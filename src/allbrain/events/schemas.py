@@ -117,6 +117,9 @@ class EventType(StrEnum):
     COUNTERFACTUAL_GENERATED = "counterfactual_generated"
     COUNTERFACTUAL_EVALUATED = "counterfactual_evaluated"
     COUNTERFACTUAL_RECOMMENDATION = "counterfactual_recommendation"
+    SCENARIO_GENERATED = "scenario_generated"
+    SCENARIO_EVALUATED = "scenario_evaluated"
+    SCENARIO_RECOMMENDED = "scenario_recommended"
 
 
 SemanticEventType = {
@@ -232,6 +235,9 @@ SemanticEventType = {
     EventType.COUNTERFACTUAL_GENERATED,
     EventType.COUNTERFACTUAL_EVALUATED,
     EventType.COUNTERFACTUAL_RECOMMENDATION,
+    EventType.SCENARIO_GENERATED,
+    EventType.SCENARIO_EVALUATED,
+    EventType.SCENARIO_RECOMMENDED,
 }
 
 

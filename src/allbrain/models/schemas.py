@@ -193,6 +193,9 @@ class RunDecisionPipelineInput(BaseModel):
     enable_counterfactual: bool = False
     counterfactual_limit: int = Field(default=3, ge=1, le=100)
     regret_threshold: float = Field(default=0.20, ge=0.0, le=1.0)
+    enable_scenarios: bool = False
+    scenarios_limit: int = Field(default=4, ge=1, le=20)
+    scenario_recommendation_threshold: float = Field(default=0.50, ge=0.0, le=1.0)
 
 
 class ObserveWorldInput(BaseModel):
@@ -223,6 +226,24 @@ class AlternativeRankingInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     actions: list[str] = Field(min_length=1)
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
+
+
+class GenerateScenariosInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    action: str = Field(min_length=1)
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
+    scenarios_limit: int = Field(default=4, ge=1, le=20)
+
+
+class EvaluateScenariosInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    action: str = Field(min_length=1)
+    scenarios: list[dict[str, Any]] = Field(min_length=1)
     project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 

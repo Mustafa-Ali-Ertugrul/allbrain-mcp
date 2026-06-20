@@ -19,6 +19,8 @@ from allbrain.models.schemas import (
     CounterfactualInput,
     CreateSnapshotInput,
     CreateTaskInput,
+    EvaluateScenariosInput,
+    GenerateScenariosInput,
     GitContextInput,
     HandoffTaskInput,
     IntentInput,
@@ -58,6 +60,11 @@ from allbrain.counterfactual import (
     AlternativeRanker,
     CounterfactualEngine,
     recommendation_severity,
+)
+from allbrain.scenarios import (
+    SCENARIO_TEMPLATE_VERSION,
+    ScenarioAnalysis,
+    ScenarioEngine,
 )
 from allbrain.world import WorldModel
 
@@ -315,6 +322,9 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         enable_counterfactual: bool = False,
         counterfactual_limit: int = 3,
         regret_threshold: float = 0.20,
+        enable_scenarios: bool = False,
+        scenarios_limit: int = 4,
+        scenario_recommendation_threshold: float = 0.50,
     ) -> dict[str, Any]:
         result = run_decision_pipeline_impl(
             context,
@@ -327,6 +337,9 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
             enable_counterfactual=enable_counterfactual,
             counterfactual_limit=counterfactual_limit,
             regret_threshold=regret_threshold,
+            enable_scenarios=enable_scenarios,
+            scenarios_limit=scenarios_limit,
+            scenario_recommendation_threshold=scenario_recommendation_threshold,
         )
         return result.model_dump(mode="json")
 
@@ -367,6 +380,38 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         limit: int = 5000,
     ) -> dict[str, Any]:
         result = rank_alternatives_impl(context, actions=actions, project_path=project_path, limit=limit)
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def generate_scenarios(
+        action: str,
+        project_path: str | None = None,
+        limit: int = 5000,
+        scenarios_limit: int = 4,
+    ) -> dict[str, Any]:
+        result = generate_scenarios_impl(
+            context,
+            action=action,
+            project_path=project_path,
+            limit=limit,
+            scenarios_limit=scenarios_limit,
+        )
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def evaluate_scenarios(
+        action: str,
+        scenarios: list[dict[str, Any]],
+        project_path: str | None = None,
+        limit: int = 5000,
+    ) -> dict[str, Any]:
+        result = evaluate_scenarios_impl(
+            context,
+            action=action,
+            scenarios=scenarios,
+            project_path=project_path,
+            limit=limit,
+        )
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -1143,6 +1188,9 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             enable_counterfactual=data.enable_counterfactual,
             counterfactual_limit=data.counterfactual_limit,
             regret_threshold=data.regret_threshold,
+            enable_scenarios=data.enable_scenarios,
+            scenarios_limit=data.scenarios_limit,
+            scenario_recommendation_threshold=data.scenario_recommendation_threshold,
         )
         audit_tool_call(
             context,
@@ -1259,6 +1307,125 @@ def rank_alternatives_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "ranked": [item.model_dump(mode="json") for item in ranked],
             },
         )
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def _publish_scenario_events(
+    context: BrainContext,
+    bound_session_id: int,
+    project_path: str,
+    analysis: ScenarioAnalysis,
+    action: str,
+) -> None:
+    analysis_payload = analysis.model_dump(mode="json")
+    generated_event = context.repository.append_event(
+        project_path=project_path,
+        session_id=bound_session_id,
+        type=EventType.SCENARIO_GENERATED.value,
+        source="scenarios",
+        payload={
+            "action": action,
+            "templates": [item.scenario for item in analysis.results],
+            "template_version": analysis.template_version,
+            "analysis_id": analysis_payload["analysis_id"],
+        },
+    )
+    last_id = generated_event.id
+    for result in analysis.results:
+        ev_event = context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.SCENARIO_EVALUATED.value,
+            source="scenarios",
+            payload={
+                "analysis_id": analysis_payload["analysis_id"],
+                "scenario": result.scenario,
+                "prediction": result.prediction.model_dump(mode="json"),
+                "confidence": result.confidence,
+            },
+            caused_by=last_id,
+            impact_score=result.confidence,
+        )
+        last_id = ev_event.id
+    rationale = (
+        f"best={analysis.best_case.prediction.success_probability:.2f} "
+        f"vs expected={analysis.expected_case.prediction.success_probability:.2f}, "
+        f"spread={analysis.prediction_spread:.2f}"
+    )
+    context.repository.append_event(
+        project_path=project_path,
+        session_id=bound_session_id,
+        type=EventType.SCENARIO_RECOMMENDED.value,
+        source="scenarios",
+        payload={
+            "analysis_id": analysis_payload["analysis_id"],
+            "best_case": analysis.best_case.model_dump(mode="json"),
+            "expected_case": analysis.expected_case.model_dump(mode="json"),
+            "rationale": rationale,
+            "template_version": analysis.template_version,
+        },
+        caused_by=last_id,
+        impact_score=analysis.prediction_spread,
+    )
+
+
+def generate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = GenerateScenariosInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        world_model = WorldModel()
+        engine = ScenarioEngine()
+        current_state = world_model.observe()
+        context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            source="scenarios",
+            payload=current_state.model_dump(mode="json"),
+        )
+        analysis = engine.analyze(current_state, data.action, limit=data.scenarios_limit)
+        _publish_scenario_events(context, bound_session_id, project_path, analysis, data.action)
+        audit_tool_call(
+            context,
+            tool_name="generate_scenarios",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        maybe_auto_snapshot(context, project_path=project_path)
+        return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def evaluate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = EvaluateScenariosInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        world_model = WorldModel()
+        engine = ScenarioEngine()
+        current_state = world_model.observe()
+        context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            source="scenarios",
+            payload=current_state.model_dump(mode="json"),
+        )
+        analysis = engine.evaluate_custom(current_state, data.action, list(data.scenarios))
+        _publish_scenario_events(context, bound_session_id, project_path, analysis, data.action)
+        audit_tool_call(
+            context,
+            tool_name="evaluate_scenarios",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        maybe_auto_snapshot(context, project_path=project_path)
+        return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
     except (ValidationError, ValueError, TypeError) as exc:
         return ToolResult(ok=False, error=str(exc))
 

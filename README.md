@@ -201,3 +201,59 @@ Test coverage: 13 new tests in `tests/test_counterfactual.py` covering alternati
 Full test suite: 238 tests, 238 passing, no regressions.
 
 The next layer is decision quality analytics: aggregating regret history into dashboards and tying the unknown-action metric to action knowledge base expansion.
+
+Sprint 35 adds the scenario planning layer on top of counterfactual reasoning. The system can now ask "what are all the futures that could unfold from this action, and how spread out are they?" by running the same action against four different state overlays.
+
+Components:
+- `ScenarioResult`, `ScenarioAnalysis`: pydantic models with `extra="forbid"`; `analysis_id: UUID` (uuid7) for replay debugging and observability timeline; `confidence: float` 0-1 from template
+- `ScenarioTemplate` (frozen dataclass): name + `environment_state_overlay` (additive merge) + `environment_state_remove` (explicit key removal) + `resources_overlay` + `resources_remove` + confidence + description + `template_version`
+- `apply_overlay(state, template)`: immutable state modifier using `model_copy(update=...)`
+- `ScenarioGenerator`: `defaults()` returns 4 named templates; `from_specs(specs)` builds custom ones
+- `ScenarioEvaluator`: stateless, takes a simulator, returns `ScenarioResult`
+- `ScenarioRanker`: `select(results)` picks best/worst/safest/expected; `metrics(results)` computes `prediction_spread`, `risk_volatility`, `uncertainty`, `confidence_total`
+- `ScenarioEngine`: facade, `analyze(state, action, limit=N)` and `evaluate_custom(state, action, scenarios)`
+- `ScenarioProjection`: replay projection that deduplicates `analysis_ids` via a `seen_ids` set
+
+Metrics exposed:
+- `prediction_spread = best.success - worst.success`
+- `risk_volatility = max(risk) - min(risk)`
+- `uncertainty = 1 - sum(confidence * prediction.confidence)`
+- `confidence_total = sum(scenario confidences)` (sanity, ~1.0)
+
+Default templates:
+- `best_case` (confidence 0.25): environment = `{tests: passed, deployment: ready}`, all resources true
+- `expected_case` (confidence 0.50): no overlay, baseline trajectory
+- `worst_case` (confidence 0.15): environment `tests` removed, resources = `{internet: false, disk: false}`
+- `safest_case` (confidence 0.10): environment = `{tests: passed, deployment: verified}`, all resources true
+
+State overlay semantics (O2): overlay fields merge additively. Removing keys requires an explicit `environment_state_remove` / `resources_remove` list. `apply_overlay` is immutable and never mutates the input state.
+
+Pipeline integration:
+- `SystemDecisionPipeline.run(...)` gains `enable_scenarios: bool = False`, `scenarios_limit: int = Field(ge=1, le=20)`, `scenario_recommendation_threshold: float = Field(ge=0.0, le=1.0)`
+- Pipeline raises `ValueError` when `scenarios_limit < 1` (defense in depth alongside the schema validation)
+- Runs after the counterfactual step, before EXECUTION; the scenario step observes a fresh `WorldState` on its own (D1 independent)
+- R1 advisory: never overrides `final_decision`. Continues to EXECUTION regardless. `scenario_recommended` is emitted with rationale every time
+- Learning integration: the prediction dict is enriched with `prediction_spread`, `risk_volatility`, and `uncertainty` before `ClosedLoopLearningEngine.evaluate()`
+
+New event types:
+- `scenario_generated` — payload includes `template_version: 1`, `analysis_id`, and the list of actual scenario names evaluated
+- `scenario_evaluated` — one per scenario result, with `impact_score = confidence`
+- `scenario_recommended` — always emitted (R1) with `best_case`, `expected_case`, `rationale`, and `template_version`
+
+New MCP tools:
+- `generate_scenarios(action, project_path, limit, scenarios_limit)` — runs `engine.analyze()` and writes events
+- `evaluate_scenarios(action, scenarios, project_path, limit)` — runs `engine.evaluate_custom()` with user-provided scenario dicts; per-scenario events are emitted (not the 4 defaults)
+
+Replay equivalence: `EventReplayEngine` routes `scenario_*` events into a new `state["scenarios"]` key. `ScenarioProjection` is the projection. The replay equivalence test asserts `replay(events)["final_state"]["scenarios"] == ScenarioProjection().build(events)` exactly.
+
+Future metrics (Sprint 36+, not implemented in this sprint):
+- `normalized_spread = prediction_spread / expected_case.success_probability` — same 0.20 spread at expected=0.80 vs expected=0.30 is not the same forecast disagreement
+- `scenario_accuracy` — post-hoc comparison of each scenario's `success_probability` against the actual `actual_success` recorded in `RUNTIME_FEEDBACK_RECORDED`; belongs to the evolution layer
+- `analysis_id` timeline — across runs, surface how often the same `analysis_id` correlates with downstream `decision_regret` to learn whether scenario spread is a leading indicator of regret
+- `template_version` migration tooling when template semantics change
+
+Test coverage: 13 new tests in `tests/test_scenarios.py` covering default templates, best/worst/safest selection, metrics, overlay remove semantics, event emission, projection dedup, replay equivalence, pipeline integration (output, learning integration, validation), and custom-scenario MCP tool.
+
+Full test suite: 251 tests, 251 passing, no regressions.
+
+The next step is decision quality analytics: aggregating regret history and tying the unknown-action metric to action knowledge base expansion.

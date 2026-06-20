@@ -19,6 +19,7 @@ from allbrain.runtime_core.learning import ClosedLoopLearningEngine
 from allbrain.runtime_core.memory import GlobalExperienceMemoryBuilder
 from allbrain.runtime_core.planning import GoalDecompositionBridge, StrategicPlanningBridge
 from allbrain.runtime_core.state import RuntimeStateMachine, RuntimeStatus
+from allbrain.scenarios import SCENARIO_TEMPLATE_VERSION, ScenarioEngine
 from allbrain.storage.repository import event_to_read
 from allbrain.world import WorldModel
 
@@ -35,8 +36,9 @@ class SystemDecisionPipeline:
         self.memory = GlobalExperienceMemoryBuilder()
         self.world = WorldModel()
         self.counterfactual = CounterfactualEngine()
+        self.scenarios = ScenarioEngine()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -45,6 +47,10 @@ class SystemDecisionPipeline:
             raise ValueError("regret_threshold must be between 0.0 and 1.0")
         if counterfactual_limit < 1:
             raise ValueError("counterfactual_limit must be >= 1")
+        if scenarios_limit < 1:
+            raise ValueError("scenarios_limit must be >= 1")
+        if not 0.0 <= scenario_recommendation_threshold <= 1.0:
+            raise ValueError("scenario_recommendation_threshold must be between 0.0 and 1.0")
         run_id = str(uuid7())
         bus = RuntimeEventBus(context, project_path=project_path)
         machine = RuntimeStateMachine(run_id)
@@ -121,6 +127,14 @@ class SystemDecisionPipeline:
                 )
                 emitted.extend(cf_events)
 
+            scenario_payload: dict[str, Any] | None = None
+            if enable_scenarios:
+                action = self._objective_world_action(objective)
+                scenario_payload, last_event_id, sc_events = self._scenario_step(
+                    bus, action, last_event_id, scenarios_limit
+                )
+                emitted.extend(sc_events)
+
             last_event_id = self._transition(machine, publish, RuntimeStatus.EXECUTION, "scheduler_execution", last_event_id)
             scheduler_result = self._schedule(context, objective, decomposition, execution_plan, bus, run_id, last_event_id, limit)
             last_event_id = scheduler_result["last_event_id"]
@@ -136,6 +150,10 @@ class SystemDecisionPipeline:
                 best_payload = counterfactual_payload["best"]
                 learning_prediction["best_alternative"] = best_payload["alternative_prediction"]["success_probability"]
                 learning_prediction["regret"] = best_payload["regret"]
+            if scenario_payload is not None:
+                learning_prediction["prediction_spread"] = scenario_payload["prediction_spread"]
+                learning_prediction["risk_volatility"] = scenario_payload["risk_volatility"]
+                learning_prediction["uncertainty"] = scenario_payload["uncertainty"]
             learning = self.learning.evaluate(learning_prediction, feedback)
             if learning["error_delta"] >= 0.3:
                 last_event_id = publish(EventType.PREDICTION_ERROR_DETECTED.value, learning, caused_by=last_event_id).id
@@ -148,8 +166,10 @@ class SystemDecisionPipeline:
                 completed_payload["world_simulation"] = world_simulation_payload["simulation"]
             if counterfactual_payload is not None:
                 completed_payload["counterfactual"] = counterfactual_payload
+            if scenario_payload is not None:
+                completed_payload["scenarios"] = scenario_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -255,7 +275,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -272,6 +292,7 @@ class SystemDecisionPipeline:
             "learning": learning,
             "world_simulation": world_simulation,
             "counterfactual": counterfactual,
+            "scenarios": scenarios,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
@@ -356,3 +377,72 @@ class SystemDecisionPipeline:
 
     def _objective_world_action(self, objective: dict[str, Any]) -> str:
         return str(objective.get("kind", "execute"))
+
+    def _scenario_step(self, bus: RuntimeEventBus, action: str, caused_by: str, scenarios_limit: int) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        current_state = self.world.observe()
+        observed_event = bus.publish(
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            payload=current_state.model_dump(mode="json"),
+            caused_by=caused_by,
+        )
+        analysis = self.scenarios.analyze(current_state, action, limit=scenarios_limit)
+        analysis_payload = analysis.model_dump(mode="json")
+        generated_event = bus.publish(
+            type=EventType.SCENARIO_GENERATED.value,
+            payload={
+                "action": action,
+                "templates": [item.scenario for item in analysis.results],
+                "template_version": SCENARIO_TEMPLATE_VERSION,
+                "analysis_id": analysis_payload["analysis_id"],
+            },
+            caused_by=observed_event.id,
+        )
+        evaluated_events: list[EventRead] = []
+        for result in analysis.results:
+            payload = {
+                "analysis_id": analysis_payload["analysis_id"],
+                "scenario": result.scenario,
+                "prediction": result.prediction.model_dump(mode="json"),
+                "confidence": result.confidence,
+            }
+            ev_event = bus.publish(
+                type=EventType.SCENARIO_EVALUATED.value,
+                payload=payload,
+                caused_by=generated_event.id,
+                impact_score=result.confidence,
+            )
+            evaluated_events.append(ev_event)
+        rationale = (
+            f"best={analysis.best_case.prediction.success_probability:.2f} "
+            f"vs expected={analysis.expected_case.prediction.success_probability:.2f}, "
+            f"spread={analysis.prediction_spread:.2f}"
+        )
+        recommendation_event = bus.publish(
+            type=EventType.SCENARIO_RECOMMENDED.value,
+            payload={
+                "analysis_id": analysis_payload["analysis_id"],
+                "best_case": analysis.best_case.model_dump(mode="json"),
+                "expected_case": analysis.expected_case.model_dump(mode="json"),
+                "rationale": rationale,
+                "template_version": SCENARIO_TEMPLATE_VERSION,
+            },
+            caused_by=evaluated_events[-1].id,
+            impact_score=analysis.prediction_spread,
+        )
+        summary = {
+            "action": action,
+            "analysis_id": analysis_payload["analysis_id"],
+            "best_case": analysis.best_case.model_dump(mode="json"),
+            "expected_case": analysis.expected_case.model_dump(mode="json"),
+            "worst_case": analysis.worst_case.model_dump(mode="json"),
+            "safest_case": analysis.safest_case.model_dump(mode="json"),
+            "prediction_spread": analysis.prediction_spread,
+            "risk_volatility": analysis.risk_volatility,
+            "uncertainty": analysis.uncertainty,
+            "confidence_total": analysis.confidence_total,
+            "template_version": analysis.template_version,
+            "rationale": rationale,
+        }
+        last_event_id = recommendation_event.id
+        emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events, recommendation_event]
+        return summary, last_event_id, emitted_events
