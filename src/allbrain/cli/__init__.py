@@ -1,0 +1,1 @@
+"""AllBrain command line interface."""

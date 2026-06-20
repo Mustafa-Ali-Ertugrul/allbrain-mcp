@@ -1,0 +1,23 @@
+{
+  "codex": {
+    "implementation": 10,
+    "refactor": 9,
+    "testing": 5,
+    "architecture": 6,
+    "reasoning": 7
+  },
+  "claude": {
+    "architecture": 10,
+    "reasoning": 10,
+    "implementation": 7,
+    "refactor": 8,
+    "testing": 6
+  },
+  "opencode": {
+    "implementation": 7,
+    "refactor": 6,
+    "testing": 10,
+    "architecture": 4,
+    "reasoning": 5
+  }
+}

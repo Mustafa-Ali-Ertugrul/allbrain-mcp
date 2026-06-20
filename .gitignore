@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.uv-cache/
+*.py[cod]
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
