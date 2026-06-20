@@ -164,3 +164,40 @@ Test coverage: 11 new tests in `tests/test_world.py` covering event emission, pr
 Full test suite: 225 tests, 225 passing, no regressions.
 
 The next layer is Sprint 34 — Counterfactual Reasoning: "what if I had not done this?" and "which alternative is best?".
+
+Sprint 34 adds the counterfactual reasoning layer on top of the world model. The system can now ask "what would have happened if I had chosen differently?", compute decision regret, and produce advisory recommendations with severity bands.
+
+Components:
+- `CounterfactualResult`, `RankedAlternative`: pydantic models with `extra="forbid"`; `improvement = alt.success − actual.success`, `regret = max(0, improvement)`
+- `recommendation_severity(improvement)` returns `Literal["low", "medium", "high"]` with bands `[0.20, 0.40)` / `[0.40, 0.70)` / `>= 0.70`
+- `AlternativeGenerator`: deterministic `ACTION_MAP` (`deploy → [run_tests, delay_deploy, rollback]`, `delete → [backup, archive]`)
+- `CounterfactualEvaluator`: stateless compare using `SimulationBridge` for both actual and alternative
+- `AlternativeRanker`: stateless rank by `success_probability − risk`
+- `CounterfactualEngine`: facade, `analyze(state, action, limit=N)` and `rank(state, actions)`
+- `CounterfactualProjection`: replay projection with `analyses`, `generated`, `recommendations`, `unknown_actions`, `count`, `unknown_action_count`, `recommendation_count`
+
+Pipeline integration:
+- `SystemDecisionPipeline.run(...)` gains `enable_counterfactual: bool = False`, `counterfactual_limit: int = Field(ge=1, le=100)`, `regret_threshold: float = Field(ge=0.0, le=1.0)`
+- Pipeline raises `ValueError` when `counterfactual_limit < 1` (defense in depth alongside the schema validation)
+- Runs after the world simulation step, before EXECUTION; the pipeline observes a fresh `WorldState` on its own (independent of `simulate_before_execute`)
+- R1 advisory only: never overrides `final_decision`. Continues to EXECUTION regardless. `counterfactual_recommendation` is emitted only when `best.improvement >= regret_threshold`
+- Learning integration (S1 plain): the prediction dict is enriched with `best_alternative` and `regret` before `ClosedLoopLearningEngine.evaluate()`. `error_delta` formula is unchanged
+
+New event types:
+- `counterfactual_generated` — at the start of an analysis. If the action is unknown, payload includes `reason: "unknown_action"` and an empty `alternatives` list
+- `counterfactual_evaluated` — once per alternative
+- `counterfactual_recommendation` — only when threshold met, with `severity` and `impact_score = improvement`
+
+New MCP tools:
+- `generate_counterfactual(action, project_path, limit, counterfactual_limit)` — runs `engine.analyze()` and writes events
+- `rank_alternatives(actions, project_path, limit)` — runs `AlternativeRanker.rank()` (read-only, no events)
+
+Replay equivalence: `EventReplayEngine` routes `counterfactual_*` events into a new `state["counterfactual"]` key. `CounterfactualProjection` is the projection. The replay equivalence test asserts `replay(events)["final_state"]["counterfactual"] == CounterfactualProjection().build(events)` exactly.
+
+Future metrics (Sprint 35+, not implemented in this sprint): `average_regret`, `rolling_regret`, `high_regret_count` (with severity breakdown), `unknown_action_rate`, `regret_by_objective_kind`. The data is already in the event log; the evolution/organizational learning layer would consume the projection.
+
+Test coverage: 13 new tests in `tests/test_counterfactual.py` covering alternative generation, improvement/regret math, ranking, event emission, the `unknown_action` metric, projection build, replay equivalence, severity bands, pipeline integration (gating, learning integration, validation), and MCP tools.
+
+Full test suite: 238 tests, 238 passing, no regressions.
+
+The next layer is decision quality analytics: aggregating regret history into dashboards and tying the unknown-action metric to action knowledge base expansion.

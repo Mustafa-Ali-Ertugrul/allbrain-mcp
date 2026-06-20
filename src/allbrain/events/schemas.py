@@ -114,6 +114,9 @@ class EventType(StrEnum):
     PIPELINE_RUN_FAILED = "pipeline_run_failed"
     WORLD_STATE_OBSERVED = "world_state_observed"
     WORLD_SIMULATION_RUN = "world_simulation_run"
+    COUNTERFACTUAL_GENERATED = "counterfactual_generated"
+    COUNTERFACTUAL_EVALUATED = "counterfactual_evaluated"
+    COUNTERFACTUAL_RECOMMENDATION = "counterfactual_recommendation"
 
 
 SemanticEventType = {
@@ -226,6 +229,9 @@ SemanticEventType = {
     EventType.PIPELINE_RUN_FAILED,
     EventType.WORLD_STATE_OBSERVED,
     EventType.WORLD_SIMULATION_RUN,
+    EventType.COUNTERFACTUAL_GENERATED,
+    EventType.COUNTERFACTUAL_EVALUATED,
+    EventType.COUNTERFACTUAL_RECOMMENDATION,
 }
 
 

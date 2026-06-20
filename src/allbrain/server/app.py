@@ -13,8 +13,10 @@ from allbrain.intent import IntentExtractor, IntentStore
 from allbrain.contradiction import ContradictionDetector
 from allbrain.models.entities import Session
 from allbrain.models.schemas import (
+    AlternativeRankingInput,
     AssignTaskInput,
     ConflictInput,
+    CounterfactualInput,
     CreateSnapshotInput,
     CreateTaskInput,
     GitContextInput,
@@ -52,6 +54,11 @@ from allbrain.snapshot.trigger import snapshot_weight
 from allbrain.snapshot.versions import is_compatible
 from allbrain.storage.repository import BrainRepository, event_to_read
 from allbrain.storage.snapshot_repo import SnapshotRepo
+from allbrain.counterfactual import (
+    AlternativeRanker,
+    CounterfactualEngine,
+    recommendation_severity,
+)
 from allbrain.world import WorldModel
 
 
@@ -305,6 +312,9 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         limit: int = 5000,
         simulate_before_execute: bool = False,
         risk_threshold: float = 0.7,
+        enable_counterfactual: bool = False,
+        counterfactual_limit: int = 3,
+        regret_threshold: float = 0.20,
     ) -> dict[str, Any]:
         result = run_decision_pipeline_impl(
             context,
@@ -314,6 +324,9 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
             limit=limit,
             simulate_before_execute=simulate_before_execute,
             risk_threshold=risk_threshold,
+            enable_counterfactual=enable_counterfactual,
+            counterfactual_limit=counterfactual_limit,
+            regret_threshold=regret_threshold,
         )
         return result.model_dump(mode="json")
 
@@ -329,6 +342,31 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         limit: int = 5000,
     ) -> dict[str, Any]:
         result = simulate_action_impl(context, action=action, project_path=project_path, limit=limit)
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def generate_counterfactual(
+        action: str,
+        project_path: str | None = None,
+        limit: int = 5000,
+        counterfactual_limit: int = 3,
+    ) -> dict[str, Any]:
+        result = generate_counterfactual_impl(
+            context,
+            action=action,
+            project_path=project_path,
+            limit=limit,
+            counterfactual_limit=counterfactual_limit,
+        )
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def rank_alternatives(
+        actions: list[str],
+        project_path: str | None = None,
+        limit: int = 5000,
+    ) -> dict[str, Any]:
+        result = rank_alternatives_impl(context, actions=actions, project_path=project_path, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -1102,6 +1140,9 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             limit=data.limit,
             simulate_before_execute=data.simulate_before_execute,
             risk_threshold=data.risk_threshold,
+            enable_counterfactual=data.enable_counterfactual,
+            counterfactual_limit=data.counterfactual_limit,
+            regret_threshold=data.regret_threshold,
         )
         audit_tool_call(
             context,
@@ -1112,6 +1153,112 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         )
         maybe_auto_snapshot(context, project_path=project_path)
         return ToolResult(ok=True, data=result)
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = CounterfactualInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        world_model = WorldModel()
+        engine = CounterfactualEngine()
+        current_state = world_model.observe()
+        observation_event = context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            source="counterfactual",
+            payload=current_state.model_dump(mode="json"),
+        )
+        generated_payload: dict[str, Any] = {"action": data.action, "alternatives": []}
+        unknown = not engine.generator.generate(data.action)
+        if unknown:
+            generated_payload["reason"] = "unknown_action"
+        generated_event = context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.COUNTERFACTUAL_GENERATED.value,
+            source="counterfactual",
+            payload=generated_payload,
+            caused_by=observation_event.id,
+        )
+        alternatives = engine.generator.generate(data.action)[: data.counterfactual_limit]
+        results_payloads: list[dict[str, Any]] = []
+        for alternative in alternatives:
+            result = engine.evaluator.compare(current_state, data.action, alternative)
+            context.repository.append_event(
+                project_path=project_path,
+                session_id=bound_session_id,
+                type=EventType.COUNTERFACTUAL_EVALUATED.value,
+                source="counterfactual",
+                payload=result.model_dump(mode="json"),
+                caused_by=generated_event.id,
+                impact_score=result.improvement,
+            )
+            results_payloads.append(result.model_dump(mode="json"))
+        best_payload: dict[str, Any] | None = None
+        recommendation_payload: dict[str, Any] | None = None
+        if results_payloads:
+            best_payload = max(results_payloads, key=lambda item: item["improvement"])
+            if best_payload["improvement"] >= 0.20:
+                severity = recommendation_severity(best_payload["improvement"])
+                recommendation_payload = {"best": best_payload, "threshold": 0.20, "severity": severity}
+                context.repository.append_event(
+                    project_path=project_path,
+                    session_id=bound_session_id,
+                    type=EventType.COUNTERFACTUAL_RECOMMENDATION.value,
+                    source="counterfactual",
+                    payload=recommendation_payload,
+                    caused_by=generated_event.id,
+                    impact_score=best_payload["improvement"],
+                )
+        summary = {
+            "action": data.action,
+            "alternatives": alternatives,
+            "unknown_action": unknown,
+            "results": results_payloads,
+            "best": best_payload,
+            "decision_regret": best_payload["regret"] if best_payload else 0.0,
+            "recommendation": recommendation_payload,
+        }
+        audit_tool_call(
+            context,
+            tool_name="generate_counterfactual",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        maybe_auto_snapshot(context, project_path=project_path)
+        return ToolResult(ok=True, data=summary)
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def rank_alternatives_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = AlternativeRankingInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        world_model = WorldModel()
+        current_state = world_model.observe()
+        ranker = AlternativeRanker()
+        ranked = ranker.rank(current_state, list(data.actions))
+        audit_tool_call(
+            context,
+            tool_name="rank_alternatives",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        return ToolResult(
+            ok=True,
+            data={
+                "state": current_state.model_dump(mode="json"),
+                "ranked": [item.model_dump(mode="json") for item in ranked],
+            },
+        )
     except (ValidationError, ValueError, TypeError) as exc:
         return ToolResult(ok=False, error=str(exc))
 

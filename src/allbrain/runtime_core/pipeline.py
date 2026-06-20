@@ -10,6 +10,7 @@ from allbrain.models.schemas import EventRead
 from allbrain.orchestrator import DeterministicScheduler
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
 from allbrain.orchestrator.task_state import TaskStateReducer
+from allbrain.counterfactual import CounterfactualEngine, recommendation_severity
 from allbrain.runtime_core.arbitration import ArbitrationBridge
 from allbrain.runtime_core.economics import EconomicEvaluationBridge
 from allbrain.runtime_core.event_bus import RuntimeEventBus
@@ -33,12 +34,17 @@ class SystemDecisionPipeline:
         self.learning = ClosedLoopLearningEngine()
         self.memory = GlobalExperienceMemoryBuilder()
         self.world = WorldModel()
+        self.counterfactual = CounterfactualEngine()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
             raise ValueError("risk_threshold must be between 0.0 and 1.0")
+        if not 0.0 <= regret_threshold <= 1.0:
+            raise ValueError("regret_threshold must be between 0.0 and 1.0")
+        if counterfactual_limit < 1:
+            raise ValueError("counterfactual_limit must be >= 1")
         run_id = str(uuid7())
         bus = RuntimeEventBus(context, project_path=project_path)
         machine = RuntimeStateMachine(run_id)
@@ -107,6 +113,14 @@ class SystemDecisionPipeline:
                 if world_simulation_payload is not None:
                     execution_plan = {**execution_plan, "predicted_success": world_simulation_payload["prediction"]["success_probability"]}
 
+            counterfactual_payload: dict[str, Any] | None = None
+            if enable_counterfactual:
+                action = self._objective_world_action(objective)
+                counterfactual_payload, last_event_id, cf_events = self._counterfactual_step(
+                    bus, action, last_event_id, regret_threshold, counterfactual_limit
+                )
+                emitted.extend(cf_events)
+
             last_event_id = self._transition(machine, publish, RuntimeStatus.EXECUTION, "scheduler_execution", last_event_id)
             scheduler_result = self._schedule(context, objective, decomposition, execution_plan, bus, run_id, last_event_id, limit)
             last_event_id = scheduler_result["last_event_id"]
@@ -117,7 +131,12 @@ class SystemDecisionPipeline:
             last_event_id = publish(EventType.RUNTIME_FEEDBACK_RECORDED.value, feedback, caused_by=last_event_id).id
 
             last_event_id = self._transition(machine, publish, RuntimeStatus.EVOLUTION, "closed_loop_learning", last_event_id)
-            learning = self.learning.evaluate(execution_plan, feedback)
+            learning_prediction = dict(execution_plan)
+            if counterfactual_payload is not None and counterfactual_payload.get("best") is not None:
+                best_payload = counterfactual_payload["best"]
+                learning_prediction["best_alternative"] = best_payload["alternative_prediction"]["success_probability"]
+                learning_prediction["regret"] = best_payload["regret"]
+            learning = self.learning.evaluate(learning_prediction, feedback)
             if learning["error_delta"] >= 0.3:
                 last_event_id = publish(EventType.PREDICTION_ERROR_DETECTED.value, learning, caused_by=last_event_id).id
             if learning["model_update_proposal"]:
@@ -127,8 +146,10 @@ class SystemDecisionPipeline:
             completed_payload: dict[str, Any] = {"status": "COMPLETED", "final_decision": final_decision}
             if world_simulation_payload is not None:
                 completed_payload["world_simulation"] = world_simulation_payload["simulation"]
+            if counterfactual_payload is not None:
+                completed_payload["counterfactual"] = counterfactual_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -234,7 +255,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -250,6 +271,7 @@ class SystemDecisionPipeline:
             "feedback": feedback,
             "learning": learning,
             "world_simulation": world_simulation,
+            "counterfactual": counterfactual,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
@@ -275,6 +297,62 @@ class SystemDecisionPipeline:
             sim_event.id,
             [observed_event, sim_event],
         )
+
+    def _counterfactual_step(self, bus: RuntimeEventBus, action: str, caused_by: str, regret_threshold: float, counterfactual_limit: int) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        current_state = self.world.observe()
+        observed_event = bus.publish(
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            payload=current_state.model_dump(mode="json"),
+            caused_by=caused_by,
+        )
+        generated_payload: dict[str, Any] = {"action": action, "alternatives": []}
+        unknown = not self.counterfactual.generator.generate(action)
+        if unknown:
+            generated_payload["reason"] = "unknown_action"
+        generated_event = bus.publish(
+            type=EventType.COUNTERFACTUAL_GENERATED.value,
+            payload=generated_payload,
+            caused_by=observed_event.id,
+        )
+        alternatives = self.counterfactual.generator.generate(action)[:counterfactual_limit]
+        results_payloads: list[dict[str, Any]] = []
+        evaluated_events: list[EventRead] = []
+        for alternative in alternatives:
+            result = self.counterfactual.evaluator.compare(current_state, action, alternative)
+            ev_event = bus.publish(
+                type=EventType.COUNTERFACTUAL_EVALUATED.value,
+                payload=result.model_dump(mode="json"),
+                caused_by=generated_event.id,
+            )
+            results_payloads.append(result.model_dump(mode="json"))
+            evaluated_events.append(ev_event)
+        best_payload: dict[str, Any] | None = None
+        recommendation_event: EventRead | None = None
+        if results_payloads:
+            best_payload = max(results_payloads, key=lambda item: item["improvement"])
+            if best_payload["improvement"] >= regret_threshold:
+                severity = recommendation_severity(best_payload["improvement"])
+                last_id = evaluated_events[-1].id if evaluated_events else generated_event.id
+                recommendation_event = bus.publish(
+                    type=EventType.COUNTERFACTUAL_RECOMMENDATION.value,
+                    payload={"best": best_payload, "threshold": regret_threshold, "severity": severity},
+                    caused_by=last_id,
+                    impact_score=best_payload["improvement"],
+                )
+        summary = {
+            "action": action,
+            "alternatives": alternatives,
+            "unknown_action": unknown,
+            "results": results_payloads,
+            "best": best_payload,
+            "decision_regret": best_payload["regret"] if best_payload else 0.0,
+            "recommendation_emitted": recommendation_event is not None,
+        }
+        last_event_id = (recommendation_event or (evaluated_events[-1] if evaluated_events else generated_event)).id
+        emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events]
+        if recommendation_event is not None:
+            emitted_events.append(recommendation_event)
+        return summary, last_event_id, emitted_events
 
     def _objective_world_action(self, objective: dict[str, Any]) -> str:
         return str(objective.get("kind", "execute"))
