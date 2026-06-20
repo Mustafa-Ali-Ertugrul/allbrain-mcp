@@ -120,6 +120,9 @@ class EventType(StrEnum):
     SCENARIO_GENERATED = "scenario_generated"
     SCENARIO_EVALUATED = "scenario_evaluated"
     SCENARIO_RECOMMENDED = "scenario_recommended"
+    FORESIGHT_GENERATED = "foresight_generated"
+    FORESIGHT_EVALUATED = "foresight_evaluated"
+    FORESIGHT_RECOMMENDED = "foresight_recommended"
 
 
 SemanticEventType = {
@@ -238,6 +241,9 @@ SemanticEventType = {
     EventType.SCENARIO_GENERATED,
     EventType.SCENARIO_EVALUATED,
     EventType.SCENARIO_RECOMMENDED,
+    EventType.FORESIGHT_GENERATED,
+    EventType.FORESIGHT_EVALUATED,
+    EventType.FORESIGHT_RECOMMENDED,
 }
 
 

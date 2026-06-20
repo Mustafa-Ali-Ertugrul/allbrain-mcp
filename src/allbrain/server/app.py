@@ -19,7 +19,9 @@ from allbrain.models.schemas import (
     CounterfactualInput,
     CreateSnapshotInput,
     CreateTaskInput,
+    EvaluatePlanInput,
     EvaluateScenariosInput,
+    GenerateFuturePlansInput,
     GenerateScenariosInput,
     GitContextInput,
     HandoffTaskInput,
@@ -65,6 +67,11 @@ from allbrain.scenarios import (
     SCENARIO_TEMPLATE_VERSION,
     ScenarioAnalysis,
     ScenarioEngine,
+)
+from allbrain.foresight import (
+    FORESIGHT_TEMPLATE_VERSION,
+    ForesightAnalysis,
+    ForesightEngine,
 )
 from allbrain.world import WorldModel
 
@@ -325,6 +332,9 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         enable_scenarios: bool = False,
         scenarios_limit: int = 4,
         scenario_recommendation_threshold: float = 0.50,
+        enable_foresight: bool = False,
+        foresight_limit: int = 5,
+        max_horizon: int = 5,
     ) -> dict[str, Any]:
         result = run_decision_pipeline_impl(
             context,
@@ -340,6 +350,9 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
             enable_scenarios=enable_scenarios,
             scenarios_limit=scenarios_limit,
             scenario_recommendation_threshold=scenario_recommendation_threshold,
+            enable_foresight=enable_foresight,
+            foresight_limit=foresight_limit,
+            max_horizon=max_horizon,
         )
         return result.model_dump(mode="json")
 
@@ -411,6 +424,40 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
             scenarios=scenarios,
             project_path=project_path,
             limit=limit,
+        )
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def generate_future_plans(
+        action: str,
+        project_path: str | None = None,
+        limit: int = 5000,
+        foresight_limit: int = 5,
+        max_horizon: int = 5,
+    ) -> dict[str, Any]:
+        result = generate_future_plans_impl(
+            context,
+            action=action,
+            project_path=project_path,
+            limit=limit,
+            foresight_limit=foresight_limit,
+            max_horizon=max_horizon,
+        )
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def evaluate_plan(
+        actions: list[str],
+        project_path: str | None = None,
+        limit: int = 5000,
+        max_horizon: int = 5,
+    ) -> dict[str, Any]:
+        result = evaluate_plan_impl(
+            context,
+            actions=actions,
+            project_path=project_path,
+            limit=limit,
+            max_horizon=max_horizon,
         )
         return result.model_dump(mode="json")
 
@@ -1191,6 +1238,9 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             enable_scenarios=data.enable_scenarios,
             scenarios_limit=data.scenarios_limit,
             scenario_recommendation_threshold=data.scenario_recommendation_threshold,
+            enable_foresight=data.enable_foresight,
+            foresight_limit=data.foresight_limit,
+            max_horizon=data.max_horizon,
         )
         audit_tool_call(
             context,
@@ -1426,6 +1476,165 @@ def evaluate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         maybe_auto_snapshot(context, project_path=project_path)
         return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def _publish_foresight_events(
+    context: BrainContext,
+    bound_session_id: int,
+    project_path: str,
+    analysis: ForesightAnalysis,
+    action: str,
+) -> None:
+    analysis_payload = analysis.model_dump(mode="json")
+    generated_event = context.repository.append_event(
+        project_path=project_path,
+        session_id=bound_session_id,
+        type=EventType.FORESIGHT_GENERATED.value,
+        source="foresight",
+        payload={
+            "action": action,
+            "plans_count": len(analysis.plans),
+            "plan_ids": [f"plan_{idx}" for idx in range(len(analysis.plans))],
+            "template_version": FORESIGHT_TEMPLATE_VERSION,
+            "analysis_id": analysis_payload["analysis_id"],
+        },
+    )
+    last_id = generated_event.id
+    for idx, plan in enumerate(analysis.plans):
+        plan_payload = plan.model_dump(mode="json")
+        plan_payload["analysis_id"] = analysis_payload["analysis_id"]
+        plan_payload["plan_id"] = f"plan_{idx}"
+        ev_event = context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.FORESIGHT_EVALUATED.value,
+            source="foresight",
+            payload=plan_payload,
+            caused_by=last_id,
+            impact_score=plan.predicted_success,
+        )
+        last_id = ev_event.id
+    rationale = (
+        f"best={analysis.best_plan.predicted_success:.2f} "
+        f"horizon={analysis.expected_plan.horizon} "
+        f"spread={analysis.plan_spread:.2f}"
+    )
+    context.repository.append_event(
+        project_path=project_path,
+        session_id=bound_session_id,
+        type=EventType.FORESIGHT_RECOMMENDED.value,
+        source="foresight",
+        payload={
+            "analysis_id": analysis_payload["analysis_id"],
+            "best_plan": analysis.best_plan.model_dump(mode="json"),
+            "expected_plan": analysis.expected_plan.model_dump(mode="json"),
+            "rationale": rationale,
+            "template_version": FORESIGHT_TEMPLATE_VERSION,
+        },
+        caused_by=last_id,
+        impact_score=analysis.plan_spread,
+    )
+
+
+def generate_future_plans_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = GenerateFuturePlansInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        world_model = WorldModel()
+        engine = ForesightEngine(max_horizon=data.max_horizon)
+        current_state = world_model.observe()
+        context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            source="foresight",
+            payload=current_state.model_dump(mode="json"),
+        )
+        analysis = engine.analyze(current_state, data.action, limit=data.foresight_limit)
+        _publish_foresight_events(context, bound_session_id, project_path, analysis, data.action)
+        audit_tool_call(
+            context,
+            tool_name="generate_future_plans",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        maybe_auto_snapshot(context, project_path=project_path)
+        return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = EvaluatePlanInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        world_model = WorldModel()
+        engine = ForesightEngine(max_horizon=data.max_horizon)
+        current_state = world_model.observe()
+        context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            source="foresight",
+            payload=current_state.model_dump(mode="json"),
+        )
+        plan = engine.evaluate_custom(current_state, list(data.actions))
+        analysis_payload = {
+            "action": "custom",
+            "plans_count": 1,
+            "plan_ids": ["plan_0"],
+            "template_version": FORESIGHT_TEMPLATE_VERSION,
+            "analysis_id": "00000000-0000-0000-0000-000000000000",
+        }
+        generated_event = context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.FORESIGHT_GENERATED.value,
+            source="foresight",
+            payload=analysis_payload,
+        )
+        plan_payload = plan.model_dump(mode="json")
+        plan_payload["analysis_id"] = "00000000-0000-0000-0000-000000000000"
+        plan_payload["plan_id"] = "plan_0"
+        context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.FORESIGHT_EVALUATED.value,
+            source="foresight",
+            payload=plan_payload,
+            caused_by=generated_event.id,
+            impact_score=plan.predicted_success,
+        )
+        rationale = f"custom plan: actions={plan.actions} success={plan.predicted_success:.2f}"
+        context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.FORESIGHT_RECOMMENDED.value,
+            source="foresight",
+            payload={
+                "analysis_id": "00000000-0000-0000-0000-000000000000",
+                "best_plan": plan.model_dump(mode="json"),
+                "expected_plan": plan.model_dump(mode="json"),
+                "rationale": rationale,
+                "template_version": FORESIGHT_TEMPLATE_VERSION,
+            },
+            caused_by=generated_event.id,
+            impact_score=plan.predicted_success,
+        )
+        audit_tool_call(
+            context,
+            tool_name="evaluate_plan",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        maybe_auto_snapshot(context, project_path=project_path)
+        return ToolResult(ok=True, data=plan.model_dump(mode="json"))
     except (ValidationError, ValueError, TypeError) as exc:
         return ToolResult(ok=False, error=str(exc))
 

@@ -257,3 +257,56 @@ Test coverage: 13 new tests in `tests/test_scenarios.py` covering default templa
 Full test suite: 251 tests, 251 passing, no regressions.
 
 The next step is decision quality analytics: aggregating regret history and tying the unknown-action metric to action knowledge base expansion.
+
+Sprint 36 adds the strategic foresight layer on top of multi-future scenarios. The system now asks "which sequence of actions produces the best long-term outcome?" by simulating plans step by step with state chaining.
+
+Components:
+- `FuturePlan`: pydantic model with `actions`, `predicted_success`, `cumulative_risk`, `cumulative_cost`, `horizon`, `confidence`, `step_states` (debug hook)
+- `ForesightAnalysis`: pydantic model with `analysis_id: UUID` (uuid7), `action`, `best_plan`, `safest_plan`, `fastest_plan`, `expected_plan`, `plan_spread`, `strategy_uncertainty`, `horizon_risk`, `template_version=1`, `plans`
+- `DEPLOY_PLANS`: static list of 4 default plans for the `deploy` action (P1 single list)
+- `ActionPlanner`: `generate(action)` returns plans for `deploy` or `[]` otherwise
+- `MultiStepSimulator`: chains `SimulationBridge` through each step, returns `(final_state, predictions, step_states)` (MS1)
+- `PlanEvaluator`: enforces `max_horizon` (T1 reject) and computes the plan metrics
+- `PlanRanker`: `select(plans)` picks best/safest/fastest/expected by score `predicted_success - cumulative_risk` (S1 plain)
+- `ForesightEngine`: facade, `analyze(state, action, limit)` and `evaluate_custom(state, actions)`
+- `ForesightProjection`: replay projection with `analyses`, `generated`, `recommendations`, `analysis_ids`, `count`, `recommendation_count` (deduplicated)
+
+Step states debug hook: `MultiStepSimulator.simulate(state, actions)` returns `step_states` (initial + N step states), captured in `FuturePlan.step_states` and serialized to event payload. Makes "which action broke the state" and "which step created drift" obvious.
+
+Pipeline integration:
+- `SystemDecisionPipeline.run(...)` gains `enable_foresight: bool = False`, `foresight_limit: int = Field(ge=1, le=20)`, `max_horizon: int = Field(ge=1, le=20)`
+- Pipeline raises `ValueError` when `foresight_limit < 1` or `max_horizon < 1` (defense in depth alongside the schema validation)
+- Runs after the scenarios step, before EXECUTION; the foresight step observes a fresh `WorldState` on its own (D1 independent)
+- Plans longer than `max_horizon` raise `ValueError` (T1 reject)
+- R1 advisory: never overrides `final_decision`. Continues to EXECUTION regardless. `foresight_recommended` is emitted with rationale every time
+- Learning integration: the prediction dict is enriched with `future_horizon`, `strategy_uncertainty`, and `horizon_risk` before `ClosedLoopLearningEngine.evaluate()`
+
+New event types:
+- `foresight_generated` — payload includes `template_version: 1`, `analysis_id`, `plans_count`, `plan_ids`
+- `foresight_evaluated` — one per plan, with `impact_score = predicted_success`
+- `foresight_recommended` — always emitted (R1) with `best_plan`, `expected_plan`, `rationale`, `template_version`
+
+New MCP tools:
+- `generate_future_plans(action, project_path, limit, foresight_limit, max_horizon)` — runs `engine.analyze()` and writes events
+- `evaluate_plan(actions, project_path, limit, max_horizon)` — runs `engine.evaluate_custom()` on a user-provided plan; `max_horizon` enforces T1 reject
+
+Replay equivalence: `EventReplayEngine` routes `foresight_*` events into a new `state["foresight"]` key. `ForesightProjection` is the projection. The replay equivalence test asserts `replay(events)["final_state"]["foresight"] == ForesightProjection().build(events)` exactly.
+
+Boundary clarity (per the user's mental model):
+- `counterfactual` (Sprint 34): one-step alternative analysis
+- `scenario` (Sprint 35): one-state multi-world analysis
+- `foresight` (Sprint 36): multi-step trajectory analysis
+
+Future metrics (Sprint 37+, not implemented in this sprint):
+- `horizon_cost` — distinct from `cumulative_cost`; weighted by step position for discounting distant costs
+- `worst_step_risk` — `max(p.risk for p in predictions)`. The current `cumulative_risk = average` is "soft"; the worst-step view makes catastrophic steps visible
+- `plan_depth` — explicit split between `horizon` (model capacity) and `plan_length` (actual plan length)
+- `plan_regret` — best_plan success minus the chosen plan success; belongs to the evolution layer
+- Extensible planning templates (P2 dict) — currently only `deploy` is supported
+- `payload_version` migration on `world`, `counterfactual`, and `scenario` events (deferred from Sprint 33 onwards)
+
+Test coverage: 16 new tests in `tests/test_foresight.py` covering plan generation, best/safest/fastest selection, step states debug hook, horizon metrics, projection build, event emission, replay equivalence, pipeline integration (output, learning integration, validation), max_horizon T1 reject, unknown action sentinel, and custom-plan MCP tool.
+
+Full test suite: 267 tests, 267 passing, no regressions.
+
+The system can now say: "I can deploy now. Running tests first increases success. The best long-term strategy is `run_tests → fix_failures → deploy → monitor` with predicted success 95%, risk 15%, horizon 4 steps." This is the first time AllBrain thinks in sequences, not just single actions.

@@ -196,6 +196,9 @@ class RunDecisionPipelineInput(BaseModel):
     enable_scenarios: bool = False
     scenarios_limit: int = Field(default=4, ge=1, le=20)
     scenario_recommendation_threshold: float = Field(default=0.50, ge=0.0, le=1.0)
+    enable_foresight: bool = False
+    foresight_limit: int = Field(default=5, ge=1, le=20)
+    max_horizon: int = Field(default=5, ge=1, le=20)
 
 
 class ObserveWorldInput(BaseModel):
@@ -246,6 +249,25 @@ class EvaluateScenariosInput(BaseModel):
     scenarios: list[dict[str, Any]] = Field(min_length=1)
     project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
+
+
+class GenerateFuturePlansInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    action: str = Field(min_length=1)
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
+    foresight_limit: int = Field(default=5, ge=1, le=20)
+    max_horizon: int = Field(default=5, ge=1, le=20)
+
+
+class EvaluatePlanInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    actions: list[str] = Field(min_length=1)
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
+    max_horizon: int = Field(default=5, ge=1, le=20)
 
 
 class EventRead(BaseModel):

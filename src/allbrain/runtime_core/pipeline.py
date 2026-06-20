@@ -11,6 +11,7 @@ from allbrain.orchestrator import DeterministicScheduler
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
 from allbrain.orchestrator.task_state import TaskStateReducer
 from allbrain.counterfactual import CounterfactualEngine, recommendation_severity
+from allbrain.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
 from allbrain.runtime_core.arbitration import ArbitrationBridge
 from allbrain.runtime_core.economics import EconomicEvaluationBridge
 from allbrain.runtime_core.event_bus import RuntimeEventBus
@@ -37,8 +38,9 @@ class SystemDecisionPipeline:
         self.world = WorldModel()
         self.counterfactual = CounterfactualEngine()
         self.scenarios = ScenarioEngine()
+        self.foresight = ForesightEngine()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -51,6 +53,10 @@ class SystemDecisionPipeline:
             raise ValueError("scenarios_limit must be >= 1")
         if not 0.0 <= scenario_recommendation_threshold <= 1.0:
             raise ValueError("scenario_recommendation_threshold must be between 0.0 and 1.0")
+        if foresight_limit < 1:
+            raise ValueError("foresight_limit must be >= 1")
+        if max_horizon < 1:
+            raise ValueError("max_horizon must be >= 1")
         run_id = str(uuid7())
         bus = RuntimeEventBus(context, project_path=project_path)
         machine = RuntimeStateMachine(run_id)
@@ -135,6 +141,14 @@ class SystemDecisionPipeline:
                 )
                 emitted.extend(sc_events)
 
+            foresight_payload: dict[str, Any] | None = None
+            if enable_foresight:
+                action = self._objective_world_action(objective)
+                foresight_payload, last_event_id, fs_events = self._foresight_step(
+                    bus, action, last_event_id, foresight_limit, max_horizon
+                )
+                emitted.extend(fs_events)
+
             last_event_id = self._transition(machine, publish, RuntimeStatus.EXECUTION, "scheduler_execution", last_event_id)
             scheduler_result = self._schedule(context, objective, decomposition, execution_plan, bus, run_id, last_event_id, limit)
             last_event_id = scheduler_result["last_event_id"]
@@ -154,6 +168,10 @@ class SystemDecisionPipeline:
                 learning_prediction["prediction_spread"] = scenario_payload["prediction_spread"]
                 learning_prediction["risk_volatility"] = scenario_payload["risk_volatility"]
                 learning_prediction["uncertainty"] = scenario_payload["uncertainty"]
+            if foresight_payload is not None:
+                learning_prediction["future_horizon"] = foresight_payload["expected_plan"]["horizon"]
+                learning_prediction["strategy_uncertainty"] = foresight_payload["strategy_uncertainty"]
+                learning_prediction["horizon_risk"] = foresight_payload["horizon_risk"]
             learning = self.learning.evaluate(learning_prediction, feedback)
             if learning["error_delta"] >= 0.3:
                 last_event_id = publish(EventType.PREDICTION_ERROR_DETECTED.value, learning, caused_by=last_event_id).id
@@ -168,8 +186,10 @@ class SystemDecisionPipeline:
                 completed_payload["counterfactual"] = counterfactual_payload
             if scenario_payload is not None:
                 completed_payload["scenarios"] = scenario_payload
+            if foresight_payload is not None:
+                completed_payload["foresight"] = foresight_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -275,7 +295,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -293,6 +313,7 @@ class SystemDecisionPipeline:
             "world_simulation": world_simulation,
             "counterfactual": counterfactual,
             "scenarios": scenarios,
+            "foresight": foresight,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
@@ -377,6 +398,73 @@ class SystemDecisionPipeline:
 
     def _objective_world_action(self, objective: dict[str, Any]) -> str:
         return str(objective.get("kind", "execute"))
+
+    def _foresight_step(self, bus: RuntimeEventBus, action: str, caused_by: str, foresight_limit: int, max_horizon: int) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        current_state = self.world.observe()
+        observed_event = bus.publish(
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            payload=current_state.model_dump(mode="json"),
+            caused_by=caused_by,
+        )
+        engine = ForesightEngine(max_horizon=max_horizon)
+        analysis = engine.analyze(current_state, action, limit=foresight_limit)
+        analysis_payload = analysis.model_dump(mode="json")
+        generated_event = bus.publish(
+            type=EventType.FORESIGHT_GENERATED.value,
+            payload={
+                "action": action,
+                "plans_count": len(analysis.plans),
+                "plan_ids": [f"plan_{idx}" for idx in range(len(analysis.plans))],
+                "template_version": FORESIGHT_TEMPLATE_VERSION,
+                "analysis_id": analysis_payload["analysis_id"],
+            },
+            caused_by=observed_event.id,
+        )
+        evaluated_events: list[EventRead] = []
+        for idx, plan in enumerate(analysis.plans):
+            plan_payload = plan.model_dump(mode="json")
+            plan_payload["analysis_id"] = analysis_payload["analysis_id"]
+            plan_payload["plan_id"] = f"plan_{idx}"
+            ev_event = bus.publish(
+                type=EventType.FORESIGHT_EVALUATED.value,
+                payload=plan_payload,
+                caused_by=generated_event.id,
+                impact_score=plan.predicted_success,
+            )
+            evaluated_events.append(ev_event)
+        rationale = (
+            f"best={analysis.best_plan.predicted_success:.2f} "
+            f"horizon={analysis.expected_plan.horizon} "
+            f"spread={analysis.plan_spread:.2f}"
+        )
+        recommendation_event = bus.publish(
+            type=EventType.FORESIGHT_RECOMMENDED.value,
+            payload={
+                "analysis_id": analysis_payload["analysis_id"],
+                "best_plan": analysis.best_plan.model_dump(mode="json"),
+                "expected_plan": analysis.expected_plan.model_dump(mode="json"),
+                "rationale": rationale,
+                "template_version": FORESIGHT_TEMPLATE_VERSION,
+            },
+            caused_by=evaluated_events[-1].id if evaluated_events else generated_event.id,
+            impact_score=analysis.plan_spread,
+        )
+        summary = {
+            "action": action,
+            "analysis_id": analysis_payload["analysis_id"],
+            "best_plan": analysis.best_plan.model_dump(mode="json"),
+            "safest_plan": analysis.safest_plan.model_dump(mode="json"),
+            "fastest_plan": analysis.fastest_plan.model_dump(mode="json"),
+            "expected_plan": analysis.expected_plan.model_dump(mode="json"),
+            "plan_spread": analysis.plan_spread,
+            "strategy_uncertainty": analysis.strategy_uncertainty,
+            "horizon_risk": analysis.horizon_risk,
+            "template_version": analysis.template_version,
+            "rationale": rationale,
+        }
+        last_event_id = recommendation_event.id
+        emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events, recommendation_event]
+        return summary, last_event_id, emitted_events
 
     def _scenario_step(self, bus: RuntimeEventBus, action: str, caused_by: str, scenarios_limit: int) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
         current_state = self.world.observe()
