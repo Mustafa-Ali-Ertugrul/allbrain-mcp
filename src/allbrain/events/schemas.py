@@ -112,6 +112,8 @@ class EventType(StrEnum):
     MODEL_UPDATE_PROPOSED = "model_update_proposed"
     PIPELINE_RUN_COMPLETED = "pipeline_run_completed"
     PIPELINE_RUN_FAILED = "pipeline_run_failed"
+    WORLD_STATE_OBSERVED = "world_state_observed"
+    WORLD_SIMULATION_RUN = "world_simulation_run"
 
 
 SemanticEventType = {
@@ -222,6 +224,8 @@ SemanticEventType = {
     EventType.MODEL_UPDATE_PROPOSED,
     EventType.PIPELINE_RUN_COMPLETED,
     EventType.PIPELINE_RUN_FAILED,
+    EventType.WORLD_STATE_OBSERVED,
+    EventType.WORLD_SIMULATION_RUN,
 }
 
 

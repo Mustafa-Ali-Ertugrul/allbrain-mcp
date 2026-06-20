@@ -188,6 +188,23 @@ class RunDecisionPipelineInput(BaseModel):
     execute_mode: str = Field(default="event_only", pattern="^(event_only|mock_runtime)$")
     project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
+    simulate_before_execute: bool = False
+    risk_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+
+
+class ObserveWorldInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
+
+
+class SimulateActionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    action: str = Field(min_length=1)
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
 
 
 class EventRead(BaseModel):

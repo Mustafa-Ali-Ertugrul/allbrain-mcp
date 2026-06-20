@@ -128,3 +128,39 @@ Adapter slots for future sprints: Claude, OpenAI, Gemini, Qwen, OpenCode CLI, Co
 Test coverage: 41 new tests covering definition serialization, registry, safety (cost ceiling, rate limit, input sanitization, domain allowlist), metrics collection, capability learning (EMA convergence, cold start, latency tracking), queue operations, worker pool lifecycle, runtime execution (success, failure, timeout, unknown agent, batch), and end-to-end workflow + runtime integration.
 
 Full test suite: 182 tests, 181 passing (one pre-existing failure in `test_unhealthy_reviewer_is_skipped` unrelated to this sprint).
+
+Sprint 33 introduces the World Model Layer — the cognitive shift from "decide then act" to "predict then decide". The system can now ask "what happens if I do this?" before committing, and feeds the answer into the closed-loop learning engine.
+
+Components:
+- `WorldState`, `Prediction`, `SimulationResult`: pydantic models with `extra="forbid"` and bounded numeric fields; `Prediction` adds a `confidence` score (0-1) for downstream calibration
+- `EnvironmentTracker`: deterministic `WorldState` capture
+- `StateTransitionBridge`: immutable `model_copy(update=...)` transitions; input never mutated
+- `PredictionBridge`: deterministic risk/success/cost/confidence rules (`deploy` without `tests` is high risk)
+- `SimulationBridge`: combines transition + prediction, mints a `uuid7` `simulation_id`
+- `WorldModel` facade: pure `observe()` and `simulate(action, state)`; no event writing at this layer
+- `WorldStateBuilder`: projection from event list to world state (derived view, not in-memory)
+- `WorldHistory`: event-derived query helper for `latest_state()` and `latest_simulation()`
+
+Pipeline integration:
+- `SystemDecisionPipeline.run(...)` gains `simulate_before_execute: bool = False` and `risk_threshold: float = 0.7`
+- When enabled, the pipeline emits `world_state_observed` and `world_simulation_run` between `final_decision_recorded` and the scheduler
+- If `prediction.risk >= risk_threshold`, the runtime state machine transitions to `BLOCKED` with reason `world_simulation_high_risk`
+- Otherwise the world `success_probability` overrides `execution_plan["predicted_success"]` so the closed-loop learning engine compares world model output against the actual outcome
+
+New event types:
+- `world_state_observed` — emitted on every `observe()` call
+- `world_simulation_run` — emitted on every `simulate()` call with `impact_score = prediction.risk`
+
+New MCP tools:
+- `observe_world(project_path, limit)` — captures a fresh `WorldState` and emits the event
+- `simulate_action(action, project_path, limit)` — captures state, simulates the action, emits both events
+
+Replay equivalence: `EventReplayEngine` routes world events into a new `state["world"]` key. `WorldStateBuilder` is the projection; the world state is fully reconstructable from the event log alone. The replay equivalence test asserts `replay(events)["final_state"]["world"]` matches `WorldStateBuilder().build(events)` exactly.
+
+Deferred to future sprints (raised during planning, not in this scope): `action.metadata` for richer action descriptors, `payload_version` on world events for migration safety, and a tighter `test_replay_simulation_prediction_equivalence` beyond the builder-level check.
+
+Test coverage: 11 new tests in `tests/test_world.py` covering event emission, prediction rules, transition immutability, history round-trip, replay equivalence, MCP impl stability, pipeline simulation gating, and world-to-learning prediction feedback.
+
+Full test suite: 225 tests, 225 passing, no regressions.
+
+The next layer is Sprint 34 — Counterfactual Reasoning: "what if I had not done this?" and "which alternative is best?".

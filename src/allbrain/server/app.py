@@ -21,11 +21,13 @@ from allbrain.models.schemas import (
     HandoffTaskInput,
     IntentInput,
     ListEventsInput,
+    ObserveWorldInput,
     OrchestratorInput,
     RecentChangesInput,
     ResumeProjectInput,
     RunDecisionPipelineInput,
     SaveEventInput,
+    SimulateActionInput,
     TaskDependencyInput,
     TaskPriorityInput,
     ToolResult,
@@ -50,6 +52,7 @@ from allbrain.snapshot.trigger import snapshot_weight
 from allbrain.snapshot.versions import is_compatible
 from allbrain.storage.repository import BrainRepository, event_to_read
 from allbrain.storage.snapshot_repo import SnapshotRepo
+from allbrain.world import WorldModel
 
 
 @dataclass
@@ -300,6 +303,8 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         execute_mode: str = "event_only",
         project_path: str | None = None,
         limit: int = 5000,
+        simulate_before_execute: bool = False,
+        risk_threshold: float = 0.7,
     ) -> dict[str, Any]:
         result = run_decision_pipeline_impl(
             context,
@@ -307,7 +312,23 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
             execute_mode=execute_mode,
             project_path=project_path,
             limit=limit,
+            simulate_before_execute=simulate_before_execute,
+            risk_threshold=risk_threshold,
         )
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def observe_world(project_path: str | None = None, limit: int = 5000) -> dict[str, Any]:
+        result = observe_world_impl(context, project_path=project_path, limit=limit)
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def simulate_action(
+        action: str,
+        project_path: str | None = None,
+        limit: int = 5000,
+    ) -> dict[str, Any]:
+        result = simulate_action_impl(context, action=action, project_path=project_path, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -1079,6 +1100,8 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             execute_mode=data.execute_mode,
             project_path=project_path,
             limit=data.limit,
+            simulate_before_execute=data.simulate_before_execute,
+            risk_threshold=data.risk_threshold,
         )
         audit_tool_call(
             context,
@@ -1089,6 +1112,80 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         )
         maybe_auto_snapshot(context, project_path=project_path)
         return ToolResult(ok=True, data=result)
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = ObserveWorldInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        world_model = WorldModel()
+        state = world_model.observe()
+        event = context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            source="world",
+            payload=state.model_dump(mode="json"),
+        )
+        audit_tool_call(
+            context,
+            tool_name="observe_world",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        maybe_auto_snapshot(context, project_path=project_path)
+        return ToolResult(
+            ok=True,
+            data={"state": state.model_dump(mode="json"), "event": event_to_read(event).model_dump(mode="json")},
+        )
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = SimulateActionInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        world_model = WorldModel()
+        state = world_model.observe()
+        observation_event = context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            source="world",
+            payload=state.model_dump(mode="json"),
+        )
+        sim_result = world_model.simulate(data.action, state)
+        sim_event = context.repository.append_event(
+            project_path=project_path,
+            session_id=bound_session_id,
+            type=EventType.WORLD_SIMULATION_RUN.value,
+            source="world",
+            payload=sim_result.model_dump(mode="json"),
+            caused_by=observation_event.id,
+            impact_score=sim_result.prediction.risk,
+        )
+        audit_tool_call(
+            context,
+            tool_name="simulate_action",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        maybe_auto_snapshot(context, project_path=project_path)
+        return ToolResult(
+            ok=True,
+            data={
+                "observation_event": event_to_read(observation_event).model_dump(mode="json"),
+                "simulation_event": event_to_read(sim_event).model_dump(mode="json"),
+                "simulation": sim_result.model_dump(mode="json"),
+            },
+        )
     except (ValidationError, ValueError, TypeError) as exc:
         return ToolResult(ok=False, error=str(exc))
 

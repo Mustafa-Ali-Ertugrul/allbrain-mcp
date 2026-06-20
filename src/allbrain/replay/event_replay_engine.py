@@ -8,6 +8,7 @@ from allbrain.events import EventType
 from allbrain.governance import GovernanceStateBuilder
 from allbrain.models.schemas import EventRead
 from allbrain.runtime_core import RuntimeCoreStateBuilder
+from allbrain.world import WorldStateBuilder
 
 
 class EventReplayEngine:
@@ -21,16 +22,17 @@ class EventReplayEngine:
     ) -> dict[str, Any]:
         ordered = self._ordered(events, deterministic=deterministic)
         end = len(ordered) if step_count is None else min(len(ordered), cursor + step_count)
-        state: dict[str, Any] = {"tasks": {}, "decisions": [], "failures": [], "collaboration": {}, "organizational_learning": {}, "recommendations": {}, "policy_updates": {}, "governance": {}, "runtime_core": {}}
+        state: dict[str, Any] = {"tasks": {}, "decisions": [], "failures": [], "collaboration": {}, "organizational_learning": {}, "recommendations": {}, "policy_updates": {}, "governance": {}, "runtime_core": {}, "world": {}}
         collaboration_events: list[EventRead] = []
         learning_events: list[EventRead] = []
         governance_events: list[EventRead] = []
         runtime_events: list[EventRead] = []
+        world_events: list[EventRead] = []
         for event in ordered[:cursor]:
-            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events)
+            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events, world_events)
         frames: list[dict[str, Any]] = []
         for index, event in enumerate(ordered[cursor:end], start=cursor):
-            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events)
+            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events, world_events)
             frames.append(
                 {
                     "cursor": index + 1,
@@ -56,7 +58,7 @@ class EventReplayEngine:
             return list(events)
         return sorted(events, key=lambda event: (event.created_at, event.id))
 
-    def _apply(self, state: dict[str, Any], event: EventRead, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead]) -> None:
+    def _apply(self, state: dict[str, Any], event: EventRead, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead]) -> None:
         task_id = event.payload.get("task_id")
         if isinstance(task_id, str) and task_id:
             task = state["tasks"].setdefault(task_id, {"task_id": task_id, "status": "unknown"})
@@ -91,6 +93,9 @@ class EventReplayEngine:
         if _is_runtime_core_event(event):
             runtime_events.append(event)
             state["runtime_core"] = RuntimeCoreStateBuilder().build(runtime_events)
+        if _is_world_event(event):
+            world_events.append(event)
+            state["world"] = WorldStateBuilder().build(world_events)
         if event.type == EventType.SELECTION_DECISION.value:
             state["decisions"].append(
                 {
@@ -126,6 +131,7 @@ def _copy_state(state: dict[str, Any]) -> dict[str, Any]:
         "policy_updates": dict(state.get("policy_updates", {})),
         "governance": dict(state.get("governance", {})),
         "runtime_core": dict(state.get("runtime_core", {})),
+        "world": dict(state.get("world", {})),
     }
 
 
@@ -151,6 +157,13 @@ def _is_runtime_core_event(event: EventRead) -> bool:
         "model_update_proposed",
         "pipeline_run_completed",
         "pipeline_run_failed",
+    }
+
+
+def _is_world_event(event: EventRead) -> bool:
+    return event.type in {
+        EventType.WORLD_STATE_OBSERVED.value,
+        EventType.WORLD_SIMULATION_RUN.value,
     }
 
 
