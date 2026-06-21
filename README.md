@@ -310,3 +310,45 @@ Test coverage: 16 new tests in `tests/test_foresight.py` covering plan generatio
 Full test suite: 267 tests, 267 passing, no regressions.
 
 The system can now say: "I can deploy now. Running tests first increases success. The best long-term strategy is `run_tests → fix_failures → deploy → monitor` with predicted success 95%, risk 15%, horizon 4 steps." This is the first time AllBrain thinks in sequences, not just single actions.
+
+Sprint 37 adds the meta-reasoning and self-evaluation layer on top of strategic foresight. The system can now say "why was this plan selected, why were the others rejected, and how confident am I in this decision?".
+
+Components:
+- `DecisionReason`: pydantic with `factor`, `contribution: float = Field(ge=-1.0, le=1.0)` (negative contributions allowed), `explanation`
+- `RejectedAlternative`: pydantic with `option`, `reason`, `score_gap`
+- `ConfidenceEstimate`: pydantic with `confidence: float` (0-1), `evidence_count: int`, `uncertainty: float`
+- `DecisionExplanation`: pydantic with `selected_option`, `confidence`, `reasons`, `rejected`, `template_version=1`, `analysis_id: UUID`
+- `DecisionAnalyzer`: produces reasons with signed `contribution` (positive = overperforms average, negative = underperforms)
+- `ConfidenceEngine`: `confidence = historical_success * 0.4 + foresight_score * 0.4 + sample_confidence * 0.2`
+- `RejectionAnalyzer`: appends `lower_score` / `higher_risk` / `insufficient_evidence` reasons with `score_gap`
+- `ExplanationGenerator`: assembles the final `DecisionExplanation`
+- `MetaReasoningManager`: facade, `explain(selected_plan, candidates, foresight_result)`
+- `MetaReasoningProjection`: replay projection
+
+Confidence formula and the H1 placeholder: `historical_success` is currently `HISTORICAL_SUCCESS_DEFAULT = 0.7` (a placeholder constant). This is a known limitation of Sprint 37 — the formula is dominated by the constant contribution (0.28 of 1.0) and does not yet reflect actual past-run performance. The `HISTORICAL_SUCCESS_DEFAULT` name is the explicit migration marker. Sprint 38 (Uncertainty and Epistemic Reasoning) will replace it with a real source: `successful_runs / total_runs` over the event log for matching plan/objective identifiers. When that happens, the formula will naturally weight `foresight_score` more, because the historical term will reflect actual performance rather than a fixed 0.7.
+
+Negative contributions: `DecisionReason.contribution` accepts values in `[-1.0, 1.0]` so the analyzer can surface the sign of the comparison. A negative contribution means the selected plan underperforms the average on that factor; a positive contribution means it overperforms. The `test_negative_contribution_supported` test verifies this behavior explicitly.
+
+Pipeline integration:
+- `SystemDecisionPipeline.run(...)` gains `enable_meta_reasoning: bool = False`
+- Runs after the foresight step, before EXECUTION; gated on `foresight_payload is not None` (meta-reasoning explains foresight's recommendation)
+- R1 advisory: never overrides `final_decision`. Continues to EXECUTION regardless
+
+New event types:
+- `meta_reasoning_started` — payload includes `template_version: 1`, `foresight_analysis_id`
+- `decision_explained` — payload is `DecisionExplanation.model_dump(mode="json")` plus `foresight_analysis_id`
+- `meta_reasoning_completed` — payload includes summary and `template_version`
+
+New MCP tools:
+- `explain_decision(plan_id, project_path, limit)` — looks up the foresight event log for `plan_id`, reconstructs the `FuturePlan`, gathers candidates from the same `analysis_id`, runs `MetaReasoningManager().explain(...)`, returns `DecisionExplanation`
+- `estimate_confidence(plan_id, project_path, limit)` — same lookup, returns just `ConfidenceEstimate`
+
+Replay equivalence: `EventReplayEngine` routes `meta_reasoning_*` and `decision_explained` events into a new `state["reasoning"]` key. `MetaReasoningProjection` is the projection. The replay equivalence test asserts the projection output matches the replay state exactly. `analysis_ids` are deduplicated.
+
+Future metrics (Sprint 38+): `historical_success` real source, `evidence_count` calibration against actual historical runs, `uncertainty` calibration, learning integration (prediction dict enrichment), `payload_version` migration on world/counterfactual/scenario/foresight/reasoning events.
+
+Test coverage: 15 new tests in `tests/test_meta_reasoning.py` covering confidence (high/low/no-evidence), rejection (lower_score/higher_risk/insufficient_evidence), explanation (reasons generated, rejected plans included), pipeline (disabled/enabled), replay state, negative contribution support, `HISTORICAL_SUCCESS_DEFAULT` placeholder constant, and MCP tools (`explain_decision`, `estimate_confidence`, unknown plan_id error).
+
+Full test suite: 282 tests, 282 passing, no regressions.
+
+The system can now say: "I selected `run_tests → fix_failures → deploy` with confidence 0.87. Reasons: success above average by 0.21, risk below average by 0.18. Rejected: `deploy_now` (lower_score, higher_risk)." This is the first time AllBrain reasons about its own decisions.

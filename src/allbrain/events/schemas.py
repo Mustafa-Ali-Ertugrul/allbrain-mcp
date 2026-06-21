@@ -123,6 +123,9 @@ class EventType(StrEnum):
     FORESIGHT_GENERATED = "foresight_generated"
     FORESIGHT_EVALUATED = "foresight_evaluated"
     FORESIGHT_RECOMMENDED = "foresight_recommended"
+    META_REASONING_STARTED = "meta_reasoning_started"
+    META_REASONING_COMPLETED = "meta_reasoning_completed"
+    DECISION_EXPLAINED = "decision_explained"
 
 
 SemanticEventType = {
@@ -244,6 +247,9 @@ SemanticEventType = {
     EventType.FORESIGHT_GENERATED,
     EventType.FORESIGHT_EVALUATED,
     EventType.FORESIGHT_RECOMMENDED,
+    EventType.META_REASONING_STARTED,
+    EventType.META_REASONING_COMPLETED,
+    EventType.DECISION_EXPLAINED,
 }
 
 
