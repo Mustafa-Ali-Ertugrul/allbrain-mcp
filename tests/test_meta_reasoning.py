@@ -8,7 +8,7 @@ import pytest
 from allbrain.events import EventType
 from allbrain.foresight import ForesightAnalysis, ForesightEngine
 from allbrain.meta_reasoning import (
-    HISTORICAL_SUCCESS_DEFAULT,
+    HISTORICAL_SUCCESS_FALLBACK,
     META_REASONING_TEMPLATE_VERSION,
     ConfidenceEngine,
     DecisionAnalyzer,
@@ -51,7 +51,7 @@ def test_high_confidence_when_all_factors_high() -> None:
     state = WorldState(timestamp=datetime.now(timezone.utc))
     analysis = ForesightEngine().analyze(state, "deploy")
     selected = analysis.best_plan
-    estimate = ConfidenceEngine().estimate(selected, analysis)
+    estimate = ConfidenceEngine().estimate(analysis.best_plan, analysis, historical_success=0.7)
 
     assert estimate.confidence > 0.7
     assert estimate.evidence_count == len(analysis.plans)
@@ -62,7 +62,7 @@ def test_low_confidence_when_foresight_score_low() -> None:
     state = WorldState(timestamp=datetime.now(timezone.utc))
     analysis = ForesightEngine().analyze(state, "deploy")
     lowest_success_plan = min(analysis.plans, key=lambda p: p.predicted_success)
-    estimate = ConfidenceEngine().estimate(lowest_success_plan, analysis)
+    estimate = ConfidenceEngine().estimate(lowest_success_plan, analysis, historical_success=0.7)
 
     assert estimate.confidence < 0.6
 
@@ -85,7 +85,7 @@ def test_no_evidence_uncertainty_high() -> None:
         template_version=FORESIGHT_TEMPLATE_VERSION,
         plans=[],
     )
-    estimate = ConfidenceEngine().estimate(empty_plan, analysis)
+    estimate = ConfidenceEngine().estimate(empty_plan, analysis, historical_success=0.7)
 
     assert estimate.evidence_count == 0
     assert estimate.uncertainty > 0.0
@@ -238,8 +238,8 @@ def test_negative_contribution_supported() -> None:
     assert risk_reason.contribution < 0.0
 
 
-def test_historical_success_placeholder_constant() -> None:
-    assert HISTORICAL_SUCCESS_DEFAULT == 0.7
+def test_historical_success_fallback_constant() -> None:
+    assert HISTORICAL_SUCCESS_FALLBACK == 0.7
 
 
 def test_mcp_explain_decision_and_estimate_confidence(tmp_path) -> None:

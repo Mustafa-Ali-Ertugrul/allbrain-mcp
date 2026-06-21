@@ -12,6 +12,7 @@ from allbrain.meta_reasoning import MetaReasoningProjection
 from allbrain.models.schemas import EventRead
 from allbrain.runtime_core import RuntimeCoreStateBuilder
 from allbrain.scenarios import ScenarioProjection
+from allbrain.uncertainty import UncertaintyProjection
 from allbrain.world import WorldStateBuilder
 
 
@@ -26,7 +27,7 @@ class EventReplayEngine:
     ) -> dict[str, Any]:
         ordered = self._ordered(events, deterministic=deterministic)
         end = len(ordered) if step_count is None else min(len(ordered), cursor + step_count)
-        state: dict[str, Any] = {"tasks": {}, "decisions": [], "failures": [], "collaboration": {}, "organizational_learning": {}, "recommendations": {}, "policy_updates": {}, "governance": {}, "runtime_core": {}, "world": {}, "counterfactual": {}, "scenarios": {}, "foresight": {}, "reasoning": {}}
+        state: dict[str, Any] = {"tasks": {}, "decisions": [], "failures": [], "collaboration": {}, "organizational_learning": {}, "recommendations": {}, "policy_updates": {}, "governance": {}, "runtime_core": {}, "world": {}, "counterfactual": {}, "scenarios": {}, "foresight": {}, "reasoning": {}, "uncertainty": {}, "knowledge_gaps": {}}
         collaboration_events: list[EventRead] = []
         learning_events: list[EventRead] = []
         governance_events: list[EventRead] = []
@@ -36,11 +37,13 @@ class EventReplayEngine:
         scenario_events: list[EventRead] = []
         foresight_events: list[EventRead] = []
         meta_reasoning_events: list[EventRead] = []
+        uncertainty_events: list[EventRead] = []
+        knowledge_gap_events: list[EventRead] = []
         for event in ordered[:cursor]:
-            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events)
+            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events)
         frames: list[dict[str, Any]] = []
         for index, event in enumerate(ordered[cursor:end], start=cursor):
-            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events)
+            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events)
             frames.append(
                 {
                     "cursor": index + 1,
@@ -66,7 +69,7 @@ class EventReplayEngine:
             return list(events)
         return sorted(events, key=lambda event: (event.created_at, event.id))
 
-    def _apply(self, state: dict[str, Any], event: EventRead, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead]) -> None:
+    def _apply(self, state: dict[str, Any], event: EventRead, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead]) -> None:
         task_id = event.payload.get("task_id")
         if isinstance(task_id, str) and task_id:
             task = state["tasks"].setdefault(task_id, {"task_id": task_id, "status": "unknown"})
@@ -116,6 +119,12 @@ class EventReplayEngine:
         if _is_meta_reasoning_event(event):
             meta_reasoning_events.append(event)
             state["reasoning"] = MetaReasoningProjection().build(meta_reasoning_events)
+        if _is_uncertainty_event(event):
+            uncertainty_events.append(event)
+            state["uncertainty"] = UncertaintyProjection().build(uncertainty_events)
+        if _is_knowledge_gap_event(event):
+            knowledge_gap_events.append(event)
+            state["knowledge_gaps"] = _build_knowledge_gap_projection(knowledge_gap_events)
         if event.type == EventType.SELECTION_DECISION.value:
             state["decisions"].append(
                 {
@@ -156,6 +165,8 @@ def _copy_state(state: dict[str, Any]) -> dict[str, Any]:
         "scenarios": dict(state.get("scenarios", {})),
         "foresight": dict(state.get("foresight", {})),
         "reasoning": dict(state.get("reasoning", {})),
+        "uncertainty": dict(state.get("uncertainty", {})),
+        "knowledge_gaps": dict(state.get("knowledge_gaps", {})),
     }
 
 
@@ -209,6 +220,30 @@ def _is_meta_reasoning_event(event: EventRead) -> bool:
         EventType.META_REASONING_COMPLETED.value,
         EventType.DECISION_EXPLAINED.value,
     }
+
+
+def _is_uncertainty_event(event: EventRead) -> bool:
+    return event.type in {
+        EventType.UNCERTAINTY_ESTIMATED.value,
+        EventType.CONFIDENCE_CALIBRATED.value,
+    }
+
+
+def _is_knowledge_gap_event(event: EventRead) -> bool:
+    return event.type == EventType.KNOWLEDGE_GAP_DETECTED.value
+
+
+def _build_knowledge_gap_projection(events: list[EventRead]) -> dict[str, Any]:
+    gaps: list[dict[str, Any]] = []
+    topics: list[str] = []
+    seen_topics: set[str] = set()
+    for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        gaps.append(event.payload)
+        topic = event.payload.get("topic")
+        if isinstance(topic, str) and topic not in seen_topics:
+            topics.append(topic)
+            seen_topics.add(topic)
+    return {"gaps": gaps, "topics": topics, "count": len(gaps)}
 
 
 def _task_statuses(state: dict[str, Any]) -> dict[str, str]:

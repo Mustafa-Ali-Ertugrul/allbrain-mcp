@@ -22,6 +22,11 @@ from allbrain.runtime_core.planning import GoalDecompositionBridge, StrategicPla
 from allbrain.runtime_core.state import RuntimeStateMachine, RuntimeStatus
 from allbrain.scenarios import SCENARIO_TEMPLATE_VERSION, ScenarioEngine
 from allbrain.meta_reasoning import META_REASONING_TEMPLATE_VERSION, MetaReasoningManager
+from allbrain.uncertainty import (
+    UNCERTAINTY_TEMPLATE_VERSION,
+    UncertaintyManager,
+    observed_success_rate,
+)
 from allbrain.storage.repository import event_to_read
 from allbrain.world import WorldModel
 
@@ -41,8 +46,9 @@ class SystemDecisionPipeline:
         self.scenarios = ScenarioEngine()
         self.foresight = ForesightEngine()
         self.meta_reasoning = MetaReasoningManager()
+        self.uncertainty = UncertaintyManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -158,6 +164,35 @@ class SystemDecisionPipeline:
                 )
                 emitted.extend(mr_events)
 
+            uncertainty_payload: dict[str, Any] | None = None
+            if enable_uncertainty and meta_reasoning_payload is not None:
+                layer_indicators = self._collect_layer_indicators(
+                    world_simulation_payload,
+                    counterfactual_payload,
+                    scenario_payload,
+                    foresight_payload,
+                    meta_reasoning_payload,
+                )
+                sample_count = len(foresight_payload.get("plans", [])) if foresight_payload else 0
+                sample_quality = (
+                    foresight_payload["best_plan"].get("confidence", 0.0)
+                    if foresight_payload
+                    else 0.0
+                )
+                historical = self._collect_historical_rate(context, project_path)
+                evidence = sum(layer_indicators) / len(layer_indicators) if layer_indicators else 0.0
+                uncertainty_payload, last_event_id, un_events = self._uncertainty_step(
+                    bus,
+                    meta_reasoning_payload,
+                    layer_indicators,
+                    sample_count,
+                    sample_quality,
+                    historical,
+                    evidence,
+                    last_event_id,
+                )
+                emitted.extend(un_events)
+
             last_event_id = self._transition(machine, publish, RuntimeStatus.EXECUTION, "scheduler_execution", last_event_id)
             scheduler_result = self._schedule(context, objective, decomposition, execution_plan, bus, run_id, last_event_id, limit)
             last_event_id = scheduler_result["last_event_id"]
@@ -199,8 +234,10 @@ class SystemDecisionPipeline:
                 completed_payload["foresight"] = foresight_payload
             if meta_reasoning_payload is not None:
                 completed_payload["meta_reasoning"] = meta_reasoning_payload
+            if uncertainty_payload is not None:
+                completed_payload["uncertainty"] = uncertainty_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -306,7 +343,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -326,6 +363,7 @@ class SystemDecisionPipeline:
             "scenarios": scenarios,
             "foresight": foresight,
             "meta_reasoning": meta_reasoning,
+            "uncertainty": uncertainty,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
@@ -478,6 +516,117 @@ class SystemDecisionPipeline:
         }
         last_event_id = completed_event.id
         emitted_events: list[EventRead] = [started_event, explained_event, completed_event]
+        return summary, last_event_id, emitted_events
+
+    def _collect_layer_indicators(
+        self,
+        world_simulation_payload: dict[str, Any] | None,
+        counterfactual_payload: dict[str, Any] | None,
+        scenario_payload: dict[str, Any] | None,
+        foresight_payload: dict[str, Any] | None,
+        meta_reasoning_payload: dict[str, Any] | None,
+    ) -> list[float]:
+        indicators: list[float] = []
+        if world_simulation_payload is not None:
+            sim = world_simulation_payload.get("prediction", {})
+            if isinstance(sim, dict) and isinstance(sim.get("success_probability"), (int, float)):
+                indicators.append(float(sim["success_probability"]))
+        if counterfactual_payload is not None:
+            best = counterfactual_payload.get("best")
+            if isinstance(best, dict):
+                pred = best.get("alternative_prediction") or best.get("actual_prediction")
+                if isinstance(pred, dict) and isinstance(pred.get("success_probability"), (int, float)):
+                    indicators.append(float(pred["success_probability"]))
+        if scenario_payload is not None:
+            best_case = scenario_payload.get("best_case", {})
+            if isinstance(best_case, dict):
+                pred = best_case.get("prediction", {})
+                if isinstance(pred, dict) and isinstance(pred.get("success_probability"), (int, float)):
+                    indicators.append(float(pred["success_probability"]))
+        if foresight_payload is not None:
+            best_plan = foresight_payload.get("best_plan", {})
+            if isinstance(best_plan, dict) and isinstance(best_plan.get("predicted_success"), (int, float)):
+                indicators.append(float(best_plan["predicted_success"]))
+        if meta_reasoning_payload is not None:
+            conf = meta_reasoning_payload.get("confidence", {})
+            if isinstance(conf, dict) and isinstance(conf.get("confidence"), (int, float)):
+                indicators.append(float(conf["confidence"]))
+        return indicators
+
+    def _collect_historical_rate(self, context: Any, project_path: str | None) -> float:
+        resolved = project_path or getattr(context, "project_path", None)
+        if not resolved:
+            return 0.7
+        try:
+            events = context.repository.list_events(project_path=resolved, limit=5000)
+        except Exception:
+            return 0.7
+        return observed_success_rate(events)
+
+    def _uncertainty_step(
+        self,
+        bus: RuntimeEventBus,
+        meta_reasoning_payload: dict[str, Any],
+        layer_indicators: list[float],
+        sample_count: int,
+        sample_quality: float,
+        historical: float,
+        evidence: float,
+        caused_by: str,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        analysis_id = str(meta_reasoning_payload.get("foresight_analysis_id") or "")
+        manager = UncertaintyManager(calibration_events=None)
+        estimate = manager.analyze(
+            historical=historical,
+            evidence=evidence,
+            layer_indicators=layer_indicators,
+            sample_count=sample_count,
+            sample_quality=sample_quality,
+            has_feedback=True,
+            analysis_id=analysis_id,
+        )
+        estimate_event = bus.publish(
+            type=EventType.UNCERTAINTY_ESTIMATED.value,
+            payload=estimate.model_dump(mode="json"),
+            caused_by=caused_by,
+            impact_score=estimate.uncertainty,
+        )
+        gap_event = None
+        if estimate.knowledge_gaps:
+            gap_event = bus.publish(
+                type=EventType.KNOWLEDGE_GAP_DETECTED.value,
+                payload={
+                    "analysis_id": analysis_id,
+                    "topics": [gap.topic for gap in estimate.knowledge_gaps],
+                    "gaps": [gap.model_dump(mode="json") for gap in estimate.knowledge_gaps],
+                    "template_version": UNCERTAINTY_TEMPLATE_VERSION,
+                },
+                caused_by=estimate_event.id,
+            )
+        calibration_event = bus.publish(
+            type=EventType.CONFIDENCE_CALIBRATED.value,
+            payload={
+                "analysis_id": analysis_id,
+                "raw_confidence": estimate.confidence,
+                "observed_rate": historical,
+                "calibrated_confidence": estimate.confidence,
+                "template_version": UNCERTAINTY_TEMPLATE_VERSION,
+            },
+            caused_by=gap_event.id if gap_event is not None else estimate_event.id,
+        )
+        summary = {
+            "action": meta_reasoning_payload.get("selected_option", "unknown"),
+            "analysis_id": analysis_id,
+            "uncertainty": estimate.model_dump(mode="json"),
+            "gaps": [gap.model_dump(mode="json") for gap in estimate.knowledge_gaps],
+            "calibrated_confidence": estimate.confidence,
+            "template_version": UNCERTAINTY_TEMPLATE_VERSION,
+        }
+        last_event_id = calibration_event.id
+        emitted_events: list[EventRead] = [estimate_event]
+        if gap_event is not None:
+            emitted_events.append(gap_event)
+        emitted_events.append(calibration_event)
         return summary, last_event_id, emitted_events
 
     def _foresight_step(self, bus: RuntimeEventBus, action: str, caused_by: str, foresight_limit: int, max_horizon: int) -> tuple[dict[str, Any] | None, str, list[EventRead]]:

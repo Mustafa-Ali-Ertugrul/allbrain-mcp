@@ -19,7 +19,9 @@ from allbrain.models.schemas import (
     CounterfactualInput,
     CreateSnapshotInput,
     CreateTaskInput,
+    DetectKnowledgeGapsInput,
     EstimateConfidenceInput,
+    EstimateUncertaintyInput,
     EvaluatePlanInput,
     EvaluateScenariosInput,
     ExplainDecisionInput,
@@ -74,6 +76,12 @@ from allbrain.foresight import (
     FORESIGHT_TEMPLATE_VERSION,
     ForesightAnalysis,
     ForesightEngine,
+)
+from allbrain.uncertainty import (
+    UNCERTAINTY_TEMPLATE_VERSION,
+    UncertaintyEstimate,
+    UncertaintyManager,
+    observed_success_rate,
 )
 from allbrain.meta_reasoning import (
     META_REASONING_TEMPLATE_VERSION,
@@ -344,6 +352,7 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         foresight_limit: int = 5,
         max_horizon: int = 5,
         enable_meta_reasoning: bool = False,
+        enable_uncertainty: bool = False,
     ) -> dict[str, Any]:
         result = run_decision_pipeline_impl(
             context,
@@ -363,6 +372,7 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
             foresight_limit=foresight_limit,
             max_horizon=max_horizon,
             enable_meta_reasoning=enable_meta_reasoning,
+            enable_uncertainty=enable_uncertainty,
         )
         return result.model_dump(mode="json")
 
@@ -494,6 +504,34 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         result = estimate_confidence_impl(
             context,
             plan_id=plan_id,
+            project_path=project_path,
+            limit=limit,
+        )
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def estimate_uncertainty(
+        decision_id: str,
+        project_path: str | None = None,
+        limit: int = 5000,
+    ) -> dict[str, Any]:
+        result = estimate_uncertainty_impl(
+            context,
+            decision_id=decision_id,
+            project_path=project_path,
+            limit=limit,
+        )
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def detect_knowledge_gaps(
+        decision_id: str,
+        project_path: str | None = None,
+        limit: int = 5000,
+    ) -> dict[str, Any]:
+        result = detect_knowledge_gaps_impl(
+            context,
+            decision_id=decision_id,
             project_path=project_path,
             limit=limit,
         )
@@ -1280,6 +1318,7 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             foresight_limit=data.foresight_limit,
             max_horizon=data.max_horizon,
             enable_meta_reasoning=data.enable_meta_reasoning,
+            enable_uncertainty=data.enable_uncertainty,
         )
         audit_tool_call(
             context,
@@ -1732,10 +1771,16 @@ def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         if plan_payload is None or lookup is None:
             return ToolResult(ok=False, error=f"plan_id '{data.plan_id}' not found in foresight events")
         from allbrain.foresight.models import FuturePlan
+        from allbrain.uncertainty.calibration import observed_success_rate
 
         selected_plan = FuturePlan.model_validate(plan_payload)
+        try:
+            events = context.repository.list_events(project_path=project_path, limit=5000)
+            historical = observed_success_rate(events)
+        except Exception:
+            historical = 0.7
         engine = ConfidenceEngine()
-        estimate = engine.estimate(selected_plan, _dummy_foresight_result(selected_plan, lookup["analysis_id"]))
+        estimate = engine.estimate(selected_plan, _dummy_foresight_result(selected_plan, lookup["analysis_id"]), historical)
         audit_tool_call(
             context,
             tool_name="estimate_confidence",
@@ -1763,6 +1808,66 @@ def _dummy_foresight_result(selected_plan, analysis_id: str):
         horizon_risk=selected_plan.cumulative_risk,
         plans=[selected_plan],
     )
+
+
+def _uncertainty_manager(context: BrainContext, project_path: str) -> UncertaintyManager:
+    try:
+        events = context.repository.list_events(project_path=project_path, limit=5000)
+    except Exception:
+        events = []
+    return UncertaintyManager(calibration_events=events)
+
+
+def estimate_uncertainty_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = EstimateUncertaintyInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        manager = _uncertainty_manager(context, project_path)
+        historical = observed_success_rate(manager._calibration_events) if manager._calibration_events else 0.7
+        estimate = manager.estimate(
+            historical=historical,
+            evidence=0.7,
+            layer_indicators=[],
+            sample_count=1,
+            sample_quality=0.7,
+            has_feedback=False,
+            analysis_id=data.decision_id,
+        )
+        audit_tool_call(
+            context,
+            tool_name="estimate_uncertainty",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        return ToolResult(ok=True, data=estimate.model_dump(mode="json"))
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def detect_knowledge_gaps_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = DetectKnowledgeGapsInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        manager = _uncertainty_manager(context, project_path)
+        gaps = manager.detect_gaps(
+            sample_count=0,
+            historical=None,
+            layer_indicators=[],
+            has_feedback=False,
+        )
+        audit_tool_call(
+            context,
+            tool_name="detect_knowledge_gaps",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        return ToolResult(ok=True, data={"gaps": [gap.model_dump(mode="json") for gap in gaps]})
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
 
 
 def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:

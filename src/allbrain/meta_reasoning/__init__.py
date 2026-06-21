@@ -1,10 +1,7 @@
 from allbrain.meta_reasoning.analyzer import DecisionAnalyzer
-from allbrain.meta_reasoning.confidence import (
-    HISTORICAL_SUCCESS_DEFAULT,
-    ConfidenceEngine,
-)
+from allbrain.meta_reasoning.confidence import ConfidenceEngine
 from allbrain.meta_reasoning.explanation import ExplanationGenerator
-from allbrain.meta_reasoning.manager import MetaReasoningManager
+from allbrain.meta_reasoning.manager import HISTORICAL_SUCCESS_FALLBACK, MetaReasoningManager
 from allbrain.meta_reasoning.models import (
     META_REASONING_TEMPLATE_VERSION,
     ConfidenceEstimate,
@@ -22,7 +19,7 @@ __all__ = [
     "DecisionExplanation",
     "DecisionReason",
     "ExplanationGenerator",
-    "HISTORICAL_SUCCESS_DEFAULT",
+    "HISTORICAL_SUCCESS_FALLBACK",
     "META_REASONING_TEMPLATE_VERSION",
     "MetaReasoningManager",
     "MetaReasoningProjection",

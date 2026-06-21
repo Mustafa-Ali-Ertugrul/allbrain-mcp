@@ -347,8 +347,63 @@ Replay equivalence: `EventReplayEngine` routes `meta_reasoning_*` and `decision_
 
 Future metrics (Sprint 38+): `historical_success` real source, `evidence_count` calibration against actual historical runs, `uncertainty` calibration, learning integration (prediction dict enrichment), `payload_version` migration on world/counterfactual/scenario/foresight/reasoning events.
 
-Test coverage: 15 new tests in `tests/test_meta_reasoning.py` covering confidence (high/low/no-evidence), rejection (lower_score/higher_risk/insufficient_evidence), explanation (reasons generated, rejected plans included), pipeline (disabled/enabled), replay state, negative contribution support, `HISTORICAL_SUCCESS_DEFAULT` placeholder constant, and MCP tools (`explain_decision`, `estimate_confidence`, unknown plan_id error).
+Test coverage: 15 new tests in `tests/test_meta_reasoning.py` covering confidence (high/low/no-evidence), rejection (lower_score/higher_risk/insufficient_evidence), explanation (reasons generated, rejected plans included), pipeline (disabled/enabled), replay state, negative contribution support, `HISTORICAL_SUCCESS_FALLBACK` constant (the final fallback for the historical component), and MCP tools (`explain_decision`, `estimate_confidence`, unknown plan_id error).
 
 Full test suite: 282 tests, 282 passing, no regressions.
 
 The system can now say: "I selected `run_tests → fix_failures → deploy` with confidence 0.87. Reasons: success above average by 0.21, risk below average by 0.18. Rejected: `deploy_now` (lower_score, higher_risk)." This is the first time AllBrain reasons about its own decisions.
+
+Sprint 38 adds the uncertainty and epistemic reasoning layer on top of meta-reasoning. The system can now say "what is that confidence based on, what don't I know, and would more data change the decision?".
+
+Components:
+- `UncertaintyType` (StrEnum): `epistemic`, `aleatoric`, `mixed`
+- `ConfidenceComponent`: pydantic with `name`, `score` (0-1)
+- `KnowledgeGap`: pydantic with `topic`, `severity` (0-1), `description`, `recoverable`
+- `UncertaintyEstimate`: pydantic with `confidence`, `uncertainty`, `uncertainty_type`, `components`, `knowledge_gaps`, `template_version=1`, `analysis_id`
+- `estimator.estimate(...)`: pure function, four-component decomposition
+- `gaps.detect(...)`: pure function, four rules (`insufficient_samples`, `missing_history`, `inconsistent_world_model`, `missing_feedback`)
+- `calibration.observed_success_rate(events)` and `calibration.calibrate(...)`: pure functions (the real implementation of the Sprint 37 H1 placeholder)
+- `UncertaintyManager`: facade, `analyze(...)` / `estimate(...)` / `detect_gaps(...)` / `calibrate(...)`
+- `UncertaintyProjection`: replay projection
+
+Confidence decomposition: `historical * 0.35 + evidence * 0.25 + consistency * 0.20 + samples * 0.20`. `consistency` is `max(0, 1 - variance(layer_indicators))` from the world/counterfactual/scenario/foresight/meta-reasoning layer outputs (K3 layer agreement).
+
+Calibration: `calibrated = raw * (1 - weight) + observed_rate * weight`, `weight = min(1.0, sample_count / 50)`. The observed rate comes from `completed / total` events in the project event log (C1 global calibration).
+
+Knowledge gap rules:
+- `sample_count < 5` → `insufficient_samples`
+- `historical is None` → `missing_history`
+- `max_deviation > 0.2` across layer indicators → `inconsistent_world_model`
+- `not has_feedback` → `missing_feedback`
+
+Uncertainty type classification:
+- `sample_count < 5` → `epistemic`
+- `confidence >= 0.7 and consistency >= 0.8` → `aleatoric`
+- otherwise → `mixed`
+
+Pipeline integration:
+- `SystemDecisionPipeline.run(...)` gains `enable_uncertainty: bool = False`
+- Runs after the meta-reasoning step, before EXECUTION; gated on `meta_reasoning_payload is not None`
+- Fetches layer indicators from world/counterfactual/scenario/foresight/meta-reasoning payloads and the `observed_success_rate` from the event log
+- R1 advisory: never overrides `final_decision`
+
+New event types:
+- `uncertainty_estimated` — `UncertaintyEstimate.model_dump(mode="json")` plus `analysis_id`; `impact_score = uncertainty`
+- `knowledge_gap_detected` — emitted only when at least one gap is detected; `topics` and `gaps` in payload
+- `confidence_calibrated` — `raw_confidence`, `observed_rate`, `calibrated_confidence`, `template_version`
+
+New MCP tools:
+- `estimate_uncertainty(decision_id, project_path, limit)` — runs `UncertaintyManager.estimate(...)` and returns `UncertaintyEstimate`
+- `detect_knowledge_gaps(decision_id, project_path, limit)` — runs `UncertaintyManager.detect_gaps(...)` and returns the list of `KnowledgeGap`
+
+Replay equivalence: `EventReplayEngine` routes `uncertainty_*` and `confidence_calibrated` events into `state["uncertainty"]` and `knowledge_gap_detected` events into `state["knowledge_gaps"]`. The replay equivalence test asserts both keys match the projection output exactly.
+
+Sprint 37 H1 placeholder migration: `HISTORICAL_SUCCESS_DEFAULT = 0.7` is renamed to `HISTORICAL_SUCCESS_FALLBACK = 0.7` and lives only in `meta_reasoning/manager.py` as the last-resort fallback when no events are available. The real source is `observed_success_rate(events)` from the uncertainty module. `ConfidenceEngine.estimate(...)` now requires `historical_success` as a parameter, removing the implicit default.
+
+Future metrics (Sprint 41+, not implemented in this sprint): sliding-window calibration (C2), per-decision-type calibration (C3), Bayesian uncertainty estimation, bootstrap variance, real environment variance measurement, per-decision-type knowledge gap recovery actions.
+
+Test coverage: 23 new tests in `tests/test_uncertainty.py` covering confidence range, uncertainty complement, four knowledge gap rules, three uncertainty types (epistemic/aleatoric/mixed), four-component decomposition, manager integration, pydantic validation, observed success rate (empty and populated), calibration, template version, pipeline (disabled/enabled/gated), replay state, and MCP tools.
+
+Full test suite: 305 tests, 305 passing, no regressions.
+
+The system can now say: "I am 0.74 confident. The breakdown: historical 0.80, evidence 0.70, consistency 0.90, samples 0.50. Type: mixed. Knowledge gaps: `insufficient_samples`, `missing_feedback`." The Sprint 37 H1 placeholder is now backed by `observed_success_rate` from the event log.

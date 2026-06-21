@@ -126,6 +126,9 @@ class EventType(StrEnum):
     META_REASONING_STARTED = "meta_reasoning_started"
     META_REASONING_COMPLETED = "meta_reasoning_completed"
     DECISION_EXPLAINED = "decision_explained"
+    UNCERTAINTY_ESTIMATED = "uncertainty_estimated"
+    KNOWLEDGE_GAP_DETECTED = "knowledge_gap_detected"
+    CONFIDENCE_CALIBRATED = "confidence_calibrated"
 
 
 SemanticEventType = {
@@ -250,6 +253,9 @@ SemanticEventType = {
     EventType.META_REASONING_STARTED,
     EventType.META_REASONING_COMPLETED,
     EventType.DECISION_EXPLAINED,
+    EventType.UNCERTAINTY_ESTIMATED,
+    EventType.KNOWLEDGE_GAP_DETECTED,
+    EventType.CONFIDENCE_CALIBRATED,
 }
 
 

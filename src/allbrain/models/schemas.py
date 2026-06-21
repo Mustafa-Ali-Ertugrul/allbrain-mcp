@@ -200,6 +200,7 @@ class RunDecisionPipelineInput(BaseModel):
     foresight_limit: int = Field(default=5, ge=1, le=20)
     max_horizon: int = Field(default=5, ge=1, le=20)
     enable_meta_reasoning: bool = False
+    enable_uncertainty: bool = False
 
 
 class ObserveWorldInput(BaseModel):
@@ -283,6 +284,22 @@ class EstimateConfidenceInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     plan_id: str = Field(min_length=1)
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
+
+
+class EstimateUncertaintyInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    decision_id: str = Field(min_length=1)
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
+
+
+class DetectKnowledgeGapsInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    decision_id: str = Field(min_length=1)
     project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
