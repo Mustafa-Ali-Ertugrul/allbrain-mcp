@@ -7,8 +7,8 @@ from allbrain.foundations.tolerance import (
     route_unknown_event,
 )
 from allbrain.foundations.versioning import (
-    PAYLOAD_CURRENT_VERSION,
     PayloadUpcaster,
+    current_payload_version,
     get_default_upcaster,
     normalize_payload,
 )
@@ -16,11 +16,11 @@ from allbrain.foundations.versioning import (
 
 __all__ = [
     "KNOWN_EVENT_PREFIXES",
-    "PAYLOAD_CURRENT_VERSION",
     "PayloadUpcaster",
     "UNKNOWN_TYPE_POLICY",
     "canonical_event_keys",
     "canonical_event_sort",
+    "current_payload_version",
     "get_default_upcaster",
     "is_known_event",
     "normalize_payload",

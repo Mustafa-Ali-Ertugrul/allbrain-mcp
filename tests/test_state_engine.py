@@ -128,3 +128,17 @@ def test_state_machine_idempotent_under_duplicated_events() -> None:
     assert len(state.failures) == 1
     assert len(state.tool_usage) == 1
     assert state.tool_usage[0]["event_id"] == "evt-tool-1"
+
+
+def test_state_machine_tolerates_unknown_event_type() -> None:
+    from allbrain.core import StateEngine
+
+    unknown_event = make_event("evt-future-1", "future_unknown_event", {})
+
+    state = StateEngine().build_state({"events": [unknown_event], "git": {}})
+
+    assert state["last_event_id"] == "evt-future-1"
+    assert state["open_tasks"] == []
+    assert state["completed_tasks"] == []
+    assert state["failures"] == []
+    assert state["blocked"] == []

@@ -10,15 +10,20 @@ from sqlmodel import col, select
 from uuid6 import uuid7
 
 from allbrain.config import canonicalize_project_path
+from allbrain.foundations.versioning import (
+    current_payload_version,
+    get_default_upcaster,
+)
 from allbrain.models.entities import Event, Project, Session, utc_now
 from allbrain.models.schemas import EventRead
-from allbrain.storage.database import open_session
+from allbrain.storage.database import ensure_event_payload_version_column, open_session
 
 
 class BrainRepository:
     def __init__(self, engine: Engine, *, owns_engine: bool = True):
         self.engine = engine
         self.owns_engine = owns_engine
+        ensure_event_payload_version_column(engine)
 
     def close(self) -> None:
         if self.owns_engine:
@@ -97,6 +102,7 @@ class BrainRepository:
                 source=source,
                 file_path=file_path,
                 payload_json=json.dumps(payload, ensure_ascii=True, sort_keys=True),
+                payload_version=current_payload_version(),
                 task_hint=task_hint,
                 importance=importance,
                 impact_score=impact_score,
@@ -127,10 +133,10 @@ class BrainRepository:
                 statement = statement.where(Event.agent_id == agent_id)
             if type is not None:
                 statement = statement.where(Event.type == type)
-            statement = statement.order_by(col(Event.created_at).desc(), col(Event.id).desc()).limit(limit)
-            events = db.exec(statement).all()
-            events = sorted(events, key=lambda event: (event.created_at, event.id))
-            return [event_to_read(event) for event in events]
+        statement = statement.order_by(col(Event.id).desc()).limit(limit)
+        events = db.exec(statement).all()
+        events = sorted(events, key=lambda event: event.id)
+        return [event_to_read(event) for event in events]
 
     def list_events_after(
         self,
@@ -171,6 +177,11 @@ class BrainRepository:
 
 
 def event_to_read(event: Event) -> EventRead:
+    stored_version = getattr(event, "payload_version", 1) or 1
+    payload, achieved_version = get_default_upcaster().migrate(
+        json.loads(event.payload_json),
+        from_version=stored_version,
+    )
     return EventRead(
         id=event.id,
         project_id=event.project_id,
@@ -179,7 +190,8 @@ def event_to_read(event: Event) -> EventRead:
         type=event.type,
         source=event.source,
         file_path=event.file_path,
-        payload=json.loads(event.payload_json),
+        payload=payload,
+        payload_version=achieved_version,
         task_hint=event.task_hint,
         importance=event.importance,
         impact_score=event.impact_score,

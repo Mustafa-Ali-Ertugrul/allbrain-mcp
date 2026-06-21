@@ -38,6 +38,7 @@ class Event(SQLModel, table=True):
     source: str = Field(default="agent", index=True)
     file_path: str | None = None
     payload_json: str
+    payload_version: int = Field(default=1, ge=1)
     task_hint: str | None = None
     importance: int | None = Field(default=None, ge=1, le=5)
     impact_score: float | None = Field(default=None, ge=0.0, le=1.0)

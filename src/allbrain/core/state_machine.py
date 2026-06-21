@@ -56,9 +56,11 @@ class StateMachine:
         if event.id in self._applied_event_ids:
             return
         self._applied_event_ids.add(event.id)
-        event_type = EventType(event.type)
         self.state.last_event_id = event.id
-
+        try:
+            event_type = EventType(event.type)
+        except ValueError:
+            return
         if event_type == EventType.TOOL_CALL:
             self._record_tool_usage(event)
             return

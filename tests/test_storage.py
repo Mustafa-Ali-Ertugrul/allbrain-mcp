@@ -130,3 +130,72 @@ def test_quality_gate_uuidv7_ordering_uses_created_at_tie_break(tmp_path: Path) 
 
     assert first.id < second.id
     assert [event.id for event in events] == [first.id, second.id]
+
+
+def test_payload_version_column_backfilled_on_old_schema(tmp_path: Path) -> None:
+    from allbrain.config import canonicalize_project_path
+    from allbrain.foundations.versioning import current_payload_version
+    from allbrain.storage import (
+        BrainRepository,
+        create_engine_for_path,
+        ensure_event_payload_version_column,
+        open_session,
+    )
+
+    engine = create_engine_for_path(tmp_path / "legacy.db")
+    canonical_path = canonicalize_project_path("/legacy")
+    with engine.begin() as conn:
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE event (
+                id TEXT PRIMARY KEY,
+                project_id INTEGER NOT NULL,
+                session_id INTEGER NOT NULL,
+                agent_id TEXT,
+                type TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'agent',
+                file_path TEXT,
+                payload_json TEXT NOT NULL,
+                task_hint TEXT,
+                importance INTEGER,
+                impact_score REAL,
+                caused_by TEXT,
+                branch TEXT,
+                created_at TIMESTAMP
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            "CREATE TABLE project (id INTEGER PRIMARY KEY, canonical_project_path TEXT UNIQUE, name TEXT, "
+            "created_at TIMESTAMP, updated_at TIMESTAMP)"
+        )
+        conn.exec_driver_sql(
+            "INSERT INTO project (id, canonical_project_path, name) VALUES (1, ?, 'legacy')",
+            (canonical_path,),
+        )
+        conn.exec_driver_sql(
+            "CREATE TABLE session (id INTEGER PRIMARY KEY, project_id INTEGER, agent_name TEXT, "
+            "started_at TIMESTAMP, ended_at TIMESTAMP, status TEXT)"
+        )
+        conn.exec_driver_sql(
+            "INSERT INTO session (id, project_id, agent_name) VALUES (1, 1, 'legacy')"
+        )
+        conn.exec_driver_sql(
+            "INSERT INTO event (id, project_id, session_id, type, source, payload_json, created_at) "
+            "VALUES ('legacy-evt-1', 1, 1, 'legacy_event', 'legacy', '{\"old\": true}', '2024-01-01 00:00:00')"
+        )
+
+    ensure_event_payload_version_column(engine)
+    ensure_event_payload_version_column(engine)
+
+    with open_session(engine) as db:
+        row = db.get(Event, "legacy-evt-1")
+        assert row is not None
+        assert row.payload_version == 1
+
+    repo = BrainRepository(engine)
+    events = repo.list_events(project_path="/legacy", session_id=1)
+    assert len(events) == 1
+    assert events[0].id == "legacy-evt-1"
+    assert events[0].payload == {"old": True}
+    assert events[0].payload_version == current_payload_version()

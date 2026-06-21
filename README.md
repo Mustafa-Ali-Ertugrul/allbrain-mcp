@@ -464,3 +464,30 @@ Event log foundation hardened before Sprint 42 (Belief State):
 **Verification**: 347/347 tests passing (329 pre-existing + 18 new). Zero behavior change — every existing payload byte-identical, ordering still deterministic, B4 fix only affects duplicate-event scenarios that didn't exist before.
 
 See `docs/sprint41_foundations_hardening.md` for full architecture.
+
+## Sprint 41.1 — Foundations Hardening Hotfix
+
+Three blockers from Sprint 41 wired into live paths:
+
+- **F1 — Storage id-only sort**: `list_events()` now `order_by(id.desc())` + `sorted(key=event.id)`. Storage and replay paths share one canonical order. `list_events_after` was already id-only.
+- **F2 — Persist + normalize `payload_version`**: `Event.payload_version: int = Field(default=1)` column added; `append_event` stamps `current_payload_version()`; `event_to_read` runs the upcaster and sets `EventRead.payload_version` to the achieved (post-migration) version. Idempotent `ALTER TABLE` migration via `ensure_event_payload_version_column` runs from `BrainRepository.__init__` on every brain-DB open (upgrade-path safe).
+- **F3 — Core reducer unknown-tolerant**: `StateMachine.apply` wraps `EventType(event.type)` in `try/except ValueError` no-op. Dedup + `last_event_id` advance stay before the try.
+
+`current_payload_version()` is dynamic — advances when an upcaster is registered, regresses on unregister. Default is 1 (no upcasters).
+
+`ensure_event_payload_version_column(engine)`:
+```python
+with engine.begin() as conn:
+    rows = conn.exec_driver_sql("PRAGMA table_info(event)").fetchall()
+    column_names = [row[1] for row in rows]
+    if "payload_version" not in column_names:
+        conn.exec_driver_sql(
+            "ALTER TABLE event ADD COLUMN payload_version INTEGER NOT NULL DEFAULT 1"
+        )
+```
+
+**Verification**: 353/353 tests passing (348 baseline + 5 new). Zero behavior change. Upgrade-path proven by `test_payload_version_column_backfilled_on_old_schema` (raw DDL with no `payload_version` column → `ensure_*` → `BrainRepository.list_events` does not raise). Upcaster wiring proven by `test_upcaster_fires_on_read` (registers v1→v2, reads v1 row, asserts payload has v2 field and `payload_version == 2`).
+
+**Event-shape audit**: no `model_dump` or full-EventRead snapshots in `tests/test_server.py`, `tests/test_cli.py`, `tests/test_snapshot.py`. New `payload_version` field is purely additive — no API contract change.
+
+See `docs/sprint41_1_hotfix.md` for full architecture.

@@ -7,10 +7,10 @@ import pytest
 
 from allbrain.events import EventType
 from allbrain.foundations import (
-    PAYLOAD_CURRENT_VERSION,
     PayloadUpcaster,
     canonical_event_keys,
     canonical_event_sort,
+    current_payload_version,
     is_known_event,
     normalize_payload,
 )
@@ -30,7 +30,7 @@ def _event(
     *,
     event_id: str | None = None,
     created_at: datetime | None = None,
-    payload_version: int = PAYLOAD_CURRENT_VERSION,
+    payload_version: int | None = None,
 ) -> EventRead:
     return EventRead(
         id=event_id or str(uuid4()),
@@ -43,7 +43,7 @@ def _event(
         task_hint=None,
         importance=1,
         created_at=created_at or datetime(2026, 1, 1, 12, 0, 0),
-        payload_version=payload_version,
+        payload_version=payload_version if payload_version is not None else current_payload_version(),
     )
 
 
@@ -242,3 +242,131 @@ def test_is_known_event_basic_check() -> None:
     assert is_known_event("world_state_observed") is True
     assert is_known_event("task_completed") is True
     assert is_known_event("some_future_unknown_event") is False
+
+
+def test_list_events_ordered_by_id_not_created_at(tmp_path) -> None:
+    from datetime import datetime, timezone
+
+    from allbrain.models.entities import Event
+    from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
+
+    engine = create_engine_for_path(tmp_path / "allbrain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    session = repo.create_session(project_root, "codex")
+
+    e1 = repo.append_event(
+        project_path=project_root, session_id=session.id or 0,
+        type="x", source="test", payload={"i": 1},
+    )
+    e2 = repo.append_event(
+        project_path=project_root, session_id=session.id or 0,
+        type="x", source="test", payload={"i": 2},
+    )
+    e3 = repo.append_event(
+        project_path=project_root, session_id=session.id or 0,
+        type="x", source="test", payload={"i": 3},
+    )
+
+    earlier = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    later = datetime(2030, 1, 1, tzinfo=timezone.utc)
+    with open_session(repo.engine) as db:
+        for row in (db.get(Event, e1.id), db.get(Event, e2.id), db.get(Event, e3.id)):
+            assert row is not None
+        db.get(Event, e1.id).created_at = later
+        db.get(Event, e2.id).created_at = earlier
+        db.get(Event, e3.id).created_at = later
+        db.commit()
+
+    events = repo.list_events(project_path=project_root)
+    ids = [event.id for event in events]
+    assert ids == canonical_event_keys(events)
+    assert ids == sorted(ids)
+    assert ids == [e1.id, e2.id, e3.id]
+
+
+def test_payload_version_persisted_and_stamped(tmp_path) -> None:
+    from allbrain.foundations.versioning import current_payload_version
+    from allbrain.models.entities import Event
+    from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
+
+    engine = create_engine_for_path(tmp_path / "allbrain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    session = repo.create_session(project_root, "codex")
+
+    event = repo.append_event(
+        project_path=project_root, session_id=session.id or 0,
+        type="x", source="test", payload={"k": "v"},
+    )
+
+    with open_session(repo.engine) as db:
+        row = db.get(Event, event.id)
+        assert row is not None
+        assert row.payload_version == current_payload_version()
+
+    read = repo.get_event(event.id)
+    assert read is not None
+    assert read.payload_version == current_payload_version()
+
+
+def test_upcaster_fires_on_read(tmp_path) -> None:
+    from allbrain.foundations.versioning import (
+        get_default_upcaster,
+    )
+    from allbrain.models.entities import Event
+    from allbrain.storage import (
+        BrainRepository,
+        create_engine_for_path,
+        ensure_event_payload_version_column,
+        init_db,
+        open_session,
+    )
+
+    up = get_default_upcaster()
+
+    def v1_to_v2(payload: dict) -> dict:
+        return {**payload, "v2_field": "default_value"}
+
+    up.register(1, 2, v1_to_v2)
+    try:
+        assert up.current_version() == 2
+
+        engine = create_engine_for_path(tmp_path / "allbrain.db")
+        init_db(engine)
+        repo = BrainRepository(engine)
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+        session = repo.create_session(project_root, "codex")
+
+        with open_session(repo.engine) as db:
+            row = Event(
+                id="01900000-0000-7000-8000-000000000001",
+                project_id=1,
+                session_id=session.id or 0,
+                type="legacy_v1_event",
+                source="legacy",
+                file_path=None,
+                payload_json='{"legacy": true}',
+                payload_version=1,
+                created_at=datetime(2024, 1, 1, 12, 0, 0),
+            )
+            project = repo.get_or_create_project(db, project_root)
+            row.project_id = project.id or 0
+            db.add(row)
+            db.commit()
+
+        ensure_event_payload_version_column(engine)
+        read = repo.get_event("01900000-0000-7000-8000-000000000001")
+        assert read is not None
+        assert read.payload["v2_field"] == "default_value"
+        assert read.payload["legacy"] is True
+        assert read.payload_version == up.current_version()
+        assert read.payload_version == 2
+    finally:
+        up.unregister(1, 2)
+        assert up.current_version() == 1
