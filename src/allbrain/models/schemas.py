@@ -336,6 +336,7 @@ class EventRead(BaseModel):
     caused_by: str | None = None
     branch: str | None = None
     created_at: datetime
+    payload_version: int = Field(default=1, ge=1)
 
 
 class ToolResult(BaseModel):

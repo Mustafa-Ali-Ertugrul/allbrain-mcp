@@ -110,3 +110,21 @@ def test_apply_events_uses_explicit_merge_strategy() -> None:
     assert state["completed_tasks"] == ["Done task"]
     assert state["failures"] == [{"error": "old"}, {"error": "new"}]
     assert state["event_count"] == 14
+
+
+def test_state_machine_idempotent_under_duplicated_events() -> None:
+    from allbrain.core.state_machine import StateMachine
+
+    failure_event = make_event("evt-fail-1", "failure", {"error": "boom"})
+    tool_event = make_event("evt-tool-1", "tool_call", {"tool_name": "search", "tool_args": {}, "timestamp": "t0"})
+
+    machine = StateMachine()
+    machine.apply(failure_event)
+    machine.apply(tool_event)
+    machine.apply(failure_event)
+    machine.apply(tool_event)
+
+    state = machine.get_state()
+    assert len(state.failures) == 1
+    assert len(state.tool_usage) == 1
+    assert state.tool_usage[0]["event_id"] == "evt-tool-1"

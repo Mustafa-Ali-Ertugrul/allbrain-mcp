@@ -1,0 +1,244 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from uuid import uuid4
+
+import pytest
+
+from allbrain.events import EventType
+from allbrain.foundations import (
+    PAYLOAD_CURRENT_VERSION,
+    PayloadUpcaster,
+    canonical_event_keys,
+    canonical_event_sort,
+    is_known_event,
+    normalize_payload,
+)
+from allbrain.models.schemas import EventRead
+from allbrain.replay import EventReplayEngine
+from allbrain.server.app import (
+    detect_knowledge_gaps_impl,
+    estimate_uncertainty_impl,
+    generate_scenarios_impl,
+)
+from tests.test_sprint12_memory_policy_ui import events as context_events
+from tests.test_sprint12_memory_policy_ui import make_context
+
+
+def _event(
+    event_type: str,
+    *,
+    event_id: str | None = None,
+    created_at: datetime | None = None,
+    payload_version: int = PAYLOAD_CURRENT_VERSION,
+) -> EventRead:
+    return EventRead(
+        id=event_id or str(uuid4()),
+        project_id=1,
+        session_id=1,
+        type=event_type,
+        source="test",
+        file_path=None,
+        payload={},
+        task_hint=None,
+        importance=1,
+        created_at=created_at or datetime(2026, 1, 1, 12, 0, 0),
+        payload_version=payload_version,
+    )
+
+
+def test_payload_version_default_is_1() -> None:
+    event = _event("world_state_observed")
+    assert event.payload_version == 1
+
+
+def test_upcaster_identity_v1_to_v1() -> None:
+    up = PayloadUpcaster()
+    payload, version = up.migrate({"x": 1}, from_version=1, to_version=1)
+    assert payload == {"x": 1}
+    assert version == 1
+
+
+def test_upcaster_chain_v1_to_v3() -> None:
+    up = PayloadUpcaster()
+    up.register(1, 2, lambda p: {**p, "v2": True})
+    up.register(2, 3, lambda p: {**p, "v3": True})
+    payload, version = up.migrate({"x": 1}, from_version=1, to_version=3)
+    assert payload == {"x": 1, "v2": True, "v3": True}
+    assert version == 3
+
+
+def test_upcaster_missing_step_raises() -> None:
+    up = PayloadUpcaster()
+    up.register(1, 2, lambda p: p)
+    with pytest.raises(ValueError, match="no upcaster registered"):
+        up.migrate({}, from_version=1, to_version=3)
+
+
+def test_normalize_payload_v1_passthrough() -> None:
+    normalized = normalize_payload({"x": 1}, from_version=1)
+    assert normalized == {"x": 1}
+
+
+def test_canonical_ordering_uuid7_only() -> None:
+    e1 = _event("a", event_id="01900000-0000-7000-8000-000000000001")
+    e2 = _event("b", event_id="01900000-0000-7000-8000-000000000002")
+    e3 = _event("c", event_id="01900000-0000-7000-8000-000000000003")
+    sorted_events = canonical_event_sort([e3, e1, e2])
+    assert [e.id for e in sorted_events] == [e1.id, e2.id, e3.id]
+
+
+def test_canonical_ordering_stable_under_created_at_collision() -> None:
+    same_time = datetime(2026, 1, 1, 12, 0, 0)
+    e1 = _event("a", event_id="01900000-0000-7000-8000-000000000001", created_at=same_time)
+    e2 = _event("b", event_id="01900000-0000-7000-8000-000000000002", created_at=same_time)
+    e3 = _event("c", event_id="01900000-0000-7000-8000-000000000003", created_at=same_time)
+    assert canonical_event_keys([e3, e1, e2]) == [e1.id, e2.id, e3.id]
+
+
+def test_canonical_ordering_with_mixed_event_types() -> None:
+    events = [
+        _event("meta_reasoning_completed", event_id="01900000-0000-7000-8000-000000000005"),
+        _event("world_state_observed", event_id="01900000-0000-7000-8000-000000000001"),
+        _event("foresight_generated", event_id="01900000-0000-7000-8000-000000000004"),
+        _event("counterfactual_generated", event_id="01900000-0000-7000-8000-000000000002"),
+        _event("scenario_generated", event_id="01900000-0000-7000-8000-000000000003"),
+    ]
+    ids = canonical_event_keys(events)
+    assert ids == sorted(ids)
+
+
+def test_tolerance_unknown_world_event_skipped(tmp_path) -> None:
+    context = make_context(tmp_path)
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=1,
+        type="world_state_observed",
+        source="test",
+        payload={},
+    )
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=1,
+        type="some_unknown_type_in_world_namespace",
+        source="test",
+        payload={},
+    )
+    all_events = context_events(context)
+    replay = EventReplayEngine().replay(all_events)["final_state"]
+    assert "foundations" in replay
+    assert replay["foundations"]["unknown_event_count"] >= 1
+
+
+def test_tolerance_unknown_counterfactual_skipped(tmp_path) -> None:
+    context = make_context(tmp_path)
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="counterfactual_generated", source="test", payload={},
+    )
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="brand_new_unknown_type", source="test", payload={},
+    )
+    replay = EventReplayEngine().replay(context_events(context))["final_state"]
+    assert replay["foundations"]["unknown_event_count"] >= 1
+
+
+def test_tolerance_unknown_scenario_skipped(tmp_path) -> None:
+    context = make_context(tmp_path)
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="scenario_generated", source="test", payload={},
+    )
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="strange_new_event_type", source="test", payload={},
+    )
+    replay = EventReplayEngine().replay(context_events(context))["final_state"]
+    assert replay["foundations"]["unknown_event_count"] >= 1
+
+
+def test_tolerance_unknown_foresight_skipped(tmp_path) -> None:
+    context = make_context(tmp_path)
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="foresight_generated", source="test", payload={},
+    )
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="brand_new_xyz", source="test", payload={},
+    )
+    replay = EventReplayEngine().replay(context_events(context))["final_state"]
+    assert replay["foundations"]["unknown_event_count"] >= 1
+
+
+def test_tolerance_unknown_meta_reasoning_skipped(tmp_path) -> None:
+    context = make_context(tmp_path)
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="meta_reasoning_started", source="test", payload={},
+    )
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="brand_new_abc", source="test", payload={},
+    )
+    replay = EventReplayEngine().replay(context_events(context))["final_state"]
+    assert replay["foundations"]["unknown_event_count"] >= 1
+
+
+def test_tolerance_unknown_uncertainty_skipped(tmp_path) -> None:
+    context = make_context(tmp_path)
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="uncertainty_estimated", source="test", payload={},
+    )
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="brand_new_def", source="test", payload={},
+    )
+    replay = EventReplayEngine().replay(context_events(context))["final_state"]
+    assert replay["foundations"]["unknown_event_count"] >= 1
+
+
+def test_tolerance_unknown_information_seeking_skipped(tmp_path) -> None:
+    context = make_context(tmp_path)
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="information_need_detected", source="test", payload={},
+    )
+    context.repository.append_event(
+        project_path=context.project_path, session_id=1,
+        type="brand_new_ghi", source="test", payload={},
+    )
+    replay = EventReplayEngine().replay(context_events(context))["final_state"]
+    assert replay["foundations"]["unknown_event_count"] >= 1
+
+
+def test_replay_state_includes_foundations_meta(tmp_path) -> None:
+    context = make_context(tmp_path)
+    replay = EventReplayEngine().replay(context_events(context))["final_state"]
+    assert replay["foundations"]["ordering"] == "uuid7"
+    assert replay["foundations"]["payload_version"] == 1
+    assert replay["foundations"]["unknown_event_count"] == 0
+
+
+def test_zero_behavior_change_golden(tmp_path) -> None:
+    context = make_context(tmp_path)
+
+    generate_scenarios_impl(context, action="deploy", scenarios_limit=4)
+    detect_knowledge_gaps_impl(context, decision_id="some_id")
+    estimate_uncertainty_impl(context, decision_id="some_id")
+
+    all_events = context_events(context)
+    replay = EventReplayEngine().replay(all_events)["final_state"]
+
+    assert "world" in replay
+    assert "scenarios" in replay
+    assert "uncertainty" in replay
+    assert "foundations" in replay
+
+
+def test_is_known_event_basic_check() -> None:
+    assert is_known_event("world_state_observed") is True
+    assert is_known_event("task_completed") is True
+    assert is_known_event("some_future_unknown_event") is False

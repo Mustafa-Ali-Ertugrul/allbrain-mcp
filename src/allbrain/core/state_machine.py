@@ -50,8 +50,12 @@ class ProjectState:
 class StateMachine:
     def __init__(self, state: ProjectState | None = None) -> None:
         self.state = state or ProjectState()
+        self._applied_event_ids: set[str] = set()
 
     def apply(self, event: EventRead) -> None:
+        if event.id in self._applied_event_ids:
+            return
+        self._applied_event_ids.add(event.id)
         event_type = EventType(event.type)
         self.state.last_event_id = event.id
 
@@ -95,6 +99,8 @@ class StateMachine:
         self.state.open_tasks = [open_task for open_task in self.state.open_tasks if open_task != task]
 
     def _record_tool_usage(self, event: EventRead) -> None:
+        if any(usage.get("event_id") == event.id for usage in self.state.tool_usage):
+            return
         self.state.tool_usage.append(
             {
                 "event_id": event.id,

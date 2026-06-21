@@ -7,6 +7,7 @@ from allbrain.evolution import LearningStateBuilder
 from allbrain.counterfactual import CounterfactualProjection
 from allbrain.events import EventType
 from allbrain.foresight import ForesightProjection
+from allbrain.foundations import canonical_event_sort, is_known_event as _is_known_event
 from allbrain.governance import GovernanceStateBuilder
 from allbrain.information_seeking import InformationSeekingProjection
 from allbrain.meta_reasoning import MetaReasoningProjection
@@ -28,7 +29,18 @@ class EventReplayEngine:
     ) -> dict[str, Any]:
         ordered = self._ordered(events, deterministic=deterministic)
         end = len(ordered) if step_count is None else min(len(ordered), cursor + step_count)
-        state: dict[str, Any] = {"tasks": {}, "decisions": [], "failures": [], "collaboration": {}, "organizational_learning": {}, "recommendations": {}, "policy_updates": {}, "governance": {}, "runtime_core": {}, "world": {}, "counterfactual": {}, "scenarios": {}, "foresight": {}, "reasoning": {}, "uncertainty": {}, "knowledge_gaps": {}, "information_seeking": {}}
+        state: dict[str, Any] = {
+            "tasks": {}, "decisions": [], "failures": [], "collaboration": {},
+            "organizational_learning": {}, "recommendations": {}, "policy_updates": {},
+            "governance": {}, "runtime_core": {}, "world": {}, "counterfactual": {},
+            "scenarios": {}, "foresight": {}, "reasoning": {}, "uncertainty": {},
+            "knowledge_gaps": {}, "information_seeking": {}, "unknown_events": [],
+            "foundations": {
+                "ordering": "uuid7",
+                "payload_version": 1,
+                "unknown_event_count": 0,
+            },
+        }
         collaboration_events: list[EventRead] = []
         learning_events: list[EventRead] = []
         governance_events: list[EventRead] = []
@@ -69,7 +81,7 @@ class EventReplayEngine:
     def _ordered(self, events: list[EventRead], *, deterministic: bool) -> list[EventRead]:
         if not deterministic:
             return list(events)
-        return sorted(events, key=lambda event: (event.created_at, event.id))
+        return canonical_event_sort(events)
 
     def _apply(self, state: dict[str, Any], event: EventRead, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead], information_seeking_events: list[EventRead]) -> None:
         task_id = event.payload.get("task_id")
@@ -130,6 +142,15 @@ class EventReplayEngine:
         if _is_information_seeking_event(event):
             information_seeking_events.append(event)
             state["information_seeking"] = InformationSeekingProjection().build(information_seeking_events)
+        if not _is_known_event(event.type):
+            state.setdefault("unknown_events", []).append(
+                {"id": event.id, "type": event.type}
+            )
+            foundations = state.setdefault(
+                "foundations",
+                {"ordering": "uuid7", "payload_version": 1, "unknown_event_count": 0},
+            )
+            foundations["unknown_event_count"] = int(foundations.get("unknown_event_count", 0)) + 1
         if event.type == EventType.SELECTION_DECISION.value:
             state["decisions"].append(
                 {
@@ -173,6 +194,8 @@ def _copy_state(state: dict[str, Any]) -> dict[str, Any]:
         "uncertainty": dict(state.get("uncertainty", {})),
         "knowledge_gaps": dict(state.get("knowledge_gaps", {})),
         "information_seeking": dict(state.get("information_seeking", {})),
+        "unknown_events": list(state.get("unknown_events", [])),
+        "foundations": dict(state.get("foundations", {})),
     }
 
 

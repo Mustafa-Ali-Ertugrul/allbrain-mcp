@@ -442,3 +442,25 @@ Test coverage: 24 new tests in `tests/test_information_seeking.py` covering per-
 Full test suite: 329 tests, 329 passing, no regressions.
 
 The system can now say: "I am missing feedback. I recommend `request_feedback` with expected VOI 0.30, gain 0.35, cost 0.05." This is the first time AllBrain moves from a passive decision maker to an active information collector. The next sprint (40+) can begin acting on these recommendations and feeding the new data back into the confidence decomposition.
+
+## Sprint 41 — Foundations Hardening
+
+Event log foundation hardened before Sprint 42 (Belief State):
+
+- **`payload_version` migration**: `EventRead.payload_version: int = Field(default=1, ge=1)`. `PayloadUpcaster` registry in `src/allbrain/foundations/versioning.py` supports v1→v2→v3 chain migration.
+- **Canonical UUIDv7-only ordering**: `canonical_event_sort(events)` replaces `(created_at, id)` with `(id,)` primary. UUIDv7 is timestamp-monotonic; `created_at` becomes sanity check.
+- **Unknown-event-type tolerance**: `KNOWN_EVENT_PREFIXES` in `tolerance.py`. Unknown events routed to `state["unknown_events"]`; count tracked in `state["foundations"]["unknown_event_count"]`.
+- **StateMachine idempotency (B4)**: `core/state_machine.py` skips duplicate event IDs; `tool_usage` further deduped by `event_id`.
+
+`state["foundations"]` schema:
+```python
+{
+    "ordering": "uuid7",
+    "payload_version": 1,
+    "unknown_event_count": 0,
+}
+```
+
+**Verification**: 347/347 tests passing (329 pre-existing + 18 new). Zero behavior change — every existing payload byte-identical, ordering still deterministic, B4 fix only affects duplicate-event scenarios that didn't exist before.
+
+See `docs/sprint41_foundations_hardening.md` for full architecture.
