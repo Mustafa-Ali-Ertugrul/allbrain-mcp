@@ -129,6 +129,9 @@ class EventType(StrEnum):
     UNCERTAINTY_ESTIMATED = "uncertainty_estimated"
     KNOWLEDGE_GAP_DETECTED = "knowledge_gap_detected"
     CONFIDENCE_CALIBRATED = "confidence_calibrated"
+    INFORMATION_NEED_DETECTED = "information_need_detected"
+    INFORMATION_ACTION_SELECTED = "information_action_selected"
+    INFORMATION_GAIN_ESTIMATED = "information_gain_estimated"
 
 
 SemanticEventType = {
@@ -256,6 +259,9 @@ SemanticEventType = {
     EventType.UNCERTAINTY_ESTIMATED,
     EventType.KNOWLEDGE_GAP_DETECTED,
     EventType.CONFIDENCE_CALIBRATED,
+    EventType.INFORMATION_NEED_DETECTED,
+    EventType.INFORMATION_ACTION_SELECTED,
+    EventType.INFORMATION_GAIN_ESTIMATED,
 }
 
 

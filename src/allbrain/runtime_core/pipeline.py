@@ -12,6 +12,10 @@ from allbrain.orchestrator.metrics import AgentPerformanceReducer
 from allbrain.orchestrator.task_state import TaskStateReducer
 from allbrain.counterfactual import CounterfactualEngine, recommendation_severity
 from allbrain.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
+from allbrain.information_seeking import (
+    INFORMATION_SEEKING_TEMPLATE_VERSION,
+    InformationSeekingManager,
+)
 from allbrain.runtime_core.arbitration import ArbitrationBridge
 from allbrain.runtime_core.economics import EconomicEvaluationBridge
 from allbrain.runtime_core.event_bus import RuntimeEventBus
@@ -47,8 +51,9 @@ class SystemDecisionPipeline:
         self.foresight = ForesightEngine()
         self.meta_reasoning = MetaReasoningManager()
         self.uncertainty = UncertaintyManager()
+        self.information_seeking = InformationSeekingManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False, enable_information_seeking: bool = False) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -193,6 +198,19 @@ class SystemDecisionPipeline:
                 )
                 emitted.extend(un_events)
 
+            information_seeking_payload: dict[str, Any] | None = None
+            if enable_information_seeking and uncertainty_payload is not None:
+                gaps_payload = (
+                    uncertainty_payload.get("uncertainty", {}).get("knowledge_gaps", [])
+                    if isinstance(uncertainty_payload, dict)
+                    else []
+                )
+                if gaps_payload:
+                    information_seeking_payload, last_event_id, is_events = self._information_seeking_step(
+                        bus, uncertainty_payload, gaps_payload, last_event_id
+                    )
+                    emitted.extend(is_events)
+
             last_event_id = self._transition(machine, publish, RuntimeStatus.EXECUTION, "scheduler_execution", last_event_id)
             scheduler_result = self._schedule(context, objective, decomposition, execution_plan, bus, run_id, last_event_id, limit)
             last_event_id = scheduler_result["last_event_id"]
@@ -236,8 +254,10 @@ class SystemDecisionPipeline:
                 completed_payload["meta_reasoning"] = meta_reasoning_payload
             if uncertainty_payload is not None:
                 completed_payload["uncertainty"] = uncertainty_payload
+            if information_seeking_payload is not None:
+                completed_payload["information_seeking"] = information_seeking_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -343,7 +363,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -364,6 +384,7 @@ class SystemDecisionPipeline:
             "foresight": foresight,
             "meta_reasoning": meta_reasoning,
             "uncertainty": uncertainty,
+            "information_seeking": information_seeking,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
@@ -627,6 +648,71 @@ class SystemDecisionPipeline:
         if gap_event is not None:
             emitted_events.append(gap_event)
         emitted_events.append(calibration_event)
+        return summary, last_event_id, emitted_events
+
+    def _information_seeking_step(
+        self,
+        bus: RuntimeEventBus,
+        uncertainty_payload: dict[str, Any],
+        gaps_payload: list[dict[str, Any]],
+        caused_by: str,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.uncertainty.models import KnowledgeGap
+
+        analysis_id = str(uncertainty_payload.get("analysis_id") or "")
+        gaps = [KnowledgeGap.model_validate(g) for g in gaps_payload]
+        manager = InformationSeekingManager()
+        plan = manager.analyze(gaps, analysis_id=analysis_id or None)
+        needs_event: EventRead | None = None
+        for need in plan.needs:
+            needs_event = bus.publish(
+                type=EventType.INFORMATION_NEED_DETECTED.value,
+                payload={
+                    "analysis_id": str(plan.analysis_id),
+                    "topic": need.topic,
+                    "expected_gain": need.expected_gain,
+                    "cost": need.cost,
+                    "priority": need.priority,
+                    "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
+                },
+                caused_by=caused_by,
+                impact_score=need.priority,
+            )
+        gain_event: EventRead | None = None
+        if plan.selected_action is not None:
+            rationale = f"selected {plan.selected_action.value} with VOI {plan.expected_voi} for {len(plan.needs)} need(s)"
+            gain_event = bus.publish(
+                type=EventType.INFORMATION_GAIN_ESTIMATED.value,
+                payload={
+                    "analysis_id": str(plan.analysis_id),
+                    "action": plan.selected_action.value,
+                    "expected_voi": plan.expected_voi,
+                    "rationale": rationale,
+                    "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
+                },
+                caused_by=needs_event.id if needs_event is not None else caused_by,
+                impact_score=plan.expected_voi,
+            )
+        selected_event = bus.publish(
+            type=EventType.INFORMATION_ACTION_SELECTED.value,
+            payload=plan.model_dump(mode="json"),
+            caused_by=gain_event.id if gain_event is not None else (needs_event.id if needs_event is not None else caused_by),
+        )
+        summary = {
+            "analysis_id": str(plan.analysis_id),
+            "needs": [n.model_dump(mode="json") for n in plan.needs],
+            "selected_action": plan.selected_action.value if plan.selected_action else None,
+            "expected_voi": plan.expected_voi,
+            "rationale": plan.rationale,
+            "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
+        }
+        last_event_id = selected_event.id
+        emitted_events: list[EventRead] = []
+        if needs_event is not None:
+            emitted_events.append(needs_event)
+        if gain_event is not None:
+            emitted_events.append(gain_event)
+        emitted_events.append(selected_event)
         return summary, last_event_id, emitted_events
 
     def _foresight_step(self, bus: RuntimeEventBus, action: str, caused_by: str, foresight_limit: int, max_horizon: int) -> tuple[dict[str, Any] | None, str, list[EventRead]]:

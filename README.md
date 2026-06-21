@@ -407,3 +407,38 @@ Test coverage: 23 new tests in `tests/test_uncertainty.py` covering confidence r
 Full test suite: 305 tests, 305 passing, no regressions.
 
 The system can now say: "I am 0.74 confident. The breakdown: historical 0.80, evidence 0.70, consistency 0.90, samples 0.50. Type: mixed. Knowledge gaps: `insufficient_samples`, `missing_feedback`." The Sprint 37 H1 placeholder is now backed by `observed_success_rate` from the event log.
+
+Sprint 39 adds the active information seeking layer on top of uncertainty. The system can now act on detected knowledge gaps by mapping them to candidate information actions, evaluating each action's value of information (VOI), and recommending the action with the highest VOI.
+
+Components:
+- `InformationAction` (StrEnum): `request_feedback`, `collect_history`, `run_simulation`, `gather_samples`, `observe_environment`
+- `InformationNeed`: pydantic with `topic`, `expected_gain` (0-1), `cost` (0-1), `priority` (0-1)
+- `InformationPlan`: pydantic with `analysis_id`, `needs`, `selected_action`, `expected_voi` (0-1), `rationale`, `template_version=1`
+- `InformationSeekingEvaluator`: stateless `evaluate(action, needs) -> (gain, cost, voi)` using `ACTION_VOI_TABLE` and `ACTION_TO_GAPS` (corrected direction — action → set of gap topics)
+- `InformationPlanner`: `needs_from_gaps(gaps)` and `plan(needs)` selecting the action with the highest VOI
+- `InformationSeekingManager`: facade, `analyze(gaps) -> InformationPlan`
+- `InformationSeekingProjection`: replay projection
+
+VOI formula: `voi = clamp(0, 1, base_gain * max(0.1, relevance) - base_cost)`, where `relevance` is the share of total expected gain covered by the action's target gap set. `ACTION_TO_GAPS` is the corrected direction (action → set of gap topics, not the reverse).
+
+Pipeline integration:
+- `SystemDecisionPipeline.run(...)` gains `enable_information_seeking: bool = False`
+- Runs after the uncertainty step, before EXECUTION; gated on `uncertainty_payload is not None` and `gaps_payload is non-empty` (G1 — no empty plans)
+- R1 advisory: never overrides `final_decision`
+
+New event types:
+- `information_need_detected` — emitted once per need; payload includes `analysis_id`, `topic`, `expected_gain`, `cost`, `priority`, `template_version`
+- `information_gain_estimated` — payload includes `analysis_id`, `action`, `expected_voi`, `rationale`
+- `information_action_selected` — payload is `InformationPlan.model_dump(mode="json")`
+
+New MCP tools:
+- `identify_information_needs(decision_id, project_path, limit)` — looks up the `UNCERTAINTY_ESTIMATED` event with matching `analysis_id`, extracts `knowledge_gaps`, runs `InformationSeekingManager.analyze(gaps)`, returns `InformationPlan`
+- `estimate_information_gain(action, project_path, limit)` — returns baseline `{action, gain, cost, voi, rationale}` for the given action
+
+Replay equivalence: `EventReplayEngine` routes `information_*` events into `state["information_seeking"]`. `InformationSeekingProjection` is the projection. The replay equivalence test asserts the projection output matches the replay state exactly.
+
+Test coverage: 24 new tests in `tests/test_information_seeking.py` covering per-action VOI evaluation, gap-to-action mapping, planner selection, manager integration, pipeline (disabled/enabled/gated), replay state, and MCP tools (both `identify_information_needs` and `estimate_information_gain`).
+
+Full test suite: 329 tests, 329 passing, no regressions.
+
+The system can now say: "I am missing feedback. I recommend `request_feedback` with expected VOI 0.30, gain 0.35, cost 0.05." This is the first time AllBrain moves from a passive decision maker to an active information collector. The next sprint (40+) can begin acting on these recommendations and feeding the new data back into the confidence decomposition.

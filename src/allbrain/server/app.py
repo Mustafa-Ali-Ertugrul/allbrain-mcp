@@ -21,6 +21,7 @@ from allbrain.models.schemas import (
     CreateTaskInput,
     DetectKnowledgeGapsInput,
     EstimateConfidenceInput,
+    EstimateInformationGainInput,
     EstimateUncertaintyInput,
     EvaluatePlanInput,
     EvaluateScenariosInput,
@@ -29,6 +30,7 @@ from allbrain.models.schemas import (
     GenerateScenariosInput,
     GitContextInput,
     HandoffTaskInput,
+    IdentifyInformationNeedsInput,
     IntentInput,
     ListEventsInput,
     ObserveWorldInput,
@@ -82,6 +84,12 @@ from allbrain.uncertainty import (
     UncertaintyEstimate,
     UncertaintyManager,
     observed_success_rate,
+)
+from allbrain.information_seeking import (
+    INFORMATION_SEEKING_TEMPLATE_VERSION,
+    InformationAction,
+    InformationSeekingManager,
+    ACTION_VOI_TABLE,
 )
 from allbrain.meta_reasoning import (
     META_REASONING_TEMPLATE_VERSION,
@@ -353,6 +361,7 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         max_horizon: int = 5,
         enable_meta_reasoning: bool = False,
         enable_uncertainty: bool = False,
+        enable_information_seeking: bool = False,
     ) -> dict[str, Any]:
         result = run_decision_pipeline_impl(
             context,
@@ -373,6 +382,7 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
             max_horizon=max_horizon,
             enable_meta_reasoning=enable_meta_reasoning,
             enable_uncertainty=enable_uncertainty,
+            enable_information_seeking=enable_information_seeking,
         )
         return result.model_dump(mode="json")
 
@@ -532,6 +542,34 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
         result = detect_knowledge_gaps_impl(
             context,
             decision_id=decision_id,
+            project_path=project_path,
+            limit=limit,
+        )
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def identify_information_needs(
+        decision_id: str,
+        project_path: str | None = None,
+        limit: int = 5000,
+    ) -> dict[str, Any]:
+        result = identify_information_needs_impl(
+            context,
+            decision_id=decision_id,
+            project_path=project_path,
+            limit=limit,
+        )
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def estimate_information_gain(
+        action: str,
+        project_path: str | None = None,
+        limit: int = 5000,
+    ) -> dict[str, Any]:
+        result = estimate_information_gain_impl(
+            context,
+            action=action,
             project_path=project_path,
             limit=limit,
         )
@@ -1319,6 +1357,7 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             max_horizon=data.max_horizon,
             enable_meta_reasoning=data.enable_meta_reasoning,
             enable_uncertainty=data.enable_uncertainty,
+            enable_information_seeking=data.enable_information_seeking,
         )
         audit_tool_call(
             context,
@@ -1866,6 +1905,78 @@ def detect_knowledge_gaps_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data={"gaps": [gap.model_dump(mode="json") for gap in gaps]})
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def _lookup_uncertainty_gaps(context: BrainContext, decision_id: str, project_path: str) -> list[dict[str, Any]]:
+    events = context.repository.list_events(project_path=project_path, limit=5000)
+    for event in events:
+        if (
+            event.type == EventType.UNCERTAINTY_ESTIMATED.value
+            and isinstance(event.payload, dict)
+            and event.payload.get("analysis_id") == decision_id
+        ):
+            gaps = event.payload.get("knowledge_gaps", [])
+            if isinstance(gaps, list):
+                return [g for g in gaps if isinstance(g, dict)]
+    return []
+
+
+def identify_information_needs_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = IdentifyInformationNeedsInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        gaps_payload = _lookup_uncertainty_gaps(context, data.decision_id, project_path)
+        if not gaps_payload:
+            return ToolResult(ok=False, error=f"no knowledge gaps found for decision_id '{data.decision_id}'")
+        from allbrain.uncertainty.models import KnowledgeGap
+
+        gaps = [KnowledgeGap.model_validate(g) for g in gaps_payload]
+        manager = InformationSeekingManager()
+        plan = manager.analyze(gaps, analysis_id=data.decision_id or None)
+        audit_tool_call(
+            context,
+            tool_name="identify_information_needs",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        return ToolResult(ok=True, data=plan.model_dump(mode="json"))
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def estimate_information_gain_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = EstimateInformationGainInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        try:
+            action_enum = InformationAction(data.action)
+        except ValueError:
+            return ToolResult(ok=False, error=f"unknown action '{data.action}'")
+        base = ACTION_VOI_TABLE.get(action_enum.value, {"gain": 0.0, "cost": 0.0})
+        rationale = f"action {action_enum.value} baseline gain {base['gain']} cost {base['cost']}"
+        audit_tool_call(
+            context,
+            tool_name="estimate_information_gain",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        return ToolResult(
+            ok=True,
+            data={
+                "action": action_enum.value,
+                "gain": base["gain"],
+                "cost": base["cost"],
+                "voi": max(0.0, base["gain"] - base["cost"]),
+                "rationale": rationale,
+                "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
+            },
+        )
     except (ValidationError, ValueError, TypeError) as exc:
         return ToolResult(ok=False, error=str(exc))
 
