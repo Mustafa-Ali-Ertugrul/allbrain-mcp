@@ -1,14 +1,45 @@
 from __future__ import annotations
 
+from allbrain.events import EventType
 from allbrain.intent.models import Intent
 
 
-INCOMPATIBLE_LIFECYCLE = {
-    ("task_completed", "task_blocked"),
-    ("task_blocked", "task_completed"),
-    ("task_completed", "failure"),
-    ("failure", "task_completed"),
-}
+SEVERITY_GOAL_DIVERGENCE = 50
+SEVERITY_LIFECYCLE_INCOMPATIBLE_SAME_GOAL = 85
+SEVERITY_LIFECYCLE_INCOMPATIBLE_SHARED = 70
+
+CONTRADICTION_TEMPLATE_VERSION = 1
+
+INCOMPATIBLE_LIFECYCLE: frozenset[frozenset[str]] = frozenset(
+    {
+        frozenset({EventType.TASK_COMPLETED.value, EventType.TASK_BLOCKED.value}),
+        frozenset({EventType.TASK_COMPLETED.value, EventType.FAILURE.value}),
+    }
+)
+
+
+def _lifecycle_value(intent: Intent) -> str | None:
+    sub_goal = intent.sub_goal
+    if not sub_goal:
+        return None
+    return sub_goal
+
+
+def _pair_signature(contradiction: dict) -> frozenset[str]:
+    return frozenset(contradiction.get("evidence_intent_ids", []))
+
+
+def dedup_contradictions(contradictions: list[dict]) -> list[dict]:
+    """Drop duplicate contradictions over the same intent pair, keeping highest severity."""
+    by_key: dict[frozenset[str], dict] = {}
+    for contradiction in contradictions:
+        key = _pair_signature(contradiction)
+        if not key:
+            continue
+        existing = by_key.get(key)
+        if existing is None or contradiction.get("severity_score", 0) > existing.get("severity_score", 0):
+            by_key[key] = contradiction
+    return list(by_key.values())
 
 
 class ContradictionDetector:
@@ -20,13 +51,23 @@ class ContradictionDetector:
                     continue
                 shared_files = sorted(set(a.related_files) & set(b.related_files))
                 same_goal = a.goal == b.goal
-                lifecycle_pair = (a.sub_goal or "", b.sub_goal or "")
+                lifecycle_pair = (
+                    _lifecycle_value(a) or "",
+                    _lifecycle_value(b) or "",
+                )
+                lifecycle_frozenset = frozenset(lifecycle_pair)
                 if shared_files and not same_goal and not self._supportive_pair(a.goal, b.goal):
-                    contradictions.append(self._contradiction(a, b, shared_files, 50))
-                elif same_goal and lifecycle_pair in INCOMPATIBLE_LIFECYCLE:
-                    contradictions.append(self._contradiction(a, b, shared_files, 85))
-                elif shared_files and lifecycle_pair in INCOMPATIBLE_LIFECYCLE:
-                    contradictions.append(self._contradiction(a, b, shared_files, 70))
+                    contradictions.append(
+                        self._contradiction(a, b, shared_files, SEVERITY_GOAL_DIVERGENCE)
+                    )
+                elif same_goal and lifecycle_frozenset in INCOMPATIBLE_LIFECYCLE:
+                    contradictions.append(
+                        self._contradiction(a, b, shared_files, SEVERITY_LIFECYCLE_INCOMPATIBLE_SAME_GOAL)
+                    )
+                elif shared_files and lifecycle_frozenset in INCOMPATIBLE_LIFECYCLE:
+                    contradictions.append(
+                        self._contradiction(a, b, shared_files, SEVERITY_LIFECYCLE_INCOMPATIBLE_SHARED)
+                    )
         return contradictions
 
     def _contradiction(self, a: Intent, b: Intent, related_files: list[str], severity_score: int) -> dict:

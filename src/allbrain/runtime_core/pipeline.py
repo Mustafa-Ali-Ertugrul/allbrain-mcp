@@ -53,7 +53,7 @@ class SystemDecisionPipeline:
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False, enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -179,6 +179,13 @@ class SystemDecisionPipeline:
                 )
                 emitted.extend(belief_events)
 
+            contradiction_payload: dict[str, Any] | None = None
+            if enable_contradiction:
+                contradiction_payload, last_event_id, contradiction_events = self._contradiction_step(
+                    bus, context, project_path, last_event_id, limit
+                )
+                emitted.extend(contradiction_events)
+
             uncertainty_payload: dict[str, Any] | None = None
             if enable_uncertainty and meta_reasoning_payload is not None:
                 layer_indicators = self._collect_layer_indicators(
@@ -283,8 +290,10 @@ class SystemDecisionPipeline:
                 completed_payload["information_seeking"] = information_seeking_payload
             if belief_payload is not None:
                 completed_payload["belief"] = belief_payload
+            if contradiction_payload is not None:
+                completed_payload["contradiction"] = contradiction_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -390,7 +399,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -413,6 +422,7 @@ class SystemDecisionPipeline:
             "uncertainty": uncertainty,
             "information_seeking": information_seeking,
             "belief": belief,
+            "contradiction": contradiction,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
@@ -742,6 +752,74 @@ class SystemDecisionPipeline:
             "template_version": belief.template_version,
         }
         return belief, summary, [computed_event], computed_event.id
+
+    def _contradiction_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any], str, list[EventRead]]:
+        """Live contradiction detection — produces a CONTRADICTION_DETECTED snapshot.
+
+        This is the ONLY write-path for CONTRADICTION_DETECTED events. The
+        detector runs against current intents; the result is a single
+        authoritative snapshot. The reducer and manager consume that event
+        log without re-deriving (Zorunlu 1: no recompute branch in the
+        replay path — divergence is impossible if both views mirror the
+        same CONTRADICTION_DETECTED stream).
+        """
+        from allbrain.contradiction import (
+            CONTRADICTION_TEMPLATE_VERSION,
+            ContradictionDetector,
+            dedup_contradictions,
+        )
+        from allbrain.intent import IntentExtractor
+
+        resolved = project_path or getattr(context, "project_path", None)
+        events: list[Any] = []
+        if resolved:
+            try:
+                events = context.repository.list_events(project_path=resolved, limit=limit)
+            except Exception:
+                events = []
+
+        intents = IntentExtractor().extract(events)
+        raw = ContradictionDetector().detect(intents)
+        contradictions = dedup_contradictions(raw)
+        severity_summary: dict[str, int] = {}
+        for c in contradictions:
+            label = c.get("severity", "info")
+            severity_summary[label] = severity_summary.get(label, 0) + 1
+
+        evidence_event_ids = sorted(
+            {str(getattr(e, "id", "")) for e in events if getattr(e, "id", "")}
+        )
+        max_severity = max((c.get("severity_score", 0) for c in contradictions), default=0)
+        impact_score = float(max_severity) / 100.0
+
+        detected_event = bus.publish(
+            type=EventType.CONTRADICTION_DETECTED.value,
+            payload={
+                "context_key": "default",
+                "contradictions": contradictions,
+                "severity_summary": severity_summary,
+                "evidence_event_ids": evidence_event_ids,
+                "template_version": CONTRADICTION_TEMPLATE_VERSION,
+            },
+            caused_by=caused_by,
+            impact_score=impact_score,
+        )
+        summary = {
+            "context_key": "default",
+            "contradictions": contradictions,
+            "severity_summary": severity_summary,
+            "evidence_event_ids": evidence_event_ids,
+            "count": len(contradictions),
+            "template_version": CONTRADICTION_TEMPLATE_VERSION,
+        }
+        return summary, detected_event.id, [detected_event]
 
     def _information_seeking_step(
         self,
