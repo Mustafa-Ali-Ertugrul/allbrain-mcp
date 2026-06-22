@@ -12,13 +12,13 @@ from allbrain.revision.state import RevisionState
 class RevisionManager:
     """Authoritative projection over BELIEF_REVISED events.
 
-    Zorunlu: this manager does NOT re-derive contradictions from intent
-    events. It mirrors RevisionReducer exactly. Both consume the same
-    event log and produce the same per-context snapshot.
+    Zorunlu: this manager does NOT re-derive uncertainty or contradiction
+    counts from intent events. It mirrors RevisionReducer exactly. Both
+    consume the same event log and produce the same per-context snapshot.
 
     Live revision (emitting BELIEF_REVISED) lives in:
       - pipeline._revision_step — generates the event from live belief +
-        contradiction + uncertainty
+        contradiction + uncertainty_computed
 
     Convergence invariant: manager.query(events) == reducer.snapshot(ctx)
     for ALL event logs.
@@ -68,20 +68,24 @@ class RevisionManager:
 
         baseline = float(last_payload["new_confidence"])
         trailing = ordered[checkpoint_index + 1:]
-        contradiction_count = sum(
-            1
-            for e in trailing
-            if str(getattr(e, "type", "")) == EventType.CONTRADICTION_DETECTED.value
-        )
 
-        # Sprint 44: composite uncertainty defaults to 0.0.
-        # Sprint 45+ will wire UncertaintyManager.analyze() here.
-        composite_uncertainty = 0.0
+        contradiction_count = 0
+        last_uncertainty = 0.0
+        for e in trailing:
+            event_type = str(getattr(e, "type", ""))
+            if event_type == EventType.CONTRADICTION_DETECTED.value:
+                contradiction_count += 1
+            elif event_type == EventType.UNCERTAINTY_COMPUTED.value:
+                p = getattr(e, "payload", None)
+                if isinstance(p, dict) and p.get("context_key") == context_key:
+                    raw = p.get("uncertainty")
+                    if isinstance(raw, (int, float)):
+                        last_uncertainty = float(raw)
 
         new_confidence = revise(
             baseline,
             contradiction_count,
-            composite_uncertainty,
+            last_uncertainty,
             self._policy,
         )
 

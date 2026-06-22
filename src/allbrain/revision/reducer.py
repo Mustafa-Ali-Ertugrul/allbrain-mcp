@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events.schemas import EventType
+from allbrain.uncertainty.events import validate_payload as validate_uncertainty_payload
 from allbrain.revision.estimator import _stable_revision_id, revise
 from allbrain.revision.events import validate_payload
 from allbrain.revision.policies import REVISION_TEMPLATE_VERSION, RevisionPolicy
@@ -13,15 +14,16 @@ class RevisionReducer:
     """Replays events into a per-context RevisionState.
 
     Contract (mirrors BeliefReducer / ContradictionReducer):
-      - Only BELIEF_REVISED is the checkpoint source.
-      - Only CONTRADICTION_DETECTED is the trailing-count source.
-      - All other event types: no-op (unknown-event tolerance).
-      - BELIEF_REVISED = authoritative overwrite (resets the trailing counter
+      - BELIEF_REVISED is the checkpoint source (resets the trailing counter
         and stores the payload's new_confidence as the new baseline).
-      - CONTRADICTION_DETECTED = increments the trailing counter.
-      - snapshot() applies revise(baseline, trailing_count, 0, policy)
-        — same formula the manager uses. Convergence holds because both
-        views consume the same event slice and apply the same function.
+      - CONTRADICTION_DETECTED in the trailing slice increments the
+        contradiction counter.
+      - UNCERTAINTY_COMPUTED in the trailing slice updates the uncertainty
+        value (last-wins authoritative).
+      - All other event types: no-op (unknown-event tolerance).
+      - snapshot() applies revise(baseline, trailing_count, last_uncertainty,
+        policy) — same formula the manager uses. Convergence holds because
+        both views consume the same event slice and apply the same function.
 
     The reducer's `analysis_id` derives from `sorted(_seen_ids)` to match
     the manager's `sorted(all_event_ids)` for stable convergence.
@@ -31,6 +33,7 @@ class RevisionReducer:
         self._policy = policy or RevisionPolicy()
         self._contexts: dict[str, dict[str, Any]] = {}
         self._trailing: dict[str, int] = {}
+        self._last_uncertainty: dict[str, float] = {}
         self._seen_ids: set[str] = set()
 
     def apply(self, event: Any) -> None:
@@ -64,6 +67,21 @@ class RevisionReducer:
         if event_type == EventType.CONTRADICTION_DETECTED.value:
             for ctx in self._contexts:
                 self._trailing[ctx] = self._trailing.get(ctx, 0) + 1
+            return
+
+        if event_type == EventType.UNCERTAINTY_COMPUTED.value and isinstance(payload, dict):
+            try:
+                validate_uncertainty_payload(payload)
+            except ValueError:
+                return
+            context_key = payload.get("context_key")
+            if not isinstance(context_key, str) or not context_key:
+                context_key = "default"
+            try:
+                self._last_uncertainty[context_key] = float(payload["uncertainty"])
+            except (KeyError, TypeError, ValueError):
+                return
+            return
 
     def snapshot(self, *, context_key: str = "default") -> RevisionState:
         evidence = sorted(self._seen_ids)
@@ -82,7 +100,8 @@ class RevisionReducer:
 
         baseline = float(bucket["new_confidence"])
         trailing = int(self._trailing.get(context_key, 0))
-        confidence = revise(baseline, trailing, 0.0, self._policy)
+        last_uncertainty = float(self._last_uncertainty.get(context_key, 0.0))
+        confidence = revise(baseline, trailing, last_uncertainty, self._policy)
         return RevisionState(
             context_key=context_key,
             confidence=confidence,

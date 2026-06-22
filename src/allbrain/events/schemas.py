@@ -135,6 +135,7 @@ class EventType(StrEnum):
     BELIEF_COMPUTED = "belief_computed"
     CONTRADICTION_DETECTED = "contradiction_detected"
     BELIEF_REVISED = "belief_revised"
+    UNCERTAINTY_COMPUTED = "uncertainty_computed"
 
 
 SemanticEventType = {
@@ -268,6 +269,7 @@ SemanticEventType = {
     EventType.BELIEF_COMPUTED,
     EventType.CONTRADICTION_DETECTED,
     EventType.BELIEF_REVISED,
+    EventType.UNCERTAINTY_COMPUTED,
 }
 
 

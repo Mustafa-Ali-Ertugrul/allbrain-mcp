@@ -53,7 +53,7 @@ class SystemDecisionPipeline:
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -186,10 +186,17 @@ class SystemDecisionPipeline:
                 )
                 emitted.extend(contradiction_events)
 
+            uncertainty_computed_payload: dict[str, Any] | None = None
+            if enable_uncertainty_computed:
+                uncertainty_computed_payload, last_event_id, uncertainty_computed_events = self._uncertainty_computed_step(
+                    bus, context, project_path, belief_state, contradiction_payload, last_event_id, limit
+                )
+                emitted.extend(uncertainty_computed_events)
+
             revision_payload: dict[str, Any] | None = None
             if enable_revision:
                 revision_payload, last_event_id, revision_events = self._revision_step(
-                    bus, belief_state, contradiction_payload, uncertainty_payload, last_event_id
+                    bus, belief_state, contradiction_payload, uncertainty_computed_payload, last_event_id
                 )
                 emitted.extend(revision_events)
 
@@ -293,6 +300,8 @@ class SystemDecisionPipeline:
                 completed_payload["meta_reasoning"] = meta_reasoning_payload
             if uncertainty_payload is not None:
                 completed_payload["uncertainty"] = uncertainty_payload
+            if uncertainty_computed_payload is not None:
+                completed_payload["uncertainty_computed"] = uncertainty_computed_payload
             if information_seeking_payload is not None:
                 completed_payload["information_seeking"] = information_seeking_payload
             if belief_payload is not None:
@@ -831,25 +840,96 @@ class SystemDecisionPipeline:
         }
         return summary, detected_event.id, [detected_event]
 
+    def _uncertainty_computed_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        belief_state: Any,
+        contradiction_payload: dict[str, Any] | None,
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any], str, list[EventRead]]:
+        """Emit UNCERTAINTY_COMPUTED with deterministic composite uncertainty.
+
+        Reads:
+          - belief_state.variance (Sprint 45: scalar input to the formula)
+          - contradiction_payload.contradictions list length
+            (contradiction_count)
+          - repository.list_events count (evidence_count, total events)
+
+        Writes: a single UNCERTAINTY_COMPUTED event with full payload
+        (context_key, uncertainty, confidence_interval, evidence_count,
+        template_version).
+        """
+        from allbrain.uncertainty import (
+            UNCERTAINTY_COMPUTED_TEMPLATE_VERSION,
+            composite_uncertainty,
+            make_payload,
+        )
+
+        variance = float(getattr(belief_state, "variance", 0.0)) if belief_state is not None else 0.0
+        contradiction_count = 0
+        if isinstance(contradiction_payload, dict):
+            cl = contradiction_payload.get("contradictions")
+            if isinstance(cl, list):
+                contradiction_count = len(cl)
+
+        resolved = project_path or getattr(context, "project_path", None)
+        evidence_count = 0
+        if resolved:
+            try:
+                events = context.repository.list_events(project_path=resolved, limit=limit)
+                evidence_count = len(events)
+            except Exception:
+                evidence_count = 0
+
+        uncertainty = composite_uncertainty(variance, evidence_count, contradiction_count)
+        confidence_interval = uncertainty * 0.5
+
+        payload = make_payload(
+            context_key="default",
+            uncertainty=uncertainty,
+            confidence_interval=confidence_interval,
+            evidence_count=evidence_count,
+        )
+        event = bus.publish(
+            type=EventType.UNCERTAINTY_COMPUTED.value,
+            payload=payload,
+            caused_by=caused_by,
+            impact_score=uncertainty,
+        )
+
+        summary = {
+            "context_key": "default",
+            "uncertainty": uncertainty,
+            "confidence_interval": confidence_interval,
+            "evidence_count": evidence_count,
+            "variance": variance,
+            "contradiction_count": contradiction_count,
+            "template_version": UNCERTAINTY_COMPUTED_TEMPLATE_VERSION,
+        }
+        return summary, event.id, [event]
+
     def _revision_step(
         self,
         bus: RuntimeEventBus,
         belief_state: Any,
         contradiction_payload: dict[str, Any] | None,
-        uncertainty_payload: dict[str, Any] | None,
+        uncertainty_computed_payload: dict[str, Any] | None,
         caused_by: str,
     ) -> tuple[dict[str, Any], str, list[EventRead]]:
         """Emit BELIEF_REVISED when new contradictions are observed after the
         last revision (or, on first run, after the current belief baseline).
 
         Reads:
-          - belief_state.mean as baseline confidence (Sprint 44: we use
-            the live belief's mean; Sprint 45+ will read last BELIEF_REVISED
-            payload if present).
+          - belief_state.mean as baseline confidence.
           - contradiction_payload.contradictions as the trailing contradiction
             list (event-count from len()).
-          - uncertainty_payload.uncertainty as the uncertainty scalar (Sprint 44:
-            defaults to 0.0 if not provided; Sprint 45+ will wire composite).
+          - uncertainty_computed_payload.uncertainty as the uncertainty scalar
+            (Sprint 45: sourced from the UNCERTAINTY_COMPUTED event emitted
+            by _uncertainty_computed_step in the same run; defaults to 0.0 if
+            not provided).
 
         Writes: a single BELIEF_REVISED event with full payload.
         """
@@ -868,8 +948,8 @@ class SystemDecisionPipeline:
             if isinstance(contradictions_list, list):
                 contradiction_count = len(contradictions_list)
         uncertainty = 0.0
-        if isinstance(uncertainty_payload, dict):
-            raw = uncertainty_payload.get("uncertainty")
+        if isinstance(uncertainty_computed_payload, dict):
+            raw = uncertainty_computed_payload.get("uncertainty")
             if isinstance(raw, (int, float)):
                 uncertainty = float(raw)
 

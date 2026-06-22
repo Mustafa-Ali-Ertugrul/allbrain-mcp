@@ -40,8 +40,3 @@ def revise(
         - float(uncertainty) * policy.uncertainty_penalty
     )
     return max(0.0, min(1.0, new))
-
-
-def composite_uncertainty(belief_variance: float, uncertainty: float) -> float:
-    """Composite uncertainty: max(belief.variance, uncertainty.uncertainty)."""
-    return max(float(belief_variance or 0.0), float(uncertainty or 0.0))

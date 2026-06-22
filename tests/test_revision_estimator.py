@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.revision import RevisionPolicy, composite_uncertainty, revise
+from allbrain.revision import RevisionPolicy, revise
 
 
 def test_revise_basic_linear_formula():
@@ -57,18 +57,6 @@ def test_revise_monotonic_in_uncertainty():
     v2 = revise(0.80, 0, 0.5, policy)
     v3 = revise(0.80, 0, 0.9, policy)
     assert v0 > v1 > v2 > v3
-
-
-def test_composite_uncertainty_takes_max():
-    assert composite_uncertainty(0.3, 0.7) == 0.7
-    assert composite_uncertainty(0.7, 0.3) == 0.7
-    assert composite_uncertainty(0.5, 0.5) == 0.5
-
-
-def test_composite_uncertainty_handles_none_and_zero():
-    assert composite_uncertainty(0.0, 0.0) == 0.0
-    assert composite_uncertainty(None, None) == 0.0
-    assert composite_uncertainty(None, 0.4) == 0.4
 
 
 def test_policy_validates_non_negative_penalties():

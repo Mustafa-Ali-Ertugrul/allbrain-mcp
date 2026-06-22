@@ -149,10 +149,13 @@ def test_manager_equals_reducer_after_replay_round_trip():
 
 def test_revision_quality_gate_no_uuid7_or_now_or_random_in_determinism_path():
     """Quality gate: estimator.py, reducer.py, manager.py must not use
-    uuid7(), datetime.now(), or random.* — deterministic hash only.
+    uuid7(), datetime.now(), random.*, or time.time() — deterministic
+    hash only. Sprint 45 also covers the uncertainty module's estimator
+    (composite_uncertainty is the new write-path's uncertainty source).
 
-    The pipeline write-path (pipeline.py:838 _revision_step) is exempt
-    because it runs at runtime, not replay.
+    The pipeline write-path (pipeline.py _revision_step /
+    _uncertainty_computed_step) is exempt because it runs at runtime,
+    not replay.
     """
     determinism_critical = ["estimator.py", "reducer.py", "manager.py"]
     base = Path("src/allbrain/revision")
@@ -161,3 +164,13 @@ def test_revision_quality_gate_no_uuid7_or_now_or_random_in_determinism_path():
         assert "uuid7" not in content, f"{filename} uses uuid7 — must be deterministic hash"
         assert "datetime.now" not in content, f"{filename} uses datetime.now — must be deterministic"
         assert "random." not in content, f"{filename} uses random — must be deterministic"
+        assert "time.time" not in content, f"{filename} uses time.time — must be deterministic"
+
+    uncertainty_critical = ["estimator.py"]
+    base_u = Path("src/allbrain/uncertainty")
+    for filename in uncertainty_critical:
+        content = (base_u / filename).read_text(encoding="utf-8")
+        assert "uuid7" not in content, f"uncertainty/{filename} uses uuid7 — must be deterministic hash"
+        assert "datetime.now" not in content, f"uncertainty/{filename} uses datetime.now — must be deterministic"
+        assert "random." not in content, f"uncertainty/{filename} uses random — must be deterministic"
+        assert "time.time" not in content, f"uncertainty/{filename} uses time.time — must be deterministic"

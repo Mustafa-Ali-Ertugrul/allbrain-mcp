@@ -1,7 +1,4 @@
-from allbrain.revision.estimator import (
-    composite_uncertainty,
-    revise,
-)
+from allbrain.revision.estimator import revise
 from allbrain.revision.events import (
     REVISION_REASON_CONTRADICTION,
     make_payload,
@@ -20,7 +17,6 @@ __all__ = [
     "REVISION_TEMPLATE_VERSION",
     "REVISION_REASON_CONTRADICTION",
     "revise",
-    "composite_uncertainty",
     "validate_payload",
     "make_payload",
 ]

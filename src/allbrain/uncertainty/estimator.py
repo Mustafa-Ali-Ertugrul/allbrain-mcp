@@ -16,6 +16,28 @@ WEIGHTS = {
 }
 
 
+def composite_uncertainty(
+    variance: float,
+    evidence_count: int,
+    contradiction_count: int,
+) -> float:
+    """Sprint 45: deterministic uncertainty composite for revision.
+
+    new = variance + contradiction_count / evidence_count, clamped to [0, 1].
+
+    Spec example: variance=0.20, evidence=20, contradictions=2 -> 0.20 + 0.10 = 0.30.
+    (Spec narrative showed 0.31; the actual formula gives 0.30, with the example
+    value being approximate. Documented in the Sprint 45 plan.)
+
+    If evidence_count is 0, returns variance unchanged (no contradiction
+    pressure can be computed without any evidence).
+    """
+    if evidence_count <= 0:
+        return max(0.0, min(1.0, float(variance)))
+    raw = float(variance) + float(contradiction_count) / float(evidence_count)
+    return max(0.0, min(1.0, raw))
+
+
 def _agreement_score(layer_indicators: list[float]) -> float:
     if not layer_indicators:
         return 0.0
