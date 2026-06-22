@@ -14,4 +14,5 @@ class RevisionState:
     policy: RevisionPolicy
     old_confidence: float | None
     analysis_id: str
+    trust_score: float = 1.0
     template_version: int = REVISION_TEMPLATE_VERSION

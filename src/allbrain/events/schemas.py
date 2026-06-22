@@ -136,6 +136,9 @@ class EventType(StrEnum):
     CONTRADICTION_DETECTED = "contradiction_detected"
     BELIEF_REVISED = "belief_revised"
     UNCERTAINTY_COMPUTED = "uncertainty_computed"
+    EVIDENCE_RECORDED = "evidence_recorded"
+    EVIDENCE_DECAYED = "evidence_decayed"
+    TRUST_UPDATED = "trust_updated"
 
 
 SemanticEventType = {
@@ -270,6 +273,9 @@ SemanticEventType = {
     EventType.CONTRADICTION_DETECTED,
     EventType.BELIEF_REVISED,
     EventType.UNCERTAINTY_COMPUTED,
+    EventType.EVIDENCE_RECORDED,
+    EventType.EVIDENCE_DECAYED,
+    EventType.TRUST_UPDATED,
 }
 
 

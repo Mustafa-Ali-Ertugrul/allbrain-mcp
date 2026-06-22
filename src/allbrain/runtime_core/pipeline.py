@@ -53,7 +53,7 @@ class SystemDecisionPipeline:
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -200,6 +200,20 @@ class SystemDecisionPipeline:
                 )
                 emitted.extend(revision_events)
 
+            evidence_payload: dict[str, Any] | None = None
+            if enable_evidence:
+                evidence_payload, last_event_id, evidence_events = self._evidence_step(
+                    bus, belief_state, contradiction_payload, last_event_id
+                )
+                emitted.extend(evidence_events)
+
+            trust_payload: dict[str, Any] | None = None
+            if enable_trust:
+                trust_payload, last_event_id, trust_events = self._trust_step(
+                    bus, evidence_payload, last_event_id
+                )
+                emitted.extend(trust_events)
+
             uncertainty_payload: dict[str, Any] | None = None
             if enable_uncertainty and meta_reasoning_payload is not None:
                 layer_indicators = self._collect_layer_indicators(
@@ -310,8 +324,12 @@ class SystemDecisionPipeline:
                 completed_payload["contradiction"] = contradiction_payload
             if revision_payload is not None:
                 completed_payload["revision"] = revision_payload
+            if evidence_payload is not None:
+                completed_payload["evidence"] = evidence_payload
+            if trust_payload is not None:
+                completed_payload["trust"] = trust_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload, evidence=evidence_payload, trust=trust_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -417,7 +435,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None, revision: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None, revision: dict[str, Any] | None = None, evidence: dict[str, Any] | None = None, trust: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -442,6 +460,8 @@ class SystemDecisionPipeline:
             "belief": belief,
             "contradiction": contradiction,
             "revision": revision,
+            "evidence": evidence,
+            "trust": trust,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
@@ -909,6 +929,81 @@ class SystemDecisionPipeline:
             "contradiction_count": contradiction_count,
             "template_version": UNCERTAINTY_COMPUTED_TEMPLATE_VERSION,
         }
+        return summary, event.id, [event]
+
+    def _evidence_step(
+        self,
+        bus: RuntimeEventBus,
+        belief_state: Any,
+        contradiction_payload: dict[str, Any] | None,
+        caused_by: str,
+    ) -> tuple[dict[str, Any], str, list[EventRead]]:
+        """Emit a single EVIDENCE_RECORDED event with computed weight.
+
+        weight = confidence * (1 - uncertainty) per evidence_weight().
+
+        Note: belief_state.mean is the prior belief confidence; the
+        uncertainty signal is derived from the contradiction_count
+        (lighter heuristic; the full uncertainty pipeline integration
+        belongs to a future sprint).
+        """
+        from allbrain.evidence import evidence_weight
+
+        confidence = float(getattr(belief_state, "mean", 0.0)) if belief_state is not None else 0.0
+        contradiction_count = 0
+        if isinstance(contradiction_payload, dict):
+            cl = contradiction_payload.get("contradictions")
+            if isinstance(cl, list):
+                contradiction_count = len(cl)
+        uncertainty = min(1.0, contradiction_count * 0.1)
+
+        weight = evidence_weight(confidence, uncertainty)
+
+        payload = {
+            "context_key": "default",
+            "evidence_id": f"evidence-{int(round(weight * 1000)):04x}",
+            "weight": float(weight),
+            "source": "task_completed",
+            "contradiction_count": contradiction_count,
+        }
+        event = bus.publish(
+            type=EventType.EVIDENCE_RECORDED.value,
+            payload=payload,
+            caused_by=caused_by,
+            impact_score=weight,
+        )
+        summary = {"context_key": "default", **payload}
+        return summary, event.id, [event]
+
+    def _trust_step(
+        self,
+        bus: RuntimeEventBus,
+        evidence_payload: dict[str, Any] | None,
+        caused_by: str,
+    ) -> tuple[dict[str, Any], str, list[EventRead]]:
+        """Emit a single TRUST_UPDATED event with computed trust score.
+
+        trust_score = mean(weights). If no evidence recorded yet,
+        trust defaults to 1.0 (Yol B decision: missing trust = full
+        confidence, not zero).
+        """
+        from allbrain.evidence import trust_score
+
+        weights: list[float] = []
+        if isinstance(evidence_payload, dict):
+            weight = evidence_payload.get("weight")
+            if isinstance(weight, (int, float)):
+                weights.append(float(weight))
+        score = trust_score(weights)
+
+        payload = {"context_key": "default", "trust_score": float(score)}
+        event = bus.publish(
+            type=EventType.TRUST_UPDATED.value,
+            payload=payload,
+            caused_by=caused_by,
+            impact_score=score,
+        )
+        summary = {"context_key": "default", **payload}
         return summary, event.id, [event]
 
     def _revision_step(

@@ -6,6 +6,7 @@ from allbrain.collaboration import CollaborationStateBuilder
 from allbrain.evolution import LearningStateBuilder
 from allbrain.belief import BeliefReducer
 from allbrain.contradiction import ContradictionReducer
+from allbrain.evidence import EvidenceReducer
 from allbrain.revision import RevisionReducer
 from allbrain.counterfactual import CounterfactualProjection
 from allbrain.events import EventType
@@ -41,6 +42,7 @@ class EventReplayEngine:
             "belief": {},
             "contradiction": {},
             "revision": {},
+            "evidence": {},
             "foundations": {
                 "ordering": "uuid7",
                 "payload_version": 1,
@@ -50,6 +52,7 @@ class EventReplayEngine:
         belief_reducer = BeliefReducer()
         contradiction_reducer = ContradictionReducer()
         revision_reducer = RevisionReducer()
+        evidence_reducer = EvidenceReducer()
         collaboration_events: list[EventRead] = []
         learning_events: list[EventRead] = []
         governance_events: list[EventRead] = []
@@ -63,10 +66,10 @@ class EventReplayEngine:
         knowledge_gap_events: list[EventRead] = []
         information_seeking_events: list[EventRead] = []
         for event in ordered[:cursor]:
-            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
+            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
         frames: list[dict[str, Any]] = []
         for index, event in enumerate(ordered[cursor:end], start=cursor):
-            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
+            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
             frames.append(
                 {
                     "cursor": index + 1,
@@ -92,13 +95,15 @@ class EventReplayEngine:
             return list(events)
         return canonical_event_sort(events)
 
-    def _apply(self, state: dict[str, Any], event: EventRead, belief_reducer: BeliefReducer, contradiction_reducer: ContradictionReducer, revision_reducer: RevisionReducer, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead], information_seeking_events: list[EventRead]) -> None:
+    def _apply(self, state: dict[str, Any], event: EventRead, belief_reducer: BeliefReducer, contradiction_reducer: ContradictionReducer, revision_reducer: RevisionReducer, evidence_reducer: EvidenceReducer, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead], information_seeking_events: list[EventRead]) -> None:
         belief_reducer.apply(event)
         state["belief"] = belief_reducer.all_snapshots()
         contradiction_reducer.apply(event)
         state["contradiction"] = contradiction_reducer.all_snapshots()
         revision_reducer.apply(event)
         state["revision"] = revision_reducer.all_snapshots()
+        evidence_reducer.apply(event)
+        state["evidence"] = evidence_reducer.all_snapshots()
         task_id = event.payload.get("task_id")
         if isinstance(task_id, str) and task_id:
             task = state["tasks"].setdefault(task_id, {"task_id": task_id, "status": "unknown"})
@@ -213,6 +218,7 @@ def _copy_state(state: dict[str, Any]) -> dict[str, Any]:
         "belief": dict(state.get("belief", {})),
         "contradiction": dict(state.get("contradiction", {})),
         "revision": dict(state.get("revision", {})),
+        "evidence": dict(state.get("evidence", {})),
         "foundations": dict(state.get("foundations", {})),
     }
 

@@ -20,10 +20,12 @@ class RevisionReducer:
         contradiction counter.
       - UNCERTAINTY_COMPUTED in the trailing slice updates the uncertainty
         value (last-wins authoritative).
+      - TRUST_UPDATED in the trailing slice updates the trust_score
+        (last-wins authoritative, default 1.0 if absent — Yol B).
       - All other event types: no-op (unknown-event tolerance).
-      - snapshot() applies revise(baseline, trailing_count, last_uncertainty,
-        policy) — same formula the manager uses. Convergence holds because
-        both views consume the same event slice and apply the same function.
+      - snapshot() applies revise(...) * trust_score, clamped [0, 1].
+        Same formula the manager uses. Convergence holds because both
+        views consume the same event slice and apply the same function.
 
     The reducer's `analysis_id` derives from `sorted(_seen_ids)` to match
     the manager's `sorted(all_event_ids)` for stable convergence.
@@ -34,6 +36,7 @@ class RevisionReducer:
         self._contexts: dict[str, dict[str, Any]] = {}
         self._trailing: dict[str, int] = {}
         self._last_uncertainty: dict[str, float] = {}
+        self._last_trust: dict[str, float] = {}
         self._seen_ids: set[str] = set()
 
     def apply(self, event: Any) -> None:
@@ -83,9 +86,19 @@ class RevisionReducer:
                 return
             return
 
+        if event_type == EventType.TRUST_UPDATED.value and isinstance(payload, dict):
+            context_key = payload.get("context_key")
+            if not isinstance(context_key, str) or not context_key:
+                context_key = "default"
+            ts = payload.get("trust_score")
+            if isinstance(ts, (int, float)):
+                self._last_trust[context_key] = max(0.0, min(1.0, float(ts)))
+            return
+
     def snapshot(self, *, context_key: str = "default") -> RevisionState:
         evidence = sorted(self._seen_ids)
         bucket = self._contexts.get(context_key)
+        trust_score = float(self._last_trust.get(context_key, 1.0))
         if bucket is None:
             return RevisionState(
                 context_key=context_key,
@@ -95,13 +108,15 @@ class RevisionReducer:
                 policy=self._policy,
                 old_confidence=None,
                 analysis_id=_stable_revision_id(context_key, evidence),
+                trust_score=trust_score,
                 template_version=REVISION_TEMPLATE_VERSION,
             )
 
         baseline = float(bucket["new_confidence"])
         trailing = int(self._trailing.get(context_key, 0))
         last_uncertainty = float(self._last_uncertainty.get(context_key, 0.0))
-        confidence = revise(baseline, trailing, last_uncertainty, self._policy)
+        revised = revise(baseline, trailing, last_uncertainty, self._policy)
+        confidence = max(0.0, min(1.0, revised * trust_score))
         return RevisionState(
             context_key=context_key,
             confidence=confidence,
@@ -110,6 +125,7 @@ class RevisionReducer:
             policy=self._policy,
             old_confidence=baseline,
             analysis_id=_stable_revision_id(context_key, evidence),
+            trust_score=trust_score,
             template_version=int(bucket["template_version"]),
         )
 
@@ -135,5 +151,6 @@ class RevisionReducer:
             },
             "old_confidence": state.old_confidence,
             "analysis_id": state.analysis_id,
+            "trust_score": state.trust_score,
             "template_version": state.template_version,
         }
