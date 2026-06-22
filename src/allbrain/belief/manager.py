@@ -22,48 +22,35 @@ class BeliefManager:
         analysis_id: str | None = None,
     ) -> BeliefState:
         ordered = canonical_event_sort(events)
+        all_event_ids = {str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")}
         
-        # 1. Authoritative Override: If a BELIEF_COMPUTED event exists for this context,
-        # it replaces the task tally. We use the most recent one.
-        for event in reversed(ordered):
+        # Find LAST BELIEF_COMPUTED for this context (baseline checkpoint)
+        checkpoint: dict[str, Any] | None = None
+        checkpoint_index = -1
+        for i, event in enumerate(ordered):
             event_type = str(getattr(event, "type", ""))
             if event_type == EventType.BELIEF_COMPUTED.value:
-                payload = getattr(event, "payload", {})
+                payload = getattr(event, "payload", None)
                 if isinstance(payload, dict) and payload.get("context_key") == context_key:
-                    successes = payload.get("successes", 0)
-                    failures = payload.get("failures", 0)
-                    blocked = payload.get("blocked", 0)
-                    sample_count = successes + failures + blocked
-                    
-                    # For authoritative overwrite, we consider all events up to this point as evidence
-                    # We approximate this by taking all events prior to or including this computed event
-                    evidence_ids = []
-                    for e in ordered:
-                        e_id = str(getattr(e, "id", ""))
-                        if e_id:
-                            evidence_ids.append(e_id)
-                        if getattr(e, "id", None) == getattr(event, "id", None):
-                            break
-                            
-                    analysis = analysis_id or _stable_analysis_id(context_key, evidence_ids)
-                    return update_state(
-                        context_key=context_key,
-                        successes=successes,
-                        failures=failures,
-                        blocked=blocked,
-                        prior_alpha=self._prior_alpha,
-                        prior_beta=self._prior_beta,
-                        sample_count=sample_count,
-                        analysis_id=analysis,
-                    )
+                    checkpoint = payload
+                    checkpoint_index = i
         
-        # 2. Recompute Path: Tally from task events
-        seen_ids: set[str] = set()
-        successes, failures, blocked = tally_outcomes(
-            ordered, context_key=context_key, seen_ids=seen_ids
-        )
+        if checkpoint is not None:
+            # Baseline + trailing: use checkpoint as baseline, tally task events after it
+            successes = checkpoint.get("successes", 0)
+            failures = checkpoint.get("failures", 0)
+            blocked = checkpoint.get("blocked", 0)
+            trailing = ordered[checkpoint_index + 1:]
+            trail_s, trail_f, trail_b = tally_outcomes(trailing, context_key=context_key)
+            successes += trail_s
+            failures += trail_f
+            blocked += trail_b
+        else:
+            # Recompute path: tally all task events
+            successes, failures, blocked = tally_outcomes(ordered, context_key=context_key)
+        
         sample_count = successes + failures + blocked
-        analysis = analysis_id or _stable_analysis_id(context_key, seen_ids)
+        analysis = analysis_id or _stable_analysis_id(context_key, all_event_ids)
         return update_state(
             context_key=context_key,
             successes=successes,
