@@ -9,7 +9,6 @@ from allbrain.belief.models import (
     BeliefState,
     OutcomeKind,
 )
-from allbrain.belief.projection import BeliefProjection, project
 from allbrain.belief.reducer import BeliefReducer
 from allbrain.belief.updater import (
     beta_info_gain,
@@ -21,7 +20,6 @@ from allbrain.belief.updater import (
 
 __all__ = [
     "BeliefManager",
-    "BeliefProjection",
     "BeliefQuery",
     "BeliefReducer",
     "BeliefSnapshot",
@@ -31,7 +29,6 @@ __all__ = [
     "beta_mean",
     "beta_variance",
     "list_known_context_keys",
-    "project",
     "tally_outcomes",
     "update_state",
 ]

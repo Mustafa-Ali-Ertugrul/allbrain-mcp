@@ -1,9 +1,25 @@
 from __future__ import annotations
 
-from typing import Any
+import hashlib
+from typing import Any, Iterable
 
 from allbrain.belief.models import OutcomeKind
 from allbrain.events import EventType
+
+
+def _stable_analysis_id(context_key: str, evidence_event_ids: Iterable[str] | None = None) -> str:
+    """Deterministic analysis_id derived from context and evidence.
+    
+    Same context + same evidence -> same id (replay-safe).
+    Different evidence -> different id (per-computation unique).
+    """
+    if evidence_event_ids is None:
+        evidence_event_ids = []
+    
+    evidence_key = "|".join(sorted(list(evidence_event_ids)))
+    digest = hashlib.sha256(f"{context_key}:{evidence_key}".encode("utf-8")).digest()
+    hex_str = digest.hex()
+    return f"belief-{hex_str[:12]}"
 
 
 def _outcome_of(event: Any) -> OutcomeKind | None:

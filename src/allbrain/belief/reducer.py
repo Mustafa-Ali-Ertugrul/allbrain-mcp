@@ -4,18 +4,15 @@ import hashlib
 from typing import Any
 
 from allbrain.belief.estimator import (
+    _context_key_of,
+    _outcome_of,
+    _stable_analysis_id,
     list_known_context_keys,
     tally_outcomes,
 )
-from allbrain.belief.models import BeliefState
+from allbrain.belief.models import BeliefState, OutcomeKind
+from allbrain.events.schemas import EventType
 from allbrain.belief.updater import update_state
-from uuid6 import uuid7
-
-
-def _stable_analysis_id(context_key: str) -> str:
-    digest = hashlib.sha256(context_key.encode("utf-8")).digest()
-    hex_str = digest.hex()
-    return f"belief-{hex_str[:12]}"
 
 
 class BeliefReducer:
@@ -32,26 +29,34 @@ class BeliefReducer:
         if event_id:
             self._seen_ids.add(event_id)
 
-        payload = getattr(event, "payload", None)
-        if not isinstance(payload, dict):
-            return
-        objective = payload.get("objective")
-        context_key = "default"
-        if isinstance(objective, dict):
-            kind = objective.get("kind")
-            if isinstance(kind, str) and kind:
-                context_key = kind
-        elif hasattr(event, "task_hint") and event.task_hint:
-            context_key = str(event.task_hint)
-
         event_type = str(getattr(event, "type", ""))
-        if not event_type:
+        
+        # 1. Authoritative Override: If a BELIEF_COMPUTED event arrives, it replaces the tally
+        if event_type == EventType.BELIEF_COMPUTED.value:
+            payload = getattr(event, "payload", None)
+            if isinstance(payload, dict):
+                context_key = payload.get("context_key", "default")
+                # Reset bucket with authoritative values; evidence_ids is the full seen set
+                self._contexts[context_key] = {
+                    "successes": payload.get("successes", 0),
+                    "failures": payload.get("failures", 0),
+                    "blocked": payload.get("blocked", 0),
+                }
             return
-        if event_type.endswith("task_completed") or event_type == "pipeline_run_completed":
+
+        # 2. Incremental Tally: Accumulate task outcomes
+        outcome = _outcome_of(event)
+        if outcome is None:
+            return
+            
+        context_key = _context_key_of(event)
+        bucket = self._contexts.setdefault(context_key, {"successes": 0, "failures": 0, "blocked": 0})
+
+        if outcome is OutcomeKind.SUCCESS:
             self._bump(context_key, "successes", 1)
-        elif event_type.endswith("task_failed") or event_type == "pipeline_run_failed":
+        elif outcome is OutcomeKind.FAILURE:
             self._bump(context_key, "failures", 1)
-        elif event_type == "task_blocked":
+        elif outcome is OutcomeKind.BLOCKED:
             self._bump(context_key, "blocked", 1)
 
     def _bump(self, context_key: str, field: str, delta: int) -> None:
@@ -61,6 +66,7 @@ class BeliefReducer:
     def snapshot(self, *, context_key: str = "default") -> BeliefState:
         bucket = self._contexts.get(context_key, {"successes": 0, "failures": 0, "blocked": 0})
         sample_count = bucket["successes"] + bucket["failures"] + bucket["blocked"]
+        
         return update_state(
             context_key=context_key,
             successes=bucket["successes"],
@@ -69,7 +75,7 @@ class BeliefReducer:
             prior_alpha=self._prior_alpha,
             prior_beta=self._prior_beta,
             sample_count=sample_count,
-            analysis_id=_stable_analysis_id(context_key),
+            analysis_id=_stable_analysis_id(context_key, self._seen_ids),
         )
 
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
