@@ -134,6 +134,7 @@ class EventType(StrEnum):
     INFORMATION_GAIN_ESTIMATED = "information_gain_estimated"
     BELIEF_COMPUTED = "belief_computed"
     CONTRADICTION_DETECTED = "contradiction_detected"
+    BELIEF_REVISED = "belief_revised"
 
 
 SemanticEventType = {
@@ -266,6 +267,7 @@ SemanticEventType = {
     EventType.INFORMATION_GAIN_ESTIMATED,
     EventType.BELIEF_COMPUTED,
     EventType.CONTRADICTION_DETECTED,
+    EventType.BELIEF_REVISED,
 }
 
 
