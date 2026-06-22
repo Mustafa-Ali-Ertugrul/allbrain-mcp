@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from allbrain.events import EventType
+from allbrain.foundations import canonical_event_sort
 from allbrain.models.schemas import EventRead
 from allbrain.observability.span import Span
 
@@ -10,7 +11,7 @@ from allbrain.observability.span import Span
 class Tracer:
     def build_spans(self, events: list[EventRead]) -> list[Span]:
         spans: list[Span] = []
-        events = sorted(events, key=lambda event: (event.created_at, event.id))
+        events = canonical_event_sort(events)
         events_by_task: dict[str, list[EventRead]] = defaultdict(list)
         for event in events:
             task_id = _task_id(event)
@@ -21,8 +22,8 @@ class Tracer:
             trace_id = _workflow_id(task_events[0]) or task_id
             workflow_span_id = f"workflow:{trace_id}"
             task_span_id = f"task:{task_id}"
-            start = task_events[0].created_at
-            end = task_events[-1].created_at
+            start = min(e.created_at for e in task_events)
+            end = max(e.created_at for e in task_events)
             spans.append(
                 Span(
                     span_id=workflow_span_id,
@@ -155,9 +156,9 @@ class Tracer:
                 grouped[review_id].append(event)
         spans: list[Span] = []
         for review_id, review_events in sorted(grouped.items()):
-            ordered = sorted(review_events, key=lambda event: (event.created_at, event.id))
-            start = ordered[0].created_at
-            end = ordered[-1].created_at
+            ordered = canonical_event_sort(review_events)
+            start = min(e.created_at for e in ordered)
+            end = max(e.created_at for e in ordered)
             status = "error" if any(event.payload.get("decision") == "reject_expansion" for event in ordered) else "ok"
             spans.append(
                 Span(

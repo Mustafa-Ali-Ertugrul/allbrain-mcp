@@ -5,6 +5,7 @@ from collections import defaultdict
 from allbrain.events import EventType
 from allbrain.memory.semantic_memory import MemoryItem, SemanticMemory
 from allbrain.models.schemas import EventRead
+from allbrain.foundations import canonical_event_sort
 
 
 class MemoryBuilder:
@@ -12,7 +13,7 @@ class MemoryBuilder:
         semantic = SemanticMemory()
         items: list[MemoryItem] = []
         events_by_task: dict[str, list[EventRead]] = defaultdict(list)
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             task_id = event.payload.get("task_id")
             if isinstance(task_id, str) and task_id:
                 events_by_task[task_id].append(event)
@@ -120,7 +121,7 @@ class MemoryBuilder:
 
     def _collaboration_items(self, events: list[EventRead], semantic: SemanticMemory) -> list[MemoryItem]:
         grouped: dict[str, list[EventRead]] = defaultdict(list)
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             collaboration_id = event.payload.get("collaboration_id")
             if isinstance(collaboration_id, str) and collaboration_id:
                 grouped[collaboration_id].append(event)
@@ -144,7 +145,7 @@ class MemoryBuilder:
 
     def _organizational_items(self, events: list[EventRead], semantic: SemanticMemory) -> list[MemoryItem]:
         items: list[MemoryItem] = []
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             if event.type == EventType.ORGANIZATIONAL_PATTERN_DISCOVERED.value:
                 pattern_id = event.payload.get("pattern_id")
                 kind = str(event.payload.get("kind") or "organizational_pattern")
@@ -178,7 +179,7 @@ class MemoryBuilder:
 
     def _governance_items(self, events: list[EventRead], semantic: SemanticMemory) -> list[MemoryItem]:
         items: list[MemoryItem] = []
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             if event.type == EventType.GOVERNANCE_DECISION_SYNTHESIZED.value:
                 decision_id = event.payload.get("decision_id")
                 if isinstance(decision_id, str):
@@ -212,7 +213,7 @@ class MemoryBuilder:
 
     def _runtime_core_items(self, events: list[EventRead], semantic: SemanticMemory) -> list[MemoryItem]:
         items: list[MemoryItem] = []
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             run_id = event.payload.get("run_id")
             if not isinstance(run_id, str):
                 continue

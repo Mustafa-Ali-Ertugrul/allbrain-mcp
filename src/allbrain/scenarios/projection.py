@@ -4,6 +4,7 @@ from typing import Any
 
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
+from allbrain.foundations import canonical_event_sort
 
 
 class ScenarioProjection:
@@ -13,7 +14,7 @@ class ScenarioProjection:
         recommendations: list[dict[str, Any]] = []
         analysis_ids: list[str] = []
         seen_ids: set[str] = set()
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             if event.type == EventType.SCENARIO_GENERATED.value:
                 generated.append(event.payload)
                 aid = event.payload.get("analysis_id")

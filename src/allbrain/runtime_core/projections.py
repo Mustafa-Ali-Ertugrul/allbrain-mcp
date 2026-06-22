@@ -4,12 +4,13 @@ from collections import Counter
 from typing import Any
 
 from allbrain.models.schemas import EventRead
+from allbrain.foundations import canonical_event_sort
 
 
 class RuntimeCoreStateBuilder:
     def build(self, events: list[EventRead]) -> dict[str, Any]:
         runs: dict[str, dict[str, Any]] = {}
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             run_id = event.payload.get("run_id")
             if not isinstance(run_id, str):
                 continue

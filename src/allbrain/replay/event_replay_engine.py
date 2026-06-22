@@ -4,6 +4,7 @@ from typing import Any
 
 from allbrain.collaboration import CollaborationStateBuilder
 from allbrain.evolution import LearningStateBuilder
+from allbrain.belief import BeliefReducer
 from allbrain.counterfactual import CounterfactualProjection
 from allbrain.events import EventType
 from allbrain.foresight import ForesightProjection
@@ -35,12 +36,14 @@ class EventReplayEngine:
             "governance": {}, "runtime_core": {}, "world": {}, "counterfactual": {},
             "scenarios": {}, "foresight": {}, "reasoning": {}, "uncertainty": {},
             "knowledge_gaps": {}, "information_seeking": {}, "unknown_events": [],
+            "belief": {},
             "foundations": {
                 "ordering": "uuid7",
                 "payload_version": 1,
                 "unknown_event_count": 0,
             },
         }
+        belief_reducer = BeliefReducer()
         collaboration_events: list[EventRead] = []
         learning_events: list[EventRead] = []
         governance_events: list[EventRead] = []
@@ -54,10 +57,10 @@ class EventReplayEngine:
         knowledge_gap_events: list[EventRead] = []
         information_seeking_events: list[EventRead] = []
         for event in ordered[:cursor]:
-            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
+            self._apply(state, event, belief_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
         frames: list[dict[str, Any]] = []
         for index, event in enumerate(ordered[cursor:end], start=cursor):
-            self._apply(state, event, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
+            self._apply(state, event, belief_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
             frames.append(
                 {
                     "cursor": index + 1,
@@ -83,7 +86,9 @@ class EventReplayEngine:
             return list(events)
         return canonical_event_sort(events)
 
-    def _apply(self, state: dict[str, Any], event: EventRead, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead], information_seeking_events: list[EventRead]) -> None:
+    def _apply(self, state: dict[str, Any], event: EventRead, belief_reducer: BeliefReducer, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead], information_seeking_events: list[EventRead]) -> None:
+        belief_reducer.apply(event)
+        state["belief"] = belief_reducer.all_snapshots()
         task_id = event.payload.get("task_id")
         if isinstance(task_id, str) and task_id:
             task = state["tasks"].setdefault(task_id, {"task_id": task_id, "status": "unknown"})
@@ -195,6 +200,7 @@ def _copy_state(state: dict[str, Any]) -> dict[str, Any]:
         "knowledge_gaps": dict(state.get("knowledge_gaps", {})),
         "information_seeking": dict(state.get("information_seeking", {})),
         "unknown_events": list(state.get("unknown_events", [])),
+        "belief": dict(state.get("belief", {})),
         "foundations": dict(state.get("foundations", {})),
     }
 
@@ -270,7 +276,7 @@ def _build_knowledge_gap_projection(events: list[EventRead]) -> dict[str, Any]:
     gaps: list[dict[str, Any]] = []
     topics: list[str] = []
     seen_topics: set[str] = set()
-    for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+    for event in canonical_event_sort(events):
         gaps.append(event.payload)
         topic = event.payload.get("topic")
         if isinstance(topic, str) and topic not in seen_topics:

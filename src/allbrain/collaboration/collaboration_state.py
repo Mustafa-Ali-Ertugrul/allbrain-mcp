@@ -4,12 +4,13 @@ from typing import Any
 
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
+from allbrain.foundations import canonical_event_sort
 
 
 class CollaborationStateBuilder:
     def build(self, events: list[EventRead]) -> dict[str, Any]:
         state: dict[str, Any] = {"collaborations": {}, "delegations": {}, "negotiations": {}, "consensus": {}, "supervisor_actions": []}
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             payload = event.payload
             collaboration_id = payload.get("collaboration_id")
             if event.type in {EventType.COLLABORATION_STARTED.value, EventType.COLLABORATION_COMPLETED.value, EventType.COLLABORATION_FAILED.value} and isinstance(collaboration_id, str):

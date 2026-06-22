@@ -4,6 +4,7 @@ from typing import Any
 
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
+from allbrain.foundations import canonical_event_sort
 
 
 class CounterfactualProjection:
@@ -12,7 +13,7 @@ class CounterfactualProjection:
         evaluated: list[dict[str, Any]] = []
         recommendations: list[dict[str, Any]] = []
         unknown_actions: list[str] = []
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             if event.type == EventType.COUNTERFACTUAL_GENERATED.value:
                 generated.append(event.payload)
                 if event.payload.get("reason") == "unknown_action":

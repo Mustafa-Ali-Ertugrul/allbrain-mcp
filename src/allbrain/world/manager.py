@@ -9,13 +9,14 @@ from allbrain.world.models import SimulationResult, WorldState
 from allbrain.world.prediction import PredictionBridge
 from allbrain.world.simulation import SimulationBridge
 from allbrain.world.transitions import StateTransitionBridge
+from allbrain.foundations import canonical_event_sort
 
 
 class WorldStateBuilder:
     def build(self, events: list[EventRead]) -> dict[str, Any]:
         observations: list[dict[str, Any]] = []
         simulations: list[dict[str, Any]] = []
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             if event.type == EventType.WORLD_STATE_OBSERVED.value:
                 observations.append(event.payload)
             elif event.type == EventType.WORLD_SIMULATION_RUN.value:

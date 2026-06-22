@@ -321,6 +321,27 @@ class EstimateInformationGainInput(BaseModel):
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
+class QueryBeliefInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    context_key: str = Field(min_length=1)
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
+    prior_alpha: float = Field(default=1.0, ge=0.0)
+    prior_beta: float = Field(default=1.0, ge=0.0)
+
+
+class EstimateInformationGainV2Input(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    action: str = Field(min_length=1)
+    context_key: str = Field(min_length=1)
+    project_path: str | None = None
+    limit: int = Field(default=5000, ge=1, le=50000)
+    prior_alpha: float = Field(default=1.0, ge=0.0)
+    prior_beta: float = Field(default=1.0, ge=0.0)
+
+
 class EventRead(BaseModel):
     id: str
     project_id: int

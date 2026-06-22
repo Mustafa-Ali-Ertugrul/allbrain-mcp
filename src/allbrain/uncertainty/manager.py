@@ -28,6 +28,7 @@ class UncertaintyManager:
         sample_quality: float,
         has_feedback: bool = True,
         analysis_id: str | None = None,
+        belief: object | None = None,
     ) -> UncertaintyEstimate:
         detected_gaps = gaps.detect(
             sample_count=sample_count,
@@ -36,6 +37,12 @@ class UncertaintyManager:
             has_feedback=has_feedback,
         )
         observed_rate = historical if historical is not None else HISTORICAL_DEFAULT
+        if belief is not None:
+            belief_mean = getattr(belief, "mean", None)
+            if belief_mean is None and isinstance(belief, dict):
+                belief_mean = belief.get("mean")
+            if isinstance(belief_mean, (int, float)):
+                observed_rate = float(belief_mean)
         raw_estimate = estimator.estimate(
             historical=observed_rate,
             evidence=evidence,
@@ -44,6 +51,7 @@ class UncertaintyManager:
             sample_quality=sample_quality,
             gaps=detected_gaps,
             analysis_id=analysis_id,
+            belief=belief,
         )
         calibrated_confidence = calibrate(
             raw_estimate.confidence,
@@ -71,6 +79,7 @@ class UncertaintyManager:
         sample_quality: float,
         has_feedback: bool = True,
         analysis_id: str | None = None,
+        belief: object | None = None,
     ) -> UncertaintyEstimate:
         return self.analyze(
             historical=historical,
@@ -80,6 +89,7 @@ class UncertaintyManager:
             sample_quality=sample_quality,
             has_feedback=has_feedback,
             analysis_id=analysis_id,
+            belief=belief,
         )
 
     def detect_gaps(

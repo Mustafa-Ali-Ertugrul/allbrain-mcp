@@ -26,6 +26,9 @@ class InformationSeekingEvaluator:
         self,
         action: InformationAction,
         needs: list[InformationNeed],
+        *,
+        expected_gain_override: float | None = None,
+        belief: object | None = None,
     ) -> tuple[float, float, float]:
         base = ACTION_VOI_TABLE[action.value]
         target_gaps = ACTION_TO_GAPS.get(action.value, set())
@@ -37,5 +40,13 @@ class InformationSeekingEvaluator:
         else:
             relevance = 0.1
         effective_gain = base["gain"] * max(0.1, relevance)
+        if expected_gain_override is not None:
+            effective_gain = max(0.0, min(1.0, expected_gain_override))
+        elif belief is not None:
+            belief_gain = getattr(belief, "info_gain", None)
+            if belief_gain is None and isinstance(belief, dict):
+                belief_gain = belief.get("info_gain")
+            if isinstance(belief_gain, (int, float)):
+                effective_gain = max(0.0, min(1.0, float(belief_gain)))
         voi = max(0.0, min(1.0, effective_gain - base["cost"]))
         return round(effective_gain, 6), round(base["cost"], 6), round(voi, 6)

@@ -4,12 +4,13 @@ from typing import Any
 
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
+from allbrain.foundations import canonical_event_sort
 
 
 class LearningStateBuilder:
     def build(self, events: list[EventRead]) -> dict[str, Any]:
         state: dict[str, Any] = {"cycles": {}, "patterns": {}, "recommendations": {}, "policy_updates": {}}
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             payload = event.payload
             cycle_id = payload.get("cycle_id")
             if event.type in {EventType.LEARNING_CYCLE_STARTED.value, EventType.LEARNING_CYCLE_COMPLETED.value} and isinstance(cycle_id, str):

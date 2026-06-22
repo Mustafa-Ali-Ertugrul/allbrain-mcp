@@ -4,13 +4,14 @@ from typing import Any
 
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
+from allbrain.foundations import canonical_event_sort
 
 
 class WorkflowGraphBuilder:
     def build(self, events: list[EventRead]) -> dict[str, Any]:
         nodes: dict[str, dict[str, Any]] = {}
         edges: list[dict[str, str]] = []
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             task_id = _task_id(event)
             workflow_id = _workflow_id(event)
             if workflow_id:

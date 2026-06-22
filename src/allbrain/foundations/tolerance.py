@@ -59,6 +59,7 @@ KNOWN_EVENT_PREFIXES: frozenset[str] = frozenset(
         "failure",
         "goal_set",
         "tool_call",
+        "belief_",
     }
 )
 

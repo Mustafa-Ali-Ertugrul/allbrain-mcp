@@ -22,6 +22,7 @@ from allbrain.models.schemas import (
     DetectKnowledgeGapsInput,
     EstimateConfidenceInput,
     EstimateInformationGainInput,
+    EstimateInformationGainV2Input,
     EstimateUncertaintyInput,
     EvaluatePlanInput,
     EvaluateScenariosInput,
@@ -35,6 +36,7 @@ from allbrain.models.schemas import (
     ListEventsInput,
     ObserveWorldInput,
     OrchestratorInput,
+    QueryBeliefInput,
     RecentChangesInput,
     ResumeProjectInput,
     RunDecisionPipelineInput,
@@ -1973,6 +1975,97 @@ def estimate_information_gain_impl(context: BrainContext, **kwargs: Any) -> Tool
                 "gain": base["gain"],
                 "cost": base["cost"],
                 "voi": max(0.0, base["gain"] - base["cost"]),
+                "rationale": rationale,
+                "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
+            },
+        )
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    from allbrain.belief import BeliefManager
+    try:
+        data = QueryBeliefInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        try:
+            events = context.repository.list_events(project_path=project_path, limit=data.limit, session_id=bound_session_id)
+        except Exception:
+            events = []
+        manager = BeliefManager(prior_alpha=data.prior_alpha, prior_beta=data.prior_beta)
+        belief = manager.query(events, context_key=data.context_key)
+        audit_tool_call(
+            context,
+            tool_name="query_belief",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        return ToolResult(
+            ok=True,
+            data={
+                "context_key": belief.context_key,
+                "analysis_id": belief.analysis_id,
+                "alpha": belief.alpha,
+                "beta": belief.beta,
+                "mean": belief.mean,
+                "variance": belief.variance,
+                "info_gain": belief.info_gain,
+                "successes": belief.successes,
+                "failures": belief.failures,
+                "blocked": belief.blocked,
+                "sample_count": belief.sample_count,
+                "template_version": belief.template_version,
+            },
+        )
+    except (ValidationError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    from allbrain.belief import BeliefManager
+    from allbrain.information_seeking.evaluator import InformationSeekingEvaluator
+    try:
+        data = EstimateInformationGainV2Input.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        project_path = data.project_path or context.project_path
+        try:
+            action_enum = InformationAction(data.action)
+        except ValueError:
+            return ToolResult(ok=False, error=f"unknown action '{data.action}'")
+        try:
+            events = context.repository.list_events(project_path=project_path, limit=data.limit, session_id=bound_session_id)
+        except Exception:
+            events = []
+        manager = BeliefManager(prior_alpha=data.prior_alpha, prior_beta=data.prior_beta)
+        belief = manager.query(events, context_key=data.context_key)
+        base = ACTION_VOI_TABLE.get(action_enum.value, {"gain": 0.0, "cost": 0.0})
+        evaluator = InformationSeekingEvaluator()
+        gain, cost, voi = evaluator.evaluate(action_enum, [], belief=belief)
+        rationale = (
+            f"action {action_enum.value} belief.info_gain={belief.info_gain:.4f} "
+            f"overrode effective gain; cost {cost:.2f}"
+        )
+        audit_tool_call(
+            context,
+            tool_name="estimate_information_gain_v2",
+            tool_args=data.model_dump(mode="json"),
+            project_path=project_path,
+            session_id=bound_session_id,
+        )
+        return ToolResult(
+            ok=True,
+            data={
+                "action": action_enum.value,
+                "context_key": belief.context_key,
+                "analysis_id": belief.analysis_id,
+                "belief_info_gain": belief.info_gain,
+                "belief_mean": belief.mean,
+                "belief_sample_count": belief.sample_count,
+                "gain": gain,
+                "cost": cost,
+                "voi": voi,
                 "rationale": rationale,
                 "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
             },

@@ -5,13 +5,14 @@ from typing import Any
 from allbrain.events import EventType
 from allbrain.governance.autonomy import AutonomyBoundaryController
 from allbrain.models.schemas import EventRead
+from allbrain.foundations import canonical_event_sort
 
 
 class GovernanceStateBuilder:
     def build(self, events: list[EventRead]) -> dict[str, Any]:
         state: dict[str, Any] = {"reviews": {}, "decisions": {}, "constraints": {}, "post_checks": {}, "current_autonomy_level": 0}
         successful_post_checks = 0
-        for event in sorted(events, key=lambda item: (item.created_at, item.id)):
+        for event in canonical_event_sort(events):
             payload = event.payload
             review_id = payload.get("review_id")
             decision_id = payload.get("decision_id")

@@ -33,7 +33,17 @@ def estimate(
     sample_quality: float,
     gaps: list[KnowledgeGap] | None = None,
     analysis_id: str | None = None,
+    historical_override: float | None = None,
+    belief: object | None = None,
 ) -> UncertaintyEstimate:
+    if historical_override is not None:
+        historical = historical_override
+    elif belief is not None:
+        belief_mean = getattr(belief, "mean", None)
+        if belief_mean is None and isinstance(belief, dict):
+            belief_mean = belief.get("mean")
+        if isinstance(belief_mean, (int, float)):
+            historical = float(belief_mean)
     components = [
         ConfidenceComponent(name="historical", score=round(historical, 6)),
         ConfidenceComponent(name="evidence", score=round(evidence, 6)),

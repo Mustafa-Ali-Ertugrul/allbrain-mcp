@@ -132,6 +132,9 @@ class EventType(StrEnum):
     INFORMATION_NEED_DETECTED = "information_need_detected"
     INFORMATION_ACTION_SELECTED = "information_action_selected"
     INFORMATION_GAIN_ESTIMATED = "information_gain_estimated"
+    BELIEF_COMPUTED = "belief_computed"
+    BELIEF_OBSERVED = "belief_observed"
+    BELIEF_UPDATED = "belief_updated"
 
 
 SemanticEventType = {
@@ -262,6 +265,9 @@ SemanticEventType = {
     EventType.INFORMATION_NEED_DETECTED,
     EventType.INFORMATION_ACTION_SELECTED,
     EventType.INFORMATION_GAIN_ESTIMATED,
+    EventType.BELIEF_COMPUTED,
+    EventType.BELIEF_OBSERVED,
+    EventType.BELIEF_UPDATED,
 }
 
 
