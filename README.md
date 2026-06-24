@@ -491,3 +491,66 @@ with engine.begin() as conn:
 **Event-shape audit**: no `model_dump` or full-EventRead snapshots in `tests/test_server.py`, `tests/test_cli.py`, `tests/test_snapshot.py`. New `payload_version` field is purely additive — no API contract change.
 
 See `docs/sprint41_1_hotfix.md` for full architecture.
+
+## Sprint 42–69 — Cognitive Stack (Summary)
+
+Sprints 42–69 build the cognitive decision stack on top of the hardened
+foundation. Each layer is event-sourced (events / model / manager / reducer) and
+read-only over upstream signals unless noted. Full per-sprint architecture lives
+in `docs/`.
+
+**Belief & evidence (42–46)**
+
+- **42–43 — Belief / Contradiction**: event-sourced belief state with
+  deterministic convergence and contradiction handling. See
+  `docs/sprint43_contradiction_event_sourcing.md`, `docs/sprint44_belief_revision.md`.
+- **45 — Uncertainty integration** via `UNCERTAINTY_COMPUTED`. See
+  `docs/sprint45_uncertainty_integration.md`.
+- **46 — Evidence & Trust**: evidence-based trust scoring + calibrated
+  confidence. See `docs/sprint46_evidence_trust_layer.md`.
+
+**Trust, routing & decision (47–52)**
+
+- **47 — Calibration & Drift** · `docs/sprint47_calibration_drift.md`
+- **48 — Reputation** (source-based scoring) · `docs/sprint48_reputation.md`
+- **49 — Arbitration** (signal conflict → consensus) · `docs/sprint49_arbitration.md`
+- **50 — Telemetry** · `docs/sprint50_telemetry.md`
+- **51 — Routing** (dynamic signal selection) · `docs/sprint51_routing.md`
+- **52 — Capabilities** (declarative capability matching) · `docs/sprint52_capabilities.md`
+
+**Self-improving signals (53–56)**
+
+- **53 — Capability Learning (EMA)** · `docs/sprint53_capability_learning.md`
+- **54 — Capability Dynamics** (drift / trend / forecast) · `docs/sprint54_dynamics.md`
+- **55 — Counterfactual Attribution** (signal credit) · `docs/sprint55_attribution.md`
+- **56 — Signal Fusion** (unified decision score) · `docs/sprint56_fusion.md`
+
+**Cognitive resources & memory (57–63)**
+
+- **57 — Fused-Signal Drift** · `docs/sprint57_drift.md`
+- **58 — Meta-Policy** (mode selection & reward) · `docs/sprint58_meta_policy.md`
+- **59 — Signal-Reward Importance** (attention input) · `docs/sprint59_signal_rewards.md`
+- **60 — Attention & Budgeting** · `docs/sprint60_attention.md`
+- **61 — Global Workspace** · `docs/sprint61_workspace.md`
+- **62 — Episodic Memory** · `docs/sprint62_episodic.md`
+- **63 — Semantic Memory** (concept abstraction) · `docs/sprint63_semantic.md`
+
+Sprints 61–63 add workspace items, episodes, and concepts to the decision engine
+as **informational** inputs (backward-compatible — the Sprint 46 confidence
+contract is unchanged).
+
+**Failure stack — react → guard → predict → learn (64–69)**
+
+- **64 — Failure Memory** · `docs/sprint64_failure_memory.md`
+- **65 — Recovery Consensus** · `docs/sprint65_recovery_consensus.md`
+- **66 — Adaptive Recovery** (strategy chains) · `docs/sprint66_adaptive_recovery.md`
+- **67 — Learning Safety** (entropy / sim-weight cap / drift guard) · `docs/sprint67_learning_safety.md`
+- **68 — Predictive Failure** (risk drift detection) · `docs/sprint68_predictive_failure.md`
+- **69 — Mitigation Learning & Policy Evolution** · `docs/sprint69_mitigation_learning.md`
+
+> Doc provenance: sprint titles/scope are derived from in-source `Sprint NN`
+> markers, event/class names, and git commit messages. Sprints 68–69 are fixed by
+> commit messages; the 64–67 ordering follows the failure-stack dependency chain
+> (see the note in `docs/sprint64_failure_memory.md`).
+
+Current state: **Sprint 69**, **1420 tests** collected across **171 test files**.
