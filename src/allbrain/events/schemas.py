@@ -217,6 +217,11 @@ class EventType(StrEnum):
     EXPLORATION_TRIGGERED = "exploration_triggered"
     SIMULATION_WEIGHT_CAPPED = "simulation_weight_capped"
     LEARNING_DRIFT_DETECTED = "learning_drift_detected"
+    POLICY_SNAPSHOTTED = "policy_snapshotted"
+    POLICY_VALIDATION_FAILED = "policy_validation_failed"
+    ROLLBACK_TRIGGERED = "rollback_triggered"
+    ROLLBACK_COMPLETED = "rollback_completed"
+    SYSTEM_RECOVERED = "system_recovered"
 
 
 SemanticEventType = {
@@ -420,6 +425,11 @@ SemanticEventType = {
     EventType.EXPLORATION_TRIGGERED,
     EventType.SIMULATION_WEIGHT_CAPPED,
     EventType.LEARNING_DRIFT_DETECTED,
+    EventType.POLICY_SNAPSHOTTED,
+    EventType.POLICY_VALIDATION_FAILED,
+    EventType.ROLLBACK_TRIGGERED,
+    EventType.ROLLBACK_COMPLETED,
+    EventType.SYSTEM_RECOVERED,
 }
 
 

@@ -45,6 +45,11 @@ class PredictiveFailureManager:
         explorer: Any = None,
         outcome_validator: Any = None,
         drift_guard: Any = None,
+        validation_gate: Any = None,
+        health_monitor: Any = None,
+        rollback_engine: Any = None,
+        snapshot_manager: Any = None,
+        recovery_executor: Any = None,
     ) -> None:
         self._risk_engine = RiskEngine()
         self._predictor = Predictor()
@@ -58,6 +63,11 @@ class PredictiveFailureManager:
         self._explorer = explorer
         self._outcome_validator = outcome_validator
         self._drift_guard = drift_guard
+        self._validation_gate = validation_gate
+        self._health_monitor = health_monitor
+        self._rollback_engine = rollback_engine
+        self._snapshot_manager = snapshot_manager
+        self._recovery_executor = recovery_executor
 
     def run_cycle(
         self,
@@ -369,7 +379,121 @@ class PredictiveFailureManager:
                                 "urgency_multipliers": dict(policy.urgency_multipliers),
                             })
 
-        # 7. Failure avoided?
+                            # 6.5 Self-repair: snapshot + validate + health check
+                            if self._snapshot_manager is not None:
+                                drift_count = (
+                                    self._health_monitor.get_anomaly_count(fault_type)
+                                    if self._health_monitor is not None else 0
+                                )
+                                safety_count = (
+                                    self._health_monitor.get_safety_violations(fault_type)
+                                    if self._health_monitor is not None else 0
+                                )
+                                stability = None
+                                if self._validation_gate is not None:
+                                    stability = self._validation_gate.compute_stability(
+                                        fault_type=fault_type,
+                                        version=policy.version,
+                                        all_stats=self._learning_engine.stats,
+                                        drift_events_recent=drift_count,
+                                        safety_violations=safety_count,
+                                    )
+                                    val_result = self._validation_gate.validate(
+                                        fault_type=fault_type,
+                                        version=policy.version,
+                                        all_stats=self._learning_engine.stats,
+                                        drift_events_recent=drift_count,
+                                        safety_violations=safety_count,
+                                    )
+                                    if not val_result.accepted:
+                                        events.append({
+                                            "event_type": EventType.POLICY_VALIDATION_FAILED.value,
+                                            "fault_type": fault_type,
+                                            "policy_version": policy.version,
+                                            "stability_score": val_result.stability_score,
+                                            "failure_reasons": list(val_result.failure_reasons),
+                                        })
+
+                                self._snapshot_manager.take_snapshot(
+                                    fault_type=fault_type,
+                                    version=policy.version,
+                                    stability_score=(
+                                        stability.stability_score if stability is not None
+                                        else 0.5
+                                    ),
+                                    stats_snapshot=policy.stats_snapshot,
+                                )
+                                events.append({
+                                    "event_type": EventType.POLICY_SNAPSHOTTED.value,
+                                    "snapshot_id": (
+                                        self._snapshot_manager.get_history(fault_type)[-1].snapshot_id
+                                    ),
+                                    "fault_type": fault_type,
+                                    "policy_version": policy.version,
+                                    "stability_score": (
+                                        stability.stability_score if stability is not None
+                                        else 0.5
+                                    ),
+                                })
+
+                            if self._health_monitor is not None and stability is not None:
+                                anomaly = self._health_monitor.check(
+                                    fault_type, stability,
+                                )
+                                if anomaly:
+                                    history = (
+                                        self._snapshot_manager.get_history(fault_type)
+                                        if self._snapshot_manager is not None else []
+                                    )
+                                    plan = None
+                                    if self._rollback_engine is not None:
+                                        plan = self._rollback_engine.plan_rollback(
+                                            fault_type=fault_type,
+                                            current_version=policy.version,
+                                            history=history,
+                                            stability=stability,
+                                        )
+                                    if plan is not None:
+                                        events.append({
+                                            "event_type": EventType.ROLLBACK_TRIGGERED.value,
+                                            "rollback_id": plan.rollback_id,
+                                            "fault_type": plan.fault_type,
+                                            "from_version": plan.from_version,
+                                            "to_version": plan.to_version,
+                                            "strategy": plan.strategy,
+                                            "triggered_by": plan.triggered_by,
+                                        })
+                                        if self._rollback_engine is not None:
+                                            self._rollback_engine.execute(
+                                                plan, self._policy_store,
+                                            )
+                                        events.append({
+                                            "event_type": EventType.ROLLBACK_COMPLETED.value,
+                                            "rollback_id": plan.rollback_id,
+                                            "fault_type": plan.fault_type,
+                                            "from_version": plan.from_version,
+                                            "to_version": plan.to_version,
+                                            "success": True,
+                                        })
+                                        if self._recovery_executor is not None:
+                                            recovery = self._recovery_executor.stabilize(
+                                                fault_type=fault_type,
+                                                plan=plan,
+                                                health_monitor=self._health_monitor,
+                                                drift_guard=self._drift_guard,
+                                            )
+                                            events.append({
+                                                "event_type": EventType.SYSTEM_RECOVERED.value,
+                                                "recovery_id": recovery.recovery_id,
+                                                "rollback_id": recovery.rollback_id,
+                                                "fault_type": recovery.fault_type,
+                                                "stabilized": recovery.stabilized,
+                                                "post_recovery_stability": recovery.post_recovery_stability,
+                                                "cycles_to_stable": recovery.cycles_to_stable,
+                                            })
+
+                if self._rollback_engine is not None:
+                    self._rollback_engine.advance_cycle()
         if action is not None and action.success:
             avoided = True
             events.append({
