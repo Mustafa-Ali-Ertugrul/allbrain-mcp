@@ -1,0 +1,8 @@
+[mcp_servers.allbrain]
+command = "uv"
+args = ["run", "allbrain", "start", "--project", ".", "--agent", "codex"]
+cwd = "."
+startup_timeout_sec = 20
+tool_timeout_sec = 120
+enabled = true
+required = true

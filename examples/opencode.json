@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "allbrain": {
+      "type": "local",
+      "command": [
+        "uv",
+        "run",
+        "allbrain",
+        "start",
+        "--project",
+        "<REPO_ROOT>",
+        "--agent",
+        "opencode"
+      ],
+      "cwd": "<REPO_ROOT>",
+      "enabled": true,
+      "timeout": 120000
+    }
+  }
+}
