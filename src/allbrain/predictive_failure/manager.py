@@ -42,6 +42,9 @@ class PredictiveFailureManager:
         learning_engine: Any = None,
         strategy_optimizer: Any = None,
         policy_store: Any = None,
+        explorer: Any = None,
+        outcome_validator: Any = None,
+        drift_guard: Any = None,
     ) -> None:
         self._risk_engine = RiskEngine()
         self._predictor = Predictor()
@@ -52,6 +55,9 @@ class PredictiveFailureManager:
         self._learning_engine = learning_engine
         self._strategy_optimizer = strategy_optimizer
         self._policy_store = policy_store
+        self._explorer = explorer
+        self._outcome_validator = outcome_validator
+        self._drift_guard = drift_guard
 
     def run_cycle(
         self,
@@ -136,7 +142,7 @@ class PredictiveFailureManager:
         })
 
         # 4. Plan mitigation (only at LEVEL_FAILURE)
-        #    Optionally use StrategyOptimizer to override default
+        #    Optionally use StrategyOptimizer + Explorer to override default
         mitigation = self._planner.plan(prediction)
         optimizer_strategy: str | None = None
         if mitigation is not None and self._strategy_optimizer is not None:
@@ -149,20 +155,48 @@ class PredictiveFailureManager:
                     default_strategy=default_strategy,
                     all_stats=self._learning_engine.stats,
                 )
-                if optimizer_strategy != default_strategy:
+
+                final_strategy = optimizer_strategy
+                if self._explorer is not None:
+                    candidates = sorted({
+                        s.strategy
+                        for s in self._learning_engine.stats.values()
+                        if s.fault_type == fault_type and s.signal_type == primary_signal
+                    })
+                    if not candidates:
+                        candidates = [optimizer_strategy, default_strategy]
+                    decision = self._explorer.select(
+                        fault_type=fault_type,
+                        signal_type=primary_signal,
+                        candidates=candidates,
+                        recommended=optimizer_strategy,
+                        all_stats=self._learning_engine.stats,
+                    )
+                    final_strategy = decision.selected_strategy
+                    events.append({
+                        "event_type": EventType.EXPLORATION_TRIGGERED.value,
+                        "fault_type": fault_type,
+                        "signal_type": primary_signal,
+                        "epsilon": decision.epsilon,
+                        "selected_strategy": decision.selected_strategy,
+                        "was_exploration": decision.was_exploration,
+                    })
+                    self._explorer.advance_cycle()
+
+                if final_strategy != default_strategy:
                     from allbrain.predictive_failure.model import MitigationPlan
                     import hashlib
-                    urgency = STRATEGY_URGENCY.get(optimizer_strategy, 0.30)
+                    urgency = STRATEGY_URGENCY.get(final_strategy, 0.30)
                     import allbrain.predictive_failure.mitigation_planner as mp
                     expected_reduction = mp._clamp(urgency * prediction.probability)
                     plan_id = hashlib.sha256(
-                        f"{prediction.fault_id}::{optimizer_strategy}".encode()
+                        f"{prediction.fault_id}::{final_strategy}".encode()
                     ).hexdigest()[:16]
                     mitigation = MitigationPlan(
                         plan_id=plan_id,
                         fault_id=prediction.fault_id,
                         fault_type=prediction.fault_type,
-                        strategy=optimizer_strategy,
+                        strategy=final_strategy,
                         urgency=urgency,
                         expected_risk_reduction=expected_reduction,
                     )
@@ -219,6 +253,48 @@ class PredictiveFailureManager:
                 })
 
                 primary_signal = top_signals[0] if top_signals else "unknown"
+
+                sim_effectiveness_for_record = None
+                if self._outcome_validator is not None and outcome.pre_risk > 0:
+                    sim_eff = (
+                        (outcome.pre_risk - outcome.post_risk)
+                        / outcome.pre_risk
+                        if outcome.pre_risk > 0
+                        else 0.0
+                    )
+                    real_eff: float | None = None
+                    real_result = self._outcome_validator.call_real_provider(
+                        mitigation.strategy,
+                        outcome.pre_risk,
+                        mitigation.urgency,
+                    )
+                    if real_result is not None:
+                        real_post, _, _ = real_result
+                        real_eff = (
+                            (outcome.pre_risk - real_post)
+                            / outcome.pre_risk
+                            if outcome.pre_risk > 0
+                            else 0.0
+                        )
+
+                    combined_eff, was_capped = (
+                        self._outcome_validator.compute_combined_effectiveness(
+                            sim_effectiveness=sim_eff,
+                            real_effectiveness=real_eff,
+                        )
+                    )
+                    sim_effectiveness_for_record = combined_eff
+                    if was_capped:
+                        events.append({
+                            "event_type": EventType.SIMULATION_WEIGHT_CAPPED.value,
+                            "fault_type": fault_type,
+                            "simulation_weight": self._outcome_validator.simulation_weight,
+                            "real_weight": self._outcome_validator.real_weight,
+                            "is_real_provider_set": (
+                                self._outcome_validator.is_real_provider_set()
+                            ),
+                        })
+
                 learning_record = self._learning_engine.make_learning_record(
                     fault_id=fault_id,
                     fault_type=fault_type,
@@ -231,6 +307,26 @@ class PredictiveFailureManager:
                 )
 
                 stats, _unused = self._learning_engine.update(learning_record)
+
+                if (
+                    self._drift_guard is not None
+                    and stats is not None
+                    and sim_effectiveness_for_record is not None
+                ):
+                    self._drift_guard.configure(fault_type, primary_signal)
+                    drift_event = self._drift_guard.record(
+                        stats.strategy,
+                        sim_effectiveness_for_record,
+                    )
+                    if drift_event is not None:
+                        events.append({
+                            "event_type": EventType.LEARNING_DRIFT_DETECTED.value,
+                            "fault_type": drift_event.fault_type,
+                            "signal_type": drift_event.signal_type,
+                            "metric_value": drift_event.metric_value,
+                            "threshold": drift_event.threshold,
+                            "details": dict(drift_event.details),
+                        })
 
                 events.append({
                     "event_type": EventType.MITIGATION_EVALUATED.value,

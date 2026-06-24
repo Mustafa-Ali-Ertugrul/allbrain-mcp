@@ -214,6 +214,9 @@ class EventType(StrEnum):
     OUTCOME_MEASURED = "outcome_measured"
     STRATEGY_UPDATED = "strategy_updated"
     POLICY_IMPROVED = "policy_improved"
+    EXPLORATION_TRIGGERED = "exploration_triggered"
+    SIMULATION_WEIGHT_CAPPED = "simulation_weight_capped"
+    LEARNING_DRIFT_DETECTED = "learning_drift_detected"
 
 
 SemanticEventType = {
@@ -414,6 +417,9 @@ SemanticEventType = {
     EventType.OUTCOME_MEASURED,
     EventType.STRATEGY_UPDATED,
     EventType.POLICY_IMPROVED,
+    EventType.EXPLORATION_TRIGGERED,
+    EventType.SIMULATION_WEIGHT_CAPPED,
+    EventType.LEARNING_DRIFT_DETECTED,
 }
 
 
