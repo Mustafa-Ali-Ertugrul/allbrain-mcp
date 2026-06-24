@@ -222,6 +222,24 @@ class EventType(StrEnum):
     ROLLBACK_TRIGGERED = "rollback_triggered"
     ROLLBACK_COMPLETED = "rollback_completed"
     SYSTEM_RECOVERED = "system_recovered"
+    COMPETITION_HELD = "competition_held"
+    POLICY_BLENDED = "policy_blended"
+    POLICY_FAMILY_SELECTED = "policy_family_selected"
+    FAMILY_CANDIDATE_EVALUATED = "family_candidate_evaluated"
+    SCORING_PROFILE_UPDATED = "scoring_profile_updated"
+    MATCH_PLAYED = "match_played"
+    WEIGHTS_ADAPTED = "weights_adapated"
+    META_OPTIMIZER_GUARDED = "meta_optimizer_guarded"
+    EVALUATOR_PROFILE_UPDATED = "evaluator_profile_updated"
+    LEARNING_NODE_UPDATED = "learning_node_updated"
+    LEARNING_GRAPH_REWRITTEN = "learning_graph_rewritten"
+    COEVOLUTION_STATE_UPDATED = "coevolution_state_updated"
+    OSCILLATION_DETECTED = "oscillation_detected"
+    OBJECTIVE_UPDATED = "objective_updated"
+    TRADEOFF_ANALYZED = "tradeoff_analyzed"
+    UTILITY_COMPUTED = "utility_computed"
+    ALIGNMENT_FAILED = "alignment_failed"
+    OBJECTIVE_REBALANCED = "objective_rebalanced"
 
 
 SemanticEventType = {
@@ -430,6 +448,24 @@ SemanticEventType = {
     EventType.ROLLBACK_TRIGGERED,
     EventType.ROLLBACK_COMPLETED,
     EventType.SYSTEM_RECOVERED,
+    EventType.COMPETITION_HELD,
+    EventType.POLICY_BLENDED,
+    EventType.POLICY_FAMILY_SELECTED,
+    EventType.FAMILY_CANDIDATE_EVALUATED,
+    EventType.SCORING_PROFILE_UPDATED,
+    EventType.MATCH_PLAYED,
+    EventType.WEIGHTS_ADAPTED,
+    EventType.META_OPTIMIZER_GUARDED,
+    EventType.EVALUATOR_PROFILE_UPDATED,
+    EventType.LEARNING_NODE_UPDATED,
+    EventType.LEARNING_GRAPH_REWRITTEN,
+    EventType.COEVOLUTION_STATE_UPDATED,
+    EventType.OSCILLATION_DETECTED,
+    EventType.OBJECTIVE_UPDATED,
+    EventType.TRADEOFF_ANALYZED,
+    EventType.UTILITY_COMPUTED,
+    EventType.ALIGNMENT_FAILED,
+    EventType.OBJECTIVE_REBALANCED,
 }
 
 
