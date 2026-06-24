@@ -139,6 +139,50 @@ class EventType(StrEnum):
     EVIDENCE_RECORDED = "evidence_recorded"
     EVIDENCE_DECAYED = "evidence_decayed"
     TRUST_UPDATED = "trust_updated"
+    CALIBRATION_UPDATED = "calibration_updated"
+    BELIEF_DRIFT_DETECTED = "belief_drift_detected"
+    AGENT_REPUTATION_UPDATED = "agent_reputation_updated"
+    AGENT_VOTE_CAST = "agent_vote_cast"
+    AGENT_CONSENSUS_REACHED = "agent_consensus_reached"
+    AGENT_ARBITRATION_DECISION = "agent_arbitration_decision"
+    TOOL_EXECUTION_STARTED = "tool_execution_started"
+    TOOL_EXECUTION_COMPLETED = "tool_execution_completed"
+    AGENT_RUNTIME_UPDATED = "agent_runtime_updated"
+    AGENT_SELECTION_REQUESTED = "agent_selection_requested"
+    AGENT_SELECTION_SCORED = "agent_selection_scored"
+    AGENT_SELECTED = "agent_selected"
+    AGENT_CAPABILITY_REGISTERED = "agent_capability_registered"
+    TASK_CLASSIFIED = "task_classified"
+    CAPABILITY_MATCHED = "capability_matched"
+    AGENT_CAPABILITY_OBSERVED = "agent_capability_observed"
+    AGENT_CAPABILITY_LEARNED = "agent_capability_learned"
+    AGENT_CAPABILITY_DECAYED = "agent_capability_decayed"
+    AGENT_CAPABILITY_DRIFT_DETECTED = "agent_capability_drift_detected"
+    AGENT_CAPABILITY_TREND_UPDATED = "agent_capability_trend_updated"
+    AGENT_CAPABILITY_FORECAST_UPDATED = "agent_capability_forecast_updated"
+    AGENT_COUNTERFACTUAL_RUN = "agent_counterfactual_run"
+    AGENT_CAUSAL_IMPACT_RECORDED = "agent_causal_impact_recorded"
+    FUSION_COMPUTED = "fusion_computed"
+    SIGNAL_CALIBRATED = "signal_calibrated"
+    DECISION_COMPUTED = "decision_computed"
+    POLICY_EVALUATED = "policy_evaluated"
+    POLICY_UPDATED = "policy_updated"
+    POLICY_DIVERGENCE_DETECTED = "policy_divergence_detected"
+    SIGNAL_CREDIT_ASSIGNED = "signal_credit_assigned"
+    SIGNAL_ATTRIBUTION_UPDATED = "signal_attribution_updated"
+    SIGNAL_IMPORTANCE_CHANGED = "signal_importance_changed"
+    ATTENTION_ALLOCATED = "attention_allocated"
+    RESOURCE_BUDGET_UPDATED = "resource_budget_updated"
+    ATTENTION_REALLOCATED = "attention_reallocated"
+    WORKSPACE_UPDATED = "workspace_updated"
+    WORKSPACE_ITEM_ADDED = "workspace_item_added"
+    WORKSPACE_ITEM_REMOVED = "workspace_item_removed"
+    EPISODE_CREATED = "episode_created"
+    EPISODE_RETRIEVED = "episode_retrieved"
+    EPISODE_FORGOTTEN = "episode_forgotten"
+    SEMANTIC_CONCEPT_CREATED = "semantic_concept_created"
+    SEMANTIC_CONCEPT_UPDATED = "semantic_concept_updated"
+    SEMANTIC_CONCEPT_FORGOTTEN = "semantic_concept_forgotten"
 
 
 SemanticEventType = {
@@ -276,6 +320,50 @@ SemanticEventType = {
     EventType.EVIDENCE_RECORDED,
     EventType.EVIDENCE_DECAYED,
     EventType.TRUST_UPDATED,
+    EventType.CALIBRATION_UPDATED,
+    EventType.BELIEF_DRIFT_DETECTED,
+    EventType.AGENT_REPUTATION_UPDATED,
+    EventType.AGENT_VOTE_CAST,
+    EventType.AGENT_CONSENSUS_REACHED,
+    EventType.AGENT_ARBITRATION_DECISION,
+    EventType.TOOL_EXECUTION_STARTED,
+    EventType.TOOL_EXECUTION_COMPLETED,
+    EventType.AGENT_RUNTIME_UPDATED,
+    EventType.AGENT_SELECTION_REQUESTED,
+    EventType.AGENT_SELECTION_SCORED,
+    EventType.AGENT_SELECTED,
+    EventType.AGENT_CAPABILITY_REGISTERED,
+    EventType.TASK_CLASSIFIED,
+    EventType.CAPABILITY_MATCHED,
+    EventType.AGENT_CAPABILITY_OBSERVED,
+    EventType.AGENT_CAPABILITY_LEARNED,
+    EventType.AGENT_CAPABILITY_DECAYED,
+    EventType.AGENT_CAPABILITY_DRIFT_DETECTED,
+    EventType.AGENT_CAPABILITY_TREND_UPDATED,
+    EventType.AGENT_CAPABILITY_FORECAST_UPDATED,
+    EventType.AGENT_COUNTERFACTUAL_RUN,
+    EventType.AGENT_CAUSAL_IMPACT_RECORDED,
+    EventType.FUSION_COMPUTED,
+    EventType.SIGNAL_CALIBRATED,
+    EventType.DECISION_COMPUTED,
+    EventType.POLICY_EVALUATED,
+    EventType.POLICY_UPDATED,
+    EventType.POLICY_DIVERGENCE_DETECTED,
+    EventType.SIGNAL_CREDIT_ASSIGNED,
+    EventType.SIGNAL_ATTRIBUTION_UPDATED,
+    EventType.SIGNAL_IMPORTANCE_CHANGED,
+    EventType.ATTENTION_ALLOCATED,
+    EventType.RESOURCE_BUDGET_UPDATED,
+    EventType.ATTENTION_REALLOCATED,
+    EventType.WORKSPACE_UPDATED,
+    EventType.WORKSPACE_ITEM_ADDED,
+    EventType.WORKSPACE_ITEM_REMOVED,
+    EventType.EPISODE_CREATED,
+    EventType.EPISODE_RETRIEVED,
+    EventType.EPISODE_FORGOTTEN,
+    EventType.SEMANTIC_CONCEPT_CREATED,
+    EventType.SEMANTIC_CONCEPT_UPDATED,
+    EventType.SEMANTIC_CONCEPT_FORGOTTEN,
 }
 
 

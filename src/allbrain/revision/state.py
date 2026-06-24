@@ -16,3 +16,12 @@ class RevisionState:
     analysis_id: str
     trust_score: float = 1.0
     template_version: int = REVISION_TEMPLATE_VERSION
+    calibrated_trust: float = 1.0
+    calibration_error: float = 0.0
+    drift_count: int = 0
+    agent_reputation: float = 1.0
+    consensus_score: float = 1.0
+    runtime_score: float = 1.0
+    selected_agent_score: float = 1.0
+    capability_score: float = 1.0
+    learned_capability: float = 1.0

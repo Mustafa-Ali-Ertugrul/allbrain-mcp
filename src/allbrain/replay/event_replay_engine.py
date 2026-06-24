@@ -5,8 +5,25 @@ from typing import Any
 from allbrain.collaboration import CollaborationStateBuilder
 from allbrain.evolution import LearningStateBuilder
 from allbrain.belief import BeliefReducer
+from allbrain.calibration import CalibrationReducer
 from allbrain.contradiction import ContradictionReducer
 from allbrain.evidence import EvidenceReducer
+from allbrain.arbitration import ArbitrationReducer
+from allbrain.reputation import ReputationReducer
+from allbrain.capabilities import CapabilityReducer
+from allbrain.dynamics import CapabilityDynamicsReducer
+from allbrain.causal import CausalReducer
+from allbrain.fusion import FusionReducer
+from allbrain.decision import DecisionReducer
+from allbrain.meta_policy import MetaPolicyReducer
+from allbrain.attribution import AttributionReducer
+from allbrain.attention import AttentionReducer
+from allbrain.workspace import WorkspaceReducer
+from allbrain.episodic import EpisodicReducer
+from allbrain.semantic import SemanticReducer
+from allbrain.learning import CapabilityLearningReducer
+from allbrain.routing import RoutingReducer
+from allbrain.telemetry import TelemetryReducer
 from allbrain.revision import RevisionReducer
 from allbrain.counterfactual import CounterfactualProjection
 from allbrain.events import EventType
@@ -43,6 +60,30 @@ class EventReplayEngine:
             "contradiction": {},
             "revision": {},
             "evidence": {},
+            "calibration": {},
+            "drift": {},
+            "reputation": {},
+            "arbitration": {},
+            "telemetry": {},
+            "routing": {},
+            "capabilities": {},
+            "learning": {},
+            "dynamics": {},
+            "causal": {},
+            "fusion": {},
+            "decision": {},
+            "meta_policy": {},
+            "attribution": {},
+            "attention": {},
+            "workspace": {
+                "active": {}, "capacity": 7, "seen": 0, "evicted": 0,
+            },
+            "episodic": {
+                "episodes": [], "total": 0, "retained": 0, "forgotten": 0,
+            },
+            "semantic": {
+                "concepts": [], "total": 0, "retained": 0, "forgotten": 0,
+            },
             "foundations": {
                 "ordering": "uuid7",
                 "payload_version": 1,
@@ -53,6 +94,23 @@ class EventReplayEngine:
         contradiction_reducer = ContradictionReducer()
         revision_reducer = RevisionReducer()
         evidence_reducer = EvidenceReducer()
+        calibration_reducer = CalibrationReducer()
+        reputation_reducer = ReputationReducer()
+        arbitration_reducer = ArbitrationReducer()
+        telemetry_reducer = TelemetryReducer()
+        routing_reducer = RoutingReducer()
+        capability_reducer = CapabilityReducer()
+        learning_reducer = CapabilityLearningReducer()
+        dynamics_reducer = CapabilityDynamicsReducer()
+        causal_reducer = CausalReducer()
+        fusion_reducer = FusionReducer()
+        decision_reducer = DecisionReducer()
+        meta_policy_reducer = MetaPolicyReducer()
+        attribution_reducer = AttributionReducer()
+        attention_reducer = AttentionReducer()
+        workspace_reducer = WorkspaceReducer()
+        episodic_reducer = EpisodicReducer()
+        semantic_reducer = SemanticReducer()
         collaboration_events: list[EventRead] = []
         learning_events: list[EventRead] = []
         governance_events: list[EventRead] = []
@@ -66,10 +124,10 @@ class EventReplayEngine:
         knowledge_gap_events: list[EventRead] = []
         information_seeking_events: list[EventRead] = []
         for event in ordered[:cursor]:
-            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
+            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, calibration_reducer, reputation_reducer, arbitration_reducer, telemetry_reducer, routing_reducer, capability_reducer, learning_reducer, dynamics_reducer, causal_reducer, fusion_reducer, decision_reducer, meta_policy_reducer, attribution_reducer, attention_reducer, workspace_reducer, episodic_reducer, semantic_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
         frames: list[dict[str, Any]] = []
         for index, event in enumerate(ordered[cursor:end], start=cursor):
-            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
+            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, calibration_reducer, reputation_reducer, arbitration_reducer, telemetry_reducer, routing_reducer, capability_reducer, learning_reducer, dynamics_reducer, causal_reducer, fusion_reducer, decision_reducer, meta_policy_reducer, attribution_reducer, attention_reducer, workspace_reducer, episodic_reducer, semantic_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
             frames.append(
                 {
                     "cursor": index + 1,
@@ -95,7 +153,7 @@ class EventReplayEngine:
             return list(events)
         return canonical_event_sort(events)
 
-    def _apply(self, state: dict[str, Any], event: EventRead, belief_reducer: BeliefReducer, contradiction_reducer: ContradictionReducer, revision_reducer: RevisionReducer, evidence_reducer: EvidenceReducer, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead], information_seeking_events: list[EventRead]) -> None:
+    def _apply(self, state: dict[str, Any], event: EventRead, belief_reducer: BeliefReducer, contradiction_reducer: ContradictionReducer, revision_reducer: RevisionReducer, evidence_reducer: EvidenceReducer, calibration_reducer: CalibrationReducer, reputation_reducer: ReputationReducer, arbitration_reducer: ArbitrationReducer, telemetry_reducer: TelemetryReducer, routing_reducer: RoutingReducer, capability_reducer: CapabilityReducer, learning_reducer: CapabilityLearningReducer, dynamics_reducer: CapabilityDynamicsReducer, causal_reducer: CausalReducer, fusion_reducer: FusionReducer, decision_reducer: DecisionReducer, meta_policy_reducer: MetaPolicyReducer, attribution_reducer: AttributionReducer, attention_reducer: AttentionReducer, workspace_reducer: WorkspaceReducer, episodic_reducer: EpisodicReducer, semantic_reducer: SemanticReducer, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead], information_seeking_events: list[EventRead]) -> None:
         belief_reducer.apply(event)
         state["belief"] = belief_reducer.all_snapshots()
         contradiction_reducer.apply(event)
@@ -104,6 +162,49 @@ class EventReplayEngine:
         state["revision"] = revision_reducer.all_snapshots()
         evidence_reducer.apply(event)
         state["evidence"] = evidence_reducer.all_snapshots()
+        calibration_reducer.apply(event)
+        state["calibration"] = calibration_reducer.all_snapshots()
+        reputation_reducer.apply(event)
+        state["reputation"] = reputation_reducer.all_snapshots()
+        arbitration_reducer.apply(event)
+        state["arbitration"] = arbitration_reducer.all_snapshots()
+        telemetry_reducer.apply(event)
+        state["telemetry"] = telemetry_reducer.all_snapshots()
+        routing_reducer.apply(event)
+        state["routing"] = routing_reducer.all_snapshots()
+        capability_reducer.apply(event)
+        state["capabilities"] = capability_reducer.all_snapshots()
+        learning_reducer.apply(event)
+        state["learning"] = learning_reducer.all_snapshots()
+        dynamics_reducer.apply(event)
+        state["dynamics"] = dynamics_reducer.all_snapshots()
+        causal_reducer.apply(event)
+        state["causal"] = causal_reducer.all_snapshots()
+        fusion_reducer.apply(event)
+        state["fusion"] = fusion_reducer.all_snapshots()
+        decision_reducer.apply(event)
+        state["decision"] = decision_reducer.all_snapshots()
+        meta_policy_reducer.apply(event)
+        state["meta_policy"] = meta_policy_reducer.all_snapshots()
+        attribution_reducer.apply(event)
+        state["attribution"] = attribution_reducer.all_snapshots()
+        attention_reducer.apply(event)
+        state["attention"] = attention_reducer.all_snapshots()
+        workspace_reducer.apply(event)
+        state["workspace"] = workspace_reducer.all_snapshots()
+        episodic_reducer.apply(event)
+        state["episodic"] = episodic_reducer.all_snapshots()
+        semantic_reducer.apply(event)
+        state["semantic"] = semantic_reducer.all_snapshots()
+        if str(getattr(event, "type", "")) == EventType.BELIEF_DRIFT_DETECTED.value:
+            payload = getattr(event, "payload", None)
+            if isinstance(payload, dict):
+                context_key = payload.get("context_key", "default")
+                if not isinstance(context_key, str) or not context_key:
+                    context_key = "default"
+                bucket = state["drift"].setdefault(context_key, {"context_key": context_key, "count": 0})
+                bucket["count"] = int(bucket.get("count", 0)) + 1
+                state["drift"][context_key] = bucket
         task_id = event.payload.get("task_id")
         if isinstance(task_id, str) and task_id:
             task = state["tasks"].setdefault(task_id, {"task_id": task_id, "status": "unknown"})
@@ -219,6 +320,24 @@ def _copy_state(state: dict[str, Any]) -> dict[str, Any]:
         "contradiction": dict(state.get("contradiction", {})),
         "revision": dict(state.get("revision", {})),
         "evidence": dict(state.get("evidence", {})),
+        "calibration": dict(state.get("calibration", {})),
+        "drift": dict(state.get("drift", {})),
+        "reputation": dict(state.get("reputation", {})),
+        "arbitration": dict(state.get("arbitration", {})),
+        "telemetry": dict(state.get("telemetry", {})),
+        "routing": dict(state.get("routing", {})),
+        "capabilities": dict(state.get("capabilities", {})),
+        "learning": dict(state.get("learning", {})),
+        "dynamics": dict(state.get("dynamics", {})),
+        "causal": dict(state.get("causal", {})),
+        "fusion": dict(state.get("fusion", {})),
+        "decision": dict(state.get("decision", {})),
+        "meta_policy": dict(state.get("meta_policy", {})),
+        "attribution": dict(state.get("attribution", {})),
+        "attention": dict(state.get("attention", {})),
+        "workspace": dict(state.get("workspace", {})),
+        "episodic": dict(state.get("episodic", {})),
+        "semantic": dict(state.get("semantic", {})),
         "foundations": dict(state.get("foundations", {})),
     }
 

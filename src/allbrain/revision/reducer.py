@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.calibration.estimator import calibrated_trust, mean_calibration_error
 from allbrain.events.schemas import EventType
 from allbrain.uncertainty.events import validate_payload as validate_uncertainty_payload
 from allbrain.revision.estimator import _stable_revision_id, revise
@@ -13,7 +14,7 @@ from allbrain.revision.state import RevisionState
 class RevisionReducer:
     """Replays events into a per-context RevisionState.
 
-    Contract (mirrors BeliefReducer / ContradictionReducer):
+    Contract (mirrors BeliefReducer / ContradictionReducer / CalibrationReducer):
       - BELIEF_REVISED is the checkpoint source (resets the trailing counter
         and stores the payload's new_confidence as the new baseline).
       - CONTRADICTION_DETECTED in the trailing slice increments the
@@ -22,6 +23,10 @@ class RevisionReducer:
         value (last-wins authoritative).
       - TRUST_UPDATED in the trailing slice updates the trust_score
         (last-wins authoritative, default 1.0 if absent — Yol B).
+      - CALIBRATION_UPDATED in the log contributes (confidence, outcome)
+        samples to the per-context calibration list (Sprint 47).
+      - BELIEF_DRIFT_DETECTED in the log increments the drift_count for
+        its context (Sprint 47).
       - All other event types: no-op (unknown-event tolerance).
       - snapshot() applies revise(...) * trust_score, clamped [0, 1].
         Same formula the manager uses. Convergence holds because both
@@ -37,6 +42,14 @@ class RevisionReducer:
         self._trailing: dict[str, int] = {}
         self._last_uncertainty: dict[str, float] = {}
         self._last_trust: dict[str, float] = {}
+        self._calibration_samples: dict[str, list[tuple[float, bool]]] = {}
+        self._drift_count: dict[str, int] = {}
+        self._last_agent_reputation: float = 1.0
+        self._last_consensus_score: float = 1.0
+        self._last_runtime_score: float = 1.0
+        self._last_selected_agent_score: float = 1.0
+        self._last_capability_score: float = 1.0
+        self._last_learned_capability: float = 1.0
         self._seen_ids: set[str] = set()
 
     def apply(self, event: Any) -> None:
@@ -95,10 +108,78 @@ class RevisionReducer:
                 self._last_trust[context_key] = max(0.0, min(1.0, float(ts)))
             return
 
+        if event_type == EventType.CALIBRATION_UPDATED.value and isinstance(payload, dict):
+            context_key = payload.get("context_key", "default")
+            if not isinstance(context_key, str) or not context_key:
+                context_key = "default"
+            predicted = payload.get("predicted_confidence")
+            outcome = payload.get("actual_outcome")
+            if not isinstance(predicted, (int, float)):
+                return
+            if not isinstance(outcome, bool):
+                return
+            self._calibration_samples.setdefault(context_key, []).append(
+                (float(predicted), bool(outcome))
+            )
+            return
+
+        if event_type == EventType.BELIEF_DRIFT_DETECTED.value and isinstance(payload, dict):
+            context_key = payload.get("context_key", "default")
+            if not isinstance(context_key, str) or not context_key:
+                context_key = "default"
+            self._drift_count[context_key] = self._drift_count.get(context_key, 0) + 1
+            return
+
+        if event_type == EventType.AGENT_REPUTATION_UPDATED.value and isinstance(payload, dict):
+            rs = payload.get("reputation_score")
+            if isinstance(rs, (int, float)):
+                self._last_agent_reputation = max(0.0, min(1.0, float(rs)))
+            return
+
+        if event_type == EventType.AGENT_CONSENSUS_REACHED.value and isinstance(payload, dict):
+            score = payload.get("score")
+            if isinstance(score, (int, float)):
+                self._last_consensus_score = max(0.0, min(1.0, float(score)))
+            return
+
+        if event_type == EventType.AGENT_RUNTIME_UPDATED.value and isinstance(payload, dict):
+            rs = payload.get("runtime_score")
+            if isinstance(rs, (int, float)):
+                self._last_runtime_score = max(0.0, min(1.0, float(rs)))
+            return
+
+        if event_type == EventType.AGENT_SELECTED.value and isinstance(payload, dict):
+            sc = payload.get("selection_score")
+            if isinstance(sc, (int, float)):
+                self._last_selected_agent_score = max(0.0, min(1.0, float(sc)))
+            return
+
+        if event_type == EventType.CAPABILITY_MATCHED.value and isinstance(payload, dict):
+            ms = payload.get("match_score")
+            if isinstance(ms, (int, float)):
+                self._last_capability_score = max(0.0, min(1.0, float(ms)))
+            return
+
+        if event_type == EventType.AGENT_CAPABILITY_LEARNED.value and isinstance(payload, dict):
+            ns = payload.get("new_score")
+            if isinstance(ns, (int, float)):
+                self._last_learned_capability = max(0.0, min(1.0, float(ns)))
+            return
+
+        if event_type == EventType.AGENT_CAPABILITY_DECAYED.value and isinstance(payload, dict):
+            ns = payload.get("new_score")
+            if isinstance(ns, (int, float)):
+                self._last_learned_capability = max(0.0, min(1.0, float(ns)))
+            return
+
     def snapshot(self, *, context_key: str = "default") -> RevisionState:
         evidence = sorted(self._seen_ids)
         bucket = self._contexts.get(context_key)
         trust_score = float(self._last_trust.get(context_key, 1.0))
+        samples = list(self._calibration_samples.get(context_key, []))
+        calibration_error = mean_calibration_error(samples)
+        cal_trust = calibrated_trust(trust_score, calibration_error)
+        drift_count = int(self._drift_count.get(context_key, 0))
         if bucket is None:
             return RevisionState(
                 context_key=context_key,
@@ -110,6 +191,15 @@ class RevisionReducer:
                 analysis_id=_stable_revision_id(context_key, evidence),
                 trust_score=trust_score,
                 template_version=REVISION_TEMPLATE_VERSION,
+                calibrated_trust=cal_trust,
+                calibration_error=calibration_error,
+                drift_count=drift_count,
+                agent_reputation=self._last_agent_reputation,
+                consensus_score=self._last_consensus_score,
+                runtime_score=self._last_runtime_score,
+                selected_agent_score=self._last_selected_agent_score,
+                capability_score=self._last_capability_score,
+                learned_capability=self._last_learned_capability,
             )
 
         baseline = float(bucket["new_confidence"])
@@ -127,6 +217,15 @@ class RevisionReducer:
             analysis_id=_stable_revision_id(context_key, evidence),
             trust_score=trust_score,
             template_version=int(bucket["template_version"]),
+            calibrated_trust=cal_trust,
+            calibration_error=calibration_error,
+            drift_count=drift_count,
+            agent_reputation=self._last_agent_reputation,
+            consensus_score=self._last_consensus_score,
+            runtime_score=self._last_runtime_score,
+            selected_agent_score=self._last_selected_agent_score,
+            capability_score=self._last_capability_score,
+            learned_capability=self._last_learned_capability,
         )
 
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
@@ -153,4 +252,13 @@ class RevisionReducer:
             "analysis_id": state.analysis_id,
             "trust_score": state.trust_score,
             "template_version": state.template_version,
+            "calibrated_trust": state.calibrated_trust,
+            "calibration_error": state.calibration_error,
+            "drift_count": state.drift_count,
+            "agent_reputation": state.agent_reputation,
+            "consensus_score": state.consensus_score,
+            "runtime_score": state.runtime_score,
+            "selected_agent_score": state.selected_agent_score,
+            "capability_score": state.capability_score,
+            "learned_capability": state.learned_capability,
         }

@@ -53,7 +53,7 @@ class SystemDecisionPipeline:
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False, enable_calibration: bool = False, enable_drift: bool = False, enable_reputation: bool = False, enable_arbitration: bool = False, enable_telemetry: bool = False, enable_routing: bool = False, enable_capabilities: bool = False, enable_learning: bool = False, enable_causal: bool = False, enable_dynamics: bool = False, enable_fusion: bool = False, enable_decision_engine: bool = False, enable_decision_engine_debug: bool = False, enable_meta_policy: bool = False, enable_meta_policy_drift_detection: bool = False, enable_attribution: bool = False,         enable_attention: bool = False, enable_workspace: bool = True, enable_episodic: bool = True, enable_semantic: bool = True) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -200,6 +200,13 @@ class SystemDecisionPipeline:
                 )
                 emitted.extend(revision_events)
 
+            drift_payload: dict[str, Any] | None = None
+            if enable_drift and revision_payload is not None:
+                drift_payload, last_event_id, drift_events = self._drift_step(
+                    bus, belief_state, revision_payload, trust_payload, last_event_id
+                )
+                emitted.extend(drift_events)
+
             evidence_payload: dict[str, Any] | None = None
             if enable_evidence:
                 evidence_payload, last_event_id, evidence_events = self._evidence_step(
@@ -213,6 +220,13 @@ class SystemDecisionPipeline:
                     bus, evidence_payload, last_event_id
                 )
                 emitted.extend(trust_events)
+
+            calibration_payload: dict[str, Any] | None = None
+            if enable_calibration:
+                calibration_payload, last_event_id, calibration_events = self._calibration_step(
+                    bus, context, project_path, belief_state, evidence_payload, last_event_id, limit
+                )
+                emitted.extend(calibration_events)
 
             uncertainty_payload: dict[str, Any] | None = None
             if enable_uncertainty and meta_reasoning_payload is not None:
@@ -300,6 +314,81 @@ class SystemDecisionPipeline:
             if learning["model_update_proposal"]:
                 last_event_id = publish(EventType.MODEL_UPDATE_PROPOSED.value, learning["model_update_proposal"], caused_by=last_event_id).id
 
+            reputation_payload: dict[str, Any] | None = None
+            if enable_reputation:
+                reputation_payload, last_event_id, reputation_events = self._reputation_step(
+                    bus, context, project_path, belief_state, scheduler_result, feedback, last_event_id, limit
+                )
+                emitted.extend(reputation_events)
+
+            vote_payload: dict[str, Any] | None = None
+            consensus_payload_arb: dict[str, Any] | None = None
+            arb_decision_payload: dict[str, Any] | None = None
+            if enable_arbitration:
+                vote_payload, last_event_id, vote_events = self._vote_step(
+                    bus, context, project_path, belief_state, scheduler_result, trust_payload, last_event_id, limit
+                )
+                emitted.extend(vote_events)
+                if vote_payload is not None:
+                    consensus_payload_arb, last_event_id, consensus_events = self._consensus_step(
+                        bus, vote_payload, last_event_id
+                    )
+                    emitted.extend(consensus_events)
+                    if consensus_payload_arb is not None:
+                        arb_decision_payload, last_event_id, arb_events = self._arbitration_step(
+                            bus, vote_payload, consensus_payload_arb, last_event_id
+                        )
+                        emitted.extend(arb_events)
+
+            telemetry_payload: dict[str, Any] | None = None
+            if enable_telemetry:
+                telemetry_payload, last_event_id, telemetry_events = self._telemetry_step(
+                    bus, context, project_path, scheduler_result, last_event_id, limit
+                )
+                emitted.extend(telemetry_events)
+
+            capability_payload: dict[str, Any] | None = None
+            if enable_capabilities:
+                capability_payload, last_event_id, capability_events = self._capability_step(
+                    bus, context, project_path, scheduler_result, last_event_id, limit
+                )
+                emitted.extend(capability_events)
+
+            learning_payload: dict[str, Any] | None = None
+            if enable_learning:
+                learning_payload, last_event_id, learning_events = self._learning_step(
+                    bus, context, project_path, scheduler_result, last_event_id, limit
+                )
+                emitted.extend(learning_events)
+
+            causal_payload: dict[str, Any] | None = None
+            if enable_causal:
+                causal_payload, last_event_id, causal_events = self._causal_step(
+                    bus, context, project_path, scheduler_result, last_event_id, limit
+                )
+                emitted.extend(causal_events)
+
+            dynamics_payload: dict[str, Any] | None = None
+            if enable_dynamics:
+                dynamics_payload, last_event_id, dynamics_events = self._dynamics_step(
+                    bus, context, project_path, scheduler_result, last_event_id, limit
+                )
+                emitted.extend(dynamics_events)
+
+            fusion_payload: dict[str, Any] | None = None
+            if enable_fusion:
+                fusion_payload, last_event_id, fusion_events = self._fusion_step(
+                    bus, context, project_path, scheduler_result, last_event_id, limit
+                )
+                emitted.extend(fusion_events)
+
+            routing_payload: dict[str, Any] | None = None
+            if enable_routing:
+                routing_payload, last_event_id, routing_events = self._routing_step(
+                    bus, context, project_path, belief_state, scheduler_result, last_event_id, limit, enable_capabilities, enable_learning, enable_causal, enable_dynamics, enable_fusion, enable_decision_engine, enable_decision_engine_debug, enable_meta_policy, enable_meta_policy_drift_detection, enable_attribution, enable_attention, enable_workspace, enable_episodic, enable_semantic
+                )
+                emitted.extend(routing_events)
+
             last_event_id = self._transition(machine, publish, RuntimeStatus.COMPLETED, "pipeline_completed", last_event_id)
             completed_payload: dict[str, Any] = {"status": "COMPLETED", "final_decision": final_decision}
             if world_simulation_payload is not None:
@@ -328,8 +417,36 @@ class SystemDecisionPipeline:
                 completed_payload["evidence"] = evidence_payload
             if trust_payload is not None:
                 completed_payload["trust"] = trust_payload
+            if calibration_payload is not None:
+                completed_payload["calibration"] = calibration_payload
+            if drift_payload is not None:
+                completed_payload["drift"] = drift_payload
+            if reputation_payload is not None:
+                completed_payload["reputation"] = reputation_payload
+            if vote_payload is not None:
+                completed_payload["vote"] = vote_payload
+            if consensus_payload_arb is not None:
+                completed_payload["consensus"] = consensus_payload_arb
+            if arb_decision_payload is not None:
+                completed_payload["arbitration"] = arb_decision_payload
+            if telemetry_payload is not None:
+                completed_payload["telemetry"] = telemetry_payload
+            if routing_payload is not None:
+                completed_payload["routing"] = routing_payload
+            if capability_payload is not None:
+                completed_payload["capability"] = capability_payload
+            if learning_payload is not None:
+                completed_payload["learning"] = learning_payload
+            if causal_payload is not None:
+                completed_payload["causal"] = causal_payload
+            if dynamics_payload is not None:
+                completed_payload["dynamics"] = dynamics_payload
+            if fusion_payload is not None:
+                completed_payload["fusion"] = fusion_payload
+            if decision_payload is not None:
+                completed_payload["decision"] = decision_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload, evidence=evidence_payload, trust=trust_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning_payload, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload, evidence=evidence_payload, trust=trust_payload, calibration=calibration_payload, drift=drift_payload, reputation=reputation_payload, consensus=consensus_payload_arb, arb_decision=arb_decision_payload, telemetry=telemetry_payload, routing=routing_payload, capability=capability_payload, dynamics=dynamics_payload, causal=causal_payload, fusion=fusion_payload, decision=decision_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -435,7 +552,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None, revision: dict[str, Any] | None = None, evidence: dict[str, Any] | None = None, trust: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None, revision: dict[str, Any] | None = None, evidence: dict[str, Any] | None = None, trust: dict[str, Any] | None = None, calibration: dict[str, Any] | None = None, drift: dict[str, Any] | None = None, reputation: dict[str, Any] | None = None, consensus: dict[str, Any] | None = None, arb_decision: dict[str, Any] | None = None, telemetry: dict[str, Any] | None = None, routing: dict[str, Any] | None = None, capability: dict[str, Any] | None = None, dynamics: dict[str, Any] | None = None, causal: dict[str, Any] | None = None, fusion: dict[str, Any] | None = None, decision: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -462,6 +579,19 @@ class SystemDecisionPipeline:
             "revision": revision,
             "evidence": evidence,
             "trust": trust,
+            "calibration": calibration,
+            "drift": drift,
+            "reputation": reputation,
+            "consensus": consensus,
+            "arb_decision": arb_decision,
+            "telemetry": telemetry,
+            "routing": routing,
+            "capability": capability,
+            "dynamics": dynamics,
+            "causal": causal,
+            "fusion": fusion,
+            "decision": decision,
+            "learning": learning,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
@@ -1005,6 +1135,1206 @@ class SystemDecisionPipeline:
         )
         summary = {"context_key": "default", **payload}
         return summary, event.id, [event]
+
+    def _calibration_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        belief_state: Any,
+        evidence_payload: dict[str, Any] | None,
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any], str, list[EventRead]]:
+        """Emit a single CALIBRATION_UPDATED event with a (confidence, outcome) sample.
+
+        The sample is taken from the latest task outcome if available; if no
+        completed/failed task is recorded in the recent event window, the
+        outcome defaults to True (this matches the trust-score default of
+        1.0 — no measurement = no penalty).
+
+        Calibration_error is a metadata measurement, not a feedback signal.
+        """
+        from allbrain.calibration import make_payload as make_calibration_payload
+
+        predicted_confidence = float(getattr(belief_state, "mean", 0.0)) if belief_state is not None else 0.0
+        predicted_confidence = max(0.0, min(1.0, predicted_confidence))
+
+        actual_outcome = True
+        resolved = project_path or getattr(context, "project_path", None)
+        if resolved and evidence_payload is not None:
+            try:
+                events = context.repository.list_events(project_path=resolved, limit=limit)
+            except Exception:
+                events = []
+            for event in reversed(events):
+                event_type = str(getattr(event, "type", ""))
+                if event_type.endswith("task_completed") or event_type == "pipeline_run_completed":
+                    actual_outcome = True
+                    break
+                if event_type.endswith("task_failed") or event_type == "pipeline_run_failed" or event_type == "task_blocked":
+                    actual_outcome = False
+                    break
+
+        payload = make_calibration_payload(
+            context_key="default",
+            predicted_confidence=predicted_confidence,
+            actual_outcome=actual_outcome,
+        )
+        event = bus.publish(
+            type=EventType.CALIBRATION_UPDATED.value,
+            payload=payload,
+            caused_by=caused_by,
+            impact_score=abs(predicted_confidence - (1.0 if actual_outcome else 0.0)),
+        )
+        summary = {"context_key": "default", **payload}
+        return summary, event.id, [event]
+
+    def _drift_step(
+        self,
+        bus: RuntimeEventBus,
+        belief_state: Any,
+        revision_payload: dict[str, Any],
+        trust_payload: dict[str, Any] | None,
+        caused_by: str,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        """Emit a single BELIEF_DRIFT_DETECTED event when belief shifts by >= DRIFT_THRESHOLD.
+
+        belief_before = belief_state.mean (baseline)
+        belief_after  = revision_payload["new_confidence"] (post-revise, post-trust)
+        reason        = "trust_shift" if trust_payload shifted trust < 1.0
+                         else "contradiction_resolution"
+        magnitude     = abs(belief_after - belief_before)
+        """
+        from allbrain.drift import detect_drift, make_payload as make_drift_payload
+
+        belief_before = float(getattr(belief_state, "mean", 0.0)) if belief_state is not None else 0.0
+        belief_after = float(revision_payload.get("new_confidence", belief_before))
+
+        trust_score = 1.0
+        if isinstance(trust_payload, dict):
+            ts = trust_payload.get("trust_score")
+            if isinstance(ts, (int, float)):
+                trust_score = float(ts)
+        reason = "trust_shift" if trust_score < 1.0 else "contradiction_resolution"
+
+        sample = detect_drift(
+            belief_before=belief_before,
+            belief_after=belief_after,
+            context_key="default",
+            reason=reason,
+        )
+        if sample is None:
+            return None, caused_by, []
+
+        payload = make_drift_payload(
+            context_key=sample.context_key,
+            belief_before=sample.belief_before,
+            belief_after=sample.belief_after,
+            reason=sample.reason,
+        )
+        event = bus.publish(
+            type=EventType.BELIEF_DRIFT_DETECTED.value,
+            payload=payload,
+            caused_by=caused_by,
+            impact_score=sample.magnitude,
+        )
+        summary = {"context_key": sample.context_key, **payload}
+        return summary, event.id, [event]
+
+    def _reputation_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        belief_state: Any,
+        scheduler_result: dict[str, Any],
+        feedback: dict[str, Any] | None,
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any], str, list[EventRead]]:
+        """Emit an AGENT_REPUTATION_UPDATED event with a (success, confidence) sample.
+
+        Sprint 48: observation-only metadata layer. The sample is taken from the
+        scheduler assignment (agent_id) and the pipeline run outcome. duration_ms
+        and retry_count default to 0 (execution telemetry is a future sprint).
+
+        The reputation_score is computed from ALL prior AGENT_REPUTATION_UPDATED
+        events for that agent plus the new sample.
+        """
+        from allbrain.reputation import (
+            ReputationManager,
+            _stable_reputation_id,
+            make_payload as make_reputation_payload,
+        )
+
+        agent_id = str(scheduler_result["assignment"].get("agent_id", "unknown"))
+        success = bool(feedback.get("actual_success", True)) if feedback else True
+        confidence = float(getattr(belief_state, "mean", 0.0)) if belief_state is not None else 0.0
+        confidence = max(0.0, min(1.0, confidence))
+
+        resolved = project_path or getattr(context, "project_path", None)
+        try:
+            events = context.repository.list_events(project_path=resolved, limit=limit)
+        except Exception:
+            events = []
+
+        manager = ReputationManager()
+        prior = manager.query(events, agent_id=agent_id)
+
+        from allbrain.reputation.estimator import reputation_score as compute_score
+        new_samples: list[tuple[bool, float, float, float]] = [
+            (s["success"], s["confidence"], s["duration_ms"], s["retry_count"])
+            for s in [
+                {
+                    "success": sample[0],
+                    "confidence": sample[1],
+                    "duration_ms": sample[2],
+                    "retry_count": sample[3],
+                }
+                for sample in [
+                    (success, confidence, 0.0, 0.0)
+                ]
+            ]
+        ]
+        existing = [
+            (e.payload["success"], e.payload["confidence"], e.payload["duration_ms"], e.payload["retry_count"])
+            for e in events
+            if str(getattr(e, "type", "")) == "agent_reputation_updated" and isinstance(getattr(e, "payload", None), dict) and getattr(e, "payload", {}).get("agent_id") == agent_id
+        ]
+        all_samples = existing + new_samples
+        score = compute_score(all_samples)
+
+        event_ids = sorted(
+            str(getattr(e, "id", ""))
+            for e in events
+            if str(getattr(e, "type", "")) == "agent_reputation_updated" and isinstance(getattr(e, "payload", None), dict) and getattr(e, "payload", {}).get("agent_id") == agent_id
+        )
+
+        payload = make_reputation_payload(
+            agent_id=agent_id,
+            task_id=str(scheduler_result.get("summary", {}).get("task_id", caused_by)),
+            success=success,
+            confidence=confidence,
+            duration_ms=0.0,
+            retry_count=0.0,
+            reputation_score=score,
+            analysis_id=_stable_reputation_id(agent_id, event_ids),
+        )
+        event = bus.publish(
+            type=EventType.AGENT_REPUTATION_UPDATED.value,
+            payload=payload,
+            caused_by=caused_by,
+            impact_score=abs(score - 0.5),
+        )
+        summary = {"agent_id": agent_id, **payload}
+        return summary, event.id, [event]
+
+    def _vote_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        belief_state: Any,
+        scheduler_result: dict[str, Any],
+        trust_payload: dict[str, Any] | None,
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.arbitration import make_vote_payload
+        from allbrain.reputation import ReputationManager
+
+        assignment = scheduler_result.get("assignment", {}) if scheduler_result else {}
+        agent_id = str(assignment.get("agent_id", "unknown"))
+        task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by))
+
+        confidence = float(getattr(belief_state, "mean", 0.0)) if belief_state is not None else 0.0
+        confidence = max(0.0, min(1.0, confidence))
+
+        calibrated_trust = 1.0
+        if isinstance(trust_payload, dict):
+            ct = trust_payload.get("calibrated_trust")
+            if isinstance(ct, (int, float)):
+                calibrated_trust = max(0.0, min(1.0, float(ct)))
+
+        resolved = project_path or getattr(context, "project_path", None)
+        try:
+            events = context.repository.list_events(project_path=resolved, limit=limit)
+        except Exception:
+            events = []
+
+        reputation_manager = ReputationManager()
+        rep_state = reputation_manager.query(events, agent_id=agent_id)
+
+        payload = make_vote_payload(
+            agent_id=agent_id,
+            candidate_id=task_id,
+            context_key="default",
+            confidence=confidence,
+            reputation=float(rep_state.reputation_score),
+            calibrated_trust=calibrated_trust,
+        )
+        event = bus.publish(
+            type=EventType.AGENT_VOTE_CAST.value,
+            payload=payload,
+            caused_by=caused_by,
+            impact_score=float(rep_state.reputation_score),
+        )
+        return {"agent_id": agent_id, "candidate_id": task_id, **payload}, event.id, [event]
+
+    def _consensus_step(
+        self,
+        bus: RuntimeEventBus,
+        vote_payload: dict[str, Any],
+        caused_by: str,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.arbitration import (
+            VoteRecord,
+            make_consensus_payload,
+            weighted_resolve,
+        )
+        from allbrain.reputation import ReputationManager
+
+        ctx = getattr(self, "_context", None)
+        events = []
+        if ctx is not None:
+            try:
+                from allbrain.runtime_core.arbitration import ArbitrationBridge
+            except ImportError:
+                pass
+
+        vote = VoteRecord(
+            agent_id=str(vote_payload.get("agent_id", "")),
+            candidate_id=str(vote_payload.get("candidate_id", "")),
+            confidence=float(vote_payload.get("confidence", 0.0)),
+            reputation=float(vote_payload.get("reputation", 1.0)),
+            calibrated_trust=float(vote_payload.get("calibrated_trust", 1.0)),
+        )
+        votes = [vote]
+        w, score, ag = weighted_resolve(votes)
+
+        payload = make_consensus_payload(
+            context_key="default",
+            winner_candidate=w or "none",
+            score=score,
+            agreement_ratio=ag,
+            method="weighted",
+        )
+        event = bus.publish(
+            type=EventType.AGENT_CONSENSUS_REACHED.value,
+            payload=payload,
+            caused_by=caused_by,
+            impact_score=score,
+        )
+        return {"winner_candidate": w, **payload}, event.id, [event]
+
+    def _arbitration_step(
+        self,
+        bus: RuntimeEventBus,
+        vote_payload: dict[str, Any],
+        consensus_payload: dict[str, Any],
+        caused_by: str,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.arbitration import make_arb_decision_payload
+
+        payload = make_arb_decision_payload(
+            context_key="default",
+            winner_candidate=str(consensus_payload.get("winner_candidate", "none")),
+            method=str(consensus_payload.get("method", "weighted")),
+            vote_count=1,
+            candidate_scores={
+                str(vote_payload.get("candidate_id", "")): float(consensus_payload.get("score", 0.0))
+            },
+        )
+        event = bus.publish(
+            type=EventType.AGENT_ARBITRATION_DECISION.value,
+            payload=payload,
+            caused_by=caused_by,
+            impact_score=0.5,
+        )
+        return {"winner_candidate": payload["winner_candidate"], **payload}, event.id, [event]
+
+    def _telemetry_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        scheduler_result: dict[str, Any],
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        """Emit TOOL_EXECUTION_STARTED + TOOL_EXECUTION_COMPLETED events.
+
+        Sprint 50: placeholder telemetry (duration_ms=0, retry_count=0).
+        Real execution telemetry wiring is future work (Sprint 51+).
+        The AGENT_RUNTIME_UPDATED event is NOT emitted here —
+        it is a projection event computed by the reducer.
+        """
+        from allbrain.telemetry import make_started_payload, make_completed_payload
+
+        agent_id = str(scheduler_result.get("assignment", {}).get("agent_id", "unknown")) if scheduler_result else "unknown"
+        task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
+
+        started = bus.publish(
+            type=EventType.TOOL_EXECUTION_STARTED.value,
+            payload=make_started_payload(agent_id=agent_id, task_id=task_id, tool_name="pipeline_execution"),
+            caused_by=caused_by,
+        )
+        completed = bus.publish(
+            type=EventType.TOOL_EXECUTION_COMPLETED.value,
+            payload=make_completed_payload(agent_id=agent_id, task_id=task_id, tool_name="pipeline_execution", duration_ms=0.0, success=True, retry_count=0.0),
+            caused_by=started.id,
+        )
+        summary = {"agent_id": agent_id, "task_id": task_id, "started_event_id": started.id, "completed_event_id": completed.id}
+        return summary, completed.id, [started, completed]
+
+    def _capability_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        scheduler_result: dict[str, Any],
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        """Emit TASK_CLASSIFIED + CAPABILITY_MATCHED events.
+
+        Sprint 52: reads registered agent capabilities from event log
+        and computes capability match scores per agent.
+        """
+        from allbrain.reputation import ReputationManager
+        from allbrain.telemetry import TelemetryManager
+        from allbrain.capabilities import (
+            make_classified_payload,
+            make_matched_payload,
+            match_score as cap_match_score,
+        )
+
+        task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
+        task_type = str(scheduler_result.get("assignment", {}).get("agent_id", "implementation")) if scheduler_result else "implementation"
+
+        resolved = project_path or getattr(context, "project_path", None)
+        try:
+            events = context.repository.list_events(project_path=resolved, limit=limit)
+        except Exception:
+            events = []
+
+        rep_mgr = ReputationManager()
+        tel_mgr = TelemetryManager()
+        agent_ids = rep_mgr.known_agent_ids(events) | tel_mgr.known_agent_ids(events)
+        if not agent_ids:
+            return None, caused_by, []
+
+        classified = bus.publish(
+            type=EventType.TASK_CLASSIFIED.value,
+            payload=make_classified_payload(task_id=task_id, task_type=task_type),
+            caused_by=caused_by,
+        )
+
+        matched_events = []
+        for aid in sorted(agent_ids):
+            registered = [
+                (e.payload["capability"], float(e.payload["weight"]))
+                for e in events
+                if str(getattr(e, "type", "")) == "agent_capability_registered"
+                and isinstance(getattr(e, "payload", None), dict)
+                and getattr(e, "payload", {}).get("agent_id") == aid
+            ]
+            ms, mk = cap_match_score(agent_capabilities=registered, task_type=task_type)
+            if ms > 0.0:
+                me = bus.publish(
+                    type=EventType.CAPABILITY_MATCHED.value,
+                    payload=make_matched_payload(agent_id=aid, task_type=task_type, match_score=ms, match_kind=mk),
+                    caused_by=classified.id,
+                )
+                matched_events.append(me)
+
+        summary = {"task_id": task_id, "task_type": task_type, "agent_count": len(agent_ids), "matched_agents": len(matched_events)}
+        return summary, classified.id, [classified] + matched_events
+
+    def _learning_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        scheduler_result: dict[str, Any],
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        """Emit AGENT_CAPABILITY_OBSERVED + AGENT_CAPABILITY_LEARNED/DECAYED events.
+
+        Sprint 53: reads capability events from log and computes
+        EMA-based learned capability per (agent, task_type).
+        Emits AGENT_CAPABILITY_OBSERVED + AGENT_CAPABILITY_LEARNED/DECAYED.
+        """
+        from allbrain.capabilities import CapabilityManager
+        from allbrain.learning import CapabilityLearningManager
+        from allbrain.learning import (
+            make_observed_payload,
+            make_learned_payload,
+            make_decayed_payload,
+            observation as learn_observation,
+            ema_update,
+        )
+
+        learning_mgr = CapabilityLearningManager()
+
+        task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
+        task_type = str(scheduler_result.get("assignment", {}).get("agent_id", "implementation")) if scheduler_result else "implementation"
+
+        resolved = project_path or getattr(context, "project_path", None)
+        try:
+            events = context.repository.list_events(project_path=resolved, limit=limit)
+        except Exception:
+            events = []
+
+        cap_mgr = CapabilityManager()
+        agent_ids = cap_mgr.known_keys(events)
+        if not agent_ids:
+            return None, caused_by, []
+
+        observed = bus.publish(
+            type=EventType.AGENT_CAPABILITY_OBSERVED.value,
+            payload=make_observed_payload(agent_id="system", task_type=task_type, success=True, runtime_score=0.0, selection_score=0.0),
+            caused_by=caused_by,
+        )
+
+        learned_events = []
+        for k in sorted(agent_ids):
+            aid, tt = k.split("::", 1)
+            old_state = learning_mgr.query(events, agent_id=aid, task_type=tt)
+            old_score = old_state.capability_score
+
+            # For Sprint 53, we use a simple observation based on task outcome
+            # In a real system, this would come from task execution results
+            obs = 0.5  # neutral observation placeholder
+            new_score = old_score * 0.9 + obs * 0.1
+            new_score = max(0.0, min(1.0, new_score))
+            delta = new_score - old_score
+
+            if abs(delta) < 0.02:
+                continue
+
+            if delta >= 0:
+                le = bus.publish(
+                    type=EventType.AGENT_CAPABILITY_LEARNED.value,
+                    payload={"agent_id": aid, "task_type": tt, "old_score": old_score, "new_score": new_score, "delta": delta},
+                    caused_by=caused_by,
+                )
+            else:
+                le = bus.publish(
+                    type=EventType.AGENT_CAPABILITY_DECAYED.value,
+                    payload={"agent_id": aid, "task_type": tt, "old_score": old_score, "new_score": new_score},
+                    caused_by=caused_by,
+                )
+            learned_events.append(le)
+
+        summary = {"task_id": task_id, "task_type": task_type, "learned_agents": len(learned_events)}
+        return summary, observed.id, [observed] + learned_events
+
+    def _causal_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        scheduler_result: dict[str, Any],
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        """Emit AGENT_COUNTERFACTUAL_RUN + AGENT_CAUSAL_IMPACT_RECORDED events.
+
+        Sprint 55: reads task outcome events and computes counterfactual
+        impact per (agent, task_type). Only depends on event stream
+        (causal purity — Refinement #1). Emits threshold-gated events.
+        """
+        from allbrain.capabilities import CapabilityManager
+        from allbrain.causal import CausalManager
+        from allbrain.causal import make_counterfactual_payload, make_impact_payload
+        from allbrain.causal.model import CAUSAL_IMPACT_THRESHOLD, CAUSAL_MIN_SAMPLES
+
+        task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
+
+        resolved = project_path or getattr(context, "project_path", None)
+        try:
+            events = context.repository.list_events(project_path=resolved, limit=limit)
+        except Exception:
+            events = []
+
+        cap_mgr = CapabilityManager()
+        agent_ids = cap_mgr.known_keys(events)
+        if not agent_ids:
+            return None, caused_by, []
+
+        causal_mgr = CausalManager()
+        causal_events: list[EventRead] = []
+
+        for k in sorted(agent_ids):
+            aid, tt = k.split("::", 1)
+            result = causal_mgr.query(events, agent_id=aid, task_type=tt)
+
+            cf_data = result.get("counterfactuals", {})
+            impacts = result.get("impacts", {})
+
+            for alt, cf in cf_data.items():
+                if cf.get("sample_count", 0) < CAUSAL_MIN_SAMPLES:
+                    continue
+                ce = bus.publish(
+                    type=EventType.AGENT_COUNTERFACTUAL_RUN.value,
+                    payload=make_counterfactual_payload(
+                        agent_id=aid, task_type=tt,
+                        actual_agent=aid, alternative_agent=alt,
+                        actual_outcome=float(cf.get("actual_outcome", 0.0)),
+                        alternative_outcome=float(cf.get("alternative_outcome", 0.0)),
+                        impact_score=float(cf.get("impact_score", 0.0)),
+                        confidence=float(cf.get("confidence", 0.0)),
+                        sample_count=int(cf.get("sample_count", 0)),
+                    ),
+                    caused_by=caused_by,
+                )
+                causal_events.append(ce)
+
+            for alt, imp in impacts.items():
+                impact_score = float(imp.get("impact_score", 0.0))
+                if abs(impact_score) < CAUSAL_IMPACT_THRESHOLD:
+                    continue
+                if imp.get("sample_count", 0) < CAUSAL_MIN_SAMPLES:
+                    continue
+                ie = bus.publish(
+                    type=EventType.AGENT_CAUSAL_IMPACT_RECORDED.value,
+                    payload=make_impact_payload(
+                        agent_id=aid, task_type=tt,
+                        alternative_agent=alt,
+                        impact_score=impact_score,
+                        confidence=float(imp.get("confidence", 0.0)),
+                        sample_count=int(imp.get("sample_count", 0)),
+                    ),
+                    caused_by=caused_by,
+                )
+                causal_events.append(ie)
+
+        summary = {
+            "task_id": task_id,
+            "agent_count": len(agent_ids),
+            "counterfactual_count": len(causal_events),
+        }
+        return summary, caused_by, causal_events
+
+    def _dynamics_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        scheduler_result: dict[str, Any],
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        """Emit AGENT_CAPABILITY_DRIFT_DETECTED + TREND_UPDATED + FORECAST_UPDATED events.
+
+        Sprint 54: reads learning events from log and computes
+        drift, trend, and forecast per (agent, task_type).
+        Emits threshold-gated DRIFT/TREND/FORECAST events.
+        """
+        from allbrain.capabilities import CapabilityManager
+        from allbrain.dynamics import CapabilityDynamicsManager
+        from allbrain.dynamics import (
+            make_drift_payload,
+            make_trend_payload,
+            make_forecast_payload,
+        )
+        from allbrain.dynamics.drift import detect_drift
+        from allbrain.dynamics.trend import classify_trend
+        from allbrain.dynamics.forecast import predict
+        from allbrain.dynamics.model import DRIFT_THRESHOLD, FORECAST_DEFAULT_HORIZON, MIN_OBSERVATIONS_FOR_DRIFT, TREND_HYSTERESIS_COUNT
+
+        task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
+
+        resolved = project_path or getattr(context, "project_path", None)
+        try:
+            events = context.repository.list_events(project_path=resolved, limit=limit)
+        except Exception:
+            events = []
+
+        cap_mgr = CapabilityManager()
+        agent_ids = cap_mgr.known_keys(events)
+        if not agent_ids:
+            return None, caused_by, []
+
+        dynamics_mgr = CapabilityDynamicsManager()
+        dynamics_events: list[EventRead] = []
+
+        for k in sorted(agent_ids):
+            aid, tt = k.split("::", 1)
+            result = dynamics_mgr.query(events, agent_id=aid, task_type=tt)
+
+            drift_data = result.get("drift", {})
+            drift_score = float(drift_data.get("drift_score", 0.0))
+            drift_level = str(drift_data.get("drift_level", "low"))
+            obs_count = int(drift_data.get("observation_count", 0))
+
+            if drift_score >= DRIFT_THRESHOLD and obs_count >= MIN_OBSERVATIONS_FOR_DRIFT:
+                de = bus.publish(
+                    type=EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value,
+                    payload=make_drift_payload(
+                        agent_id=aid, task_type=tt,
+                        drift_score=drift_score, drift_level=drift_level,
+                        ema_short=float(drift_data.get("ema_short", 0.0)),
+                        ema_long=float(drift_data.get("ema_long", 0.0)),
+                    ),
+                    caused_by=caused_by,
+                )
+                dynamics_events.append(de)
+
+            trend_data = result.get("trend", {})
+            trend_label = str(trend_data.get("label", "stable"))
+            trend_consecutive = int(trend_data.get("consecutive_count", 0))
+
+            if trend_label != "stable" and trend_consecutive >= TREND_HYSTERESIS_COUNT:
+                te = bus.publish(
+                    type=EventType.AGENT_CAPABILITY_TREND_UPDATED.value,
+                    payload=make_trend_payload(
+                        agent_id=aid, task_type=tt,
+                        slope=float(trend_data.get("slope", 0.0)),
+                        label=trend_label,
+                        momentum=float(trend_data.get("momentum", 0.0)),
+                        consecutive_count=trend_consecutive,
+                    ),
+                    caused_by=caused_by,
+                )
+                dynamics_events.append(te)
+
+            forecast_data = result.get("forecast", {})
+            predicted = float(forecast_data.get("predicted_capability", 0.0))
+            current_cap = float(forecast_data.get("current_capability", 0.0))
+
+            if abs(predicted - current_cap) >= 0.05:
+                fe = bus.publish(
+                    type=EventType.AGENT_CAPABILITY_FORECAST_UPDATED.value,
+                    payload=make_forecast_payload(
+                        agent_id=aid, task_type=tt,
+                        horizon=int(forecast_data.get("horizon", FORECAST_DEFAULT_HORIZON)),
+                        predicted_capability=predicted,
+                        confidence=float(forecast_data.get("confidence", 0.0)),
+                        current_capability=current_cap,
+                        delta=float(forecast_data.get("delta", 0.0)),
+                    ),
+                    caused_by=caused_by,
+                )
+                dynamics_events.append(fe)
+
+        summary = {
+            "task_id": task_id,
+            "agent_count": len(agent_ids),
+            "drift_count": sum(1 for e in dynamics_events if str(getattr(e, "type", "")) == EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value),
+            "trend_count": sum(1 for e in dynamics_events if str(getattr(e, "type", "")) == EventType.AGENT_CAPABILITY_TREND_UPDATED.value),
+            "forecast_count": sum(1 for e in dynamics_events if str(getattr(e, "type", "")) == EventType.AGENT_CAPABILITY_FORECAST_UPDATED.value),
+        }
+        return summary, caused_by, dynamics_events
+
+    def _fusion_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        scheduler_result: dict[str, Any],
+        caused_by: str,
+        limit: int,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        """Emit FUSION_COMPUTED + SIGNAL_CALIBRATED events.
+
+        Sprint 56: reads all signal events and computes unified decision
+        score via signal vectorization + adaptive weighting.
+
+        Refinement #1: projection only — no derived global state.
+        """
+        from allbrain.capabilities import CapabilityManager
+        from allbrain.fusion import FusionManager
+        from allbrain.fusion import make_fusion_payload, make_calibration_payload
+
+        task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
+
+        resolved = project_path or getattr(context, "project_path", None)
+        try:
+            events = context.repository.list_events(project_path=resolved, limit=limit)
+        except Exception:
+            events = []
+
+        cap_mgr = CapabilityManager()
+        agent_ids = cap_mgr.known_keys(events)
+        if not agent_ids:
+            return None, caused_by, []
+
+        fusion_mgr = FusionManager()
+        fusion_events: list[EventRead] = []
+
+        for k in sorted(agent_ids):
+            aid, tt = k.split("::", 1)
+            result = fusion_mgr.query(events, agent_id=aid, task_type=tt)
+
+            sv = result.get("signal_vector", {})
+            cal = result.get("calibrations", {})
+
+            for ch in ["capability", "learning", "dynamics", "causal"]:
+                ce = bus.publish(
+                    type=EventType.SIGNAL_CALIBRATED.value,
+                    payload=make_calibration_payload(
+                        agent_id=aid, task_type=tt,
+                        channel=ch,
+                        raw_mean=float(cal.get(ch, 0.0)),
+                        normalized_value=float(cal.get(ch, 0.0)),
+                        was_normalized=bool(cal.get(ch, 0.0) > 0),
+                        sample_count=1,
+                    ),
+                    caused_by=caused_by,
+                )
+                fusion_events.append(ce)
+
+            fe = bus.publish(
+                type=EventType.FUSION_COMPUTED.value,
+                payload=make_fusion_payload(
+                    agent_id=aid, task_type=tt,
+                    unified_score=float(result["unified_score"]),
+                    capability=float(sv.get("capability", 0.0)),
+                    learning=float(sv.get("learning", 0.0)),
+                    dynamics=float(sv.get("dynamics", 0.0)),
+                    causal=float(sv.get("causal", 0.0)),
+                ),
+                caused_by=caused_by,
+            )
+            fusion_events.append(fe)
+
+        summary = {"task_id": task_id, "agent_count": len(agent_ids), "fusion_count": len(fusion_events)}
+        return summary, caused_by, fusion_events
+
+    def _routing_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        project_path: str | None,
+        belief_state: Any,
+        scheduler_result: dict[str, Any],
+        caused_by: str,
+        limit: int,
+        enable_capabilities: bool = False,
+        enable_learning: bool = False,
+        enable_causal: bool = False,
+        enable_dynamics: bool = False,
+enable_fusion: bool = False,
+        enable_decision_engine: bool = False,
+enable_decision_engine_debug: bool = False,
+        enable_meta_policy: bool = False,
+enable_meta_policy_drift_detection: bool = False,
+enable_attribution: bool = False,
+enable_attention: bool = False,
+        enable_workspace: bool = True,
+        enable_episodic: bool = True,
+        enable_semantic: bool = True,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        """Emit AGENT_SELECTION_SCORED + AGENT_SELECTED events.
+
+        Sprint 51: recommendation-only. Uses event-sourced reputation,
+        runtime_score, calibrated_trust, and global consensus_score to
+        score candidate agents. Does NOT change the actual assignment.
+
+        Known agents = union of reputation and telemetry event participants.
+        """
+        from allbrain.reputation import ReputationManager
+        from allbrain.telemetry import TelemetryManager
+        from allbrain.revision import RevisionManager
+        from allbrain.routing import (
+            make_req_payload,
+            make_scored_payload,
+            make_selected_payload,
+            best_agent as routing_best_agent,
+            selection_score as routing_selection_score,
+            extended_selection_score as routing_extended_score,
+            adaptive_selection_score as routing_adaptive_score,
+            dynamics_selection_score as routing_dynamics_score,
+            causal_selection_score as routing_causal_score,
+        )
+        from allbrain.capabilities import CapabilityManager
+        from allbrain.learning import CapabilityLearningManager
+        from allbrain.dynamics import CapabilityDynamicsManager
+
+        task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
+        task_type = str(scheduler_result.get("assignment", {}).get("agent_id", "implementation")) if scheduler_result else "implementation"
+
+        resolved = project_path or getattr(context, "project_path", None)
+        try:
+            events = context.repository.list_events(project_path=resolved, limit=limit)
+        except Exception:
+            events = []
+
+        rep_mgr = ReputationManager()
+        tel_mgr = TelemetryManager()
+        rev_mgr = RevisionManager()
+
+        agent_ids = rep_mgr.known_agent_ids(events) | tel_mgr.known_agent_ids(events)
+        if not agent_ids:
+            return None, caused_by, []
+
+        rev_state = rev_mgr.query(events)
+
+        req = bus.publish(
+            type=EventType.AGENT_SELECTION_REQUESTED.value,
+            payload=make_req_payload(task_id=task_id, task_type=task_type, context_key="default"),
+            caused_by=caused_by,
+        )
+
+        scored: dict[str, float] = {}
+        scored_events: list = []
+        for aid in sorted(agent_ids):
+            rep = rep_mgr.query(events, agent_id=aid)
+            tel = tel_mgr.query(events, agent_id=aid)
+            if enable_meta_policy:
+                from allbrain.meta_policy import MetaPolicyManager, make_policy_eval_payload
+                meta_mgr = MetaPolicyManager()
+                selected = meta_mgr.select(
+                    events, agent_id=aid, task_type=task_type,
+                    enable_drift_detection=enable_meta_policy_drift_detection,
+                )
+                pe = bus.publish(
+                    type=EventType.POLICY_EVALUATED.value,
+                    payload=make_policy_eval_payload(
+                        agent_id=aid, task_type=task_type,
+                        mode=selected,
+                        exploration_rate=meta_mgr._policy_state.exploration_rate if meta_mgr._policy_state else 0.05,
+                    ),
+                    caused_by=req.id,
+                )
+                scored_events.append(pe)
+                from allbrain.decision import DecisionEngine, DecisionContext, make_contract
+                ctx = DecisionContext(
+                    agent_id=aid, task_type=task_type,
+                    contract=make_contract(**{selected: True}),
+                    telemetry={"reputation": float(rep.reputation_score), "runtime_score": float(tel.runtime_score)},
+                    learning={"calibrated_trust": float(rev_state.calibrated_trust), "consensus_score": float(rev_state.consensus_score)},
+                    capability={"match_score": 0.0},
+                    dynamics={}, causal={},
+                )
+                result = DecisionEngine().decide(ctx)
+                s = float(result.score)
+                if enable_attribution:
+                    from allbrain.attribution import AttributionManager, make_credit_payload, make_attribution_update_payload, make_importance_payload
+                    attr_mgr = AttributionManager()
+                    attr_result = attr_mgr.attribute(
+                        events, agent_id=aid, task_type=task_type,
+                        decision_id=result.analysis_id,
+                        mode=result.mode,
+                        reward=float(s),
+                        contributors=result.contributors,
+                    )
+                    for alloc in attr_result.get("allocations", []):
+                        ce = bus.publish(
+                            type=EventType.SIGNAL_CREDIT_ASSIGNED.value,
+                            payload=make_credit_payload(
+                                decision_id=result.analysis_id,
+                                signal=alloc["signal"],
+                                contribution=alloc["contribution"],
+                                confidence=alloc["confidence"],
+                            ),
+                            caused_by=req.id,
+                        )
+                        scored_events.append(ce)
+                    for signal, ema_r in attr_result.get("signal_rewards", {}).items():
+                        cnt = attr_result.get("signal_counts", {}).get(signal, 0)
+                        ae = bus.publish(
+                            type=EventType.SIGNAL_ATTRIBUTION_UPDATED.value,
+                            payload=make_attribution_update_payload(
+                                signal=signal, ema_reward=float(ema_r), count=int(cnt),
+                            ),
+                            caused_by=req.id,
+                        )
+                        scored_events.append(ae)
+                if enable_attention:
+                    from allbrain.attention import AttentionManager, make_attention_payload, make_budget_payload, make_reallocation_payload
+                    attention_mgr = AttentionManager()
+                    att_result = attention_mgr.allocate(
+                        events,
+                        signal_rewards=attr_result.get("signal_rewards", {}),
+                        mode_rewards=getattr(self, "_last_mode_rewards", None),
+                    )
+                    for w in att_result.get("weights", []):
+                        ae2 = bus.publish(
+                            type=EventType.ATTENTION_ALLOCATED.value,
+                            payload=make_attention_payload(
+                                signal=w["signal"], importance=w["importance"],
+                                cost=w["cost"], allocation=w["allocation"],
+                            ),
+                            caused_by=req.id,
+                        )
+                        scored_events.append(ae2)
+                    budget = att_result.get("budget", {})
+                    be = bus.publish(
+                        type=EventType.RESOURCE_BUDGET_UPDATED.value,
+                        payload=make_budget_payload(
+                            total_budget=float(budget.get("total_budget", 1.0)),
+                            unused_budget=float(budget.get("unused_budget", 0.0)),
+                            allocated_total=float(budget.get("allocated_total", 0.0)),
+                        ),
+                        caused_by=req.id,
+                    )
+                    scored_events.append(be)
+                    for sig, rd in att_result.get("reallocations", {}).items():
+                        re = bus.publish(
+                            type=EventType.ATTENTION_REALLOCATED.value,
+                            payload=make_reallocation_payload(
+                                signal=sig,
+                                delta_allocation=float(rd.get("delta_allocation", 0.0)),
+                                new_allocation=float(rd.get("new_allocation", 0.0)),
+                            ),
+                            caused_by=req.id,
+                        )
+                        scored_events.append(re)
+                if enable_workspace:
+                    from allbrain.workspace import WorkspaceManager, make_ws_added_payload, make_ws_updated_payload
+                    ws_mgr = WorkspaceManager()
+                    ws_result = ws_mgr.update(
+                        events,
+                        signal_rewards=attr_result.get("signal_rewards", {}) if attr_result else {},
+                        attention_weight=float(att_result.get("weights", [{}])[0].get("allocation", 0.0)) if att_result.get("weights") else 0.0,
+                        item_id=result.analysis_id if 'result' in dir() else None,
+                    )
+                    for a_item in ws_result.get("added", []):
+                        we = bus.publish(
+                            type=EventType.WORKSPACE_ITEM_ADDED.value,
+                            payload=make_ws_added_payload(
+                                item_id=a_item["item_id"], activation=a_item["activation"], source=a_item["source"],
+                            ),
+                            caused_by=req.id,
+                        )
+                        scored_events.append(we)
+                    we2 = bus.publish(
+                        type=EventType.WORKSPACE_UPDATED.value,
+                        payload=make_ws_updated_payload(
+                            active_count=ws_result["active_count"], capacity=ws_result["capacity"],
+                        ),
+                        caused_by=req.id,
+                    )
+                    scored_events.append(we2)
+                    ws_items = ws_mgr.get_active_items()
+                episodes_payloads: list = []
+                if enable_episodic:
+                    from allbrain.episodic import EpisodicManager, make_episode_created_payload, make_episode_retrieved_payload, make_episode_forgotten_payload
+                    ep_mgr = EpisodicManager()
+                    ws_item_ids = [item.item_id for item in ws_items] if enable_workspace and ws_items else []
+                    ep_result = ep_mgr.store_episode(
+                        reward=float(s),
+                        workspace_items=ws_item_ids,
+                        decision_id=result.analysis_id,
+                        activation=0.5,
+                    )
+                    if ep_result.get("stored"):
+                        ee = bus.publish(
+                            type=EventType.EPISODE_CREATED.value,
+                            payload=make_episode_created_payload(
+                                episode_id=ep_result["episode_id"],
+                                importance=ep_result["importance"],
+                                reward=float(s),
+                            ),
+                            caused_by=req.id,
+                        )
+                        scored_events.append(ee)
+                        for forg in ep_result.get("forgotten", []):
+                            fe = bus.publish(
+                                type=EventType.EPISODE_FORGOTTEN.value,
+                                payload=make_episode_forgotten_payload(
+                                    episode_id=forg["episode_id"],
+                                    reason=forg["reason"],
+                                ),
+                                caused_by=req.id,
+                            )
+                            scored_events.append(fe)
+                    ret_result = ep_mgr.retrieve(ws_item_ids, limit=5)
+                    if ret_result["retrieved"] > 0:
+                        re = bus.publish(
+                            type=EventType.EPISODE_RETRIEVED.value,
+                            payload=make_episode_retrieved_payload(
+                                retrieved=ret_result["retrieved"],
+                                best_similarity=ret_result["best_similarity"],
+                            ),
+                            caused_by=req.id,
+                        )
+                        scored_events.append(re)
+                    episodes_payloads = ret_result.get("episodes", [])
+                concepts_payloads: list = []
+                if enable_semantic:
+                    from allbrain.semantic import SemanticManager, CONSOLIDATION_THRESHOLD, make_concept_created_payload, make_concept_updated_payload, make_concept_forgotten_payload
+                    from allbrain.episodic import Episode
+                    sem_mgr = SemanticManager()
+                    # Consolidate episode into semantic concepts
+                    if ep_result.get("stored"):
+                        stored_ep = Episode(
+                            episode_id=ep_result["episode_id"],
+                            timestamp=0,
+                            reward=float(s),
+                            importance=ep_result["importance"],
+                            workspace_items=tuple(ws_item_ids),
+                            decision_id=result.analysis_id if result is not None else "",
+                        )
+                        cons_result = sem_mgr.consolidate(stored_ep)
+                        if cons_result.get("concept_created"):
+                            ce = bus.publish(
+                                type=EventType.SEMANTIC_CONCEPT_CREATED.value,
+                                payload=make_concept_created_payload(
+                                    concept_id=cons_result["concept_created"],
+                                    pattern_signature=list(ws_item_ids),
+                                    confidence=CONSOLIDATION_THRESHOLD,
+                                ),
+                                caused_by=req.id,
+                            )
+                            scored_events.append(ce)
+                        if cons_result.get("concept_updated"):
+                            # Concept updated event already handled internally
+                            pass
+                        for forg in cons_result.get("forgotten", []):
+                            fe = bus.publish(
+                                type=EventType.SEMANTIC_CONCEPT_FORGOTTEN.value,
+                                payload=make_concept_forgotten_payload(
+                                    concept_id=forg["concept_id"],
+                                    reason=forg["reason"],
+                                ),
+                                caused_by=req.id,
+                            )
+                            scored_events.append(fe)
+                    sem_ret = sem_mgr.retrieve(tuple(ws_item_ids), limit=5)
+                    concepts_payloads = sem_ret.get("concepts", [])
+            elif enable_decision_engine:
+                from allbrain.decision import DecisionManager, make_decision_payload
+                decision_mgr_local = DecisionManager()
+                result = decision_mgr_local.query(
+                    events, agent_id=aid, task_type=task_type,
+                    debug=enable_decision_engine_debug,
+                    fusion=enable_fusion, causal=enable_causal, dynamics=enable_dynamics,
+                )
+                s = float(result.score)
+                if not enable_decision_engine_debug:
+                    de = bus.publish(
+                        type=EventType.DECISION_COMPUTED.value,
+                        payload=make_decision_payload(
+                            agent_id=aid, task_type=task_type,
+                            score=s, mode=result.mode,
+                            contributors=result.contributors,
+                            backend_trace=result.backend_trace,
+                        ),
+                        caused_by=req.id,
+                    )
+                    scored_events.append(de)
+            elif enable_fusion:
+                from allbrain.fusion import FusionManager
+                fusion_mgr_local = FusionManager()
+                fusion_state = fusion_mgr_local.query(events, agent_id=aid, task_type=task_type)
+                sv = fusion_state.get("signal_vector", {})
+                wv = fusion_state.get("weights", {})
+                s = unified_decision_score(
+                    capability=float(sv.get("capability", 0.0)),
+                    learning=float(sv.get("learning", 0.0)),
+                    dynamics=float(sv.get("dynamics", 0.0)),
+                    causal=float(sv.get("causal", 0.0)),
+                    capability_weight=float(wv.get("capability", 0.25)),
+                    learning_weight=float(wv.get("learning", 0.25)),
+                    dynamics_weight=float(wv.get("dynamics", 0.25)),
+                    causal_weight=float(wv.get("causal", 0.25)),
+                )
+            elif enable_causal:
+                cap_mgr = CapabilityManager()
+                cap_state = cap_mgr.query(events, agent_id=aid)
+                learning_mgr = CapabilityLearningManager()
+                learning_state = learning_mgr.query(events, agent_id=aid, task_type=task_type)
+                dynamics_mgr = CapabilityDynamicsManager()
+                dyn_state = dynamics_mgr.query(events, agent_id=aid, task_type=task_type)
+                drift_score = float(dyn_state.get("drift", {}).get("drift_score", 0.0))
+                trend_label = str(dyn_state.get("trend", {}).get("label", "stable"))
+                forecast_score = float(dyn_state.get("forecast", {}).get("predicted_capability", 0.0))
+                from allbrain.causal import CausalManager as CMS
+                causal_mgr = CMS()
+                causal_state = causal_mgr.query(events, agent_id=aid, task_type=task_type)
+                impacts = causal_state.get("impacts", {})
+                impact_score = 0.0
+                causal_conf = 0.0
+                if impacts:
+                    first_imp = next(iter(impacts.values()), {})
+                    impact_score = float(first_imp.get("impact_score", 0.0))
+                    causal_conf = float(first_imp.get("confidence", 0.0))
+                s = routing_causal_score(
+                    reputation=float(rep.reputation_score),
+                    runtime_score=float(tel.runtime_score),
+                    calibrated_trust=float(rev_state.calibrated_trust),
+                    consensus_score=float(rev_state.consensus_score),
+                    capability_match=float(cap_state.match_score),
+                    learned_capability=float(learning_state.capability_score),
+                    drift_score=drift_score,
+                    trend_label=trend_label,
+                    forecast_score=forecast_score,
+                    impact_score=impact_score,
+                    causal_confidence=causal_conf,
+                )
+            elif enable_dynamics:
+                cap_mgr = CapabilityManager()
+                cap_state = cap_mgr.query(events, agent_id=aid)
+                learning_mgr = CapabilityLearningManager()
+                learning_state = learning_mgr.query(events, agent_id=aid, task_type=task_type)
+                dynamics_mgr = CapabilityDynamicsManager()
+                dyn_state = dynamics_mgr.query(events, agent_id=aid, task_type=task_type)
+                drift_score = float(dyn_state.get("drift", {}).get("drift_score", 0.0))
+                trend_label = str(dyn_state.get("trend", {}).get("label", "stable"))
+                forecast_score = float(dyn_state.get("forecast", {}).get("predicted_capability", 0.0))
+                s = routing_dynamics_score(
+                    reputation=float(rep.reputation_score),
+                    runtime_score=float(tel.runtime_score),
+                    calibrated_trust=float(rev_state.calibrated_trust),
+                    consensus_score=float(rev_state.consensus_score),
+                    capability_match=float(cap_state.match_score),
+                    learned_capability=float(learning_state.capability_score),
+                    drift_score=drift_score,
+                    trend_label=trend_label,
+                    forecast_score=forecast_score,
+                )
+            elif enable_learning:
+                cap_mgr = CapabilityManager()
+                cap_state = cap_mgr.query(events, agent_id=aid)
+                learning_mgr = CapabilityLearningManager()
+                learning_state = learning_mgr.query(events, agent_id=aid, task_type=task_type)
+                s = routing_adaptive_score(
+                    reputation=float(rep.reputation_score),
+                    runtime_score=float(tel.runtime_score),
+                    calibrated_trust=float(rev_state.calibrated_trust),
+                    consensus_score=float(rev_state.consensus_score),
+                    capability_match=float(cap_state.match_score),
+                    learned_capability=float(learning_state.capability_score),
+                )
+            elif enable_capabilities:
+                cap_mgr = CapabilityManager()
+                cap_state = cap_mgr.query(events, agent_id=aid)
+                s = routing_extended_score(
+                    reputation=float(rep.reputation_score),
+                    runtime_score=float(tel.runtime_score),
+                    calibrated_trust=float(rev_state.calibrated_trust),
+                    consensus_score=float(rev_state.consensus_score),
+                    capability_match=float(cap_state.match_score),
+                )
+            else:
+                s = routing_selection_score(
+                    reputation=float(rep.reputation_score),
+                    runtime_score=float(tel.runtime_score),
+                    calibrated_trust=float(rev_state.calibrated_trust),
+                    consensus_score=float(rev_state.consensus_score),
+                )
+            scored[aid] = s
+            se = bus.publish(
+                type=EventType.AGENT_SELECTION_SCORED.value,
+                payload=make_scored_payload(agent_id=aid, task_type=task_type, selection_score=s, reputation=float(rep.reputation_score), runtime_score=float(tel.runtime_score), calibrated_trust=float(rev_state.calibrated_trust)),
+                caused_by=req.id,
+            )
+            scored_events.append(se)
+
+        best = routing_best_agent(scored)
+        sel_event = bus.publish(
+            type=EventType.AGENT_SELECTED.value,
+            payload=make_selected_payload(task_id=task_id, task_type=task_type, agent_id=best or "unknown", selection_score=scored.get(best or "", 0.0)),
+            caused_by=req.id,
+            impact_score=scored.get(best or "", 0.0),
+        )
+        return {"task_id": task_id, "task_type": task_type, "selected": best, "candidates": sorted(agent_ids)}, sel_event.id, [req] + scored_events + [sel_event]
 
     def _revision_step(
         self,
