@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "allbrain": {
+      "command": "<PATH_TO_PYTHON>",
+      "args": [
+        "-m",
+        "allbrain.cli.main",
+        "start",
+        "--project",
+        "<REPO_ROOT>",
+        "--agent",
+        "claude-code",
+        "--db-path",
+        "<REPO_ROOT>/.allbrain-claude.db"
+      ],
+      "cwd": "<REPO_ROOT>",
+      "env": {},
+      "timeout": 120000
+    }
+  }
+}

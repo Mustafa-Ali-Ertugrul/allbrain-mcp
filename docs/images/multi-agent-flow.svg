@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="650" viewBox="0 0 1600 650" role="img" aria-labelledby="title desc">
+  <title id="title">Multi-agent flow</title>
+  <desc id="desc">A flow diagram showing two writing agents and one reading agent resolving a conflict.</desc>
+  <defs>
+    <style>
+      .box { fill: #0f172a; stroke: #475569; stroke-width: 2.4; rx: 18; }
+      .write { fill: #0b1220; stroke: #38bdf8; stroke-width: 2.8; rx: 18; }
+      .read { fill: #0b1220; stroke: #8b5cf6; stroke-width: 2.8; rx: 18; }
+      .label { fill: #f8fafc; font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 24px; font-weight: 600; }
+      .small { fill: #cbd5e1; font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 18px; }
+      .title { fill: #f8fafc; font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 34px; font-weight: 700; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="650" rx="28" fill="#111827"/>
+  <text class="title" x="70" y="64">Multi-agent test flow</text>
+  <text class="small" x="70" y="96">A shared project, different agents, one replayable memory.</text>
+
+  <rect class="write" x="80" y="170" width="300" height="130" rx="18"/>
+  <text class="label" x="135" y="225">Agent A</text>
+  <text class="small" x="135" y="260">writes auth.py</text>
+
+  <rect class="write" x="80" y="360" width="300" height="130" rx="18"/>
+  <text class="label" x="135" y="415">Agent B</text>
+  <text class="small" x="135" y="450">writes auth.py</text>
+
+  <rect class="write" x="80" y="520" width="300" height="80" rx="18"/>
+  <text class="label" x="135" y="570">Agent C</text>
+
+  <rect class="box" x="470" y="230" width="430" height="190" rx="22"/>
+  <text class="label" x="535" y="290">Conflict detection</text>
+  <text class="small" x="535" y="325">Same file + multiple agents + impact score</text>
+  <text class="small" x="535" y="355">returns L1 conflicts</text>
+
+  <rect class="read" x="1030" y="170" width="470" height="130" rx="18"/>
+  <text class="label" x="1090" y="225">Resolve</text>
+  <text class="small" x="1090" y="260">pick winner, keep the shared log</text>
+
+  <rect class="read" x="1030" y="360" width="470" height="130" rx="18"/>
+  <text class="label" x="1090" y="415">Resume</text>
+  <text class="small" x="1090" y="450">next_step + agent_view + conflict_view</text>
+
+  <path d="M380 235 H460" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M380 425 H460" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M900 325 H1020" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1260 300 V360" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M380 560 H430 V530 H470" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+</svg>

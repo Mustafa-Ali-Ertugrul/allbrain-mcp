@@ -7,3 +7,7 @@ __pycache__/
 .mypy_cache/
 .coverage
 htmlcov/
+.tmp-test.db
+.allbrain-*.db
+.codex/
+.mcp.json

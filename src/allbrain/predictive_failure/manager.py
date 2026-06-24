@@ -32,6 +32,16 @@ class PredictiveFailureManager:
       7. If successful: emit FAILURE_AVOIDED
 
     Accepts optional drift_detector and learning components.
+    Supports Sprint72 optional layers:
+      - meta_router: policy_routing.MetaPolicyRouter for family-based candidate filtering
+      - competition_engine: policy_competition.CompetitionEngine for multi-policy scoring
+      - policy_blender: soft_repair.PolicyBlender for stability-weighted blending
+      - stability_adapter: soft_repair.StabilityAdapter for blend-or-hard decision
+    Supports Sprint73 optional layers:
+      - meta_scorer: meta_scoring.MetaScorer for learnable scoring augmentation
+      - profile_store: meta_scoring.ProfileStore for per-fault-type scoring profiles
+      - match_engine: self_play.MatchEngine for self-play simulation
+      - weight_optimizer: meta_optimizer.WeightOptimizer for adaptive weight updates
     """
 
     def __init__(
@@ -50,6 +60,27 @@ class PredictiveFailureManager:
         rollback_engine: Any = None,
         snapshot_manager: Any = None,
         recovery_executor: Any = None,
+        meta_router: Any = None,
+        competition_engine: Any = None,
+        policy_blender: Any = None,
+        stability_adapter: Any = None,
+        meta_scorer: Any = None,
+        profile_store: Any = None,
+        match_engine: Any = None,
+        weight_optimizer: Any = None,
+        meta_evaluator: Any = None,
+        evaluator_store: Any = None,
+        learning_graph: Any = None,
+        graph_rewriter: Any = None,
+        coupling_matrix: Any = None,
+        dynamics: Any = None,
+        oscillation_detector: Any = None,
+        objective_store: Any = None,
+        objective_evaluator: Any = None,
+        tradeoff_engine: Any = None,
+        tradeoff_selector: Any = None,
+        constraint_engine: Any = None,
+        alignment_tracker: Any = None,
     ) -> None:
         self._risk_engine = RiskEngine()
         self._predictor = Predictor()
@@ -68,6 +99,27 @@ class PredictiveFailureManager:
         self._rollback_engine = rollback_engine
         self._snapshot_manager = snapshot_manager
         self._recovery_executor = recovery_executor
+        self._meta_router = meta_router
+        self._competition_engine = competition_engine
+        self._policy_blender = policy_blender
+        self._stability_adapter = stability_adapter
+        self._meta_scorer = meta_scorer
+        self._profile_store = profile_store
+        self._match_engine = match_engine
+        self._weight_optimizer = weight_optimizer
+        self._meta_evaluator = meta_evaluator
+        self._evaluator_store = evaluator_store
+        self._learning_graph = learning_graph
+        self._graph_rewriter = graph_rewriter
+        self._coupling_matrix = coupling_matrix
+        self._dynamics = dynamics
+        self._oscillation_detector = oscillation_detector
+        self._objective_store = objective_store
+        self._objective_evaluator = objective_evaluator
+        self._tradeoff_engine = tradeoff_engine
+        self._tradeoff_selector = tradeoff_selector
+        self._constraint_engine = constraint_engine
+        self._alignment_tracker = alignment_tracker
 
     def run_cycle(
         self,
@@ -79,7 +131,9 @@ class PredictiveFailureManager:
         """Run one predictive failure cycle for a fault."""
         events: list[dict[str, Any]] = []
         avoided = False
+        stability: Any = None
         now = time.time()
+        stats: Any = None
 
         # 1. Emit signal detected events
         for signal in signals:
@@ -175,6 +229,23 @@ class PredictiveFailureManager:
                     })
                     if not candidates:
                         candidates = [optimizer_strategy, default_strategy]
+
+                    # Sprint 72: Meta Router — filter candidates by policy family
+                    if self._meta_router is not None:
+                        route_decision, candidates = self._meta_router.route(
+                            fault_type=fault_type,
+                            signal_type=primary_signal,
+                            all_candidates=candidates,
+                        )
+                        events.append({
+                            "event_type": EventType.POLICY_FAMILY_SELECTED.value,
+                            "family": route_decision.family.name.value,
+                            "strategies": list(route_decision.family.strategies),
+                            "fault_type": route_decision.fault_type,
+                            "signal_type": route_decision.signal_type,
+                            "confidence": route_decision.confidence,
+                        })
+
                     decision = self._explorer.select(
                         fault_type=fault_type,
                         signal_type=primary_signal,
@@ -192,6 +263,130 @@ class PredictiveFailureManager:
                         "was_exploration": decision.was_exploration,
                     })
                     self._explorer.advance_cycle()
+
+                    # Sprint 72: Policy Competition — score and select best candidate
+                    if self._competition_engine is not None:
+                        from allbrain.policy_competition import PolicyCandidate
+                        comp_candidates = [
+                            PolicyCandidate(
+                                policy_id=f"policy::{fault_type}::{s}",
+                                fault_type=fault_type,
+                                strategy=s,
+                                policy_data={},
+                                version=1,
+                            )
+                            for s in candidates
+                        ]
+                        if comp_candidates:
+                            comp_result = self._competition_engine.compete(
+                                comp_candidates,
+                                self._learning_engine.stats,
+                            )
+                            if comp_result is not None:
+                                final_strategy = comp_result.winner.candidate.strategy
+                                events.append({
+                                    "event_type": EventType.COMPETITION_HELD.value,
+                                    "fault_type": fault_type,
+                                    "winner_policy_id": comp_result.winner.candidate.policy_id,
+                                    "winner_strategy": comp_result.winner.candidate.strategy,
+                                    "winner_score": comp_result.winner.score,
+                                    "confidence": comp_result.confidence,
+                                    "candidate_count": len(comp_candidates),
+                                })
+
+                                # Sprint 73: Meta-Scoring Augmentation
+                                if self._meta_scorer is not None:
+                                    from allbrain.meta_scoring import (
+                                        MetaScoreResult,
+                                        make_scoring_profile_updated_payload,
+                                    )
+                                    winner_scorer = comp_result.winner
+                                    meta_result = self._meta_scorer.score(
+                                        fault_type=fault_type,
+                                        static_score=winner_scorer.score,
+                                        success_rate=winner_scorer.success_rate,
+                                        risk_estimate=1.0 - winner_scorer.risk_penalty,
+                                        stability_estimate=winner_scorer.stability_bonus,
+                                        drift_estimate=winner_scorer.drift_penalty,
+                                    )
+                                    if meta_result.override_applied:
+                                        events.append({
+                                            "event_type": EventType.SCORING_PROFILE_UPDATED.value,
+                                            **self._meta_scorer.to_event_payload(meta_result, fault_type),
+                                        })
+
+                                # Sprint 74: Meta-Meta Scoring — evaluate the evaluator
+                                if self._meta_evaluator is not None:
+                                    from allbrain.meta_meta_scoring import make_evaluator_profile_updated_payload
+                                    mm_result = self._meta_evaluator.evaluate(
+                                        evaluator_id=f"meta_scorer::{fault_type}",
+                                        fault_type=fault_type,
+                                        meta_score=meta_result.meta_score,
+                                        outcome_delta=meta_result.meta_score - meta_result.static_score,
+                                    )
+                                    if mm_result.version >= 1:
+                                        events.append({
+                                            "event_type": EventType.EVALUATOR_PROFILE_UPDATED.value,
+                                            **make_evaluator_profile_updated_payload(
+                                                evaluator_id=f"meta_scorer::{fault_type}",
+                                                fault_type=fault_type,
+                                                accuracy=mm_result.accuracy,
+                                                bias=mm_result.bias,
+                                                stability=0.5,
+                                                drift_sensitivity=0.1,
+                                                version=mm_result.version,
+                                            ),
+                                        })
+
+                # Sprint 75: Objective Governance — compute objectives + utility + trader
+                obj_winner: str | None = None
+                if self._objective_evaluator is not None and self._tradeoff_engine is not None and self._tradeoff_selector is not None:
+                    from allbrain.objective_system import Objective, make_objective_updated_payload
+                    from allbrain.tradeoff_engine import UtilityFunction, ParetoAnalyzer, make_tradeoff_analyzed_payload, make_utility_computed_payload
+                    store = self._objective_store
+                    weights = store.get(fault_type) if store is not None else None
+                    if weights is None:
+                        from allbrain.objective_system import ObjectiveStore
+                        weights = ObjectiveStore().get(fault_type)
+                    obj_results = []
+                    for c in comp_candidates:
+                        key = (fault_type, fault_type, c.strategy)
+                        s = self._learning_engine.stats.get(key)
+                        obj = Objective.compute(fault_type, c.strategy, s, 0.5, 1)
+                        self._objective_evaluator.evaluate(obj)
+                        events.append({"event_type": EventType.OBJECTIVE_UPDATED.value,
+                            **make_objective_updated_payload(fault_type=fault_type,
+                                safety=obj.safety, stability=obj.stability, success=obj.success,
+                                efficiency=obj.efficiency, safety_pass=obj.safety_pass)})
+                        u = UtilityFunction.compute(obj, weights, c.policy_id, c.strategy)
+                        events.append({"event_type": EventType.UTILITY_COMPUTED.value,
+                            **make_utility_computed_payload(policy_id=c.policy_id, fault_type=fault_type,
+                                utility=u.utility, safety_pass=u.safety_pass)})
+                        obj_results.append(u)
+                    frontier = ParetoAnalyzer.analyze(obj_results)
+                    events.append({"event_type": EventType.TRADEOFF_ANALYZED.value,
+                        **make_tradeoff_analyzed_payload(fault_type=fault_type,
+                            frontier_size=len(frontier.frontier), dominated_count=len(frontier.dominated))})
+                    tradeoff = self._tradeoff_selector.select(obj_results, frontier)
+                    if tradeoff.winner is not None:
+                        obj_winner = tradeoff.winner.strategy
+
+                    # Sprint 75: Value Alignment — check constraints
+                    if self._constraint_engine is not None and tradeoff.winner is not None:
+                        from allbrain.value_alignment import make_alignment_failed_payload
+                        from allbrain.objective_system.model import FAULT_TYPE_SAFETY_THRESHOLDS
+                        st = FAULT_TYPE_SAFETY_THRESHOLDS.get(fault_type, 0.50)
+                        align_score = self._constraint_engine.check(fault_type,
+                            {"safety": tradeoff.winner.safety, "stability": tradeoff.winner.stability}, st)
+                        if self._alignment_tracker is not None:
+                            from allbrain.value_alignment import AlignmentResult
+                            self._alignment_tracker.record(AlignmentResult(score=align_score, blocked=not align_score.passed))
+                        if not align_score.passed:
+                            events.append({"event_type": EventType.ALIGNMENT_FAILED.value,
+                                **make_alignment_failed_payload(fault_type=fault_type,
+                                    overall_score=align_score.overall_score,
+                                    hard_violations=align_score.hard_violations,
+                                    soft_penalties=align_score.soft_penalties)})
 
                 if final_strategy != default_strategy:
                     from allbrain.predictive_failure.model import MitigationPlan
@@ -363,6 +558,26 @@ class PredictiveFailureManager:
                         "disabled": stats.disabled,
                     })
 
+                    # Sprint 73: Self-Play Simulation (isolated)
+                    if self._match_engine is not None:
+                        sp_candidates = sorted({
+                            s.strategy for s in self._learning_engine.stats.values()
+                            if s.fault_type == fault_type and not s.disabled
+                        })
+                        # Fallback: also include router family candidates if meta_router is set
+                        if len(sp_candidates) < 2 and candidates and len(candidates) >= 2:
+                            sp_candidates = sorted(set(sp_candidates) | set(candidates))
+                        sp_results = self._match_engine.run_simulated_round(
+                            fault_type=fault_type,
+                            candidates=sp_candidates,
+                            all_stats=self._learning_engine.stats,
+                        )
+                        for sp_result in sp_results:
+                            events.append({
+                                "event_type": EventType.MATCH_PLAYED.value,
+                                **sp_result.to_payload(),
+                            })
+
                     if self._policy_store is not None:
                         policy = self._policy_store.update_if_needed(
                             fault_type,
@@ -380,6 +595,7 @@ class PredictiveFailureManager:
                             })
 
                             # 6.5 Self-repair: snapshot + validate + health check
+                            stability = None
                             if self._snapshot_manager is not None:
                                 drift_count = (
                                     self._health_monitor.get_anomaly_count(fault_type)
@@ -389,7 +605,6 @@ class PredictiveFailureManager:
                                     self._health_monitor.get_safety_violations(fault_type)
                                     if self._health_monitor is not None else 0
                                 )
-                                stability = None
                                 if self._validation_gate is not None:
                                     stability = self._validation_gate.compute_stability(
                                         fault_type=fault_type,
@@ -435,6 +650,82 @@ class PredictiveFailureManager:
                                         else 0.5
                                     ),
                                 })
+
+                            # Sprint 72: Soft Blend — if stability < threshold, blend with previous version
+                            if self._policy_blender is not None and stability is not None:
+                                stbl_score = stability.stability_score if hasattr(stability, "stability_score") else 0.5
+                                if self._policy_blender.should_blend(stbl_score):
+                                    history = self._policy_store.get_history(fault_type)
+                                    if len(history) >= 2:
+                                        old_version = history[-2]
+                                        old_data = {
+                                            **dict(old_version.strategy_preferences),
+                                            **dict(old_version.urgency_multipliers),
+                                        }
+                                        new_data = {
+                                            **dict(policy.strategy_preferences),
+                                            **dict(policy.urgency_multipliers),
+                                        }
+                                        blend_result = self._policy_blender.blend(
+                                            old_policy_id=f"v{old_version.version}",
+                                            new_policy_id=f"v{policy.version}",
+                                            fault_type=fault_type,
+                                            old_data=old_data,
+                                            new_data=new_data,
+                                            stability_score=stbl_score,
+                                        )
+                                        if blend_result is not None:
+                                            events.append({
+                                                "event_type": EventType.POLICY_BLENDED.value,
+                                                "old_policy_id": blend_result.old_policy_id,
+                                                "new_policy_id": blend_result.new_policy_id,
+                                                "fault_type": blend_result.fault_type,
+                                                "old_weight": blend_result.old_weight,
+                                                "new_weight": blend_result.new_weight,
+                                                "stability_score": blend_result.stability_score,
+                                            })
+
+                            # Sprint 74: Learning Graph — update node performance + maybe rewrite
+                            if self._learning_graph is not None:
+                                perf = stats.success_rate if stats is not None else 0.5
+                                for nid in ["meta_scorer", "weight_optimizer", "competition_engine"]:
+                                    node = self._learning_graph.get_node(nid)
+                                    if node is not None:
+                                        self._learning_graph.update_performance(nid, perf)
+                                        events.append({
+                                            "event_type": EventType.LEARNING_NODE_UPDATED.value,
+                                            "node_id": nid,
+                                            "node_type": node.node_type,
+                                            "performance": node.performance,
+                                            "version": node.version,
+                                        })
+                                if self._graph_rewriter is not None:
+                                    rewrite = self._graph_rewriter.maybe_rewrite()
+                                    if rewrite is not None:
+                                        events.append({
+                                            "event_type": EventType.LEARNING_GRAPH_REWRITTEN.value,
+                                            "node_id": rewrite.node_id,
+                                            "param_name": rewrite.param_name,
+                                            "old_value": rewrite.old_value,
+                                            "new_value": rewrite.new_value,
+                                            "delta": rewrite.delta,
+                                            "triggered_by": rewrite.triggered_by,
+                                            "version": rewrite.version,
+                                        })
+
+                            # Sprint 75: Objective Rebalancing (every 25 cycles, low oscillation)
+                            if self._objective_evaluator is not None:
+                                osc_low = True
+                                if self._oscillation_detector is not None:
+                                    osc_low = not self._oscillation_detector.is_oscillating(fault_type)
+                                reb = self._objective_evaluator.maybe_rebalance(fault_type, osc_low)
+                                if reb is not None:
+                                    from allbrain.objective_system import make_objective_rebalanced_payload
+                                    events.append({"event_type": EventType.OBJECTIVE_REBALANCED.value,
+                                        **make_objective_rebalanced_payload(fault_type=fault_type,
+                                            safety=reb.safety, stability=reb.stability,
+                                            success=reb.success, efficiency=reb.efficiency,
+                                            version=reb.version)})
 
                             if self._health_monitor is not None and stability is not None:
                                 anomaly = self._health_monitor.check(
@@ -494,6 +785,75 @@ class PredictiveFailureManager:
 
                 if self._rollback_engine is not None:
                     self._rollback_engine.advance_cycle()
+
+        # Sprint 73: Meta-Optimizer (every N cycles) — outside policy update
+        if self._weight_optimizer is not None:
+            optimizer_stbl = stability.stability_score if (stability is not None and hasattr(stability, "stability_score")) else 0.5
+            from allbrain.meta_optimizer import StabilityController, make_weights_adapated_payload, make_meta_optimizer_guarded_payload
+            gate = StabilityController()
+            if gate.allow_update(optimizer_stbl) and stats is not None:
+                delta_success = stats.success_rate
+                delta_risk = 1.0 - stats.avg_effectiveness if stats.avg_effectiveness > 0 else 0.5
+                delta_stability = optimizer_stbl
+                delta_drift = 1.0 - stats.success_rate
+                updated = self._weight_optimizer.step(
+                    fault_type=fault_type,
+                    delta_success=delta_success,
+                    delta_risk=delta_risk,
+                    delta_stability=delta_stability,
+                    delta_drift=delta_drift,
+                )
+                if updated is not None:
+                    events.append({
+                        "event_type": EventType.WEIGHTS_ADAPTED.value,
+                        **make_weights_adapated_payload(
+                            fault_type=fault_type,
+                            success_weight=updated.success_weight,
+                            risk_weight=updated.risk_weight,
+                            stability_weight=updated.stability_weight,
+                            drift_weight=updated.drift_weight,
+                            version=updated.version,
+                        ),
+                    })
+            elif stats is not None:
+                events.append({
+                    "event_type": EventType.META_OPTIMIZER_GUARDED.value,
+                    **make_meta_optimizer_guarded_payload(
+                        fault_type=fault_type,
+                        reason="stability_below_threshold",
+                        stability_score=optimizer_stbl,
+                    ),
+                })
+
+        # Sprint 74: CoEvolution — alternating policy/scorer update with oscillation guard
+        if self._coupling_matrix is not None and self._dynamics is not None and stats is not None:
+            from allbrain.coevolution import CoEvolutionState
+            now = time.time()
+            cycle_parity = int(now * 1000) % 2 == 0
+            coev_state = CoEvolutionState()
+            coev_state = self._dynamics.step(coev_state, policy_update=cycle_parity)
+            events.append({
+                "event_type": EventType.COEVOLUTION_STATE_UPDATED.value,
+                "policy_strength": coev_state.policy_strength,
+                "scorer_strength": coev_state.scorer_strength,
+                "oscillation_index": coev_state.oscillation_index,
+                "cycle": coev_state.cycle,
+                "version": coev_state.version,
+            })
+            if self._oscillation_detector is not None:
+                self._oscillation_detector.record(
+                    fault_type, stats.success_rate - 0.5 if stats is not None else 0.0,
+                )
+                if self._oscillation_detector.is_oscillating(fault_type):
+                    osc_index = self._oscillation_detector.oscillation_index(fault_type)
+                    events.append({
+                        "event_type": EventType.OSCILLATION_DETECTED.value,
+                        "fault_type": fault_type,
+                        "oscillation_index": osc_index,
+                        "threshold": 0.30,
+                        "message": "co-evolution oscillation detected, damping applied",
+                    })
+
         if action is not None and action.success:
             avoided = True
             events.append({

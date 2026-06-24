@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="700" viewBox="0 0 1600 700" role="img" aria-labelledby="title desc">
+  <title id="title">AllBrain MCP architecture</title>
+  <desc id="desc">A flow diagram showing clients connecting via MCP to the AllBrain server and SQLite storage.</desc>
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#1f2937"/>
+    </linearGradient>
+    <style>
+      .box { fill: #0f172a; stroke: #334155; stroke-width: 2.5; rx: 20; }
+      .label { fill: #e2e8f0; font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 24px; font-weight: 600; }
+      .small { fill: #94a3b8; font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 18px; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="700" rx="28" fill="url(#g2)"/>
+  <text x="68" y="62" fill="#f8fafc" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">Architecture</text>
+  <text x="68" y="96" fill="#94a3b8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="18">Each client connects through stdio MCP and shares the same event log.</text>
+
+  <rect class="box" x="70" y="160" width="300" height="120" rx="20"/>
+  <text class="label" x="120" y="210">Codex</text>
+  <text class="small" x="120" y="245">CLI / IDE MCP client</text>
+
+  <rect class="box" x="70" y="320" width="300" height="120" rx="20"/>
+  <text class="label" x="120" y="370">Claude Code</text>
+  <text class="small" x="120" y="405">Project or user scope</text>
+
+  <rect class="box" x="70" y="480" width="300" height="120" rx="20"/>
+  <text class="label" x="120" y="530">Antigravity</text>
+  <text class="small" x="120" y="565">Raw MCP config</text>
+
+  <rect x="480" y="210" width="400" height="280" rx="26" fill="url(#g1)" opacity="0.18" stroke="#38bdf8" stroke-width="2.5"/>
+  <text class="label" x="570" y="290">AllBrain MCP Server</text>
+  <text class="small" x="570" y="330">stdio transport</text>
+  <text class="small" x="570" y="365">event-sourced tool layer</text>
+  <text class="small" x="570" y="400">conflict / resume / reasoning tools</text>
+
+  <rect class="box" x="1020" y="190" width="500" height="150" rx="24"/>
+  <text class="label" x="1085" y="245">SQLite event store</text>
+  <text class="small" x="1085" y="280">canonical project identity + append-only events</text>
+
+  <rect class="box" x="1020" y="385" width="500" height="150" rx="24"/>
+  <text class="label" x="1085" y="440">Replay / projections</text>
+  <text class="small" x="1085" y="475">resume, conflict view, intent, world, scenario</text>
+
+  <path d="M370 220 H470" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M370 380 H470" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M370 540 H470" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M880 330 H1010" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1260 340 V385" stroke="#94a3b8" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+</svg>

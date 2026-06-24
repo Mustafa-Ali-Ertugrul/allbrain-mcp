@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "allbrain": {
+      "command": "<PATH_TO_PYTHON>",
+      "args": [
+        "-m",
+        "allbrain.cli.main",
+        "start",
+        "--project",
+        "<REPO_ROOT>",
+        "--agent",
+        "antigravity",
+        "--db-path",
+        "<REPO_ROOT>/.allbrain-antigravity.db"
+      ],
+      "cwd": "<REPO_ROOT>",
+      "env": {}
+    }
+  }
+}
