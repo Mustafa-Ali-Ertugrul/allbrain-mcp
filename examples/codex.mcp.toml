@@ -1,0 +1,8 @@
+[mcp_servers.allbrain]
+command = "<PATH_TO_PYTHON>"
+args = ["-m", "allbrain.cli.main", "start", "--project", "<REPO_ROOT>", "--agent", "codex", "--db-path", "<REPO_ROOT>/.allbrain-codex.db"]
+cwd = "<REPO_ROOT>"
+startup_timeout_sec = 20
+tool_timeout_sec = 120
+enabled = true
+required = true
