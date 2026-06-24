@@ -53,7 +53,7 @@ class SystemDecisionPipeline:
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False, enable_calibration: bool = False, enable_drift: bool = False, enable_reputation: bool = False, enable_arbitration: bool = False, enable_telemetry: bool = False, enable_routing: bool = False, enable_capabilities: bool = False, enable_learning: bool = False, enable_causal: bool = False, enable_dynamics: bool = False, enable_fusion: bool = False, enable_decision_engine: bool = False, enable_decision_engine_debug: bool = False, enable_meta_policy: bool = False, enable_meta_policy_drift_detection: bool = False, enable_attribution: bool = False,         enable_attention: bool = False,                  enable_workspace: bool = True, enable_episodic: bool = True, enable_semantic: bool = True, enable_resilience: bool = False, enable_recovery_consensus: bool = False, enable_failure_memory: bool = False, enable_adaptive_recovery: bool = False, enable_predictive_failure: bool = False) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False, enable_calibration: bool = False, enable_drift: bool = False, enable_reputation: bool = False, enable_arbitration: bool = False, enable_telemetry: bool = False, enable_routing: bool = False, enable_capabilities: bool = False, enable_learning: bool = False, enable_causal: bool = False, enable_dynamics: bool = False, enable_fusion: bool = False, enable_decision_engine: bool = False, enable_decision_engine_debug: bool = False, enable_meta_policy: bool = False, enable_meta_policy_drift_detection: bool = False, enable_attribution: bool = False,         enable_attention: bool = False,                  enable_workspace: bool = True, enable_episodic: bool = True, enable_semantic: bool = True, enable_resilience: bool = False, enable_recovery_consensus: bool = False, enable_failure_memory: bool = False, enable_adaptive_recovery: bool = False, enable_predictive_failure: bool = False, enable_mitigation_learning: bool = False) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -585,6 +585,117 @@ class SystemDecisionPipeline:
                     "total_avoided": sum(1 for c in pf_chains if c.get("avoided")),
                 }
 
+            mitigation_learning_payload: dict[str, Any] | None = None
+            if enable_mitigation_learning and predictive_failure_payload is not None:
+                from allbrain.mitigation_learning import (
+                    OutcomeTracker,
+                    LearningEngine,
+                    StrategyOptimizer,
+                    PolicyStore,
+                )
+                ml_tracker = OutcomeTracker()
+                ml_engine = LearningEngine()
+                ml_optimizer = StrategyOptimizer()
+                ml_store = PolicyStore()
+                ml_chains: list[dict[str, Any]] = []
+                for chain in pf_chains:
+                    if chain.get("mitigation") is None:
+                        ml_chains.append({"fault_id": chain["fault_id"], "learned": False})
+                        continue
+                    outcome = ml_tracker.measure(
+                        fault_id=chain["fault_id"],
+                        fault_type=chain["fault_type"],
+                        plan_id=chain["mitigation"].plan_id if hasattr(chain["mitigation"], "plan_id") else "",
+                        strategy=chain["mitigation"].strategy if hasattr(chain["mitigation"], "strategy") else "unknown",
+                        pre_risk=chain["risk_score"],
+                        urgency=chain["mitigation"].urgency if hasattr(chain["mitigation"], "urgency") else 0.5,
+                        timestamp=0.0,
+                    )
+                    signal_type = chain.get("fault_type", "failure")
+                    learning_record = ml_engine.make_learning_record(
+                        fault_id=chain["fault_id"],
+                        fault_type=chain["fault_type"],
+                        signal_type=signal_type,
+                        strategy=outcome.strategy,
+                        risk_delta=outcome.risk_delta,
+                        pre_risk=outcome.pre_risk,
+                        success=outcome.risk_delta > 0,
+                        occurred_at=0.0,
+                    )
+                    stats, _unused = ml_engine.update(learning_record)
+                    policy = ml_store.update_if_needed(
+                        chain["fault_type"],
+                        ml_engine.stats,
+                    )
+                    learned_events: list[dict[str, Any]] = [
+                        {"event_type": EventType.OUTCOME_MEASURED.value, **{
+                            "outcome_id": outcome.outcome_id,
+                            "fault_id": outcome.fault_id,
+                            "plan_id": outcome.plan_id,
+                            "strategy": outcome.strategy,
+                            "pre_risk": outcome.pre_risk,
+                            "post_risk": outcome.post_risk,
+                            "risk_delta": outcome.risk_delta,
+                            "failure_prevented": outcome.failure_prevented,
+                            "stability_delta": outcome.stability_delta,
+                        }},
+                        {"event_type": EventType.MITIGATION_EVALUATED.value, **{
+                            "learning_id": learning_record.learning_id,
+                            "fault_id": learning_record.fault_id,
+                            "fault_type": learning_record.fault_type,
+                            "signal_type": learning_record.signal_type,
+                            "strategy": learning_record.strategy,
+                            "effectiveness_score": learning_record.effectiveness_score,
+                            "success": learning_record.success,
+                        }},
+                    ]
+                    if stats is not None:
+                        learned_events.append({
+                            "event_type": EventType.STRATEGY_UPDATED.value,
+                            "fault_type": stats.fault_type,
+                            "signal_type": stats.signal_type,
+                            "strategy": stats.strategy,
+                            "total_uses": stats.total_uses,
+                            "successes": stats.successes,
+                            "failures": stats.failures,
+                            "avg_effectiveness": stats.avg_effectiveness,
+                            "success_rate": stats.success_rate,
+                            "disabled": stats.disabled,
+                        })
+                    if policy is not None:
+                        learned_events.append({
+                            "event_type": EventType.POLICY_IMPROVED.value,
+                            "fault_type": policy.fault_type,
+                            "version": policy.version,
+                            "created_at": policy.created_at,
+                            "disabled_strategies": sorted(policy.disabled_strategies),
+                            "strategy_preferences": dict(policy.strategy_preferences),
+                            "urgency_multipliers": dict(policy.urgency_multipliers),
+                        })
+                    for lev in learned_events:
+                        et_raw = lev.pop("event_type", "")
+                        try:
+                            et = EventType(et_raw)
+                            bus.publish(
+                                type=et.value,
+                                payload=lev,
+                                caused_by=last_event_id,
+                            )
+                        except ValueError:
+                            pass
+                    ml_chains.append({
+                        "fault_id": chain["fault_id"],
+                        "learned": True,
+                        "outcome": outcome,
+                        "learning": learning_record,
+                        "policy_version": policy.version if policy else 0,
+                    })
+                mitigation_learning_payload = {
+                    "chains": ml_chains,
+                    "total_learned": sum(1 for c in ml_chains if c.get("learned")),
+                    "total_cycles": len(ml_chains),
+                }
+
             adaptive_recovery_payload: dict[str, Any] | None = None
             if enable_adaptive_recovery and recovery_consensus_payload is not None and resilience_payload is not None:
                 from allbrain.adaptive_recovery import AdaptiveRecoveryManager
@@ -707,8 +818,10 @@ class SystemDecisionPipeline:
                 completed_payload["adaptive_recovery"] = adaptive_recovery_payload
             if predictive_failure_payload is not None:
                 completed_payload["predictive_failure"] = predictive_failure_payload
+            if mitigation_learning_payload is not None:
+                completed_payload["mitigation_learning"] = mitigation_learning_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning_payload, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload, evidence=evidence_payload, trust=trust_payload, calibration=calibration_payload, drift=drift_payload, reputation=reputation_payload, consensus=consensus_payload_arb, arb_decision=arb_decision_payload, telemetry=telemetry_payload, routing=routing_payload, capability=capability_payload, dynamics=dynamics_payload, causal=causal_payload, fusion=fusion_payload, decision=decision_payload, resilience=resilience_payload, recovery_consensus=recovery_consensus_payload, failure_memory=failure_memory_payload, adaptive_recovery=adaptive_recovery_payload, predictive_failure=predictive_failure_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning_payload, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload, evidence=evidence_payload, trust=trust_payload, calibration=calibration_payload, drift=drift_payload, reputation=reputation_payload, consensus=consensus_payload_arb, arb_decision=arb_decision_payload, telemetry=telemetry_payload, routing=routing_payload, capability=capability_payload, dynamics=dynamics_payload, causal=causal_payload, fusion=fusion_payload, decision=decision_payload, resilience=resilience_payload, recovery_consensus=recovery_consensus_payload, failure_memory=failure_memory_payload, adaptive_recovery=adaptive_recovery_payload, predictive_failure=predictive_failure_payload, mitigation_learning=mitigation_learning_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -814,7 +927,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None, revision: dict[str, Any] | None = None, evidence: dict[str, Any] | None = None, trust: dict[str, Any] | None = None, calibration: dict[str, Any] | None = None, drift: dict[str, Any] | None = None, reputation: dict[str, Any] | None = None, consensus: dict[str, Any] | None = None, arb_decision: dict[str, Any] | None = None, telemetry: dict[str, Any] | None = None, routing: dict[str, Any] | None = None, capability: dict[str, Any] | None = None, dynamics: dict[str, Any] | None = None, causal: dict[str, Any] | None = None, fusion: dict[str, Any] | None = None, decision: dict[str, Any] | None = None, resilience: dict[str, Any] | None = None, recovery_consensus: dict[str, Any] | None = None, failure_memory: dict[str, Any] | None = None, adaptive_recovery: dict[str, Any] | None = None, predictive_failure: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None, revision: dict[str, Any] | None = None, evidence: dict[str, Any] | None = None, trust: dict[str, Any] | None = None, calibration: dict[str, Any] | None = None, drift: dict[str, Any] | None = None, reputation: dict[str, Any] | None = None, consensus: dict[str, Any] | None = None, arb_decision: dict[str, Any] | None = None, telemetry: dict[str, Any] | None = None, routing: dict[str, Any] | None = None, capability: dict[str, Any] | None = None, dynamics: dict[str, Any] | None = None, causal: dict[str, Any] | None = None, fusion: dict[str, Any] | None = None, decision: dict[str, Any] | None = None, resilience: dict[str, Any] | None = None, recovery_consensus: dict[str, Any] | None = None, failure_memory: dict[str, Any] | None = None, adaptive_recovery: dict[str, Any] | None = None, predictive_failure: dict[str, Any] | None = None, mitigation_learning: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -858,6 +971,7 @@ class SystemDecisionPipeline:
             "failure_memory": failure_memory,
             "adaptive_recovery": adaptive_recovery,
             "predictive_failure": predictive_failure,
+            "mitigation_learning": mitigation_learning,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 

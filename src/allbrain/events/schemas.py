@@ -210,6 +210,10 @@ class EventType(StrEnum):
     PROACTIVE_MITIGATION_PLANNED = "proactive_mitigation_planned"
     PROACTIVE_RECOVERY_EXECUTED = "proactive_recovery_executed"
     FAILURE_AVOIDED = "failure_avoided"
+    MITIGATION_EVALUATED = "mitigation_evaluated"
+    OUTCOME_MEASURED = "outcome_measured"
+    STRATEGY_UPDATED = "strategy_updated"
+    POLICY_IMPROVED = "policy_improved"
 
 
 SemanticEventType = {
@@ -406,6 +410,10 @@ SemanticEventType = {
     EventType.FAILURE_PATTERN_DETECTED,
     EventType.RECOVERY_EXPERIENCE_UPDATED,
     EventType.RECOVERY_LEARNING_APPLIED,
+    EventType.MITIGATION_EVALUATED,
+    EventType.OUTCOME_MEASURED,
+    EventType.STRATEGY_UPDATED,
+    EventType.POLICY_IMPROVED,
 }
 
 
