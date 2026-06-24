@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from enum import StrEnum
 
@@ -183,6 +183,33 @@ class EventType(StrEnum):
     SEMANTIC_CONCEPT_CREATED = "semantic_concept_created"
     SEMANTIC_CONCEPT_UPDATED = "semantic_concept_updated"
     SEMANTIC_CONCEPT_FORGOTTEN = "semantic_concept_forgotten"
+    RESILIENCE_ANOMALY_DETECTED = "resilience_anomaly_detected"
+    RESILIENCE_RECOVERY_PLANNED = "resilience_recovery_planned"
+    RESILIENCE_RECOVERY_CANCELLED = "resilience_recovery_cancelled"
+    RESILIENCE_SNAPSHOT_CREATED = "resilience_snapshot_created"
+    RESILIENCE_FAILURE_ANALYZED = "resilience_failure_analyzed"
+    RECOVERY_STRATEGIES_GENERATED = "recovery_strategies_generated"
+    RECOVERY_STRATEGY_EVALUATED = "recovery_strategy_evaluated"
+    RECOVERY_CONSENSUS_REACHED = "recovery_consensus_reached"
+    RECOVERY_STRATEGY_REJECTED = "recovery_strategy_rejected"
+    RECOVERY_STRATEGY_SELECTED = "recovery_strategy_selected"
+    FAILURE_MEMORY_STORED = "failure_memory_stored"
+    FAILURE_MEMORY_RETRIEVED = "failure_memory_retrieved"
+    FAILURE_PATTERN_DETECTED = "failure_pattern_detected"
+    RECOVERY_EXPERIENCE_UPDATED = "recovery_experience_updated"
+    RECOVERY_LEARNING_APPLIED = "recovery_learning_applied"
+    RECOVERY_CHAIN_CREATED = "recovery_chain_created"
+    RECOVERY_STEP_STARTED = "recovery_step_started"
+    RECOVERY_STEP_FAILED = "recovery_step_failed"
+    RECOVERY_STEP_SUCCEEDED = "recovery_step_succeeded"
+    RECOVERY_STRATEGY_SWITCHED = "recovery_strategy_switched"
+    ADAPTIVE_RECOVERY_COMPLETED = "adaptive_recovery_completed"
+    PREDICTIVE_SIGNAL_DETECTED = "predictive_signal_detected"
+    FAILURE_RISK_COMPUTED = "failure_risk_computed"
+    FAILURE_PREDICTED = "failure_predicted"
+    PROACTIVE_MITIGATION_PLANNED = "proactive_mitigation_planned"
+    PROACTIVE_RECOVERY_EXECUTED = "proactive_recovery_executed"
+    FAILURE_AVOIDED = "failure_avoided"
 
 
 SemanticEventType = {
@@ -364,6 +391,21 @@ SemanticEventType = {
     EventType.SEMANTIC_CONCEPT_CREATED,
     EventType.SEMANTIC_CONCEPT_UPDATED,
     EventType.SEMANTIC_CONCEPT_FORGOTTEN,
+    EventType.RESILIENCE_ANOMALY_DETECTED,
+    EventType.RESILIENCE_RECOVERY_PLANNED,
+    EventType.RESILIENCE_RECOVERY_CANCELLED,
+    EventType.RESILIENCE_SNAPSHOT_CREATED,
+    EventType.RESILIENCE_FAILURE_ANALYZED,
+    EventType.RECOVERY_STRATEGIES_GENERATED,
+    EventType.RECOVERY_STRATEGY_EVALUATED,
+    EventType.RECOVERY_CONSENSUS_REACHED,
+    EventType.RECOVERY_STRATEGY_REJECTED,
+    EventType.RECOVERY_STRATEGY_SELECTED,
+    EventType.FAILURE_MEMORY_STORED,
+    EventType.FAILURE_MEMORY_RETRIEVED,
+    EventType.FAILURE_PATTERN_DETECTED,
+    EventType.RECOVERY_EXPERIENCE_UPDATED,
+    EventType.RECOVERY_LEARNING_APPLIED,
 }
 
 

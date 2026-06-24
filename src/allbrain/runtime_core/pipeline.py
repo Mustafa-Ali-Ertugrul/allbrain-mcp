@@ -53,7 +53,7 @@ class SystemDecisionPipeline:
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False, enable_calibration: bool = False, enable_drift: bool = False, enable_reputation: bool = False, enable_arbitration: bool = False, enable_telemetry: bool = False, enable_routing: bool = False, enable_capabilities: bool = False, enable_learning: bool = False, enable_causal: bool = False, enable_dynamics: bool = False, enable_fusion: bool = False, enable_decision_engine: bool = False, enable_decision_engine_debug: bool = False, enable_meta_policy: bool = False, enable_meta_policy_drift_detection: bool = False, enable_attribution: bool = False,         enable_attention: bool = False, enable_workspace: bool = True, enable_episodic: bool = True, enable_semantic: bool = True) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False, enable_calibration: bool = False, enable_drift: bool = False, enable_reputation: bool = False, enable_arbitration: bool = False, enable_telemetry: bool = False, enable_routing: bool = False, enable_capabilities: bool = False, enable_learning: bool = False, enable_causal: bool = False, enable_dynamics: bool = False, enable_fusion: bool = False, enable_decision_engine: bool = False, enable_decision_engine_debug: bool = False, enable_meta_policy: bool = False, enable_meta_policy_drift_detection: bool = False, enable_attribution: bool = False,         enable_attention: bool = False,                  enable_workspace: bool = True, enable_episodic: bool = True, enable_semantic: bool = True, enable_resilience: bool = False, enable_recovery_consensus: bool = False, enable_failure_memory: bool = False, enable_adaptive_recovery: bool = False, enable_predictive_failure: bool = False) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -389,6 +389,258 @@ class SystemDecisionPipeline:
                 )
                 emitted.extend(routing_events)
 
+            resilience_payload: dict[str, Any] | None = None
+            if enable_resilience:
+                resilience_payload, last_event_id, resilience_events = self._resilience_step(
+                    bus, context, last_event_id, emitted,
+                )
+                emitted.extend(resilience_events)
+
+            failure_memory_payload: dict[str, Any] | None = None
+            failure_memory_mgr = None
+            if enable_failure_memory:
+                from allbrain.failure_memory import FailureMemoryManager
+                failure_memory_mgr = FailureMemoryManager()
+                fmp: dict[str, Any] = {
+                    "retrieved": [],
+                    "fault_types": [],
+                }
+                if resilience_payload is not None:
+                    for f in resilience_payload.get("detected_faults", []):
+                        fault_type = str(f.get("fault_type", "failure"))
+                        fmp["fault_types"].append(fault_type)
+                        result = failure_memory_mgr.retrieve(fault_type)
+                        fmp["retrieved"].append(result)
+                        if result["total_records"] > 0:
+                            bus.publish(
+                                type=EventType.FAILURE_MEMORY_RETRIEVED.value,
+                                payload={
+                                    "fault_type": fault_type,
+                                    "total_records": result["total_records"],
+                                    "experience_count": len(result.get("experiences", [])),
+                                },
+                                caused_by=last_event_id,
+                            )
+                failure_memory_payload = fmp
+
+            recovery_consensus_payload: dict[str, Any] | None = None
+            if enable_recovery_consensus and resilience_payload is not None:
+                from allbrain.recovery_consensus import RecoveryConsensusManager
+                bias_weight = 0.30 if (failure_memory_mgr is not None) else 0.0
+                mgr = RecoveryConsensusManager(memory=failure_memory_mgr, bias_weight=bias_weight)
+                faults = [
+                    {"fault_id": f["fault_id"], "component": f.get("component", "unknown"), "severity": f.get("severity", "medium"), "fault_type": f.get("fault_type", "failure")}
+                    for f in resilience_payload.get("detected_faults", [])
+                ]
+                if faults:
+                    rc_result = mgr.run_cycle(faults)
+                    recovery_consensus_payload = rc_result
+                    for d in rc_result.get("decisions", []):
+                        emit_events: list[EventRead] = []
+                        ge = bus.publish(
+                            type=EventType.RECOVERY_STRATEGIES_GENERATED.value,
+                            payload={
+                                "fault_id": d["fault_id"],
+                                "decision_id": d["decision_id"],
+                                "candidate_count": d["candidate_count"],
+                            },
+                            caused_by=last_event_id,
+                        )
+                        emit_events.append(ge)
+                        se = bus.publish(
+                            type=EventType.RECOVERY_STRATEGY_EVALUATED.value,
+                            payload={
+                                "fault_id": d["fault_id"],
+                                "selected_strategy": d["selected_strategy"],
+                                "consensus_score": d["consensus_score"],
+                            },
+                            caused_by=ge.id,
+                        )
+                        emit_events.append(se)
+                        re = bus.publish(
+                            type=EventType.RECOVERY_CONSENSUS_REACHED.value,
+                            payload={
+                                "fault_id": d["fault_id"],
+                                "consensus_score": d["consensus_score"],
+                            },
+                            caused_by=se.id,
+                        )
+                        emit_events.append(re)
+                        if d.get("rejected_strategies"):
+                            rje = bus.publish(
+                                type=EventType.RECOVERY_STRATEGY_REJECTED.value,
+                                payload={
+                                    "fault_id": d["fault_id"],
+                                    "rejected_strategies": d["rejected_strategies"],
+                                },
+                                caused_by=re.id,
+                            )
+                            emit_events.append(rje)
+                        fse = bus.publish(
+                            type=EventType.RECOVERY_STRATEGY_SELECTED.value,
+                            payload={
+                                "fault_id": d["fault_id"],
+                                "selected_strategy": d["selected_strategy"],
+                                "reason": d["reason"],
+                            },
+                            caused_by=re.id,
+                        )
+                        emit_events.append(fse)
+                        emitted.extend(emit_events)
+
+                        # Record outcome in failure memory
+                        if failure_memory_mgr is not None:
+                            fault_type = str(next(
+                                (f.get("fault_type", "failure") for f in faults if f["fault_id"] == d["fault_id"]),
+                                "failure",
+                            ))
+                            outcome = failure_memory_mgr.record_outcome(
+                                fault_type=fault_type,
+                                strategy=d["selected_strategy"],
+                                success=True,
+                                severity="medium",
+                                occurred_at=float(d.get("score", 0)),
+                            )
+                            bus.publish(
+                                type=EventType.FAILURE_MEMORY_STORED.value,
+                                payload={
+                                    "fault_type": fault_type,
+                                    "strategy": d["selected_strategy"],
+                                    "success": True,
+                                    "severity": "medium",
+                                    "occurred_at": float(d.get("score", 0)),
+                                    "failure_count": 0,
+                                },
+                                caused_by=fse.id,
+                            )
+                            exp = outcome.get("new_experience")
+                            if exp is not None:
+                                bus.publish(
+                                    type=EventType.RECOVERY_EXPERIENCE_UPDATED.value,
+                                    payload={
+                                        "fault_type": exp.fault_type,
+                                        "strategy": exp.strategy,
+                                        "success_rate": exp.success_rate,
+                                        "attempts": exp.attempts,
+                                    },
+                                    caused_by=fse.id,
+                                )
+                            pat = outcome.get("pattern_detected")
+                            if pat is not None:
+                                bus.publish(
+                                    type=EventType.FAILURE_PATTERN_DETECTED.value,
+                                    payload={
+                                        "fault_type": pat.fault_type,
+                                        "strategy": pat.strategy,
+                                        "success_rate": float(pat.success_rate),
+                                        "attempts": int(pat.attempts),
+                                        "severity": pat.severity,
+                                    },
+                                    caused_by=fse.id,
+                                )
+
+            predictive_failure_payload: dict[str, Any] | None = None
+            if enable_predictive_failure and resilience_payload is not None:
+                from allbrain.predictive_failure import (
+                    PredictiveFailureManager,
+                    RiskSignal,
+                    RiskDriftDetector,
+                )
+                pf_detector = RiskDriftDetector()
+                pf_mgr = PredictiveFailureManager(drift_detector=pf_detector)
+                pf_chains: list[dict[str, Any]] = []
+                for f in resilience_payload.get("detected_faults", []):
+                    fault_id = str(f.get("fault_id", ""))
+                    fault_type = str(f.get("fault_type", "failure"))
+                    severity_val = f.get("severity", "medium")
+                    sev_map = {"low": 0.3, "medium": 0.6, "high": 0.9}
+                    severity = sev_map.get(severity_val, 0.6)
+                    signals = [
+                        RiskSignal(
+                            signal_type=fault_type,
+                            severity=severity,
+                            frequency=1,
+                        ),
+                    ]
+                    pf_result = pf_mgr.run_cycle(
+                        fault_id=fault_id,
+                        fault_type=fault_type,
+                        signals=signals,
+                    )
+                    pf_chains.append(pf_result)
+                    for ev in pf_result.get("events", []):
+                        et_raw = ev.get("event_type", "")
+                        try:
+                            et = EventType(et_raw)
+                            bus.publish(
+                                type=et.value,
+                                payload=ev,
+                                caused_by=last_event_id,
+                            )
+                        except ValueError:
+                            pass
+                predictive_failure_payload = {
+                    "chains": pf_chains,
+                    "total_cycles": len(pf_chains),
+                    "total_avoided": sum(1 for c in pf_chains if c.get("avoided")),
+                }
+
+            adaptive_recovery_payload: dict[str, Any] | None = None
+            if enable_adaptive_recovery and recovery_consensus_payload is not None and resilience_payload is not None:
+                from allbrain.adaptive_recovery import AdaptiveRecoveryManager
+                from allbrain.recovery_consensus.model import CandidateStrategy
+                ar_faults = [
+                    {"fault_id": f["fault_id"], "fault_type": f.get("fault_type", "failure"), "component": f.get("component", "unknown")}
+                    for f in resilience_payload.get("detected_faults", [])
+                ]
+                ar_mgr = AdaptiveRecoveryManager(memory=failure_memory_mgr)
+                ar_chains: list[dict[str, Any]] = []
+                for d in recovery_consensus_payload.get("decisions", []):
+                    fault_id = d["fault_id"]
+                    fault_info = next(
+                        (ft for ft in ar_faults if ft["fault_id"] == fault_id),
+                        {"fault_type": "failure", "component": "unknown"},
+                    )
+                    fault_type = fault_info["fault_type"]
+                    component = fault_info["component"]
+                    fault_candidates = [
+                        c for c in recovery_consensus_payload.get("candidates_generated", [])
+                        if c.get("fault_id") == fault_id
+                    ]
+                    if not fault_candidates:
+                        continue
+                    typed_candidates = [
+                        CandidateStrategy(
+                            strategy=c["strategy"],
+                            confidence=float(c.get("confidence", 0.5)),
+                            risk=float(c.get("risk", 0.3)),
+                            estimated_success=float(c.get("estimated_success", 0.5)),
+                            explanation=f"{c['strategy']} for {fault_id}",
+                            fault_id=fault_id,
+                            component=component,
+                        )
+                        for c in fault_candidates
+                    ]
+                    chain_result = ar_mgr.run_chain(
+                        fault_id=fault_id,
+                        fault_type=fault_type,
+                        candidates=typed_candidates,
+                    )
+                    ar_chains.append(chain_result)
+                    for ev in chain_result.get("events", []):
+                        et_raw = ev.get("event_type", "")
+                        et = getattr(EventType, et_raw, None)
+                        if et is not None:
+                            bus.publish(
+                                type=et.value,
+                                payload=ev,
+                                caused_by=last_event_id,
+                            )
+                adaptive_recovery_payload = {
+                    "chains": ar_chains,
+                    "total_chains": len(ar_chains),
+                }
+
             last_event_id = self._transition(machine, publish, RuntimeStatus.COMPLETED, "pipeline_completed", last_event_id)
             completed_payload: dict[str, Any] = {"status": "COMPLETED", "final_decision": final_decision}
             if world_simulation_payload is not None:
@@ -445,8 +697,18 @@ class SystemDecisionPipeline:
                 completed_payload["fusion"] = fusion_payload
             if decision_payload is not None:
                 completed_payload["decision"] = decision_payload
+            if resilience_payload is not None:
+                completed_payload["resilience"] = resilience_payload
+            if recovery_consensus_payload is not None:
+                completed_payload["recovery_consensus"] = recovery_consensus_payload
+            if failure_memory_payload is not None:
+                completed_payload["failure_memory"] = failure_memory_payload
+            if adaptive_recovery_payload is not None:
+                completed_payload["adaptive_recovery"] = adaptive_recovery_payload
+            if predictive_failure_payload is not None:
+                completed_payload["predictive_failure"] = predictive_failure_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning_payload, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload, evidence=evidence_payload, trust=trust_payload, calibration=calibration_payload, drift=drift_payload, reputation=reputation_payload, consensus=consensus_payload_arb, arb_decision=arb_decision_payload, telemetry=telemetry_payload, routing=routing_payload, capability=capability_payload, dynamics=dynamics_payload, causal=causal_payload, fusion=fusion_payload, decision=decision_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning_payload, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload, evidence=evidence_payload, trust=trust_payload, calibration=calibration_payload, drift=drift_payload, reputation=reputation_payload, consensus=consensus_payload_arb, arb_decision=arb_decision_payload, telemetry=telemetry_payload, routing=routing_payload, capability=capability_payload, dynamics=dynamics_payload, causal=causal_payload, fusion=fusion_payload, decision=decision_payload, resilience=resilience_payload, recovery_consensus=recovery_consensus_payload, failure_memory=failure_memory_payload, adaptive_recovery=adaptive_recovery_payload, predictive_failure=predictive_failure_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
@@ -552,7 +814,7 @@ class SystemDecisionPipeline:
             "actual_success": status in {"planned", "completed"},
         }
 
-    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None, revision: dict[str, Any] | None = None, evidence: dict[str, Any] | None = None, trust: dict[str, Any] | None = None, calibration: dict[str, Any] | None = None, drift: dict[str, Any] | None = None, reputation: dict[str, Any] | None = None, consensus: dict[str, Any] | None = None, arb_decision: dict[str, Any] | None = None, telemetry: dict[str, Any] | None = None, routing: dict[str, Any] | None = None, capability: dict[str, Any] | None = None, dynamics: dict[str, Any] | None = None, causal: dict[str, Any] | None = None, fusion: dict[str, Any] | None = None, decision: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None, revision: dict[str, Any] | None = None, evidence: dict[str, Any] | None = None, trust: dict[str, Any] | None = None, calibration: dict[str, Any] | None = None, drift: dict[str, Any] | None = None, reputation: dict[str, Any] | None = None, consensus: dict[str, Any] | None = None, arb_decision: dict[str, Any] | None = None, telemetry: dict[str, Any] | None = None, routing: dict[str, Any] | None = None, capability: dict[str, Any] | None = None, dynamics: dict[str, Any] | None = None, causal: dict[str, Any] | None = None, fusion: dict[str, Any] | None = None, decision: dict[str, Any] | None = None, resilience: dict[str, Any] | None = None, recovery_consensus: dict[str, Any] | None = None, failure_memory: dict[str, Any] | None = None, adaptive_recovery: dict[str, Any] | None = None, predictive_failure: dict[str, Any] | None = None) -> dict[str, Any]:
         return {
             "run_id": run_id,
             "status": status,
@@ -591,7 +853,11 @@ class SystemDecisionPipeline:
             "causal": causal,
             "fusion": fusion,
             "decision": decision,
-            "learning": learning,
+            "resilience": resilience,
+            "recovery_consensus": recovery_consensus,
+            "failure_memory": failure_memory,
+            "adaptive_recovery": adaptive_recovery,
+            "predictive_failure": predictive_failure,
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
@@ -2618,3 +2884,130 @@ enable_attention: bool = False,
         last_event_id = recommendation_event.id
         emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events, recommendation_event]
         return summary, last_event_id, emitted_events
+
+    def _resilience_step(
+        self,
+        bus: RuntimeEventBus,
+        context: Any,
+        caused_by: str,
+        emitted: list[EventRead],
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        """Run the self-healing resilience cycle on emitted pipeline events.
+
+        Detects faults/anomalies, plans recovery, checks guardrails,
+        and executes recovery actions.
+
+        Skips RESILIENCE_ prefixed events to prevent recursive loops.
+        """
+        from allbrain.resilience import (
+            ResilienceManager,
+            make_anomaly_detected_payload,
+            make_recovery_planned_payload,
+            make_recovery_cancelled_payload,
+            make_snapshot_created_payload,
+            make_failure_analyzed_payload,
+            DEFAULT_GUARDRAIL_THRESHOLD,
+        )
+
+        mgr = ResilienceManager(guardrail_threshold=DEFAULT_GUARDRAIL_THRESHOLD)
+        result = mgr.run_cycle(
+            emitted,
+            event_id=str(getattr(emitted[-1], "id", "")) if emitted else "",
+            pipeline_stage="routing",
+        )
+
+        resilience_events: list[EventRead] = []
+        last_event_id = caused_by
+
+        # Emit RESILIENCE_ANOMALY_DETECTED for each detected fault
+        for fd in result.get("detected_faults", []):
+            payload = make_anomaly_detected_payload(
+                fault_id=fd["fault_id"],
+                component=fd["component"],
+                severity=fd["severity"],
+                fault_type=fd["fault_type"],
+                detected_at=mgr.stats().get("time", 0),
+            )
+            ev = bus.publish(
+                type=EventType.RESILIENCE_ANOMALY_DETECTED.value,
+                payload=payload,
+                caused_by=last_event_id,
+                impact_score={"low": 0.2, "medium": 0.5, "high": 0.8, "critical": 0.95}.get(fd["severity"], 0.5),
+            )
+            resilience_events.append(ev)
+            last_event_id = ev.id
+
+        # Emit RESILIENCE_RECOVERY_PLANNED + optionally cancelled for each plan
+        for plan in result.get("plans_created", []):
+            payload = make_recovery_planned_payload(
+                plan_id=plan["plan_id"],
+                fault_id=plan["fault_id"],
+                strategy=plan["strategy"],
+                target_component=plan.get("target_component", "unknown"),
+                priority=plan["priority"],
+                reason=plan["reason"],
+            )
+            ev = bus.publish(
+                type=EventType.RESILIENCE_RECOVERY_PLANNED.value,
+                payload=payload,
+                caused_by=last_event_id,
+                impact_score=plan["priority"] / 5.0,
+            )
+            resilience_events.append(ev)
+            last_event_id = ev.id
+
+        # Emit SNAPSHOT_CREATED for any snapshots taken
+        for snap_id in result.get("snapshots_created", []):
+            payload = make_snapshot_created_payload(
+                snapshot_id=snap_id,
+                component="resilience",
+                created_at=mgr.stats().get("time", 0),
+            )
+            ev = bus.publish(
+                type=EventType.RESILIENCE_SNAPSHOT_CREATED.value,
+                payload=payload,
+                caused_by=last_event_id,
+            )
+            resilience_events.append(ev)
+
+        # Emit FAILURE_ANALYZED for successful recoveries
+        for exec_result in result.get("executed", []):
+            if exec_result.get("success"):
+                payload = make_failure_analyzed_payload(
+                    fault_id=exec_result.get("plan_id", "unknown"),
+                    root_cause=exec_result.get("message", "recovered"),
+                    confidence=0.8,
+                )
+                ev = bus.publish(
+                    type=EventType.RESILIENCE_FAILURE_ANALYZED.value,
+                    payload=payload,
+                    caused_by=last_event_id,
+                )
+                resilience_events.append(ev)
+
+        # Emit RECOVERY_CANCELLED for guardrail-blocked plans
+        for exec_result in result.get("executed", []):
+            if not exec_result.get("success") and "guardrail" in exec_result.get("message", ""):
+                payload = make_recovery_cancelled_payload(
+                    plan_id=exec_result.get("plan_id", "unknown"),
+                    reason=exec_result.get("message", "guardrail_blocked"),
+                )
+                ev = bus.publish(
+                    type=EventType.RESILIENCE_RECOVERY_CANCELLED.value,
+                    payload=payload,
+                    caused_by=last_event_id,
+                )
+                resilience_events.append(ev)
+
+        summary: dict[str, Any] = {
+            "detected_faults": len(result.get("detected_faults", [])),
+            "plans_created": len(result.get("plans_created", [])),
+            "executed": [
+                {"plan_id": e["plan_id"], "success": e["success"], "message": e["message"]}
+                for e in result.get("executed", [])
+            ],
+            "snapshots_created": len(result.get("snapshots_created", [])),
+            "stats": mgr.stats(),
+        }
+
+        return summary, last_event_id, resilience_events
