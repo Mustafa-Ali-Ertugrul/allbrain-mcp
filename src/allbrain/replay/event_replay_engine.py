@@ -31,6 +31,16 @@ from allbrain.predictive_failure import PredictiveFailureReducer
 from allbrain.mitigation_learning import MitigationLearningReducer
 from allbrain.learning_safety import LearningSafetyReducer
 from allbrain.self_repair import SelfRepairReducer
+from allbrain.policy_routing import PolicyRoutingReducer
+from allbrain.policy_competition import PolicyCompetitionReducer
+from allbrain.soft_repair import SoftRepairReducer
+from allbrain.meta_scoring import MetaScoringReducer
+from allbrain.self_play import SelfPlayReducer
+from allbrain.meta_optimizer import MetaOptimizerReducer
+from allbrain.meta_meta_scoring import MetaMetaScoringReducer
+from allbrain.objective_system import ObjectiveSystemReducer
+from allbrain.tradeoff_engine import TradeoffReducer
+from allbrain.value_alignment import ValueAlignmentReducer
 from allbrain.telemetry import TelemetryReducer
 from allbrain.revision import RevisionReducer
 from allbrain.counterfactual import CounterfactualProjection
@@ -131,6 +141,37 @@ class EventReplayEngine:
                 "total_snapshots": 0, "total_validation_failures": 0,
                 "total_rollbacks": 0, "total_recoveries": 0,
             },
+            "policy_routing": {
+                "family_selections": [], "candidate_evaluations": [],
+                "total_selections": 0, "total_evaluations": 0,
+            },
+            "policy_competition": {
+                "competitions": [], "total_competitions": 0,
+            },
+            "soft_repair": {
+                "blends": [], "total_blends": 0,
+            },
+            "meta_scoring": {
+                "profiles": {}, "total_updates": 0,
+            },
+            "self_play": {
+                "matches": [], "total_matches": 0,
+            },
+            "meta_optimizer": {
+                "adaptations": [], "total_adaptations": 0, "total_guards": 0,
+            },
+            "meta_meta_scoring": {
+                "profiles": {}, "total_updates": 0,
+            },
+            "objective_system": {
+                "objectives": [], "rebalances": [], "total_objectives": 0, "total_rebalances": 0,
+            },
+            "tradeoff": {
+                "tradeoffs": [], "utilities": [], "total_tradeoffs": 0, "total_utilities": 0,
+            },
+            "value_alignment": {
+                "failures": [], "total_failures": 0,
+            },
             "resilience": {
                 "faults": [], "plans": [], "snapshots": [],
                 "total_faults": 0, "recovered": 0,
@@ -171,6 +212,16 @@ class EventReplayEngine:
         mitigation_learning_reducer = MitigationLearningReducer()
         learning_safety_reducer = LearningSafetyReducer()
         self_repair_reducer = SelfRepairReducer()
+        policy_routing_reducer = PolicyRoutingReducer()
+        policy_competition_reducer = PolicyCompetitionReducer()
+        soft_repair_reducer = SoftRepairReducer()
+        meta_scoring_reducer = MetaScoringReducer()
+        self_play_reducer = SelfPlayReducer()
+        meta_optimizer_reducer = MetaOptimizerReducer()
+        meta_meta_scoring_reducer = MetaMetaScoringReducer()
+        objective_system_reducer = ObjectiveSystemReducer()
+        tradeoff_reducer = TradeoffReducer()
+        value_alignment_reducer = ValueAlignmentReducer()
         collaboration_events: list[EventRead] = []
         learning_events: list[EventRead] = []
         governance_events: list[EventRead] = []
@@ -184,10 +235,10 @@ class EventReplayEngine:
         knowledge_gap_events: list[EventRead] = []
         information_seeking_events: list[EventRead] = []
         for event in ordered[:cursor]:
-            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, calibration_reducer, reputation_reducer, arbitration_reducer, telemetry_reducer, routing_reducer, capability_reducer, learning_reducer, dynamics_reducer, causal_reducer, fusion_reducer, decision_reducer, meta_policy_reducer, attribution_reducer, attention_reducer, workspace_reducer, episodic_reducer, semantic_reducer, resilience_reducer, recovery_consensus_reducer, failure_memory_reducer, adaptive_recovery_reducer, predictive_failure_reducer, mitigation_learning_reducer, learning_safety_reducer, self_repair_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
+            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, calibration_reducer, reputation_reducer, arbitration_reducer, telemetry_reducer, routing_reducer, capability_reducer, learning_reducer, dynamics_reducer, causal_reducer, fusion_reducer, decision_reducer, meta_policy_reducer, attribution_reducer, attention_reducer, workspace_reducer, episodic_reducer, semantic_reducer, resilience_reducer, recovery_consensus_reducer, failure_memory_reducer, adaptive_recovery_reducer, predictive_failure_reducer, mitigation_learning_reducer, learning_safety_reducer, self_repair_reducer, policy_routing_reducer, policy_competition_reducer, soft_repair_reducer, meta_scoring_reducer, self_play_reducer, meta_optimizer_reducer, meta_meta_scoring_reducer, objective_system_reducer, tradeoff_reducer, value_alignment_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
         frames: list[dict[str, Any]] = []
         for index, event in enumerate(ordered[cursor:end], start=cursor):
-            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, calibration_reducer, reputation_reducer, arbitration_reducer, telemetry_reducer, routing_reducer, capability_reducer, learning_reducer, dynamics_reducer, causal_reducer, fusion_reducer, decision_reducer, meta_policy_reducer, attribution_reducer, attention_reducer, workspace_reducer, episodic_reducer, semantic_reducer, resilience_reducer, recovery_consensus_reducer, failure_memory_reducer, adaptive_recovery_reducer, predictive_failure_reducer, mitigation_learning_reducer, learning_safety_reducer, self_repair_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
+            self._apply(state, event, belief_reducer, contradiction_reducer, revision_reducer, evidence_reducer, calibration_reducer, reputation_reducer, arbitration_reducer, telemetry_reducer, routing_reducer, capability_reducer, learning_reducer, dynamics_reducer, causal_reducer, fusion_reducer, decision_reducer, meta_policy_reducer, attribution_reducer, attention_reducer, workspace_reducer, episodic_reducer, semantic_reducer, resilience_reducer, recovery_consensus_reducer, failure_memory_reducer, adaptive_recovery_reducer, predictive_failure_reducer, mitigation_learning_reducer, learning_safety_reducer, self_repair_reducer, policy_routing_reducer, policy_competition_reducer, soft_repair_reducer, meta_scoring_reducer, self_play_reducer, meta_optimizer_reducer, meta_meta_scoring_reducer, objective_system_reducer, tradeoff_reducer, value_alignment_reducer, collaboration_events, learning_events, governance_events, runtime_events, world_events, counterfactual_events, scenario_events, foresight_events, meta_reasoning_events, uncertainty_events, knowledge_gap_events, information_seeking_events)
             frames.append(
                 {
                     "cursor": index + 1,
@@ -213,7 +264,7 @@ class EventReplayEngine:
             return list(events)
         return canonical_event_sort(events)
 
-    def _apply(self, state: dict[str, Any], event: EventRead, belief_reducer: BeliefReducer, contradiction_reducer: ContradictionReducer, revision_reducer: RevisionReducer, evidence_reducer: EvidenceReducer, calibration_reducer: CalibrationReducer, reputation_reducer: ReputationReducer, arbitration_reducer: ArbitrationReducer, telemetry_reducer: TelemetryReducer, routing_reducer: RoutingReducer, capability_reducer: CapabilityReducer, learning_reducer: CapabilityLearningReducer, dynamics_reducer: CapabilityDynamicsReducer, causal_reducer: CausalReducer, fusion_reducer: FusionReducer, decision_reducer: DecisionReducer, meta_policy_reducer: MetaPolicyReducer, attribution_reducer: AttributionReducer, attention_reducer: AttentionReducer, workspace_reducer: WorkspaceReducer, episodic_reducer: EpisodicReducer, semantic_reducer: SemanticReducer, resilience_reducer: ResilienceReducer, recovery_consensus_reducer: RecoveryConsensusReducer, failure_memory_reducer: FailureMemoryReducer, adaptive_recovery_reducer: AdaptiveRecoveryReducer, predictive_failure_reducer: PredictiveFailureReducer, mitigation_learning_reducer: MitigationLearningReducer, learning_safety_reducer: LearningSafetyReducer, self_repair_reducer: SelfRepairReducer, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead], information_seeking_events: list[EventRead]) -> None:
+    def _apply(self, state: dict[str, Any], event: EventRead, belief_reducer: BeliefReducer, contradiction_reducer: ContradictionReducer, revision_reducer: RevisionReducer, evidence_reducer: EvidenceReducer, calibration_reducer: CalibrationReducer, reputation_reducer: ReputationReducer, arbitration_reducer: ArbitrationReducer, telemetry_reducer: TelemetryReducer, routing_reducer: RoutingReducer, capability_reducer: CapabilityReducer, learning_reducer: CapabilityLearningReducer, dynamics_reducer: CapabilityDynamicsReducer, causal_reducer: CausalReducer, fusion_reducer: FusionReducer, decision_reducer: DecisionReducer, meta_policy_reducer: MetaPolicyReducer, attribution_reducer: AttributionReducer, attention_reducer: AttentionReducer, workspace_reducer: WorkspaceReducer, episodic_reducer: EpisodicReducer, semantic_reducer: SemanticReducer, resilience_reducer: ResilienceReducer, recovery_consensus_reducer: RecoveryConsensusReducer, failure_memory_reducer: FailureMemoryReducer, adaptive_recovery_reducer: AdaptiveRecoveryReducer, predictive_failure_reducer: PredictiveFailureReducer, mitigation_learning_reducer: MitigationLearningReducer, learning_safety_reducer: LearningSafetyReducer, self_repair_reducer: SelfRepairReducer, policy_routing_reducer: PolicyRoutingReducer, policy_competition_reducer: PolicyCompetitionReducer, soft_repair_reducer: SoftRepairReducer, meta_scoring_reducer: MetaScoringReducer, self_play_reducer: SelfPlayReducer, meta_optimizer_reducer: MetaOptimizerReducer, meta_meta_scoring_reducer: MetaMetaScoringReducer, objective_system_reducer: ObjectiveSystemReducer, tradeoff_reducer: TradeoffReducer, value_alignment_reducer: ValueAlignmentReducer, collaboration_events: list[EventRead], learning_events: list[EventRead], governance_events: list[EventRead], runtime_events: list[EventRead], world_events: list[EventRead], counterfactual_events: list[EventRead], scenario_events: list[EventRead], foresight_events: list[EventRead], meta_reasoning_events: list[EventRead], uncertainty_events: list[EventRead], knowledge_gap_events: list[EventRead], information_seeking_events: list[EventRead]) -> None:
         belief_reducer.apply(event)
         state["belief"] = belief_reducer.all_snapshots()
         contradiction_reducer.apply(event)
@@ -272,6 +323,26 @@ class EventReplayEngine:
         state["learning_safety"] = learning_safety_reducer.all_snapshots()
         self_repair_reducer.apply(event)
         state["self_repair"] = self_repair_reducer.all_snapshots()
+        policy_routing_reducer.apply(event)
+        state["policy_routing"] = policy_routing_reducer.all_snapshots()
+        policy_competition_reducer.apply(event)
+        state["policy_competition"] = policy_competition_reducer.all_snapshots()
+        soft_repair_reducer.apply(event)
+        state["soft_repair"] = soft_repair_reducer.all_snapshots()
+        meta_scoring_reducer.apply(event)
+        state["meta_scoring"] = meta_scoring_reducer.all_snapshots()
+        self_play_reducer.apply(event)
+        state["self_play"] = self_play_reducer.all_snapshots()
+        meta_optimizer_reducer.apply(event)
+        state["meta_optimizer"] = meta_optimizer_reducer.all_snapshots()
+        meta_meta_scoring_reducer.apply(event)
+        state["meta_meta_scoring"] = meta_meta_scoring_reducer.all_snapshots()
+        objective_system_reducer.apply(event)
+        state["objective_system"] = objective_system_reducer.all_snapshots()
+        tradeoff_reducer.apply(event)
+        state["tradeoff"] = tradeoff_reducer.all_snapshots()
+        value_alignment_reducer.apply(event)
+        state["value_alignment"] = value_alignment_reducer.all_snapshots()
         if str(getattr(event, "type", "")) == EventType.BELIEF_DRIFT_DETECTED.value:
             payload = getattr(event, "payload", None)
             if isinstance(payload, dict):
@@ -422,6 +493,16 @@ def _copy_state(state: dict[str, Any]) -> dict[str, Any]:
         "mitigation_learning": dict(state.get("mitigation_learning", {})),
         "learning_safety": dict(state.get("learning_safety", {})),
         "self_repair": dict(state.get("self_repair", {})),
+        "policy_routing": dict(state.get("policy_routing", {})),
+        "policy_competition": dict(state.get("policy_competition", {})),
+        "soft_repair": dict(state.get("soft_repair", {})),
+        "meta_scoring": dict(state.get("meta_scoring", {})),
+        "self_play": dict(state.get("self_play", {})),
+        "meta_optimizer": dict(state.get("meta_optimizer", {})),
+        "meta_meta_scoring": dict(state.get("meta_meta_scoring", {})),
+        "objective_system": dict(state.get("objective_system", {})),
+        "tradeoff": dict(state.get("tradeoff", {})),
+        "value_alignment": dict(state.get("value_alignment", {})),
         "foundations": dict(state.get("foundations", {})),
     }
 

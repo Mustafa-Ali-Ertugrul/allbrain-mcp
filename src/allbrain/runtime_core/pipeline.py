@@ -53,7 +53,7 @@ class SystemDecisionPipeline:
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False, enable_calibration: bool = False, enable_drift: bool = False, enable_reputation: bool = False, enable_arbitration: bool = False, enable_telemetry: bool = False, enable_routing: bool = False, enable_capabilities: bool = False, enable_learning: bool = False, enable_causal: bool = False, enable_dynamics: bool = False, enable_fusion: bool = False, enable_decision_engine: bool = False, enable_decision_engine_debug: bool = False, enable_meta_policy: bool = False, enable_meta_policy_drift_detection: bool = False, enable_attribution: bool = False,         enable_attention: bool = False,                  enable_workspace: bool = True, enable_episodic: bool = True, enable_semantic: bool = True, enable_resilience: bool = False, enable_recovery_consensus: bool = False, enable_failure_memory: bool = False, enable_adaptive_recovery: bool = False, enable_predictive_failure: bool = False, enable_mitigation_learning: bool = False, enable_learning_safety: bool = False, enable_self_repair: bool = False) -> dict[str, Any]:
+    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False, enable_calibration: bool = False, enable_drift: bool = False, enable_reputation: bool = False, enable_arbitration: bool = False, enable_telemetry: bool = False, enable_routing: bool = False, enable_capabilities: bool = False, enable_learning: bool = False, enable_causal: bool = False, enable_dynamics: bool = False, enable_fusion: bool = False, enable_decision_engine: bool = False, enable_decision_engine_debug: bool = False, enable_meta_policy: bool = False, enable_meta_policy_drift_detection: bool = False, enable_attribution: bool = False,         enable_attention: bool = False,                  enable_workspace: bool = True, enable_episodic: bool = True, enable_semantic: bool = True, enable_resilience: bool = False, enable_recovery_consensus: bool = False, enable_failure_memory: bool = False, enable_adaptive_recovery: bool = False, enable_predictive_failure: bool = False, enable_mitigation_learning: bool = False, enable_learning_safety: bool = False, enable_self_repair: bool = False, enable_policy_routing: bool = False, enable_policy_competition: bool = False, enable_soft_repair: bool = False, enable_meta_scoring: bool = False, enable_self_play: bool = False, enable_meta_optimizer: bool = False, enable_meta_meta_scoring: bool = False, enable_learning_graph: bool = False, enable_coevolution: bool = False, enable_objective_system: bool = False, enable_tradeoff_engine: bool = False, enable_value_alignment: bool = False) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -376,6 +376,7 @@ class SystemDecisionPipeline:
                 emitted.extend(dynamics_events)
 
             fusion_payload: dict[str, Any] | None = None
+            decision_payload: dict[str, Any] | None = None
             if enable_fusion:
                 fusion_payload, last_event_id, fusion_events = self._fusion_step(
                     bus, context, project_path, scheduler_result, last_event_id, limit
@@ -571,6 +572,68 @@ class SystemDecisionPipeline:
                     pf_kwargs["rollback_engine"] = RollbackEngine()
                     pf_kwargs["snapshot_manager"] = PolicySnapshotManager()
                     pf_kwargs["recovery_executor"] = RecoveryExecutor()
+                if enable_policy_routing:
+                    from allbrain.policy_routing import MetaPolicyRouter
+                    pf_kwargs["meta_router"] = MetaPolicyRouter()
+                if enable_policy_competition:
+                    from allbrain.policy_competition import CompetitionEngine
+                    pf_kwargs["competition_engine"] = CompetitionEngine()
+                if enable_soft_repair:
+                    from allbrain.soft_repair import PolicyBlender
+                    pf_kwargs["policy_blender"] = PolicyBlender()
+                if enable_mitigation_learning:
+                    from allbrain.mitigation_learning import (
+                        OutcomeTracker,
+                        LearningEngine,
+                        StrategyOptimizer,
+                        PolicyStore,
+                    )
+                    pf_kwargs["outcome_tracker"] = OutcomeTracker()
+                    pf_kwargs["learning_engine"] = LearningEngine()
+                    pf_kwargs["strategy_optimizer"] = StrategyOptimizer()
+                    pf_kwargs["policy_store"] = PolicyStore()
+                if enable_meta_scoring:
+                    from allbrain.meta_scoring import MetaScorer, ProfileStore
+                    pf_kwargs["profile_store"] = ProfileStore()
+                    pf_kwargs["meta_scorer"] = MetaScorer(pf_kwargs["profile_store"])
+                if enable_self_play:
+                    from allbrain.self_play import MatchEngine, WinMatrix
+                    pf_kwargs["match_engine"] = MatchEngine(WinMatrix())
+                if enable_meta_optimizer:
+                    if "profile_store" not in pf_kwargs:
+                        from allbrain.meta_scoring import ProfileStore
+                        pf_kwargs["profile_store"] = ProfileStore()
+                    from allbrain.meta_optimizer import WeightOptimizer
+                    pf_kwargs["weight_optimizer"] = WeightOptimizer(pf_kwargs["profile_store"])
+                if enable_meta_meta_scoring:
+                    from allbrain.meta_meta_scoring import MetaEvaluator, EvaluatorStore
+                    pf_kwargs["evaluator_store"] = EvaluatorStore()
+                    pf_kwargs["meta_evaluator"] = MetaEvaluator(pf_kwargs["evaluator_store"])
+                if enable_learning_graph:
+                    from allbrain.learning_graph import LearningGraph, GraphRewriter, LearningNode
+                    graph = LearningGraph()
+                    graph.add_node(LearningNode("meta_scorer", "meta_scorer", 0.5))
+                    graph.add_node(LearningNode("weight_optimizer", "weight_optimizer", 0.5))
+                    graph.add_node(LearningNode("competition_engine", "competition_engine", 0.5))
+                    pf_kwargs["learning_graph"] = graph
+                    pf_kwargs["graph_rewriter"] = GraphRewriter(graph)
+                if enable_coevolution:
+                    from allbrain.coevolution import CouplingMatrix, Dynamics, OscillationDetector
+                    pf_kwargs["coupling_matrix"] = CouplingMatrix()
+                    pf_kwargs["dynamics"] = Dynamics(pf_kwargs["coupling_matrix"])
+                    pf_kwargs["oscillation_detector"] = OscillationDetector()
+                if enable_objective_system:
+                    from allbrain.objective_system import ObjectiveStore, ObjectiveEvaluator
+                    pf_kwargs["objective_store"] = ObjectiveStore()
+                    pf_kwargs["objective_evaluator"] = ObjectiveEvaluator(pf_kwargs["objective_store"])
+                if enable_tradeoff_engine:
+                    from allbrain.tradeoff_engine import UtilityFunction, ParetoAnalyzer, Selector
+                    pf_kwargs["tradeoff_engine"] = UtilityFunction()
+                    pf_kwargs["tradeoff_selector"] = Selector()
+                if enable_value_alignment:
+                    from allbrain.value_alignment import ConstraintEngine, AlignmentScoreTracker
+                    pf_kwargs["constraint_engine"] = ConstraintEngine()
+                    pf_kwargs["alignment_tracker"] = AlignmentScoreTracker()
                 pf_mgr = PredictiveFailureManager(**pf_kwargs)
                 pf_chains: list[dict[str, Any]] = []
                 for f in resilience_payload.get("detected_faults", []):
@@ -822,8 +885,8 @@ class SystemDecisionPipeline:
                 completed_payload["routing"] = routing_payload
             if capability_payload is not None:
                 completed_payload["capability"] = capability_payload
-            if learning_payload is not None:
-                completed_payload["learning"] = learning_payload
+            if learning is not None:
+                completed_payload["learning"] = learning
             if causal_payload is not None:
                 completed_payload["causal"] = causal_payload
             if dynamics_payload is not None:
@@ -845,7 +908,7 @@ class SystemDecisionPipeline:
             if mitigation_learning_payload is not None:
                 completed_payload["mitigation_learning"] = mitigation_learning_payload
             publish(EventType.PIPELINE_RUN_COMPLETED.value, completed_payload, caused_by=last_event_id)
-            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning_payload, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload, evidence=evidence_payload, trust=trust_payload, calibration=calibration_payload, drift=drift_payload, reputation=reputation_payload, consensus=consensus_payload_arb, arb_decision=arb_decision_payload, telemetry=telemetry_payload, routing=routing_payload, capability=capability_payload, dynamics=dynamics_payload, causal=causal_payload, fusion=fusion_payload, decision=decision_payload, resilience=resilience_payload, recovery_consensus=recovery_consensus_payload, failure_memory=failure_memory_payload, adaptive_recovery=adaptive_recovery_payload, predictive_failure=predictive_failure_payload, mitigation_learning=mitigation_learning_payload)
+            return self._result(run_id, "COMPLETED", emitted, objective, governance_result, economic, strategic_plan, decomposition, execution_plan, arbitration, final_decision, scheduler_result, feedback, learning, world_simulation=world_simulation_payload["simulation"] if world_simulation_payload else None, counterfactual=counterfactual_payload, scenarios=scenario_payload, foresight=foresight_payload, meta_reasoning=meta_reasoning_payload, uncertainty=uncertainty_payload, information_seeking=information_seeking_payload, belief=belief_payload, contradiction=contradiction_payload, revision=revision_payload, evidence=evidence_payload, trust=trust_payload, calibration=calibration_payload, drift=drift_payload, reputation=reputation_payload, consensus=consensus_payload_arb, arb_decision=arb_decision_payload, telemetry=telemetry_payload, routing=routing_payload, capability=capability_payload, dynamics=dynamics_payload, causal=causal_payload, fusion=fusion_payload, decision=decision_payload, resilience=resilience_payload, recovery_consensus=recovery_consensus_payload, failure_memory=failure_memory_payload, adaptive_recovery=adaptive_recovery_payload, predictive_failure=predictive_failure_payload, mitigation_learning=mitigation_learning_payload)
         except Exception as exc:
             try:
                 failed_status = RuntimeStatus.FAILED if machine.status != RuntimeStatus.FAILED else machine.status
