@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "allbrain": {
+      "command": "uv",
+      "args": [
+        "run",
+        "allbrain",
+        "start",
+        "--project",
+        ".",
+        "--agent",
+        "claude-code"
+      ],
+      "cwd": ".",
+      "env": {},
+      "timeout": 120000
+    }
+  }
+}

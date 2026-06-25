@@ -30,6 +30,14 @@ AllBrain MCP is an event-sourced memory and orchestration server for multi-agent
 uv run allbrain start --project . --agent codex
 ```
 
+For the easiest MCP setup after cloning:
+
+```powershell
+.\scripts\install-mcp.ps1 -All
+```
+
+That installs or refreshes the client configs for Codex, Claude Code, OpenCode, and Antigravity on Windows.
+
 If you want a clean local setup:
 
 1. create a venv
@@ -37,7 +45,7 @@ If you want a clean local setup:
 3. start the server with `allbrain start`
 4. connect your MCP client to the stdio command
 
-See [docs/setup.md](docs/setup.md) for Codex, Claude Code, and Antigravity examples.
+See the [complete installation and troubleshooting guide](docs/setup.md) for Windows, macOS, Linux, client-specific verification, and shared-memory configuration.
 
 ## Example flow
 
@@ -68,6 +76,6 @@ It still does not make the model magically autonomous. Some pipelines simulate e
 
 ## Status
 
-- 251 tests passing
+- 1745 tests passing
 - stdio MCP handshake verified
 - multi-agent write/read/conflict flows verified

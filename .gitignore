@@ -9,5 +9,3 @@ __pycache__/
 htmlcov/
 .tmp-test.db
 .allbrain-*.db
-.codex/
-.mcp.json
