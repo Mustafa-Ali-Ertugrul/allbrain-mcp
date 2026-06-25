@@ -97,24 +97,30 @@ if ($OpenCode) {
 
 if ($Antigravity) {
     $antigravityPath = Join-Path $env:USERPROFILE '.gemini\antigravity\mcp_config.json'
-    $antigravityConfig = @{
-        mcpServers = @{
-            allbrain = @{
-                command = 'uv'
-                args = @(
-                    'run'
-                    'allbrain'
-                    'start'
-                    '--project'
-                    $repoRoot
-                    '--agent'
-                    'antigravity'
-                )
-                cwd = $repoRoot
-                env = @{}
-                timeout = 120000
-            }
-        }
-    } | ConvertTo-Json -Depth 8
-    Write-Text $antigravityPath $antigravityConfig
+    Ensure-Dir $antigravityPath
+    if (Test-Path $antigravityPath) {
+        $antigravityConfig = Get-Content -LiteralPath $antigravityPath -Raw | ConvertFrom-Json
+    } else {
+        $antigravityConfig = [pscustomobject]@{}
+    }
+    if (-not $antigravityConfig.PSObject.Properties['mcpServers']) {
+        $antigravityConfig | Add-Member -NotePropertyName mcpServers -NotePropertyValue ([pscustomobject]@{})
+    }
+    $allbrainConfig = [pscustomobject]@{
+        command = 'uv'
+        args = @(
+            'run'
+            'allbrain'
+            'start'
+            '--project'
+            $repoRoot
+            '--agent'
+            'antigravity'
+        )
+        cwd = $repoRoot
+        env = @{}
+        timeout = 120000
+    }
+    $antigravityConfig.mcpServers | Add-Member -NotePropertyName allbrain -NotePropertyValue $allbrainConfig -Force
+    Write-Text $antigravityPath ($antigravityConfig | ConvertTo-Json -Depth 20)
 }
