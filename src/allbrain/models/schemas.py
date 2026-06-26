@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from allbrain.events import EventType
+from allbrain.security.redaction import sanitize_payload
 
 
 class UserInputError(ValueError):
@@ -34,6 +35,7 @@ class SaveEventInput(BaseModel):
     @field_validator("payload")
     @classmethod
     def validate_payload_size(cls, value: dict[str, Any]) -> dict[str, Any]:
+        value = sanitize_payload(value)
         import json
         raw = json.dumps(value)
         if len(raw) > 250000:
@@ -137,9 +139,19 @@ class CreateTaskInput(BaseModel):
     task_id: str | None = None
     goal: str = Field(min_length=1, max_length=10000)
     kind: str = Field(default="implementation", min_length=1, max_length=50)
-    related_files: list[str] = Field(default_factory=list, max_length=100)
+    related_files: list[str] = Field(default_factory=list, max_length=50)
     priority: int = Field(default=3, ge=1, le=5)
     agent_id: str | None = Field(default=None, max_length=255)
+
+    @field_validator("related_files")
+    @classmethod
+    def validate_related_files(cls, v: list[str]) -> list[str]:
+        for i, item in enumerate(v):
+            if len(item) > 512:
+                raise ValueError(f"related_files[{i}] exceeds 512 characters")
+        if len(v) > 50:
+            raise ValueError("related_files must have at most 50 items")
+        return v
 
 
 class AssignTaskInput(BaseModel):
