@@ -8,6 +8,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from allbrain.events import EventType
 
 
+class UserInputError(ValueError):
+    """Raised when user-provided input is invalid.
+    This is distinguishable from internal ValueError by exception handler,
+    so user-visible validation errors are not confused with system errors.
+    """
+
+    pass
+
+
 class SaveEventInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 

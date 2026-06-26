@@ -1,9 +1,12 @@
 ﻿from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import timezone
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from fastmcp import FastMCP
 from pydantic import ValidationError
@@ -42,6 +45,7 @@ from allbrain.models.schemas import (
     RunDecisionPipelineInput,
     SaveEventInput,
     SimulateActionInput,
+    UserInputError,
     TaskDependencyInput,
     TaskPriorityInput,
     ToolResult,
@@ -685,8 +689,13 @@ def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -707,8 +716,13 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=[event.model_dump(mode="json") for event in events])
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -747,8 +761,13 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=resume)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -789,8 +808,13 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=snapshot_to_dict(snapshot) | {"reused": False})
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_git_context_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -806,8 +830,13 @@ def get_git_context_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=git_context)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_git_status_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -823,8 +852,13 @@ def get_git_status_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=git_status)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_recent_changes_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -840,8 +874,13 @@ def get_recent_changes_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=recent_changes)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def detect_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -858,8 +897,13 @@ def detect_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data={"conflicts": conflicts, "count": len(conflicts)})
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def resolve_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -878,8 +922,13 @@ def resolve_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data={"resolved_conflicts": resolved, "count": len(resolved)})
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def extract_intents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -896,8 +945,13 @@ def extract_intents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data={"intents": [intent.model_dump(mode="json") for intent in intents], "count": len(intents)})
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def detect_contradictions_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -915,8 +969,13 @@ def detect_contradictions_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data={"contradictions": contradictions, "count": len(contradictions)})
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -947,8 +1006,13 @@ def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=result)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def create_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -980,8 +1044,13 @@ def create_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1038,8 +1107,13 @@ def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "assignment": assignment,
             },
         )
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def add_task_dependency_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1061,8 +1135,13 @@ def add_task_dependency_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def change_task_priority_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1085,8 +1164,13 @@ def change_task_priority_impl(context: BrainContext, **kwargs: Any) -> ToolResul
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1162,8 +1246,13 @@ def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "handoff": recommendation,
             },
         )
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_task_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1183,8 +1272,13 @@ def get_task_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data={"task_view": task_state, "task_graph": graph, "agent_state": agent_state})
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1233,8 +1327,13 @@ def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=result)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1272,8 +1371,13 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=result)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1348,8 +1452,13 @@ def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolRe
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=summary)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def rank_alternatives_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1374,8 +1483,13 @@ def rank_alternatives_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "ranked": [item.model_dump(mode="json") for item in ranked],
             },
         )
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def _publish_scenario_events(
@@ -1458,8 +1572,13 @@ def generate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def evaluate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1486,8 +1605,13 @@ def evaluate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def _publish_foresight_events(
@@ -1569,8 +1693,13 @@ def generate_future_plans_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1635,8 +1764,13 @@ def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=plan.model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def _lookup_foresight_plan(context: BrainContext, plan_id: str, bound_session_id: int, project_path: str) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
@@ -1679,8 +1813,13 @@ def explain_decision_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=explanation.model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1709,8 +1848,13 @@ def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=estimate.model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def _dummy_foresight_result(selected_plan, analysis_id: str):
@@ -1761,8 +1905,13 @@ def estimate_uncertainty_impl(context: BrainContext, **kwargs: Any) -> ToolResul
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=estimate.model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def detect_knowledge_gaps_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1784,8 +1933,13 @@ def detect_knowledge_gaps_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data={"gaps": [gap.model_dump(mode="json") for gap in gaps]})
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def _lookup_uncertainty_gaps(context: BrainContext, decision_id: str, project_path: str) -> list[dict[str, Any]]:
@@ -1822,8 +1976,13 @@ def identify_information_needs_impl(context: BrainContext, **kwargs: Any) -> Too
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=plan.model_dump(mode="json"))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def estimate_information_gain_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1854,8 +2013,13 @@ def estimate_information_gain_impl(context: BrainContext, **kwargs: Any) -> Tool
                 "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
             },
         )
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1893,8 +2057,13 @@ def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "template_version": belief.template_version,
             },
         )
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1943,8 +2112,13 @@ def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> T
                 "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
             },
         )
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -1971,8 +2145,13 @@ def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             ok=True,
             data={"state": state.model_dump(mode="json"), "event": event_to_read(event).model_dump(mode="json")},
         )
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2012,14 +2191,19 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "simulation": sim_result.model_dump(mode="json"),
             },
         )
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_task_or_raise(task_state: dict[str, Any], task_id: str) -> dict[str, Any]:
     task = task_state.get("tasks", {}).get(task_id)
     if task is None:
-        raise ValueError(f"unknown task_id '{task_id}'")
+        raise UserInputError(f"unknown task_id '{task_id}'")
     return task
 
 
@@ -2036,8 +2220,13 @@ def get_observability_dashboard_impl(context: BrainContext, **kwargs: Any) -> To
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=ObservabilityBuilder().build(events))
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2071,8 +2260,13 @@ def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=replay)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_workflow_trace_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2096,8 +2290,13 @@ def get_workflow_trace_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=result)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_system_metrics_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2114,8 +2313,13 @@ def get_system_metrics_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=result)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2131,8 +2335,13 @@ def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolRes
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=result)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_workflow_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2156,8 +2365,13 @@ def get_workflow_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=result)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2174,8 +2388,13 @@ def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=comparison)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def build_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2191,19 +2410,24 @@ def build_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=store.to_dict())
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def retrieve_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         query = kwargs.get("query")
         if not isinstance(query, str) or not query:
-            raise ValueError("query is required")
+            raise UserInputError("query is required")
         project_path, limit = observability_project_and_limit(context, kwargs)
         top_k = int(kwargs.get("top_k", 5) or 5)
         if top_k < 1 or top_k > 50:
-            raise ValueError("top_k must be between 1 and 50")
+                raise UserInputError("top_k must be between 1 and 50")
         bound_session_id = bind_session_id(context, None)
         events = context.repository.list_events(project_path=context.project_path, limit=limit)
         retriever = MemoryRetriever(MemoryBuilder().build(events))
@@ -2218,15 +2442,20 @@ def retrieve_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=result)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def recommend_policy_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         task = kwargs.get("task")
         if not isinstance(task, dict):
-            raise ValueError("task must be a dict")
+            raise UserInputError("task must be a dict")
         project_path, limit = observability_project_and_limit(context, kwargs)
         bound_session_id = bind_session_id(context, None)
         events = context.repository.list_events(project_path=context.project_path, limit=limit)
@@ -2239,8 +2468,13 @@ def recommend_policy_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=recommendation)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_ui_trace_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2260,8 +2494,13 @@ def get_ui_trace_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=view)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_ui_replay_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2285,8 +2524,13 @@ def get_ui_replay_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=view)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_ui_graph_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2306,8 +2550,13 @@ def get_ui_graph_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=view)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_ui_metrics_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2323,8 +2572,13 @@ def get_ui_metrics_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=view)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except ValidationError as exc:
         return ToolResult(ok=False, error=str(exc))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
 
 
 def append_selection_decision(
@@ -2363,7 +2617,7 @@ def observability_project_and_limit(context: BrainContext, kwargs: dict[str, Any
     project_path = context.project_path
     limit = int(kwargs.get("limit", 5000) or 5000)
     if limit < 1 or limit > 50000:
-        raise ValueError("limit must be between 1 and 50000")
+        raise UserInputError("limit must be between 1 and 50000")
     return project_path, limit
 
 
