@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
@@ -13,16 +13,23 @@ class SaveEventInput(BaseModel):
 
     type: str = Field(min_length=1)
     payload: dict[str, Any]
-    file_path: str | None = None
-    project_path: str | None = None
-    source: str = Field(default="agent", min_length=1)
+    file_path: str | None = Field(default=None, max_length=4000)
+    source: str = Field(default="agent", min_length=1, max_length=100)
     session_id: int | None = None
-    agent_id: str | None = None
-    task_hint: str | None = None
+    task_hint: str | None = Field(default=None, max_length=4000)
     importance: int | None = Field(default=None, ge=1, le=5)
     impact_score: float | None = Field(default=None, ge=0.0, le=1.0)
-    caused_by: str | None = None
-    branch: str | None = None
+    caused_by: str | None = Field(default=None, max_length=255)
+    branch: str | None = Field(default=None, max_length=255)
+
+    @field_validator("payload")
+    @classmethod
+    def validate_payload_size(cls, value: dict[str, Any]) -> dict[str, Any]:
+        import json
+        raw = json.dumps(value)
+        if len(raw) > 250000:
+            raise ValueError("payload exceeds maximum size of 250KB")
+        return value
 
     @field_validator("type")
     @classmethod
@@ -56,9 +63,7 @@ class SaveEventInput(BaseModel):
 class ListEventsInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     session_id: int | None = None
-    agent_id: str | None = None
     type: str | None = None
     limit: int = Field(default=50, ge=1, le=500)
 
@@ -78,7 +83,6 @@ class ListEventsInput(BaseModel):
 class ResumeProjectInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     include_git: bool = True
     use_snapshot: bool = True
@@ -87,7 +91,6 @@ class ResumeProjectInput(BaseModel):
 class CreateSnapshotInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     force: bool = False
     include_derived: bool = False
@@ -96,20 +99,17 @@ class CreateSnapshotInput(BaseModel):
 class GitContextInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
 
 
 class RecentChangesInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     limit: int = Field(default=10, ge=1, le=100)
 
 
 class ConflictInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     threshold: float = Field(default=0.7, ge=0.0, le=1.0)
 
@@ -117,7 +117,6 @@ class ConflictInput(BaseModel):
 class IntentInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     include_git: bool = True
     use_snapshot: bool = True
@@ -126,28 +125,25 @@ class IntentInput(BaseModel):
 class CreateTaskInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     task_id: str | None = None
-    goal: str = Field(min_length=1)
-    kind: str = Field(default="implementation", min_length=1)
-    related_files: list[str] = Field(default_factory=list)
+    goal: str = Field(min_length=1, max_length=10000)
+    kind: str = Field(default="implementation", min_length=1, max_length=50)
+    related_files: list[str] = Field(default_factory=list, max_length=100)
     priority: int = Field(default=3, ge=1, le=5)
-    agent_id: str | None = None
+    agent_id: str | None = Field(default=None, max_length=255)
 
 
 class AssignTaskInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     task_id: str = Field(min_length=1)
-    agent_id: str | None = None
+    agent_id: str | None = Field(default=None, max_length=255)
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
 class HandoffTaskInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     task_id: str = Field(min_length=1)
     from_agent: str = Field(min_length=1)
     to_agent: str | None = None
@@ -158,7 +154,6 @@ class HandoffTaskInput(BaseModel):
 class TaskDependencyInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     task_id: str = Field(min_length=1)
     depends_on: str = Field(min_length=1)
 
@@ -166,7 +161,6 @@ class TaskDependencyInput(BaseModel):
 class TaskPriorityInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     task_id: str = Field(min_length=1)
     old: int | None = Field(default=None, ge=1, le=5)
     new: int = Field(ge=1, le=5)
@@ -175,7 +169,6 @@ class TaskPriorityInput(BaseModel):
 class OrchestratorInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     include_git: bool = True
     use_snapshot: bool = True
@@ -186,7 +179,6 @@ class RunDecisionPipelineInput(BaseModel):
 
     objective: dict[str, Any]
     execute_mode: str = Field(default="event_only", pattern="^(event_only|mock_runtime)$")
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     simulate_before_execute: bool = False
     risk_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
@@ -207,7 +199,6 @@ class RunDecisionPipelineInput(BaseModel):
 class ObserveWorldInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -215,7 +206,6 @@ class SimulateActionInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -223,7 +213,6 @@ class CounterfactualInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     counterfactual_limit: int = Field(default=3, ge=1, le=100)
 
@@ -232,7 +221,6 @@ class AlternativeRankingInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     actions: list[str] = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -240,7 +228,6 @@ class GenerateScenariosInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     scenarios_limit: int = Field(default=4, ge=1, le=20)
 
@@ -250,7 +237,6 @@ class EvaluateScenariosInput(BaseModel):
 
     action: str = Field(min_length=1)
     scenarios: list[dict[str, Any]] = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -258,7 +244,6 @@ class GenerateFuturePlansInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     foresight_limit: int = Field(default=5, ge=1, le=20)
     max_horizon: int = Field(default=5, ge=1, le=20)
@@ -268,7 +253,6 @@ class EvaluatePlanInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     actions: list[str] = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     max_horizon: int = Field(default=5, ge=1, le=20)
 
@@ -277,7 +261,6 @@ class ExplainDecisionInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     plan_id: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -285,7 +268,6 @@ class EstimateConfidenceInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     plan_id: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -293,7 +275,6 @@ class EstimateUncertaintyInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     decision_id: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -301,7 +282,6 @@ class DetectKnowledgeGapsInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     decision_id: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -309,7 +289,6 @@ class IdentifyInformationNeedsInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     decision_id: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -317,7 +296,6 @@ class EstimateInformationGainInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
@@ -325,7 +303,6 @@ class QueryBeliefInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     context_key: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     prior_alpha: float = Field(default=1.0, ge=0.0)
     prior_beta: float = Field(default=1.0, ge=0.0)
@@ -336,7 +313,6 @@ class EstimateInformationGainV2Input(BaseModel):
 
     action: str = Field(min_length=1)
     context_key: str = Field(min_length=1)
-    project_path: str | None = None
     limit: int = Field(default=5000, ge=1, le=50000)
     prior_alpha: float = Field(default=1.0, ge=0.0)
     prior_beta: float = Field(default=1.0, ge=0.0)

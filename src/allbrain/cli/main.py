@@ -61,6 +61,8 @@ def _patch_stdio_newlines_for_windows() -> None:
     if getattr(mcp_stdio.stdio_server, "__allbrain_lf_only__", False):
         return
 
+    # Tested against FastMCP 3.4.2 / MCP stdio internals from uv.lock.
+    # Recheck this patch when either package updates.
     @asynccontextmanager
     async def lf_stdio_server(
         stdin: anyio.AsyncFile[str] | None = None,
