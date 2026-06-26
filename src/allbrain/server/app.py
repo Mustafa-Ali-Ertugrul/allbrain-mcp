@@ -668,8 +668,8 @@ def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = SaveEventInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, data.session_id)
-        project_path = context.project_path
         event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=data.type,
             source=data.source,
@@ -729,8 +729,7 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ResumeProjectInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
-        project = context.repository.get_project_by_path(project_path)
+        project = context.repository.get_project_by_path(context.project_path)
         if project is None or project.id is None:
             raise ValueError("project does not exist")
         events = None
@@ -748,6 +747,7 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             snapshot_repo=SnapshotRepo(context.repository.engine),
         )
         resume = MultiAgentResumeEngine(incremental).resume(
+            project_path=context.project_path,
             project_id=project.id,
             events=all_events if events is None else events,
             limit=data.limit,
@@ -791,7 +791,6 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                     context,
                     tool_name="create_snapshot",
                     tool_args=data.model_dump(mode="json"),
-                    project_path=context.project_path,
                     session_id=bound_session_id,
                 )
                 return ToolResult(ok=True, data=snapshot_to_dict(latest) | {"reused": True})
@@ -2674,13 +2673,13 @@ def bind_session_id(context: BrainContext, session_id: int | None) -> int:
         with open_session(context.repository.engine) as db:
             session = context.repository.get_session(db, session_id)
             if session is None:
-                raise ValueError("Invalid session")
+                raise UserInputError("Invalid session")
             project = context.repository.get_or_create_project(db, context.project_path)
             if session.project_id != project.id:
-                raise ValueError("Invalid session")
+                raise UserInputError("Invalid session")
         return session_id
     if context.active_session_id is None:
-        raise ValueError("No active session is available")
+        raise UserInputError("No active session is available")
     return context.active_session_id
 
 
@@ -2689,10 +2688,10 @@ def audit_tool_call(
     *,
     tool_name: str,
     tool_args: dict[str, Any],
-    project_path: str | Path,
     session_id: int,
 ) -> None:
     context.repository.append_event(
+        project_path=context.project_path,
         session_id=session_id,
         type="tool_call",
         source="allbrain",
