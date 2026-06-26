@@ -64,6 +64,7 @@ from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
 from allbrain.snapshot.adapters import SnapshotAdapter
 from allbrain.snapshot.trigger import snapshot_weight
 from allbrain.snapshot.versions import is_compatible
+from allbrain.storage.database import open_session
 from allbrain.storage.repository import BrainRepository, event_to_read
 from allbrain.storage.snapshot_repo import SnapshotRepo
 from allbrain.counterfactual import (
@@ -670,7 +671,6 @@ def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             source=data.source,
             payload=data.payload,
             file_path=data.file_path,
-            agent_id=data.agent_id,
             task_hint=data.task_hint,
             importance=data.importance,
             impact_score=data.impact_score,
@@ -695,8 +695,8 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         bound_session_id = bind_session_id(context, None)
         project_path = context.project_path
         events = context.repository.list_events(
+            project_path=context.project_path,
             session_id=data.session_id,
-            agent_id=data.agent_id,
             type=data.type,
             limit=data.limit,
         )
@@ -2421,6 +2421,14 @@ def merge_agent_metrics(base: dict[str, dict[str, Any]], delta: dict[str, dict[s
 
 def bind_session_id(context: BrainContext, session_id: int | None) -> int:
     if session_id is not None:
+        # User-provided session_id — validate it belongs to current project
+        with open_session(context.repository.engine) as db:
+            session = context.repository.get_session(db, session_id)
+            if session is None:
+                raise ValueError("Invalid session")
+            project = context.repository.get_or_create_project(db, context.project_path)
+            if session.project_id != project.id:
+                raise ValueError("Invalid session")
         return session_id
     if context.active_session_id is None:
         raise ValueError("No active session is available")
