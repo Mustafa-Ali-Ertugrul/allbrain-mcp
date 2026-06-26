@@ -1032,7 +1032,6 @@ def create_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "related_files": data.related_files,
                 "priority": data.priority,
             },
-            agent_id=data.agent_id,
             task_hint=data.goal,
             importance=data.priority,
         )
@@ -1081,7 +1080,6 @@ def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "reason": assignment["reason"],
                 "candidate_agents": assignment["candidate_agents"],
             },
-            agent_id=assignment["agent_id"],
             task_hint=task.get("goal"),
         )
         decision_event = append_selection_decision(
@@ -1201,7 +1199,6 @@ def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "reason": data.reason,
                 "assignment": recommendation["assignment"],
             },
-            agent_id=data.from_agent,
             task_hint=task.get("goal"),
         )
         assignment = recommendation["assignment"]
@@ -1217,7 +1214,6 @@ def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 "reason": "handoff",
                 "candidate_agents": assignment["candidate_agents"],
             },
-            agent_id=assignment["agent_id"],
             task_hint=task.get("goal"),
             caused_by=handoff_event.id,
         )
@@ -2607,7 +2603,6 @@ def append_selection_decision(
             "fallback_mode": assignment.get("fallback_mode", False),
             "selection_decision": selection_decision,
         },
-        agent_id=assignment["agent_id"],
         task_hint=task_hint,
         caused_by=caused_by or assignment_event_id,
     )

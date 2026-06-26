@@ -74,7 +74,6 @@ class BrainRepository:
         source: str,
         payload: dict[str, Any],
         file_path: str | None = None,
-        agent_id: str | None = None,
         task_hint: str | None = None,
         importance: int | None = None,
         impact_score: float | None = None,

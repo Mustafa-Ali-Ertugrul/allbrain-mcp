@@ -21,7 +21,6 @@ class RuntimeEventBus:
         type: str,
         payload: dict[str, Any],
         caused_by: str | None = None,
-        agent_id: str | None = None,
         importance: int | None = None,
         impact_score: float | None = None,
     ) -> EventRead:
@@ -32,7 +31,6 @@ class RuntimeEventBus:
             source="runtime_core",
             payload=payload,
             caused_by=caused_by,
-            agent_id=agent_id,
             importance=importance,
             impact_score=impact_score,
         )

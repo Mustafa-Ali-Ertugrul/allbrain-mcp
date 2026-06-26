@@ -975,7 +975,6 @@ class SystemDecisionPipeline:
             type=EventType.TASK_ASSIGNED.value,
             payload={"run_id": run_id, "task_id": task_id, "agent_id": assignment["agent_id"], "score": assignment["score"], "breakdown": assignment["breakdown"], "reason": assignment["reason"], "candidate_agents": assignment["candidate_agents"], "execution_plan_id": execution_plan["execution_plan_id"]},
             caused_by=caused_by,
-            agent_id=assignment["agent_id"],
         )
         decision_event = context.repository.append_event(
             project_path=bus.project_path,
