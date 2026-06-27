@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from allbrain.orchestrator.scoring import SchedulerV1
 from allbrain.orchestrator.state import AgentStateBuilder
@@ -66,7 +66,7 @@ def metrics(
         "confidence": confidence,
         "user_feedback_score": None,
         "consecutive_failures": consecutive_failures,
-        "last_failure_at": datetime.now().isoformat() if consecutive_failures else None,
+        "last_failure_at": datetime.now(timezone.utc).isoformat() if consecutive_failures else None,
         "last_failure_reason": last_failure_reason,
     }
 
@@ -116,7 +116,7 @@ def test_retry_routing_does_not_select_attempted_agent() -> None:
 
 def test_unhealthy_agent_can_recover_after_circuit_breaker_window() -> None:
     scheduler = SchedulerV1(FakeRegistry(), epsilon=0.0)  # type: ignore[arg-type]
-    old_failure = (datetime.now() - timedelta(minutes=16)).isoformat()
+    old_failure = (datetime.now(timezone.utc) - timedelta(minutes=16)).isoformat()
 
     result = scheduler.assign_task(
         task={"domain": "software", "required_skills": ["security"]},

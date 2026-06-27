@@ -12,6 +12,8 @@ from fastmcp import FastMCP
 from pydantic import ValidationError
 
 from allbrain.gitbrain import GitBrain
+from allbrain.security.rate_limit import check_tool_rate
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.intent import IntentExtractor, IntentStore
 from allbrain.contradiction import ContradictionDetector
 from allbrain.models.entities import Session
@@ -666,32 +668,41 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
 
 def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
+        check_tool_rate("save_event")
         data = SaveEventInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, data.session_id)
-        event = context.repository.append_event(
-            project_path=context.project_path,
-            session_id=bound_session_id,
-            type=data.type,
-            source=data.source,
-            payload=data.payload,
-            file_path=data.file_path,
-            task_hint=data.task_hint,
-            importance=data.importance,
-            impact_score=data.impact_score,
-            caused_by=data.caused_by,
-            branch=data.branch,
-        )
-        audit_tool_call(
-            context,
-            tool_name="save_event",
-            tool_args=data.model_dump(mode="json"),
-            session_id=bound_session_id,
-        )
+        with open_session(context.repository.engine) as db:
+            event = context.repository.append_event(
+                project_path=context.project_path,
+                session_id=bound_session_id,
+                type=data.type,
+                source=data.source,
+                payload=data.payload,
+                file_path=data.file_path,
+                agent_id=data.agent_id,
+                task_hint=data.task_hint,
+                importance=data.importance,
+                impact_score=data.impact_score,
+                caused_by=data.caused_by,
+                branch=data.branch,
+                _session=db,
+            )
+            audit_tool_call(
+                context,
+                tool_name="save_event",
+                tool_args=data.model_dump(mode="json"),
+                session_id=bound_session_id,
+                _session=db,
+            )
+            db.commit()
+            result_data = event_to_read(event).model_dump(mode="json")
         maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
+        return ToolResult(ok=True, data=result_data)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except ValueError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
         logger.exception("Tool failed")
@@ -700,6 +711,7 @@ def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 
 def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
+        check_tool_rate("list_events")
         data = ListEventsInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
         project_path = context.project_path
@@ -717,7 +729,7 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=[event.model_dump(mode="json") for event in events])
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -762,7 +774,7 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=resume)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -808,7 +820,7 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=snapshot_to_dict(snapshot) | {"reused": False})
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -830,7 +842,7 @@ def get_git_context_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=git_context)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -852,7 +864,7 @@ def get_git_status_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=git_status)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -874,7 +886,7 @@ def get_recent_changes_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=recent_changes)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -897,7 +909,7 @@ def detect_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data={"conflicts": conflicts, "count": len(conflicts)})
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -922,7 +934,7 @@ def resolve_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data={"resolved_conflicts": resolved, "count": len(resolved)})
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -945,7 +957,7 @@ def extract_intents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data={"intents": [intent.model_dump(mode="json") for intent in intents], "count": len(intents)})
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -969,7 +981,7 @@ def detect_contradictions_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         )
         return ToolResult(ok=True, data={"contradictions": contradictions, "count": len(contradictions)})
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -992,6 +1004,7 @@ def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         multi_agent = MultiAgentResumeEngine(incremental)
         result = IntentResumeEngine(multi_agent).resume(
+            project_path=project_path,
             events=events,
             project_id=project.id,
             limit=data.limit,
@@ -1006,7 +1019,7 @@ def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1016,11 +1029,12 @@ def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 
 def create_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
+        check_tool_rate("create_task")
         data = CreateTaskInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         task_id = data.task_id or TaskStateReducer.new_task_id()
         event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.TASK_CREATED.value,
             source="allbrain",
@@ -1043,7 +1057,7 @@ def create_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1053,6 +1067,7 @@ def create_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 
 def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
+        check_tool_rate("assign_task")
         data = AssignTaskInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
         project_path = context.project_path
@@ -1068,6 +1083,7 @@ def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             metrics=metrics,
         )
         event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.TASK_ASSIGNED.value,
             source="allbrain",
@@ -1083,6 +1099,7 @@ def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         decision_event = append_selection_decision(
             context,
+            project_path=context.project_path,
             session_id=bound_session_id,
             task_id=data.task_id,
             assignment=assignment,
@@ -1105,7 +1122,7 @@ def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             },
         )
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1117,8 +1134,8 @@ def add_task_dependency_impl(context: BrainContext, **kwargs: Any) -> ToolResult
     try:
         data = TaskDependencyInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.TASK_DEPENDENCY_ADDED.value,
             source="allbrain",
@@ -1133,7 +1150,7 @@ def add_task_dependency_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1145,8 +1162,8 @@ def change_task_priority_impl(context: BrainContext, **kwargs: Any) -> ToolResul
     try:
         data = TaskPriorityInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.TASK_PRIORITY_CHANGED.value,
             source="allbrain",
@@ -1162,7 +1179,7 @@ def change_task_priority_impl(context: BrainContext, **kwargs: Any) -> ToolResul
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1188,6 +1205,7 @@ def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             metrics=metrics,
         )
         handoff_event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.HANDOFF_CREATED.value,
             source="allbrain",
@@ -1202,6 +1220,7 @@ def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         assignment = recommendation["assignment"]
         assigned_event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.TASK_ASSIGNED.value,
             source="allbrain",
@@ -1218,6 +1237,7 @@ def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         decision_event = append_selection_decision(
             context,
+            project_path=context.project_path,
             session_id=bound_session_id,
             task_id=data.task_id,
             assignment=assignment,
@@ -1242,7 +1262,7 @@ def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             },
         )
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1268,7 +1288,7 @@ def get_task_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data={"task_view": task_state, "task_graph": graph, "agent_state": agent_state})
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1323,7 +1343,7 @@ def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         )
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1367,7 +1387,7 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1384,6 +1404,7 @@ def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolRe
         engine = CounterfactualEngine()
         current_state = world_model.observe()
         observation_event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.WORLD_STATE_OBSERVED.value,
             source="counterfactual",
@@ -1394,6 +1415,7 @@ def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolRe
         if unknown:
             generated_payload["reason"] = "unknown_action"
         generated_event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.COUNTERFACTUAL_GENERATED.value,
             source="counterfactual",
@@ -1448,7 +1470,7 @@ def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolRe
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=summary)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1460,7 +1482,6 @@ def rank_alternatives_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = AlternativeRankingInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         world_model = WorldModel()
         current_state = world_model.observe()
         ranker = AlternativeRanker()
@@ -1479,7 +1500,7 @@ def rank_alternatives_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             },
         )
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1496,6 +1517,7 @@ def _publish_scenario_events(
 ) -> None:
     analysis_payload = analysis.model_dump(mode="json")
     generated_event = context.repository.append_event(
+        project_path=project_path,
         session_id=bound_session_id,
         type=EventType.SCENARIO_GENERATED.value,
         source="scenarios",
@@ -1509,6 +1531,7 @@ def _publish_scenario_events(
     last_id = generated_event.id
     for result in analysis.results:
         ev_event = context.repository.append_event(
+            project_path=project_path,
             session_id=bound_session_id,
             type=EventType.SCENARIO_EVALUATED.value,
             source="scenarios",
@@ -1528,6 +1551,7 @@ def _publish_scenario_events(
         f"spread={analysis.prediction_spread:.2f}"
     )
     context.repository.append_event(
+        project_path=project_path,
         session_id=bound_session_id,
         type=EventType.SCENARIO_RECOMMENDED.value,
         source="scenarios",
@@ -1552,6 +1576,7 @@ def generate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         engine = ScenarioEngine()
         current_state = world_model.observe()
         context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.WORLD_STATE_OBSERVED.value,
             source="scenarios",
@@ -1568,7 +1593,7 @@ def generate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1585,6 +1610,7 @@ def evaluate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         engine = ScenarioEngine()
         current_state = world_model.observe()
         context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.WORLD_STATE_OBSERVED.value,
             source="scenarios",
@@ -1601,7 +1627,7 @@ def evaluate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1618,6 +1644,7 @@ def _publish_foresight_events(
 ) -> None:
     analysis_payload = analysis.model_dump(mode="json")
     generated_event = context.repository.append_event(
+        project_path=project_path,
         session_id=bound_session_id,
         type=EventType.FORESIGHT_GENERATED.value,
         source="foresight",
@@ -1635,6 +1662,7 @@ def _publish_foresight_events(
         plan_payload["analysis_id"] = analysis_payload["analysis_id"]
         plan_payload["plan_id"] = f"plan_{idx}"
         ev_event = context.repository.append_event(
+            project_path=project_path,
             session_id=bound_session_id,
             type=EventType.FORESIGHT_EVALUATED.value,
             source="foresight",
@@ -1649,6 +1677,7 @@ def _publish_foresight_events(
         f"spread={analysis.plan_spread:.2f}"
     )
     context.repository.append_event(
+        project_path=project_path,
         session_id=bound_session_id,
         type=EventType.FORESIGHT_RECOMMENDED.value,
         source="foresight",
@@ -1673,6 +1702,7 @@ def generate_future_plans_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         engine = ForesightEngine(max_horizon=data.max_horizon)
         current_state = world_model.observe()
         context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.WORLD_STATE_OBSERVED.value,
             source="foresight",
@@ -1689,7 +1719,7 @@ def generate_future_plans_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1706,6 +1736,7 @@ def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         engine = ForesightEngine(max_horizon=data.max_horizon)
         current_state = world_model.observe()
         context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.WORLD_STATE_OBSERVED.value,
             source="foresight",
@@ -1720,6 +1751,7 @@ def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             "analysis_id": "00000000-0000-0000-0000-000000000000",
         }
         generated_event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.FORESIGHT_GENERATED.value,
             source="foresight",
@@ -1729,6 +1761,7 @@ def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         plan_payload["analysis_id"] = "00000000-0000-0000-0000-000000000000"
         plan_payload["plan_id"] = "plan_0"
         context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.FORESIGHT_EVALUATED.value,
             source="foresight",
@@ -1738,6 +1771,7 @@ def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         rationale = f"custom plan: actions={plan.actions} success={plan.predicted_success:.2f}"
         context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.FORESIGHT_RECOMMENDED.value,
             source="foresight",
@@ -1760,7 +1794,7 @@ def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=plan.model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1809,7 +1843,7 @@ def explain_decision_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=explanation.model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1844,7 +1878,7 @@ def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         )
         return ToolResult(ok=True, data=estimate.model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1901,7 +1935,7 @@ def estimate_uncertainty_impl(context: BrainContext, **kwargs: Any) -> ToolResul
         )
         return ToolResult(ok=True, data=estimate.model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1929,7 +1963,7 @@ def detect_knowledge_gaps_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         )
         return ToolResult(ok=True, data={"gaps": [gap.model_dump(mode="json") for gap in gaps]})
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1972,7 +2006,7 @@ def identify_information_needs_impl(context: BrainContext, **kwargs: Any) -> Too
         )
         return ToolResult(ok=True, data=plan.model_dump(mode="json"))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -1984,7 +2018,6 @@ def estimate_information_gain_impl(context: BrainContext, **kwargs: Any) -> Tool
     try:
         data = EstimateInformationGainInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         try:
             action_enum = InformationAction(data.action)
         except ValueError:
@@ -2009,7 +2042,7 @@ def estimate_information_gain_impl(context: BrainContext, **kwargs: Any) -> Tool
             },
         )
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2053,7 +2086,7 @@ def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             },
         )
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2108,7 +2141,7 @@ def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> T
             },
         )
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2124,6 +2157,7 @@ def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         world_model = WorldModel()
         state = world_model.observe()
         event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.WORLD_STATE_OBSERVED.value,
             source="world",
@@ -2141,7 +2175,7 @@ def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             data={"state": state.model_dump(mode="json"), "event": event_to_read(event).model_dump(mode="json")},
         )
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2157,6 +2191,7 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         world_model = WorldModel()
         state = world_model.observe()
         observation_event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.WORLD_STATE_OBSERVED.value,
             source="world",
@@ -2164,6 +2199,7 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         sim_result = world_model.simulate(data.action, state)
         sim_event = context.repository.append_event(
+            project_path=context.project_path,
             session_id=bound_session_id,
             type=EventType.WORLD_SIMULATION_RUN.value,
             source="world",
@@ -2187,7 +2223,7 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             },
         )
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2216,7 +2252,7 @@ def get_observability_dashboard_impl(context: BrainContext, **kwargs: Any) -> To
         )
         return ToolResult(ok=True, data=ObservabilityBuilder().build(events))
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2228,15 +2264,15 @@ def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
         bound_session_id = bind_session_id(context, None)
-        result = ObservabilityAPI().workflow_replay(
-            context.repository.list_events(project_path=context.project_path, limit=limit),
+        events = context.repository.list_events(project_path=project_path, limit=limit)
+        replay = ObservabilityAPI().replay(
+            events,
             workflow_id=kwargs.get("workflow_id"),
             task_id=kwargs.get("task_id"),
-            cursor=kwargs.get("cursor", 0),
+            cursor=int(kwargs.get("cursor", 0) or 0),
             step_count=kwargs.get("step_count"),
-            deterministic=kwargs.get("deterministic", True),
+            deterministic=bool(kwargs.get("deterministic", True)),
         )
-        replay = result.model_dump(mode="json")
         replay = replay | {
             "tasks": replay["visualization"]["tasks"],
             "task_count": replay["visualization"]["task_count"],
@@ -2245,6 +2281,7 @@ def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             context,
             tool_name="replay_workflow",
             tool_args={
+                "project_path": kwargs.get("project_path"),
                 "workflow_id": kwargs.get("workflow_id"),
                 "task_id": kwargs.get("task_id"),
                 "cursor": kwargs.get("cursor", 0),
@@ -2255,13 +2292,8 @@ def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=replay)
-    except ValidationError as exc:
+    except (ValidationError, ValueError, TypeError) as exc:
         return ToolResult(ok=False, error=str(exc))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
 
 
 def get_workflow_trace_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
@@ -2286,7 +2318,7 @@ def get_workflow_trace_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2309,7 +2341,7 @@ def get_system_metrics_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2331,7 +2363,7 @@ def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolRes
         )
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2361,7 +2393,7 @@ def get_workflow_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2384,7 +2416,7 @@ def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=comparison)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2406,7 +2438,7 @@ def build_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=store.to_dict())
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2438,7 +2470,7 @@ def retrieve_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2464,7 +2496,7 @@ def recommend_policy_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=recommendation)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2490,7 +2522,7 @@ def get_ui_trace_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=view)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2520,7 +2552,7 @@ def get_ui_replay_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=view)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2546,7 +2578,7 @@ def get_ui_graph_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=view)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2568,7 +2600,7 @@ def get_ui_metrics_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         )
         return ToolResult(ok=True, data=view)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:
         return ToolResult(ok=False, error=str(exc))
     except Exception:
@@ -2589,6 +2621,7 @@ def append_selection_decision(
 ):
     selection_decision = assignment.get("selection_decision", {})
     return context.repository.append_event(
+        project_path=project_path,
         session_id=session_id,
         type=EventType.SELECTION_DECISION.value,
         source="allbrain",
@@ -2602,6 +2635,7 @@ def append_selection_decision(
             "fallback_mode": assignment.get("fallback_mode", False),
             "selection_decision": selection_decision,
         },
+        agent_id=assignment["agent_id"],
         task_hint=task_hint,
         caused_by=caused_by or assignment_event_id,
     )
@@ -2689,6 +2723,7 @@ def audit_tool_call(
     tool_name: str,
     tool_args: dict[str, Any],
     session_id: int,
+    _session: Any | None = None,
 ) -> None:
     context.repository.append_event(
         project_path=context.project_path,
@@ -2701,6 +2736,7 @@ def audit_tool_call(
             "timestamp": datetime_now_iso(),
             "session_id": session_id,
         },
+        _session=_session,
     )
 
 
