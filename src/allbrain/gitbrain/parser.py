@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
@@ -54,7 +54,7 @@ class GitBrain:
 
     def _open_repo(self) -> Repo | None:
         try:
-            return Repo(self.project_path, search_parent_directories=True)
+            return Repo(self.project_path, search_parent_directories=False)
         except (InvalidGitRepositoryError, NoSuchPathError):
             return None
 

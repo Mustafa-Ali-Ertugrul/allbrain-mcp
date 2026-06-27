@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from uuid6 import uuid7
@@ -33,6 +34,9 @@ from allbrain.uncertainty import (
 )
 from allbrain.storage.repository import event_to_read
 from allbrain.world import WorldModel
+
+
+logger = logging.getLogger(__name__)
 
 
 class SystemDecisionPipeline:
@@ -971,7 +975,6 @@ class SystemDecisionPipeline:
             type=EventType.TASK_ASSIGNED.value,
             payload={"run_id": run_id, "task_id": task_id, "agent_id": assignment["agent_id"], "score": assignment["score"], "breakdown": assignment["breakdown"], "reason": assignment["reason"], "candidate_agents": assignment["candidate_agents"], "execution_plan_id": execution_plan["execution_plan_id"]},
             caused_by=caused_by,
-            agent_id=assignment["agent_id"],
         )
         decision_event = context.repository.append_event(
             project_path=bus.project_path,
@@ -1254,7 +1257,8 @@ class SystemDecisionPipeline:
             return 0.7
         try:
             events = context.repository.list_events(project_path=resolved, limit=5000)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to collect historical event rate: %s", exc, exc_info=True)
             return 0.7
         context_key = None
         if isinstance(objective, dict):
@@ -1348,7 +1352,8 @@ class SystemDecisionPipeline:
         if resolved:
             try:
                 events = context.repository.list_events(project_path=resolved, limit=limit)
-            except Exception:
+            except Exception as exc:
+                logger.debug("Failed to load events for belief step: %s", exc, exc_info=True)
                 events = []
         kind = objective.get("kind") if isinstance(objective, dict) else None
         context_key = kind if isinstance(kind, str) and kind else "default"
@@ -1418,7 +1423,8 @@ class SystemDecisionPipeline:
         if resolved:
             try:
                 events = context.repository.list_events(project_path=resolved, limit=limit)
-            except Exception:
+            except Exception as exc:
+                logger.debug("Failed to load events for contradiction step: %s", exc, exc_info=True)
                 events = []
 
         intents = IntentExtractor().extract(events)
@@ -1498,7 +1504,8 @@ class SystemDecisionPipeline:
             try:
                 events = context.repository.list_events(project_path=resolved, limit=limit)
                 evidence_count = len(events)
-            except Exception:
+            except Exception as exc:
+                logger.debug("Failed to load events for uncertainty computed step: %s", exc, exc_info=True)
                 evidence_count = 0
 
         uncertainty = composite_uncertainty(variance, evidence_count, contradiction_count)
@@ -1632,7 +1639,8 @@ class SystemDecisionPipeline:
         if resolved and evidence_payload is not None:
             try:
                 events = context.repository.list_events(project_path=resolved, limit=limit)
-            except Exception:
+            except Exception as exc:
+                logger.debug("Failed to load events for calibration step: %s", exc, exc_info=True)
                 events = []
             for event in reversed(events):
                 event_type = str(getattr(event, "type", ""))
@@ -1743,7 +1751,8 @@ class SystemDecisionPipeline:
         resolved = project_path or getattr(context, "project_path", None)
         try:
             events = context.repository.list_events(project_path=resolved, limit=limit)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to load events for reputation step: %s", exc, exc_info=True)
             events = []
 
         manager = ReputationManager()
@@ -1827,7 +1836,8 @@ class SystemDecisionPipeline:
         resolved = project_path or getattr(context, "project_path", None)
         try:
             events = context.repository.list_events(project_path=resolved, limit=limit)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to load events for arbitration vote step: %s", exc, exc_info=True)
             events = []
 
         reputation_manager = ReputationManager()
@@ -1983,7 +1993,8 @@ class SystemDecisionPipeline:
         resolved = project_path or getattr(context, "project_path", None)
         try:
             events = context.repository.list_events(project_path=resolved, limit=limit)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to load events for capability step: %s", exc, exc_info=True)
             events = []
 
         rep_mgr = ReputationManager()
@@ -2052,7 +2063,8 @@ class SystemDecisionPipeline:
         resolved = project_path or getattr(context, "project_path", None)
         try:
             events = context.repository.list_events(project_path=resolved, limit=limit)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to load events for learning step: %s", exc, exc_info=True)
             events = []
 
         cap_mgr = CapabilityManager()
@@ -2124,7 +2136,8 @@ class SystemDecisionPipeline:
         resolved = project_path or getattr(context, "project_path", None)
         try:
             events = context.repository.list_events(project_path=resolved, limit=limit)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to load events for causal step: %s", exc, exc_info=True)
             events = []
 
         cap_mgr = CapabilityManager()
@@ -2218,7 +2231,8 @@ class SystemDecisionPipeline:
         resolved = project_path or getattr(context, "project_path", None)
         try:
             events = context.repository.list_events(project_path=resolved, limit=limit)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to load events for dynamics step: %s", exc, exc_info=True)
             events = []
 
         cap_mgr = CapabilityManager()
@@ -2322,7 +2336,8 @@ class SystemDecisionPipeline:
         resolved = project_path or getattr(context, "project_path", None)
         try:
             events = context.repository.list_events(project_path=resolved, limit=limit)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to load events for fusion step: %s", exc, exc_info=True)
             events = []
 
         cap_mgr = CapabilityManager()
@@ -2428,7 +2443,8 @@ class SystemDecisionPipeline:
         resolved = project_path or getattr(context, "project_path", None)
         try:
             events = context.repository.list_events(project_path=resolved, limit=limit)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to load events for routing step: %s", exc, exc_info=True)
             events = []
 
         rep_mgr = ReputationManager()

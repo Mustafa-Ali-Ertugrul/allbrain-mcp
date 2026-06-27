@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -74,7 +74,6 @@ class BrainRepository:
         source: str,
         payload: dict[str, Any],
         file_path: str | None = None,
-        agent_id: str | None = None,
         task_hint: str | None = None,
         importance: int | None = None,
         impact_score: float | None = None,
@@ -92,7 +91,7 @@ class BrainRepository:
             if session.project_id != project.id:
                 raise ValueError("session_id does not belong to project_path")
 
-            bound_agent_id = agent_id or session.agent_name
+            bound_agent_id = session.agent_name
             event = Event(
                 id=str(uuid7()),
                 project_id=project.id or 0,
@@ -133,10 +132,10 @@ class BrainRepository:
                 statement = statement.where(Event.agent_id == agent_id)
             if type is not None:
                 statement = statement.where(Event.type == type)
-        statement = statement.order_by(col(Event.id).desc()).limit(limit)
-        events = db.exec(statement).all()
-        events = sorted(events, key=lambda event: event.id)
-        return [event_to_read(event) for event in events]
+            statement = statement.order_by(col(Event.id).desc()).limit(limit)
+            events = db.exec(statement).all()
+            events = sorted(events, key=lambda event: event.id)
+            return [event_to_read(event) for event in events]
 
     def list_events_after(
         self,
