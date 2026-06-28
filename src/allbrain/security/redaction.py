@@ -7,8 +7,8 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
-    (re.compile(r"sk-[a-zA-Z0-9]{20,}", re.IGNORECASE), "openai"),
-    (re.compile(r"sk-[a-zA-Z0-9]{32,}", re.IGNORECASE), "anthropic"),
+    (re.compile(r"sk-ant-[a-zA-Z0-9_-]{20,}", re.IGNORECASE), "anthropic"),
+    (re.compile(r"sk-(?!ant-)[a-zA-Z0-9]{20,}", re.IGNORECASE), "openai"),
     (re.compile(r"ghp_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_pat"),
     (re.compile(r"gho_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_oauth"),
     (re.compile(r"ghu_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_user"),

@@ -98,7 +98,7 @@ def test_no_false_positive_on_normal_text() -> None:
 
 
 def test_anthropic_key_uppercase_masked() -> None:
-    result = sanitize_payload({"key": "SK-" + "A" * 36})
+    result = sanitize_payload({"key": "SK-ANT-" + "A" * 36})
     assert result["key"] == "********"
 
 

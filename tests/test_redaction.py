@@ -10,8 +10,18 @@ def test_openai_key_masked() -> None:
 
 
 def test_anthropic_key_masked() -> None:
-    result = sanitize_payload({"key": "sk-" + "a" * 36})
+    result = sanitize_payload({"key": "sk-ant-" + "a" * 36})
     assert result["key"] == "********"
+
+
+def test_anthropic_key_classified_as_anthropic(caplog) -> None:
+    caplog.set_level(INFO)
+    sanitize_payload({"token": "sk-ant-" + "a" * 36})
+
+    records = [record for record in caplog.records if record.message == "secret_redacted"]
+    assert records
+    assert "anthropic" in records[-1].types
+    assert "openai" not in records[-1].types
 
 
 def test_github_pat_masked() -> None:

@@ -266,9 +266,16 @@ def create_mcp_server(context: BrainContext) -> FastMCP:
     @mcp.tool
     def assign_task(
         task_id: str,
+        agent_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        result = assign_task_impl(context, task_id=task_id, agent_id=agent_id, project_path=context.project_path, limit=limit)
+        result = assign_task_impl(
+            context,
+            task_id=task_id,
+            agent_id=agent_id,
+            project_path=context.project_path,
+            limit=limit,
+        )
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -2454,7 +2461,7 @@ def retrieve_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         project_path, limit = observability_project_and_limit(context, kwargs)
         top_k = int(kwargs.get("top_k", 5) or 5)
         if top_k < 1 or top_k > 50:
-                raise UserInputError("top_k must be between 1 and 50")
+            raise UserInputError("top_k must be between 1 and 50")
         bound_session_id = bind_session_id(context, None)
         events = context.repository.list_events(project_path=context.project_path, limit=limit)
         retriever = MemoryRetriever(MemoryBuilder().build(events))
