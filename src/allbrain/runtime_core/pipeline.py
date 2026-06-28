@@ -1,22 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
-
-from uuid6 import uuid7
+from typing import TYPE_CHECKING, Any
 
 from allbrain.events import EventType
-from allbrain.governance import AutonomousGovernanceCoordinator
 from allbrain.models.schemas import EventRead
-from allbrain.orchestrator import DeterministicScheduler
-from allbrain.orchestrator.metrics import AgentPerformanceReducer
-from allbrain.orchestrator.task_state import TaskStateReducer
-from allbrain.counterfactual import CounterfactualEngine, recommendation_severity
-from allbrain.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
-from allbrain.information_seeking import (
-    INFORMATION_SEEKING_TEMPLATE_VERSION,
-    InformationSeekingManager,
-)
 from allbrain.runtime_core.arbitration import ArbitrationBridge
 from allbrain.runtime_core.economics import EconomicEvaluationBridge
 from allbrain.runtime_core.event_bus import RuntimeEventBus
@@ -25,15 +13,9 @@ from allbrain.runtime_core.learning import ClosedLoopLearningEngine
 from allbrain.runtime_core.memory import GlobalExperienceMemoryBuilder
 from allbrain.runtime_core.planning import GoalDecompositionBridge, StrategicPlanningBridge
 from allbrain.runtime_core.state import RuntimeStateMachine, RuntimeStatus
-from allbrain.scenarios import SCENARIO_TEMPLATE_VERSION, ScenarioEngine
-from allbrain.meta_reasoning import META_REASONING_TEMPLATE_VERSION, MetaReasoningManager
-from allbrain.uncertainty import (
-    UNCERTAINTY_TEMPLATE_VERSION,
-    UncertaintyManager,
-    observed_success_rate,
-)
-from allbrain.storage.repository import event_to_read
-from allbrain.world import WorldModel
+
+if TYPE_CHECKING:
+    from allbrain.server.app import BrainContext
 
 
 logger = logging.getLogger(__name__)
@@ -41,6 +23,19 @@ logger = logging.getLogger(__name__)
 
 class SystemDecisionPipeline:
     def __init__(self) -> None:
+        from uuid6 import uuid7
+
+        from allbrain.governance import AutonomousGovernanceCoordinator
+        from allbrain.counterfactual import CounterfactualEngine
+        from allbrain.foresight import ForesightEngine
+        from allbrain.information_seeking import InformationSeekingManager
+        from allbrain.scenarios import ScenarioEngine
+        from allbrain.meta_reasoning import MetaReasoningManager
+        from allbrain.uncertainty import UncertaintyManager
+        from allbrain.world import WorldModel
+
+        self._uuid7 = uuid7
+
         self.governance = AutonomousGovernanceCoordinator()
         self.economics = EconomicEvaluationBridge()
         self.strategy = StrategicPlanningBridge()
@@ -57,7 +52,7 @@ class SystemDecisionPipeline:
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
 
-    def run(self, context: Any, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False, enable_calibration: bool = False, enable_drift: bool = False, enable_reputation: bool = False, enable_arbitration: bool = False, enable_telemetry: bool = False, enable_routing: bool = False, enable_capabilities: bool = False, enable_learning: bool = False, enable_causal: bool = False, enable_dynamics: bool = False, enable_fusion: bool = False, enable_decision_engine: bool = False, enable_decision_engine_debug: bool = False, enable_meta_policy: bool = False, enable_meta_policy_drift_detection: bool = False, enable_attribution: bool = False,         enable_attention: bool = False,                  enable_workspace: bool = True, enable_episodic: bool = True, enable_semantic: bool = True, enable_resilience: bool = False, enable_recovery_consensus: bool = False, enable_failure_memory: bool = False, enable_adaptive_recovery: bool = False, enable_predictive_failure: bool = False, enable_mitigation_learning: bool = False, enable_learning_safety: bool = False, enable_self_repair: bool = False, enable_policy_routing: bool = False, enable_policy_competition: bool = False, enable_soft_repair: bool = False, enable_meta_scoring: bool = False, enable_self_play: bool = False, enable_meta_optimizer: bool = False, enable_meta_meta_scoring: bool = False, enable_learning_graph: bool = False, enable_coevolution: bool = False, enable_objective_system: bool = False, enable_tradeoff_engine: bool = False, enable_value_alignment: bool = False) -> dict[str, Any]:
+    def run(self, context: BrainContext, objective: dict[str, Any], *, execute_mode: str = "event_only", project_path: str | None = None, limit: int = 5000, simulate_before_execute: bool = False, risk_threshold: float = 0.7, enable_counterfactual: bool = False, counterfactual_limit: int = 3, regret_threshold: float = 0.20, enable_scenarios: bool = False, scenarios_limit: int = 4, scenario_recommendation_threshold: float = 0.50, enable_foresight: bool = False, foresight_limit: int = 5, max_horizon: int = 5, enable_meta_reasoning: bool = False, enable_uncertainty: bool = False,         enable_information_seeking: bool = False, enable_belief: bool = False, belief_prior_alpha: float = 1.0, belief_prior_beta: float = 1.0, enable_contradiction: bool = False, enable_revision: bool = False, enable_uncertainty_computed: bool = False, enable_evidence: bool = False, enable_trust: bool = False, enable_calibration: bool = False, enable_drift: bool = False, enable_reputation: bool = False, enable_arbitration: bool = False, enable_telemetry: bool = False, enable_routing: bool = False, enable_capabilities: bool = False, enable_learning: bool = False, enable_causal: bool = False, enable_dynamics: bool = False, enable_fusion: bool = False, enable_decision_engine: bool = False, enable_decision_engine_debug: bool = False, enable_meta_policy: bool = False, enable_meta_policy_drift_detection: bool = False, enable_attribution: bool = False,         enable_attention: bool = False,                  enable_workspace: bool = True, enable_episodic: bool = True, enable_semantic: bool = True, enable_resilience: bool = False, enable_recovery_consensus: bool = False, enable_failure_memory: bool = False, enable_adaptive_recovery: bool = False, enable_predictive_failure: bool = False, enable_mitigation_learning: bool = False, enable_learning_safety: bool = False, enable_self_repair: bool = False, enable_policy_routing: bool = False, enable_policy_competition: bool = False, enable_soft_repair: bool = False, enable_meta_scoring: bool = False, enable_self_play: bool = False, enable_meta_optimizer: bool = False, enable_meta_meta_scoring: bool = False, enable_learning_graph: bool = False, enable_coevolution: bool = False, enable_objective_system: bool = False, enable_tradeoff_engine: bool = False, enable_value_alignment: bool = False) -> dict[str, Any]:
         if execute_mode not in {"event_only", "mock_runtime"}:
             raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
@@ -76,7 +71,7 @@ class SystemDecisionPipeline:
             raise ValueError("max_horizon must be >= 1")
         if belief_prior_alpha < 0.0 or belief_prior_beta < 0.0:
             raise ValueError("belief priors must be non-negative")
-        run_id = str(uuid7())
+        run_id = str(self._uuid7())
         bus = RuntimeEventBus(context, project_path=project_path)
         machine = RuntimeStateMachine(run_id)
         emitted: list[EventRead] = []
@@ -93,7 +88,17 @@ class SystemDecisionPipeline:
             objective_event = publish(EventType.OBJECTIVE_RECEIVED.value, {"objective": objective}, caused_by=last_event_id, importance=int(objective.get("priority", 3) or 3))
             last_event_id = objective_event.id
 
-            proposal = self._objective_to_governance_proposal(objective)
+            proposal = {
+                "proposal_id": str(objective.get("objective_id") or objective.get("task_id") or "objective"),
+                "change_type": objective.get("change_type", "strategy_change"),
+                "risk_level": objective.get("risk_level", "medium"),
+                "requested_autonomy_level": objective.get("requested_autonomy_level"),
+                "safety_validation": objective.get("safety_validation", True),
+                "confidence": objective.get("confidence", 0.75),
+                "alignment_decay_risk": objective.get("alignment_decay_risk"),
+                "reduces_interpretability": objective.get("reduces_interpretability", False),
+                "capability": objective.get("capability"),
+            }
             governance_result = self.governance.review(
                 {
                     "trigger_source": "runtime_pipeline",
@@ -114,7 +119,18 @@ class SystemDecisionPipeline:
             last_event_id = publish(EventType.STRATEGIC_PLAN_CREATED.value, strategic_plan, caused_by=last_event_id).id
             decomposition = self.decomposition.decompose(objective, strategic_plan, economic)
             last_event_id = publish(EventType.GOAL_DECOMPOSITION_COMPLETED.value, decomposition, caused_by=last_event_id).id
-            self._emit_task_events(context, bus, run_id, decomposition, last_event_id, objective)
+            # Emit task events inline
+            task_id_emit = decomposition["task_id"]
+            bus.publish(
+                type=EventType.TASK_CREATED.value,
+                payload={"run_id": run_id, "task_id": task_id_emit, "goal": objective.get("goal") or task_id_emit, "kind": objective.get("kind", "implementation"), "related_files": objective.get("related_files", []), "priority": int(objective.get("priority", 3) or 3)},
+                caused_by=last_event_id,
+                importance=int(objective.get("priority", 3) or 3),
+            )
+            for subtask in decomposition["subtasks"]:
+                bus.publish(type=EventType.SUBTASK_CREATED.value, payload={"run_id": run_id, **subtask}, caused_by=last_event_id)
+            for edge in decomposition["edges"]:
+                bus.publish(type=EventType.TASK_DEPENDENCY_ADDED.value, payload={"run_id": run_id, "task_id": task_id_emit, "depends_on": edge["from"], "node_id": edge["to"]}, caused_by=last_event_id)
 
             execution_plan = self.execution.plan(objective, economic, decomposition)
             last_event_id = publish(EventType.EXECUTION_PLAN_CREATED.value, execution_plan, caused_by=last_event_id).id
@@ -123,7 +139,17 @@ class SystemDecisionPipeline:
                 last_event_id = publish(EventType.ARBITRATION_COMPLETED.value, arbitration, caused_by=last_event_id).id
 
             last_event_id = self._transition(machine, publish, RuntimeStatus.DECISION, "final_decision", last_event_id)
-            final_decision = self._final_decision(governance_result, economic, arbitration)
+            governance_decision = governance_result["governance_decision"]["decision"]
+            # Default: accept
+            final_decision = {"action": "accept", "reason": "pipeline_ready", "confidence": min(economic["confidence"], governance_result["governance_decision"]["confidence"])}
+            if governance_decision in {"reject_expansion", "require_restructuring", "escalate_to_supervision"}:
+                final_decision = {"action": "reject", "reason": governance_decision, "confidence": governance_result["governance_decision"]["confidence"]}
+            elif arbitration["action"] == "reject":
+                final_decision = {"action": "reject", "reason": "arbitration_rejected", "confidence": arbitration["confidence"]}
+            elif economic["decision"] == "delay":
+                final_decision = {"action": "delay", "reason": "negative_risk_adjusted_value", "confidence": economic["confidence"]}
+            elif arbitration["action"] == "modify":
+                final_decision = {"action": "modify", "reason": "constraints_applied", "confidence": arbitration["confidence"]}
             last_event_id = publish(EventType.FINAL_DECISION_RECORDED.value, final_decision, caused_by=last_event_id, impact_score=final_decision["confidence"]).id
             if final_decision["action"] not in {"accept", "modify"}:
                 last_event_id = self._transition(machine, publish, RuntimeStatus.BLOCKED, final_decision["reason"], last_event_id)
@@ -176,7 +202,7 @@ class SystemDecisionPipeline:
                 emitted.extend(mr_events)
 
             belief_payload: dict[str, Any] | None = None
-            belief_state: Any = None
+            belief_state: object | None = None
             if enable_belief:
                 belief_state, belief_payload, belief_events, last_event_id = self._belief_step(
                     bus, context, project_path, objective, belief_prior_alpha, belief_prior_beta, last_event_id, limit
@@ -247,33 +273,23 @@ class SystemDecisionPipeline:
                     if foresight_payload
                     else 0.0
                 )
-                if belief_state is not None:
-                    historical = float(getattr(belief_state, "mean", 0.7))
-                    evidence = sum(layer_indicators) / len(layer_indicators) if layer_indicators else 0.0
-                    uncertainty_payload, last_event_id, un_events = self._uncertainty_step(
-                        bus,
-                        meta_reasoning_payload,
-                        layer_indicators,
-                        sample_count,
-                        sample_quality,
-                        historical,
-                        evidence,
-                        last_event_id,
-                        belief=belief_state,
-                    )
-                else:
-                    historical = self._collect_historical_rate(context, project_path, objective=objective)
-                    evidence = sum(layer_indicators) / len(layer_indicators) if layer_indicators else 0.0
-                    uncertainty_payload, last_event_id, un_events = self._uncertainty_step(
-                        bus,
-                        meta_reasoning_payload,
-                        layer_indicators,
-                        sample_count,
-                        sample_quality,
-                        historical,
-                        evidence,
-                        last_event_id,
-                    )
+                historical = (
+                    float(getattr(belief_state, "mean", 0.7))
+                    if belief_state is not None
+                    else self._collect_historical_rate(context, project_path, objective=objective)
+                )
+                evidence = sum(layer_indicators) / len(layer_indicators) if layer_indicators else 0.0
+                uncertainty_payload, last_event_id, un_events = self._uncertainty_step(
+                    bus,
+                    meta_reasoning_payload,
+                    layer_indicators,
+                    sample_count,
+                    sample_quality,
+                    historical,
+                    evidence,
+                    last_event_id,
+                    belief=belief_state,
+                )
                 emitted.extend(un_events)
 
             information_seeking_payload: dict[str, Any] | None = None
@@ -295,7 +311,15 @@ class SystemDecisionPipeline:
             last_event_id = publish(EventType.SCHEDULER_EXECUTION_STARTED.value, scheduler_result["summary"], caused_by=last_event_id).id
 
             last_event_id = self._transition(machine, publish, RuntimeStatus.FEEDBACK, "runtime_feedback", last_event_id)
-            feedback = self._feedback(run_id, execute_mode, scheduler_result, execution_plan)
+            feedback_status = "completed" if execute_mode == "mock_runtime" else "planned"
+            feedback = {
+                "run_id": run_id,
+                "status": feedback_status,
+                "execute_mode": execute_mode,
+                "assignment": scheduler_result["assignment"],
+                "actual_cost": 0.0 if execute_mode == "mock_runtime" else execution_plan["predicted_cost"],
+                "actual_success": feedback_status in {"planned", "completed"},
+            }
             last_event_id = publish(EventType.RUNTIME_FEEDBACK_RECORDED.value, feedback, caused_by=last_event_id).id
 
             last_event_id = self._transition(machine, publish, RuntimeStatus.EVOLUTION, "closed_loop_learning", last_event_id)
@@ -926,45 +950,12 @@ class SystemDecisionPipeline:
         payload = machine.transition(target, reason=reason)
         return publish(EventType.PIPELINE_STATE_CHANGED.value, payload, caused_by=caused_by).id
 
-    def _objective_to_governance_proposal(self, objective: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "proposal_id": str(objective.get("objective_id") or objective.get("task_id") or "objective"),
-            "change_type": objective.get("change_type", "strategy_change"),
-            "risk_level": objective.get("risk_level", "medium"),
-            "requested_autonomy_level": objective.get("requested_autonomy_level"),
-            "safety_validation": objective.get("safety_validation", True),
-            "confidence": objective.get("confidence", 0.75),
-            "alignment_decay_risk": objective.get("alignment_decay_risk"),
-            "reduces_interpretability": objective.get("reduces_interpretability", False),
-            "capability": objective.get("capability"),
-        }
-
-    def _emit_task_events(self, context: BrainContext, bus: RuntimeEventBus, run_id: str, decomposition: dict[str, Any], caused_by: str, objective: dict[str, Any]) -> None:
-        task_id = decomposition["task_id"]
-        bus.publish(
-            type=EventType.TASK_CREATED.value,
-            payload={"run_id": run_id, "task_id": task_id, "goal": objective.get("goal") or task_id, "kind": objective.get("kind", "implementation"), "related_files": objective.get("related_files", []), "priority": int(objective.get("priority", 3) or 3)},
-            caused_by=caused_by,
-            importance=int(objective.get("priority", 3) or 3),
-        )
-        for subtask in decomposition["subtasks"]:
-            bus.publish(type=EventType.SUBTASK_CREATED.value, payload={"run_id": run_id, **subtask}, caused_by=caused_by)
-        for edge in decomposition["edges"]:
-            bus.publish(type=EventType.TASK_DEPENDENCY_ADDED.value, payload={"run_id": run_id, "task_id": task_id, "depends_on": edge["from"], "node_id": edge["to"]}, caused_by=caused_by)
-
-    def _final_decision(self, governance: dict[str, Any], economic: dict[str, Any], arbitration: dict[str, Any]) -> dict[str, Any]:
-        governance_decision = governance["governance_decision"]["decision"]
-        if governance_decision in {"reject_expansion", "require_restructuring", "escalate_to_supervision"}:
-            return {"action": "reject", "reason": governance_decision, "confidence": governance["governance_decision"]["confidence"]}
-        if arbitration["action"] == "reject":
-            return {"action": "reject", "reason": "arbitration_rejected", "confidence": arbitration["confidence"]}
-        if economic["decision"] == "delay":
-            return {"action": "delay", "reason": "negative_risk_adjusted_value", "confidence": economic["confidence"]}
-        if arbitration["action"] == "modify":
-            return {"action": "modify", "reason": "constraints_applied", "confidence": arbitration["confidence"]}
-        return {"action": "accept", "reason": "pipeline_ready", "confidence": min(economic["confidence"], governance["governance_decision"]["confidence"])}
-
     def _schedule(self, context: BrainContext, objective: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], bus: RuntimeEventBus, run_id: str, caused_by: str, limit: int) -> dict[str, Any]:
+        from allbrain.orchestrator import DeterministicScheduler
+        from allbrain.orchestrator.metrics import AgentPerformanceReducer
+        from allbrain.orchestrator.task_state import TaskStateReducer
+        from allbrain.storage.repository import event_to_read
+
         events = context.repository.list_events(project_path=bus.project_path, limit=limit)
         task_state = TaskStateReducer().build(events)
         task_id = decomposition["task_id"]
@@ -1004,17 +995,6 @@ class SystemDecisionPipeline:
             "decision_event_id": decision_event.id,
             "decision_event": decision_read.model_dump(mode="json"),
             "last_event_id": decision_event.id,
-        }
-
-    def _feedback(self, run_id: str, execute_mode: str, scheduler_result: dict[str, Any], execution_plan: dict[str, Any]) -> dict[str, Any]:
-        status = "completed" if execute_mode == "mock_runtime" else "planned"
-        return {
-            "run_id": run_id,
-            "status": status,
-            "execute_mode": execute_mode,
-            "assignment": scheduler_result["assignment"],
-            "actual_cost": 0.0 if execute_mode == "mock_runtime" else execution_plan["predicted_cost"],
-            "actual_success": status in {"planned", "completed"},
         }
 
     def _result(self, run_id: str, status: str, emitted: list[EventRead], objective: dict[str, Any], governance: dict[str, Any], economic: dict[str, Any], strategic_plan: dict[str, Any], decomposition: dict[str, Any], execution_plan: dict[str, Any], arbitration: dict[str, Any], final_decision: dict[str, Any], scheduler_result: dict[str, Any] | None, feedback: dict[str, Any] | None, learning: dict[str, Any] | None, *, world_simulation: dict[str, Any] | None = None, counterfactual: dict[str, Any] | None = None, scenarios: dict[str, Any] | None = None, foresight: dict[str, Any] | None = None, meta_reasoning: dict[str, Any] | None = None, uncertainty: dict[str, Any] | None = None, information_seeking: dict[str, Any] | None = None, belief: dict[str, Any] | None = None, contradiction: dict[str, Any] | None = None, revision: dict[str, Any] | None = None, evidence: dict[str, Any] | None = None, trust: dict[str, Any] | None = None, calibration: dict[str, Any] | None = None, drift: dict[str, Any] | None = None, reputation: dict[str, Any] | None = None, consensus: dict[str, Any] | None = None, arb_decision: dict[str, Any] | None = None, telemetry: dict[str, Any] | None = None, routing: dict[str, Any] | None = None, capability: dict[str, Any] | None = None, dynamics: dict[str, Any] | None = None, causal: dict[str, Any] | None = None, fusion: dict[str, Any] | None = None, decision: dict[str, Any] | None = None, resilience: dict[str, Any] | None = None, recovery_consensus: dict[str, Any] | None = None, failure_memory: dict[str, Any] | None = None, adaptive_recovery: dict[str, Any] | None = None, predictive_failure: dict[str, Any] | None = None, mitigation_learning: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -1089,6 +1069,8 @@ class SystemDecisionPipeline:
         )
 
     def _counterfactual_step(self, bus: RuntimeEventBus, action: str, caused_by: str, regret_threshold: float, counterfactual_limit: int) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.counterfactual import recommendation_severity
+
         current_state = self.world.observe()
         observed_event = bus.publish(
             type=EventType.WORLD_STATE_OBSERVED.value,
@@ -1153,16 +1135,16 @@ class SystemDecisionPipeline:
         foresight_payload: dict[str, Any],
         caused_by: str,
     ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.meta_reasoning import META_REASONING_TEMPLATE_VERSION
         from allbrain.foresight.models import ForesightAnalysis, FuturePlan
-        from uuid6 import uuid7
 
         best_plan_payload = foresight_payload["best_plan"]
         best_plan = FuturePlan.model_validate(best_plan_payload)
         candidates_payload = [plan for plan in foresight_payload.get("plans", []) if plan is not best_plan_payload]
         candidates = [FuturePlan.model_validate(c) for c in candidates_payload]
-        synthetic_analysis_id = foresight_payload.get("analysis_id") or str(uuid7())
+        synthetic_analysis_id = foresight_payload.get("analysis_id") or str(self._uuid7())
         foresight_analysis = ForesightAnalysis(
-            analysis_id=uuid7(),
+            analysis_id=self._uuid7(),
             action=foresight_payload.get("action", "unknown"),
             best_plan=best_plan,
             expected_plan=best_plan,
@@ -1251,7 +1233,9 @@ class SystemDecisionPipeline:
                 indicators.append(float(conf["confidence"]))
         return indicators
 
-    def _collect_historical_rate(self, context: Any, project_path: str | None, *, objective: dict[str, Any] | None = None) -> float:
+    def _collect_historical_rate(self, context: BrainContext, project_path: str | None, *, objective: dict[str, Any] | None = None) -> float:
+        from allbrain.uncertainty import observed_success_rate
+
         resolved = project_path or getattr(context, "project_path", None)
         if not resolved:
             return 0.7
@@ -1279,6 +1263,8 @@ class SystemDecisionPipeline:
         caused_by: str,
         belief: object | None = None,
     ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.uncertainty import UNCERTAINTY_TEMPLATE_VERSION, UncertaintyManager
+
         analysis_id = str(meta_reasoning_payload.get("foresight_analysis_id") or "")
         manager = UncertaintyManager(calibration_events=None)
         estimate = manager.analyze(
@@ -1338,17 +1324,19 @@ class SystemDecisionPipeline:
     def _belief_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
         objective: dict[str, Any],
         prior_alpha: float,
         prior_beta: float,
         caused_by: str,
         limit: int,
-    ) -> tuple[Any, dict[str, Any], list[EventRead], str]:
+    ) -> tuple[object, dict[str, Any], list[EventRead], str]:
+        from allbrain.belief import BeliefManager
+
         resolved = project_path or getattr(context, "project_path", None)
         manager = BeliefManager(prior_alpha=prior_alpha, prior_beta=prior_beta)
-        events: list[Any] = []
+        events: list[EventRead] = []
         if resolved:
             try:
                 events = context.repository.list_events(project_path=resolved, limit=limit)
@@ -1397,7 +1385,7 @@ class SystemDecisionPipeline:
     def _contradiction_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
         caused_by: str,
         limit: int,
@@ -1419,7 +1407,7 @@ class SystemDecisionPipeline:
         from allbrain.intent import IntentExtractor
 
         resolved = project_path or getattr(context, "project_path", None)
-        events: list[Any] = []
+        events: list[EventRead] = []
         if resolved:
             try:
                 events = context.repository.list_events(project_path=resolved, limit=limit)
@@ -1466,9 +1454,9 @@ class SystemDecisionPipeline:
     def _uncertainty_computed_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
-        belief_state: Any,
+        belief_state: object | None,
         contradiction_payload: dict[str, Any] | None,
         caused_by: str,
         limit: int,
@@ -1538,7 +1526,7 @@ class SystemDecisionPipeline:
     def _evidence_step(
         self,
         bus: RuntimeEventBus,
-        belief_state: Any,
+        belief_state: object | None,
         contradiction_payload: dict[str, Any] | None,
         caused_by: str,
     ) -> tuple[dict[str, Any], str, list[EventRead]]:
@@ -1613,9 +1601,9 @@ class SystemDecisionPipeline:
     def _calibration_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
-        belief_state: Any,
+        belief_state: object | None,
         evidence_payload: dict[str, Any] | None,
         caused_by: str,
         limit: int,
@@ -1668,7 +1656,7 @@ class SystemDecisionPipeline:
     def _drift_step(
         self,
         bus: RuntimeEventBus,
-        belief_state: Any,
+        belief_state: object | None,
         revision_payload: dict[str, Any],
         trust_payload: dict[str, Any] | None,
         caused_by: str,
@@ -1720,9 +1708,9 @@ class SystemDecisionPipeline:
     def _reputation_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
-        belief_state: Any,
+        belief_state: object | None,
         scheduler_result: dict[str, Any],
         feedback: dict[str, Any] | None,
         caused_by: str,
@@ -1809,9 +1797,9 @@ class SystemDecisionPipeline:
     def _vote_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
-        belief_state: Any,
+        belief_state: object | None,
         scheduler_result: dict[str, Any],
         trust_payload: dict[str, Any] | None,
         caused_by: str,
@@ -1934,7 +1922,7 @@ class SystemDecisionPipeline:
     def _telemetry_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
@@ -1968,7 +1956,7 @@ class SystemDecisionPipeline:
     def _capability_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
@@ -2033,7 +2021,7 @@ class SystemDecisionPipeline:
     def _learning_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
@@ -2094,18 +2082,20 @@ class SystemDecisionPipeline:
             if abs(delta) < 0.02:
                 continue
 
-            if delta >= 0:
-                le = bus.publish(
-                    type=EventType.AGENT_CAPABILITY_LEARNED.value,
-                    payload={"agent_id": aid, "task_type": tt, "old_score": old_score, "new_score": new_score, "delta": delta},
-                    caused_by=caused_by,
-                )
-            else:
+            if delta < 0:
                 le = bus.publish(
                     type=EventType.AGENT_CAPABILITY_DECAYED.value,
                     payload={"agent_id": aid, "task_type": tt, "old_score": old_score, "new_score": new_score},
                     caused_by=caused_by,
                 )
+                learned_events.append(le)
+                continue
+
+            le = bus.publish(
+                type=EventType.AGENT_CAPABILITY_LEARNED.value,
+                payload={"agent_id": aid, "task_type": tt, "old_score": old_score, "new_score": new_score, "delta": delta},
+                caused_by=caused_by,
+            )
             learned_events.append(le)
 
         summary = {"task_id": task_id, "task_type": task_type, "learned_agents": len(learned_events)}
@@ -2114,7 +2104,7 @@ class SystemDecisionPipeline:
     def _causal_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
@@ -2202,7 +2192,7 @@ class SystemDecisionPipeline:
     def _dynamics_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
@@ -2314,7 +2304,7 @@ class SystemDecisionPipeline:
     def _fusion_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
@@ -2390,9 +2380,9 @@ class SystemDecisionPipeline:
     def _routing_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         project_path: str | None,
-        belief_state: Any,
+        belief_state: object | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
         limit: int,
@@ -2468,6 +2458,13 @@ class SystemDecisionPipeline:
         for aid in sorted(agent_ids):
             rep = rep_mgr.query(events, agent_id=aid)
             tel = tel_mgr.query(events, agent_id=aid)
+            # Default fallback score (was else: branch)
+            s = routing_selection_score(
+                reputation=float(rep.reputation_score),
+                runtime_score=float(tel.runtime_score),
+                calibrated_trust=float(rev_state.calibrated_trust),
+                consensus_score=float(rev_state.consensus_score),
+            )
             if enable_meta_policy:
                 from allbrain.meta_policy import MetaPolicyManager, make_policy_eval_payload
                 meta_mgr = MetaPolicyManager()
@@ -2795,13 +2792,6 @@ class SystemDecisionPipeline:
                     consensus_score=float(rev_state.consensus_score),
                     capability_match=float(cap_state.match_score),
                 )
-            else:
-                s = routing_selection_score(
-                    reputation=float(rep.reputation_score),
-                    runtime_score=float(tel.runtime_score),
-                    calibrated_trust=float(rev_state.calibrated_trust),
-                    consensus_score=float(rev_state.consensus_score),
-                )
             scored[aid] = s
             se = bus.publish(
                 type=EventType.AGENT_SELECTION_SCORED.value,
@@ -2822,7 +2812,7 @@ class SystemDecisionPipeline:
     def _revision_step(
         self,
         bus: RuntimeEventBus,
-        belief_state: Any,
+        belief_state: object | None,
         contradiction_payload: dict[str, Any] | None,
         uncertainty_computed_payload: dict[str, Any] | None,
         caused_by: str,
@@ -2908,6 +2898,10 @@ class SystemDecisionPipeline:
         gaps_payload: list[dict[str, Any]],
         caused_by: str,
     ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.information_seeking import (
+            INFORMATION_SEEKING_TEMPLATE_VERSION,
+            InformationSeekingManager,
+        )
         from allbrain.uncertainty.models import KnowledgeGap
 
         analysis_id = str(uncertainty_payload.get("analysis_id") or "")
@@ -2967,6 +2961,8 @@ class SystemDecisionPipeline:
         return summary, last_event_id, emitted_events
 
     def _foresight_step(self, bus: RuntimeEventBus, action: str, caused_by: str, foresight_limit: int, max_horizon: int) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
+
         current_state = self.world.observe()
         observed_event = bus.publish(
             type=EventType.WORLD_STATE_OBSERVED.value,
@@ -3034,6 +3030,8 @@ class SystemDecisionPipeline:
         return summary, last_event_id, emitted_events
 
     def _scenario_step(self, bus: RuntimeEventBus, action: str, caused_by: str, scenarios_limit: int) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        from allbrain.scenarios import SCENARIO_TEMPLATE_VERSION
+
         current_state = self.world.observe()
         observed_event = bus.publish(
             type=EventType.WORLD_STATE_OBSERVED.value,
@@ -3105,7 +3103,7 @@ class SystemDecisionPipeline:
     def _resilience_step(
         self,
         bus: RuntimeEventBus,
-        context: Any,
+        context: BrainContext,
         caused_by: str,
         emitted: list[EventRead],
     ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
