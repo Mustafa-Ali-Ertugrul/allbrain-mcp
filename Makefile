@@ -5,7 +5,7 @@ install:
 
 lint:
 	uv run ruff check --exit-zero src/ tests/
-	uv run ruff format --check --exit-zero src/ tests/
+	uv run ruff format --check src/ tests/ || true
 
 security:
 	uv run bandit -c pyproject.toml -r src/ -ll

@@ -23,7 +23,7 @@ jobs:
           enable-cache: true
       - run: uv sync --extra dev
       - run: uv run ruff check --exit-zero src/ tests/
-      - run: uv run ruff format --check --exit-zero src/ tests/
+      - run: uv run ruff format --check src/ tests/ || true
 
   security:
     name: Security (Bandit)
