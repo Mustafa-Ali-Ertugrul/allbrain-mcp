@@ -383,7 +383,7 @@ C:\allbrain-mcp
 Scan the dependency tree for known vulnerabilities with `pip-audit`:
 
 ```bash
-uv run pip-audit
+uv run --extra dev pip-audit
 ```
 
 The project uses `pip-audit` (PyPA/Google-backed) instead of `safety` to avoid license restrictions and dependency conflicts. To run `safety` in an isolated sandbox without polluting the project venv:
