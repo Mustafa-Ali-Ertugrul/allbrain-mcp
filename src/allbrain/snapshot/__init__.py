@@ -1,4 +1,4 @@
-﻿from allbrain.snapshot.builder import SnapshotBuilder
+from allbrain.snapshot.builder import SnapshotBuilder
 from allbrain.snapshot.cluster_snapshot import ClusterSnapshotBuilder
 from allbrain.snapshot.compaction import SnapshotCompactor
 from allbrain.snapshot.engine import Snapshot, SnapshotEngine

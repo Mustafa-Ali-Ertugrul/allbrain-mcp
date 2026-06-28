@@ -1,4 +1,4 @@
-﻿from allbrain.collaboration.collaboration_context import CollaborationContext
+from allbrain.collaboration.collaboration_context import CollaborationContext
 from allbrain.collaboration.collaboration_manager import CollaborationManager
 from allbrain.collaboration.collaboration_state import CollaborationStateBuilder
 from allbrain.collaboration.consensus import ConsensusEngine

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from allbrain.agents.queue import QueueItem
 from allbrain.agents.queues import RedisTaskQueue, RabbitMQTaskQueue, SQLiteTaskQueue

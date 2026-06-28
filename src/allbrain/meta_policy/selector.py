@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import random as _random
+from hashlib import sha256
 
 from allbrain.meta_policy.model import (
     META_POLICY_EXPLORATION_MIN,
@@ -14,7 +15,7 @@ from allbrain.meta_policy.model import (
 def _event_seed(agent_id: str, task_type: str, decision_count: int) -> int:
     """Refinement #1: event-derived seed for replay determinism."""
     key = f"{agent_id}:{task_type}:{decision_count}"
-    return abs(hash(key)) % (10**9)
+    return int.from_bytes(sha256(key.encode("utf-8")).digest()[:8], "big") % (10**9)
 
 
 def select_mode(

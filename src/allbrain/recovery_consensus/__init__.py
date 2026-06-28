@@ -1,4 +1,4 @@
-﻿from allbrain.recovery_consensus.model import (
+from allbrain.recovery_consensus.model import (
     CONSENSUS_TEMPLATE_VERSION,
     MAX_CANDIDATES,
     MIN_CANDIDATES,

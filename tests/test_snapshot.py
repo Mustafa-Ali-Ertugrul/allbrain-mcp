@@ -12,13 +12,14 @@ from allbrain.snapshot.versions import snapshot_versions
 from allbrain.storage import BrainRepository, SnapshotRepo, create_engine_for_path, init_db
 
 
-def make_context(repo: BrainRepository, project_root: Path, agent: str, threshold: int = 50) -> BrainContext:
+def make_context(repo: BrainRepository, project_root: Path, agent: str, threshold: int = 50, snapshot_check_interval: int = 100) -> BrainContext:
     session = repo.create_session(project_root, agent)
     return BrainContext(
         repository=repo,
         project_path=str(project_root.resolve()),
         active_session=session,
         auto_snapshot_threshold=threshold,
+        snapshot_check_interval=snapshot_check_interval,
     )
 
 
@@ -169,7 +170,7 @@ def test_agent_switch_uses_snapshot_for_context_reconstruction(tmp_path: Path) -
 
 def test_auto_snapshot_trigger_uses_weighted_event_score(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=100)
+    context = make_context(repo, project_root, "codex", threshold=100, snapshot_check_interval=1)
     for index in range(13):
         assert save_event_impl(context, type="failure", payload={"error": f"failure-{index}"}).ok
     project = repo.get_project_by_path(project_root)

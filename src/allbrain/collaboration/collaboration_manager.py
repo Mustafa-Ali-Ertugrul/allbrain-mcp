@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from allbrain.collaboration.collaboration_context import CollaborationContext
 from allbrain.collaboration.collaboration_state import CollaborationStateBuilder

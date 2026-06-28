@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from datetime import datetime, timezone, timedelta
 from allbrain.models.schemas import EventRead
 from allbrain.runtime_core.projections import RuntimeCoreStateBuilder

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
@@ -205,9 +205,9 @@ class CreateTaskInput(BaseInputModel):
     def validate_related_files(cls, v: list[str]) -> list[str]:
         for i, item in enumerate(v):
             if len(item) > 512:
-                raise ValueError(f"related_files[{i}] exceeds 512 characters")
+                raise UserInputError(f"related_files[{i}] exceeds 512 characters")
         if len(v) > 50:
-            raise ValueError("related_files must have at most 50 items")
+            raise UserInputError("related_files must have at most 50 items")
         return v
 
 

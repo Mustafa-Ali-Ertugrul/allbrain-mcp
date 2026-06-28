@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from allbrain.collaboration.team import AgentTeam, TeamMember
 

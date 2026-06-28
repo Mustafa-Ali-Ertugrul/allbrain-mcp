@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from allbrain.belief.manager import BeliefManager
 from allbrain.belief.reducer import BeliefReducer
 from allbrain.events.schemas import EventType

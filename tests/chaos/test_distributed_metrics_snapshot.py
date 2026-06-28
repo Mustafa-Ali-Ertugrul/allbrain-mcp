@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from allbrain.events import EventType
 from allbrain.reliability import ReliabilityMetrics
