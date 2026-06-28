@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from allbrain.collaboration.decision import Decision
 from allbrain.collaboration.voting import Vote

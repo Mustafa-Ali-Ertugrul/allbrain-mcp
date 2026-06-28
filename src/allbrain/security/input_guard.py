@@ -1,4 +1,4 @@
-﻿"""Input sanitization for the MCP boundary.
+"""Input sanitization for the MCP boundary.
 
 Expanded version of the prompt-injection patterns from agents/safety.py.
 Applied at the BaseInputModel level in schemas.py so all MCP tools are
