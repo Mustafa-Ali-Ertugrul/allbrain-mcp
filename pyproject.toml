@@ -17,10 +17,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "bandit>=1.8.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
+    "ruff>=0.11.0",
 ]
 
 [project.scripts]
@@ -46,4 +48,19 @@ omit = ["*/tests/*"]
 
 [tool.coverage.report]
 show_missing = true
+fail_under = 60
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = ["F401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401", "SIM"]
+
+[tool.bandit]
+skips = ["B311"]
 
