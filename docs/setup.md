@@ -377,3 +377,17 @@ C:\allbrain-mcp
 - Review MCP configuration before trusting a cloned repository.
 - Do not commit API keys or personal database files.
 - `.allbrain-*.db` files are ignored by Git.
+
+### Vulnerability scanning
+
+Scan the dependency tree for known vulnerabilities with `pip-audit`:
+
+```bash
+uv run pip-audit
+```
+
+The project uses `pip-audit` (PyPA/Google-backed) instead of `safety` to avoid license restrictions and dependency conflicts. To run `safety` in an isolated sandbox without polluting the project venv:
+
+```bash
+uvx safety check
+```
