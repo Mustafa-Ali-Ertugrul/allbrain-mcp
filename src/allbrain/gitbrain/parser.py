@@ -1,5 +1,8 @@
 ﻿from __future__ import annotations
 
+import contextlib
+import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -7,6 +10,51 @@ from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 from git.exc import GitCommandError
 
 from allbrain.config import canonicalize_project_path
+from allbrain.security.redaction import sanitize_text
+
+# Environment variables that carry credentials and must be
+# stripped before spawning any git subprocess.
+_CREDENTIAL_ENV_VARS: frozenset[str] = frozenset({
+    "GIT_TOKEN",
+    "GIT_ASKPASS",
+    "SSH_AUTH_SOCK",
+    "SSH_AGENT_PID",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_SESSION_TOKEN",
+    "AZURE_CLIENT_SECRET",
+    "AZURE_CLIENT_ID",
+    "GITHUB_TOKEN",
+    "GITHUB_PAT",
+    "GIT_TERMINAL_PROMPT",
+})
+
+_CREDENTIAL_RE = re.compile(
+    r"(?:_|^)(?:API_KEY|TOKENS?|SECRET|PASSWORD|CREDENTIALS?)(?:_|$)",
+    re.IGNORECASE,
+)
+
+
+def _is_credential_var(name: str) -> bool:
+    """Check if an env var name looks credential-bearing."""
+    if name in _CREDENTIAL_ENV_VARS:
+        return True
+    return bool(_CREDENTIAL_RE.search(name))
+
+
+def safe_git_env() -> dict[str, str]:
+    """Return a copy of the process environment safe for git subprocesses.
+
+    Credential-carrying env vars are removed, and
+    ``GIT_TERMINAL_PROMPT=0`` is forced to prevent interactive auth.
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if not _is_credential_var(k)
+    }
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
 
 
 class GitBrain:
@@ -14,16 +62,18 @@ class GitBrain:
         self.project_path = canonicalize_project_path(project_path)
         self.repo = self._open_repo()
 
+    # ---- public API -------------------------------------------------------
+
     def build_git_context(self) -> dict[str, Any]:
         if self.repo is None:
             return self._empty_context()
 
         files = self._changed_files()
-        status = self._status()
-        diff = self._diff()
+        status = self._sanitized_status()
+        diff = self._sanitized_diff()
         return {
             "is_repo": True,
-            "branch": self._branch(),
+            "branch": self._sanitized_branch(),
             "status": status,
             "diff": diff,
             "files": files,
@@ -43,7 +93,7 @@ class GitBrain:
                 changes.append(
                     {
                         "sha": commit.hexsha,
-                        "summary": commit.summary,
+                        "summary": sanitize_text(commit.summary),
                         "author": commit.author.name,
                         "committed_at": commit.committed_datetime.isoformat(),
                     }
@@ -51,6 +101,29 @@ class GitBrain:
         except (ValueError, GitCommandError):
             return []
         return changes
+
+    # ---- env sandbox ------------------------------------------------------
+
+    _ENV_OVERRIDES = {"GIT_TERMINAL_PROMPT": "0"}
+
+    @contextlib.contextmanager
+    def _git_env(self):
+        """Temporarily replace ``os.environ`` with a credential-safe copy.
+
+        Restores original env on exit.  Intended to wrap bare git
+        subprocess calls made via GitPython.
+        """
+        saved = dict(os.environ)
+        safe = safe_git_env()
+        os.environ.clear()
+        os.environ.update(safe)
+        try:
+            yield
+        finally:
+            os.environ.clear()
+            os.environ.update(saved)
+
+    # ---- low-level git operations (all sanitized) -------------------------
 
     def _open_repo(self) -> Repo | None:
         try:
@@ -69,27 +142,31 @@ class GitBrain:
             "normalized": {"intent": "unknown", "risk": "low", "files": []},
         }
 
-    def _branch(self) -> str | None:
+    def _sanitized_branch(self) -> str | None:
         if self.repo is None:
             return None
         try:
-            return self.repo.active_branch.name
+            return sanitize_text(self.repo.active_branch.name)
         except TypeError:
             return None
 
-    def _status(self) -> str:
+    def _sanitized_status(self) -> str:
         if self.repo is None:
             return ""
         try:
-            return self.repo.git.status("--short")
+            with self._git_env():
+                raw = self.repo.git.status("--short")
+            return sanitize_text(raw)
         except GitCommandError:
             return ""
 
-    def _diff(self) -> str:
+    def _sanitized_diff(self) -> str:
         if self.repo is None:
             return ""
         try:
-            return self.repo.git.diff()
+            with self._git_env():
+                raw = self.repo.git.diff()
+            return sanitize_text(raw)
         except GitCommandError:
             return ""
 
@@ -106,6 +183,8 @@ class GitBrain:
         except (ValueError, GitCommandError):
             files.update(self.repo.untracked_files)
         return sorted(file for file in files if file)
+
+    # ---- context normalisation (no git calls) -----------------------------
 
     def _normalize(self, *, status: str, diff: str, files: list[str]) -> dict[str, Any]:
         lowered = f"{status}\n{diff}".lower()

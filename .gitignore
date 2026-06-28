@@ -8,4 +8,7 @@ __pycache__/
 .coverage
 htmlcov/
 .tmp-test.db
-.allbrain-*.db
+.allbrain-*.db*
+
+# Benchmark results (generated; committed baselines use git add -f)
+benchmarks/results/

@@ -198,7 +198,7 @@ class SQLiteTaskQueue(TaskQueue):
         return self.qsize() == 0
 
     def capabilities(self) -> dict[str, Any]:
-        return {"backend": "sqlite", "persistent": True, "lease_aware": True, "distributed_ready": True}
+        return {"backend": "sqlite", "persistent": True, "lease_aware": True, "distributed_ready": False}
 
 
 def _serialize_item(item: QueueItem) -> dict[str, Any]:

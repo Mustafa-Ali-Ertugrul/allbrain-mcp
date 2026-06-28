@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from allbrain.events import EventType
+from allbrain.security.input_guard import sanitize_payload_fields, sanitize_user_text
 from allbrain.security.redaction import sanitize_payload
 
 
@@ -18,7 +19,62 @@ class UserInputError(ValueError):
     pass
 
 
-class SaveEventInput(BaseModel):
+_MAX_PAYLOAD_BYTES = 250_000
+_MAX_DICT_BYTES = 50_000
+
+
+def _check_null_bytes_recursive(obj: Any) -> None:
+    """Reject null bytes in strings, dict keys/values, and list items."""
+    if isinstance(obj, str):
+        if "\x00" in obj:
+            raise ValueError("null byte (\\x00) is not allowed in input")
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and "\x00" in k:
+                raise ValueError("null byte (\\x00) is not allowed in input")
+            _check_null_bytes_recursive(v)
+    elif isinstance(obj, list):
+        for item in obj:
+            _check_null_bytes_recursive(item)
+
+
+class BaseInputModel(BaseModel):
+    """Base for all input models — rejects null bytes + sanitizes string fields."""
+
+    @field_validator("*", mode="after")
+    @classmethod
+    def _reject_null_bytes(cls, v: Any) -> Any:
+        _check_null_bytes_recursive(v)
+        return v
+
+    @field_validator("*", mode="after")
+    @classmethod
+    def _sanitize_strings(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return sanitize_user_text(v)
+        if isinstance(v, dict):
+            return sanitize_payload_fields(v)
+        return v
+
+    @model_validator(mode="after")
+    def _check_dict_sizes(self) -> "BaseInputModel":
+        """Enforce size limits on all dict-typed fields."""
+        import json
+
+        for field_name, field_value in self.__dict__.items():
+            if not isinstance(field_value, dict):
+                continue
+            raw = json.dumps(field_value)
+            max_bytes = _MAX_PAYLOAD_BYTES if "payload" in field_name else _MAX_DICT_BYTES
+            if len(raw) > max_bytes:
+                raise ValueError(
+                    f"field '{field_name}' exceeds maximum size of {max_bytes // 1000}KB "
+                    f"(got {len(raw)} bytes)"
+                )
+        return self
+
+
+class SaveEventInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     type: str = Field(min_length=1)
@@ -26,6 +82,7 @@ class SaveEventInput(BaseModel):
     file_path: str | None = Field(default=None, max_length=4000)
     source: str = Field(default="agent", min_length=1, max_length=100)
     session_id: int | None = None
+    agent_id: str | None = None
     task_hint: str | None = Field(default=None, max_length=4000)
     importance: int | None = Field(default=None, ge=1, le=5)
     impact_score: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -71,7 +128,7 @@ class SaveEventInput(BaseModel):
         return self
 
 
-class ListEventsInput(BaseModel):
+class ListEventsInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     session_id: int | None = None
@@ -91,7 +148,7 @@ class ListEventsInput(BaseModel):
         return value
 
 
-class ResumeProjectInput(BaseModel):
+class ResumeProjectInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     limit: int = Field(default=5000, ge=1, le=50000)
@@ -99,7 +156,7 @@ class ResumeProjectInput(BaseModel):
     use_snapshot: bool = True
 
 
-class CreateSnapshotInput(BaseModel):
+class CreateSnapshotInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     limit: int = Field(default=5000, ge=1, le=50000)
@@ -107,25 +164,25 @@ class CreateSnapshotInput(BaseModel):
     include_derived: bool = False
 
 
-class GitContextInput(BaseModel):
+class GitContextInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
 
 
-class RecentChangesInput(BaseModel):
+class RecentChangesInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     limit: int = Field(default=10, ge=1, le=100)
 
 
-class ConflictInput(BaseModel):
+class ConflictInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     limit: int = Field(default=5000, ge=1, le=50000)
     threshold: float = Field(default=0.7, ge=0.0, le=1.0)
 
 
-class IntentInput(BaseModel):
+class IntentInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     limit: int = Field(default=5000, ge=1, le=50000)
@@ -133,7 +190,7 @@ class IntentInput(BaseModel):
     use_snapshot: bool = True
 
 
-class CreateTaskInput(BaseModel):
+class CreateTaskInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     task_id: str | None = None
@@ -154,7 +211,7 @@ class CreateTaskInput(BaseModel):
         return v
 
 
-class AssignTaskInput(BaseModel):
+class AssignTaskInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     task_id: str = Field(min_length=1)
@@ -162,7 +219,7 @@ class AssignTaskInput(BaseModel):
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class HandoffTaskInput(BaseModel):
+class HandoffTaskInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     task_id: str = Field(min_length=1)
@@ -172,14 +229,14 @@ class HandoffTaskInput(BaseModel):
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class TaskDependencyInput(BaseModel):
+class TaskDependencyInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     task_id: str = Field(min_length=1)
     depends_on: str = Field(min_length=1)
 
 
-class TaskPriorityInput(BaseModel):
+class TaskPriorityInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     task_id: str = Field(min_length=1)
@@ -187,7 +244,7 @@ class TaskPriorityInput(BaseModel):
     new: int = Field(ge=1, le=5)
 
 
-class OrchestratorInput(BaseModel):
+class OrchestratorInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     limit: int = Field(default=5000, ge=1, le=50000)
@@ -195,7 +252,7 @@ class OrchestratorInput(BaseModel):
     use_snapshot: bool = True
 
 
-class RunDecisionPipelineInput(BaseModel):
+class RunDecisionPipelineInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     objective: dict[str, Any]
@@ -217,20 +274,20 @@ class RunDecisionPipelineInput(BaseModel):
     enable_information_seeking: bool = False
 
 
-class ObserveWorldInput(BaseModel):
+class ObserveWorldInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class SimulateActionInput(BaseModel):
+class SimulateActionInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class CounterfactualInput(BaseModel):
+class CounterfactualInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
@@ -238,14 +295,14 @@ class CounterfactualInput(BaseModel):
     counterfactual_limit: int = Field(default=3, ge=1, le=100)
 
 
-class AlternativeRankingInput(BaseModel):
+class AlternativeRankingInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     actions: list[str] = Field(min_length=1)
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class GenerateScenariosInput(BaseModel):
+class GenerateScenariosInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
@@ -253,7 +310,7 @@ class GenerateScenariosInput(BaseModel):
     scenarios_limit: int = Field(default=4, ge=1, le=20)
 
 
-class EvaluateScenariosInput(BaseModel):
+class EvaluateScenariosInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
@@ -261,7 +318,7 @@ class EvaluateScenariosInput(BaseModel):
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class GenerateFuturePlansInput(BaseModel):
+class GenerateFuturePlansInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
@@ -270,7 +327,7 @@ class GenerateFuturePlansInput(BaseModel):
     max_horizon: int = Field(default=5, ge=1, le=20)
 
 
-class EvaluatePlanInput(BaseModel):
+class EvaluatePlanInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     actions: list[str] = Field(min_length=1)
@@ -278,49 +335,49 @@ class EvaluatePlanInput(BaseModel):
     max_horizon: int = Field(default=5, ge=1, le=20)
 
 
-class ExplainDecisionInput(BaseModel):
+class ExplainDecisionInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     plan_id: str = Field(min_length=1)
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class EstimateConfidenceInput(BaseModel):
+class EstimateConfidenceInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     plan_id: str = Field(min_length=1)
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class EstimateUncertaintyInput(BaseModel):
+class EstimateUncertaintyInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     decision_id: str = Field(min_length=1)
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class DetectKnowledgeGapsInput(BaseModel):
+class DetectKnowledgeGapsInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     decision_id: str = Field(min_length=1)
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class IdentifyInformationNeedsInput(BaseModel):
+class IdentifyInformationNeedsInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     decision_id: str = Field(min_length=1)
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class EstimateInformationGainInput(BaseModel):
+class EstimateInformationGainInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)
     limit: int = Field(default=5000, ge=1, le=50000)
 
 
-class QueryBeliefInput(BaseModel):
+class QueryBeliefInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     context_key: str = Field(min_length=1)
@@ -329,7 +386,7 @@ class QueryBeliefInput(BaseModel):
     prior_beta: float = Field(default=1.0, ge=0.0)
 
 
-class EstimateInformationGainV2Input(BaseModel):
+class EstimateInformationGainV2Input(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     action: str = Field(min_length=1)

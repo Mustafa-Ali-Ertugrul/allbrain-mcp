@@ -16,6 +16,7 @@ from allbrain.foundations.versioning import (
 )
 from allbrain.models.entities import Event, Project, Session, utc_now
 from allbrain.models.schemas import EventRead
+from allbrain.security.redaction import sanitize_payload
 from allbrain.storage.database import ensure_event_payload_version_column, open_session
 
 
@@ -74,45 +75,75 @@ class BrainRepository:
         source: str,
         payload: dict[str, Any],
         file_path: str | None = None,
+        agent_id: str | None = None,
+        task_hint: str | None = None,
+        importance: int | None = None,
+        impact_score: float | None = None,
+        caused_by: str | None = None,
+        branch: str | None = None,
+        _session: DbSession | None = None,
+    ) -> Event:
+        if _session is not None:
+            event = self._append_event_core(_session, project_path=project_path, session_id=session_id, type=type, source=source, payload=payload, file_path=file_path, agent_id=agent_id, task_hint=task_hint, importance=importance, impact_score=impact_score, caused_by=caused_by, branch=branch)
+            _session.flush()
+            _session.refresh(event)
+            return event
+        with open_session(self.engine) as db:
+            event = self._append_event_core(db, project_path=project_path, session_id=session_id, type=type, source=source, payload=payload, file_path=file_path, agent_id=agent_id, task_hint=task_hint, importance=importance, impact_score=impact_score, caused_by=caused_by, branch=branch)
+            db.commit()
+            db.refresh(event)
+            return event
+
+    def _append_event_core(
+        self,
+        db: DbSession,
+        *,
+        project_path: str | Path | None,
+        session_id: int,
+        type: str,
+        source: str,
+        payload: dict[str, Any],
+        file_path: str | None = None,
+        agent_id: str | None = None,
         task_hint: str | None = None,
         importance: int | None = None,
         impact_score: float | None = None,
         caused_by: str | None = None,
         branch: str | None = None,
     ) -> Event:
-        with open_session(self.engine) as db:
-            session = self.get_session(db, session_id)
-            if session is None:
-                raise ValueError(f"session_id {session_id} does not exist")
-            if caused_by is not None and db.get(Event, caused_by) is None:
-                raise ValueError(f"caused_by event {caused_by} does not exist")
+        session = self.get_session(db, session_id)
+        if session is None:
+            raise ValueError(f"session_id {session_id} does not exist")
+        if caused_by is not None and db.get(Event, caused_by) is None:
+            raise ValueError(f"caused_by event {caused_by} does not exist")
 
-            project = self.get_or_create_project(db, project_path)
-            if session.project_id != project.id:
-                raise ValueError("session_id does not belong to project_path")
+        project = self.get_or_create_project(db, project_path)
+        if session.project_id != project.id:
+            raise ValueError("session_id does not belong to project_path")
 
-            bound_agent_id = session.agent_name
-            event = Event(
-                id=str(uuid7()),
-                project_id=project.id or 0,
-                session_id=session.id or 0,
-                agent_id=bound_agent_id,
-                type=type,
-                source=source,
-                file_path=file_path,
-                payload_json=json.dumps(payload, ensure_ascii=True, sort_keys=True),
-                payload_version=current_payload_version(),
-                task_hint=task_hint,
-                importance=importance,
-                impact_score=impact_score,
-                caused_by=caused_by,
-                branch=branch or bound_agent_id,
-                created_at=utc_now(),
-            )
-            db.add(event)
-            db.commit()
-            db.refresh(event)
-            return event
+        # Defense-in-depth: always redact secrets from payload at storage layer
+        payload = sanitize_payload(payload)
+
+        bound_agent_id = agent_id or session.agent_name
+        event = Event(
+            id=str(uuid7()),
+            project_id=project.id or 0,
+            session_id=session.id or 0,
+            agent_id=bound_agent_id,
+            type=type,
+            source=source,
+            file_path=file_path,
+            payload_json=json.dumps(payload, ensure_ascii=True, sort_keys=True),
+            payload_version=current_payload_version(),
+            task_hint=task_hint,
+            importance=importance,
+            impact_score=impact_score,
+            caused_by=caused_by,
+            branch=branch or bound_agent_id,
+            created_at=utc_now(),
+        )
+        db.add(event)
+        return event
 
     def list_events(
         self,

@@ -51,7 +51,15 @@ def run_mcp_server(project: Path, agent: str, db_path: Path | None) -> None:
 
 
 def _patch_stdio_newlines_for_windows() -> None:
-    """Keep MCP JSON-RPC frames LF-delimited on Windows stdio."""
+    """Keep MCP JSON-RPC frames LF-delimited on Windows stdio.
+
+    Python 3.14+ ships native universal newline support on Windows
+    (https://github.com/python/cpython/issues/108196), so the monkey-patch
+    is only required on older interpreters.
+    """
+    if sys.version_info >= (3, 14):
+        return
+
     import fastmcp.server.mixins.transport as fastmcp_transport
     import mcp.server.stdio as mcp_stdio
     import mcp.types as types

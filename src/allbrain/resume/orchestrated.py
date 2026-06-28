@@ -65,13 +65,21 @@ class OrchestratedResumeEngine:
             task = blocked[0]
             owner = task.get("owner")
             if owner:
-                recommendation = self.scheduler.choose_agent(
-                    task=task,
-                    task_state=task_state,
-                    exclude_agent_id=owner,
-                    events=events,
-                    metrics=metrics,
-                )
+                try:
+                    recommendation = self.scheduler.choose_agent(
+                        task=task,
+                        task_state=task_state,
+                        exclude_agent_id=owner,
+                        events=events,
+                        metrics=metrics,
+                    )
+                except ValueError:
+                    return {
+                        "next_step": f"no eligible agent for handoff of {task['task_id']}",
+                        "required_action": "escalate",
+                        "task_id": task["task_id"],
+                        "confidence": 0.5,
+                    }
                 return {
                     "next_step": f"handoff task {task['task_id']} to {recommendation['agent_id']}",
                     "required_action": "handoff_task",

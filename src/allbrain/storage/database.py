@@ -2,15 +2,32 @@
 
 from pathlib import Path
 
+from sqlalchemy import event
 from sqlalchemy.engine import Engine
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import QueuePool
 from sqlmodel import Session, SQLModel, create_engine
+
+
+@event.listens_for(Engine, "connect")
+def _set_sqlite_pragmas(dbapi_conn, _connection_record):
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA busy_timeout=5000")
+    cursor.close()
 
 
 def create_engine_for_path(db_path: str | Path) -> Engine:
     path = Path(db_path).expanduser()
     path.parent.mkdir(parents=True, exist_ok=True)
-    return create_engine(f"sqlite:///{path}", connect_args={"check_same_thread": False}, poolclass=NullPool)
+    return create_engine(
+        f"sqlite:///{path}",
+        connect_args={"check_same_thread": False},
+        poolclass=QueuePool,
+        pool_size=5,
+        max_overflow=10,
+        pool_pre_ping=True,
+    )
 
 
 def init_db(engine: Engine) -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from allbrain.agents.adapter import AgentAdapter, ExecutionContext, RetryPolicy
@@ -77,7 +77,7 @@ class AgentRuntime:
         start: datetime,
         result: SubtaskResult,
     ) -> None:
-        completed = datetime.now()
+        completed = datetime.now(timezone.utc)
         duration_ms = int((completed - start).total_seconds() * 1000)
         metrics = ExecutionMetrics(
             agent_id=agent_id,
@@ -105,7 +105,7 @@ class AgentRuntime:
         error_type: str,
         error_message: str,
     ) -> None:
-        completed = datetime.now()
+        completed = datetime.now(timezone.utc)
         duration_ms = int((completed - start).total_seconds() * 1000)
         metrics = ExecutionMetrics(
             agent_id=agent_id,
@@ -144,7 +144,7 @@ class AgentRuntime:
             metadata=metadata,
         )
         wrapper = self.get_safety_wrapper(agent_id)
-        start = datetime.now()
+        start = datetime.now(timezone.utc)
 
         try:
             result = await self._run_with_timeout(wrapper, task, context, timeout_seconds)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from math import log
 from typing import Any, Protocol
 
@@ -191,7 +191,10 @@ class SchedulerV1:
     def _recovery_probe(self, last_failure_at: datetime | None) -> bool:
         if last_failure_at is None:
             return False
-        now = datetime.now(tz=last_failure_at.tzinfo) if last_failure_at.tzinfo else datetime.now()
+        now = datetime.now(timezone.utc)
+        # last_failure_at may be naive (legacy data); treat as UTC for comparison
+        if last_failure_at.tzinfo is None:
+            last_failure_at = last_failure_at.replace(tzinfo=timezone.utc)
         return now - last_failure_at >= RECOVERY_AFTER
 
     def _confidence(self, total_tasks: int) -> float:

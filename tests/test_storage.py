@@ -143,7 +143,7 @@ def test_payload_version_column_backfilled_on_old_schema(tmp_path: Path) -> None
     )
 
     engine = create_engine_for_path(tmp_path / "legacy.db")
-    canonical_path = canonicalize_project_path("/legacy")
+    canonical_path = canonicalize_project_path(tmp_path / "legacy")
     with engine.begin() as conn:
         conn.exec_driver_sql(
             """
@@ -194,7 +194,7 @@ def test_payload_version_column_backfilled_on_old_schema(tmp_path: Path) -> None
         assert row.payload_version == 1
 
     repo = BrainRepository(engine)
-    events = repo.list_events(project_path="/legacy", session_id=1)
+    events = repo.list_events(project_path=tmp_path / "legacy", session_id=1)
     assert len(events) == 1
     assert events[0].id == "legacy-evt-1"
     assert events[0].payload == {"old": True}

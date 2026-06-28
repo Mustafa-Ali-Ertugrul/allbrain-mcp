@@ -102,11 +102,11 @@ class AgentAdapter(ABC):
         return self._health
 
     def _update_health(self, success: bool, error: str | None = None) -> None:
-        from datetime import datetime
+        from datetime import datetime, timezone
         if success:
             self._health = AgentHealth(
                 status=AgentStatus.HEALTHY,
-                last_check_at=datetime.now(),
+                last_check_at=datetime.now(timezone.utc),
                 consecutive_failures=0,
             )
         else:
@@ -114,7 +114,7 @@ class AgentAdapter(ABC):
             status = AgentStatus.UNHEALTHY if failures >= 5 else AgentStatus.DEGRADED
             self._health = AgentHealth(
                 status=status,
-                last_check_at=datetime.now(),
+                last_check_at=datetime.now(timezone.utc),
                 error_message=error,
                 consecutive_failures=failures,
             )

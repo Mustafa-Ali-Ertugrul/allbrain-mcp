@@ -42,6 +42,18 @@ _SUSPICIOUS_PATTERNS = [
     re.compile(r"(?i)rm\s+-rf\s+/"),
 ]
 
+# NOTE: This list has diverged from ``allbrain.security.input_guard._SUSPICIOUS_PATTERNS``
+# (6 patterns here vs 14 there).
+#
+# Backlog item: consolidate prompt-injection rules into a shared security policy.
+#   Owner: TBD
+#   Priority: MEDIUM (not blocking, but drift will grow with each new pattern)
+#   Action: Extract 14 patterns from input_guard.py into a shared module
+#           (e.g., allbrain/security/_prompt_rules.py), have both safety.py
+#           and input_guard.py import from it. Remove the 6-pattern duplicate.
+#   Risk: None — pure refactor, no behavior change.
+#   Test safety: test_safety.py (6 smoke tests) must still pass after consolidation.
+
 
 def sanitize_input(text: str) -> str:
     """Remove suspicious patterns that could be prompt injection attempts."""
