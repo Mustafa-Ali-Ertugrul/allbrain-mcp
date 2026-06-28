@@ -1,7 +1,7 @@
 .PHONY: install lint security test stress stress-mcp ci-local
 
 install:
-	uv sync --only-dev
+	uv sync --extra dev
 
 lint:
 	uv run ruff check --exit-zero src/ tests/

@@ -21,7 +21,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
-      - run: uv sync --only-dev
+      - run: uv sync --extra dev
       - run: uv run ruff check --exit-zero src/ tests/
       - run: uv run ruff format --check --exit-zero src/ tests/
 
@@ -35,7 +35,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
-      - run: uv sync --only-dev
+      - run: uv sync --extra dev
       - run: uv run bandit -c pyproject.toml -r src/ -ll
 
   test:
@@ -49,5 +49,5 @@ jobs:
           version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
-      - run: uv sync --only-dev
+      - run: uv sync --extra dev
       - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=60 -n auto --dist=worksteal
