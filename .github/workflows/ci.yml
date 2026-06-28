@@ -9,6 +9,7 @@ on:
 env:
   UV_VERSION: "0.6.x"
   PYTHON_VERSION: "3.13"
+  ALLOWED_PROJECT_ROOTS: "/home/runner:/tmp"
 
 jobs:
   lint:
