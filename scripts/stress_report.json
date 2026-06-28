@@ -1,0 +1,184 @@
+{
+  "wal": {
+    "journal_mode": "wal"
+  },
+  "sequential": {
+    "mode": "single_agent_baseline",
+    "events_total": 1000,
+    "ok": 1000,
+    "rate_limited": 0,
+    "db_locked": 0,
+    "other_errors": [],
+    "duration_seconds": 3.916,
+    "resume_hash": "-2541461531996899136"
+  },
+  "summary": {
+    "stress_test": {
+      "mode": "concurrent_10_agents",
+      "agents": [
+        "agent-00",
+        "agent-01",
+        "agent-02",
+        "agent-03",
+        "agent-04",
+        "agent-05",
+        "agent-06",
+        "agent-07",
+        "agent-08",
+        "agent-09"
+      ],
+      "events_per_agent": 100,
+      "concurrent_runtime_seconds": 5.604,
+      "total_events_attempted": 1000,
+      "total_ok": 1000,
+      "total_rate_limited": 0,
+      "total_db_locked": 0,
+      "total_other_errors": 0,
+      "per_agent": [
+        {
+          "agent": "agent-00",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 1.502
+        },
+        {
+          "agent": "agent-01",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 3.261
+        },
+        {
+          "agent": "agent-02",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 1.928
+        },
+        {
+          "agent": "agent-03",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 2.994
+        },
+        {
+          "agent": "agent-04",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 2.708
+        },
+        {
+          "agent": "agent-05",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 5.497
+        },
+        {
+          "agent": "agent-06",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 5.525
+        },
+        {
+          "agent": "agent-07",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 4.041
+        },
+        {
+          "agent": "agent-08",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 5.104
+        },
+        {
+          "agent": "agent-09",
+          "ok": 100,
+          "rate_limited": 0,
+          "db_locked": 0,
+          "other_errors": [],
+          "duration_seconds": 5.593
+        }
+      ],
+      "resume_hashes_match": true,
+      "resume_details": [
+        {
+          "agent": "agent-00",
+          "event_count": 4002,
+          "deterministic_keys_match": true
+        },
+        {
+          "agent": "agent-01",
+          "event_count": 4003,
+          "deterministic_keys_match": true
+        },
+        {
+          "agent": "agent-02",
+          "event_count": 4004,
+          "deterministic_keys_match": true
+        },
+        {
+          "agent": "agent-03",
+          "event_count": 4005,
+          "deterministic_keys_match": true
+        },
+        {
+          "agent": "agent-04",
+          "event_count": 4006,
+          "deterministic_keys_match": true
+        },
+        {
+          "agent": "agent-05",
+          "event_count": 4007,
+          "deterministic_keys_match": true
+        },
+        {
+          "agent": "agent-06",
+          "event_count": 4008,
+          "deterministic_keys_match": true
+        },
+        {
+          "agent": "agent-07",
+          "event_count": 4009,
+          "deterministic_keys_match": true
+        },
+        {
+          "agent": "agent-08",
+          "event_count": 4010,
+          "deterministic_keys_match": true
+        },
+        {
+          "agent": "agent-09",
+          "event_count": 4011,
+          "deterministic_keys_match": true
+        }
+      ],
+      "reference_event_count": 4001,
+      "deterministic_fields_match": true
+    },
+    "verdict": "PASS",
+    "config": {
+      "pool_size": 5,
+      "max_overflow": 10,
+      "busy_timeout_ms": 5000,
+      "rate_limit_rpm": 100000,
+      "rate_limit_rps": 1000
+    }
+  }
+}
