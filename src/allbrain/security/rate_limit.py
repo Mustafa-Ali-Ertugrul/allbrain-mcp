@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+from collections import deque
 from typing import Any
 
 
@@ -17,6 +18,7 @@ class SlidingWindowCounter:
     temporarily denied until the window slides past the oldest events.
 
     Thread-safe for GIL-guarded operations (single-process MCP use).
+    Uses ``collections.deque`` for O(expired) prune via ``popleft``.
     """
 
     def __init__(self, window_seconds: float, max_events: int, buckets: int = 10) -> None:
@@ -28,38 +30,37 @@ class SlidingWindowCounter:
         self._window = window_seconds
         self._max = max_events
         self._bucket_span = window_seconds / buckets
-        self._buckets: dict[str, list[float]] = {}  # key → [timestamps]
+        self._buckets: dict[str, deque[float]] = {}  # key → deque of timestamps
 
     def _prune(self, key: str, now: float) -> None:
         ts_list = self._buckets.get(key)
         if ts_list is None:
             return
         cutoff = now - self._window
-        # Keep only timestamps newer than cutoff
-        kept = [t for t in ts_list if t > cutoff]
-        if kept:
-            self._buckets[key] = kept
-        else:
+        # Pop expired timestamps from the front (O(expired_count))
+        while ts_list and ts_list[0] <= cutoff:
+            ts_list.popleft()
+        if not ts_list:
             self._buckets.pop(key, None)
 
     def check(self, key: str) -> tuple[bool, int]:
         """Return ``(allowed, current_count)`` without recording the call."""
         now = time.monotonic()
         self._prune(key, now)
-        cur = len(self._buckets.get(key, []))
+        cur = len(self._buckets.get(key, deque()))
         return cur < self._max, cur
 
     def record(self, key: str) -> None:
         """Record one call for *key*."""
         now = time.monotonic()
         self._prune(key, now)
-        self._buckets.setdefault(key, []).append(now)
+        self._buckets.setdefault(key, deque()).append(now)
 
     def check_and_record(self, key: str) -> tuple[bool, int]:
         """Atomic check-and-record.  Returns ``(allowed, current_count)``."""
         now = time.monotonic()
         self._prune(key, now)
-        ts_list = self._buckets.get(key, [])
+        ts_list = self._buckets.get(key, deque())
         cur = len(ts_list)
         if cur >= self._max:
             return False, cur

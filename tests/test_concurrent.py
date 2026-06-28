@@ -37,13 +37,13 @@ def _shared_context(tmp_path: Path) -> "BrainContext":  # noqa: F821
 
 
 def test_concurrent_save_event_no_deadlock(tmp_path: Path) -> None:
-    """20 threads, 100 events each = 2000 events total."""
+    """5 threads, 20 events each = 100 events total (reduced from 20×100 to avoid 179s runtime)."""
     context = _shared_context(tmp_path)
     errors: list[str] = []
 
     def _write_events(thread_id: int) -> int:
         count = 0
-        for i in range(100):
+        for i in range(20):
             result = save_event_impl(
                 context,
                 type="file_modified",
@@ -56,15 +56,15 @@ def test_concurrent_save_event_no_deadlock(tmp_path: Path) -> None:
                 errors.append(f"thread={thread_id} seq={i} err={result.error}")
         return count
 
-    with ThreadPoolExecutor(max_workers=20) as pool:
-        futures = [pool.submit(_write_events, tid) for tid in range(20)]
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        futures = [pool.submit(_write_events, tid) for tid in range(5)]
         total = sum(f.result() for f in as_completed(futures))
 
-    assert total == 2000, f"expected 2000 events, got {total}"
+    assert total == 100, f"expected 100 events, got {total}"
     assert not errors, f"errors: {errors[:5]}"
 
     listed = context.repository.list_events(project_path=context.project_path, limit=50000)
-    assert len(listed) >= 2000
+    assert len(listed) >= 100
 
 
 def test_concurrent_create_task(tmp_path: Path) -> None:

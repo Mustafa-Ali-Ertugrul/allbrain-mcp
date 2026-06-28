@@ -1,6 +1,7 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import logging
+import threading
 from dataclasses import dataclass
 from datetime import timezone
 from pathlib import Path
@@ -115,12 +116,32 @@ class BrainContext:
     project_path: str
     active_session: Session | None
     auto_snapshot_threshold: int = 100
+    snapshot_check_interval: int = 100
+
+    def __init__(self: BrainContext, **kwargs: Any) -> None:
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        self._event_count: int = 0
+        self._count_lock: threading.Lock = threading.Lock()
 
     @property
     def active_session_id(self) -> int | None:
         if self.active_session is None:
             return None
         return self.active_session.id
+
+    def increment_and_check_event_count(self) -> bool:
+        """Atomically increment and check if we should run maybe_auto_snapshot.
+        
+        Thread-safe via threading.Lock. Returns True every N events
+        (N = snapshot_check_interval) to trigger the actual DB-backed check.
+        """
+        with self._count_lock:
+            self._event_count += 1
+            if self._event_count >= self.snapshot_check_interval:
+                self._event_count = 0
+                return True
+            return False
 
 
 def create_mcp_server(context: BrainContext) -> FastMCP:
@@ -2758,6 +2779,10 @@ def snapshot_to_dict(snapshot) -> dict[str, Any]:
 
 
 def maybe_auto_snapshot(context: BrainContext, *, project_path: str | Path) -> None:
+    # Counter-based guard: skip the 3-DB-query check for most calls.
+    # Each call increments; the full check runs only every N calls.
+    if not context.increment_and_check_event_count():
+        return
     project = context.repository.get_project_by_path(project_path)
     if project is None or project.id is None:
         return
