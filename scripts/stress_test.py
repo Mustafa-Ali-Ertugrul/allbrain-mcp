@@ -16,7 +16,6 @@ import json
 import os
 import random
 import sys
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field, asdict
