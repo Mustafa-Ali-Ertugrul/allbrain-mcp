@@ -33,10 +33,18 @@ uv run allbrain start --project . --agent codex
 For the easiest MCP setup after cloning:
 
 ```powershell
-.\scripts\install-mcp.ps1 -All
+.\scripts\install-mcp.ps1 -All          # Windows
+./scripts/install-mcp.sh --all            # macOS / Linux
 ```
 
-That installs or refreshes the client configs for Codex, Claude Code, OpenCode, and Antigravity on Windows.
+That installs or refreshes the client configs for Codex, Claude Code, OpenCode, and Antigravity.
+
+For per-agent databases (isolated mode), add `--isolate`:
+
+```powershell
+.\scripts\install-mcp.ps1 -All -Isolate  # Windows
+./scripts/install-mcp.sh --all --isolate  # macOS / Linux
+```
 
 If you want a clean local setup:
 

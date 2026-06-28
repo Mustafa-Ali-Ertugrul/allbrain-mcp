@@ -57,7 +57,9 @@ uv run allbrain start --project . --agent setup-test
 
 The server waits for MCP messages over stdio. Seeing it remain open is expected. Press `Ctrl+C` after the check.
 
-## Automatic setup on Windows
+## Automatic setup
+
+### Windows
 
 Run from the repository root:
 
@@ -72,6 +74,25 @@ Install only selected clients:
 .\scripts\install-mcp.ps1 -Claude
 .\scripts\install-mcp.ps1 -OpenCode
 .\scripts\install-mcp.ps1 -Antigravity
+```
+
+After installation, completely restart the affected clients.
+
+### macOS and Linux
+
+Run from the repository root:
+
+```bash
+./scripts/install-mcp.sh --all
+```
+
+Install only selected clients:
+
+```bash
+./scripts/install-mcp.sh --codex
+./scripts/install-mcp.sh --claude
+./scripts/install-mcp.sh --opencode
+./scripts/install-mcp.sh --antigravity
 ```
 
 After installation, completely restart the affected clients.
@@ -207,7 +228,9 @@ For manual setup, add this entry under `mcpServers`, replacing `/absolute/path/a
         "--project",
         "/absolute/path/allbrain-mcp",
         "--agent",
-        "antigravity"
+        "antigravity",
+        "--db-path",
+        "/absolute/path/allbrain-mcp/.allbrain/allbrain.db"
       ],
       "cwd": "/absolute/path/allbrain-mcp",
       "env": {},
@@ -216,6 +239,8 @@ For manual setup, add this entry under `mcpServers`, replacing `/absolute/path/a
   }
 }
 ```
+
+For per-agent isolation, replace `allbrain.db` with `<agent>.db` (e.g. `antigravity.db`).
 
 Restart Antigravity and check the MCP management page for `allbrain`.
 
@@ -255,21 +280,52 @@ Project identity is based on the canonical project path. Make sure every client 
 
 ## Shared versus isolated databases
 
-If `--db-path` is omitted, all clients use the global default:
+By default, all clients use the global shared database:
 
 ```text
 ~/.allbrain/allbrain.db
 ```
 
-This is the easiest shared-memory setup.
+This is the easiest shared-memory setup: every agent writes to and reads from the same database.
 
-To isolate a client, add:
+### `--isolate` flag (recommended for isolation)
+
+The install scripts accept a `--isolate` flag that assigns a separate database per agent:
+
+```powershell
+# Windows — per-agent databases
+.\scripts\install-mcp.ps1 -All -Isolate
+```
+
+```bash
+# macOS / Linux
+./scripts/install-mcp.sh --all --isolate
+```
+
+When `--isolate` is set, each agent config receives a `--db-path` argument pointing to an agent-specific file:
+
+| Agent | Database path |
+|-------|---------------|
+| Codex | `~/.allbrain/codex.db` |
+| Claude Code | `~/.allbrain/claude-code.db` |
+| OpenCode | `~/.allbrain/opencode.db` |
+| Antigravity | `~/.allbrain/antigravity.db` |
+
+This makes isolation explicit and centrally managed by the installer instead of requiring manual `--db-path` edits across multiple config files.
+
+### Manual isolation
+
+To isolate a single client manually, add `--db-path` to its config:
 
 ```text
 --db-path /path/to/client-specific.db
 ```
 
-Do not use different database paths when you expect agents to share memory.
+### Important
+
+- Do **not** use different database paths when you expect agents to share memory.
+- Re-run the installer with or without `--isolate` to switch between shared and isolated modes — config files are regenerated.
+- AllBrain database paths use forward slashes (`/`) in generated config files for cross-platform consistency.
 
 ## Troubleshooting
 
