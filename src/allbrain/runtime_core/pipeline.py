@@ -159,7 +159,7 @@ class SystemDecisionPipeline:
             world_simulation_payload: dict[str, Any] | None = None
             if simulate_before_execute:
                 world_simulation_payload, last_event_id, world_events = self._simulation_step(
-                    bus, objective, last_event_id, risk_threshold
+                    bus, context, project_path, objective, last_event_id, risk_threshold, limit
                 )
                 emitted.extend(world_events)
                 if world_simulation_payload is not None and world_simulation_payload.get("blocked"):
@@ -1045,7 +1045,25 @@ class SystemDecisionPipeline:
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
-    def _simulation_step(self, bus: RuntimeEventBus, objective: dict[str, Any], caused_by: str, risk_threshold: float) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+    def _simulation_step(
+        self,
+        bus: RuntimeEventBus,
+        context: BrainContext,
+        project_path: str | None,
+        objective: dict[str, Any],
+        caused_by: str,
+        risk_threshold: float,
+        limit: int = 500,
+    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
+        # Learn from prior events so learned bridges are used when data exists
+        resolved = project_path or getattr(context, "project_path", None)
+        if resolved:
+            try:
+                events = context.repository.list_events(project_path=resolved, limit=limit)
+                self.world.learn(events)
+            except Exception as exc:
+                logger.debug("Failed to load events for world simulation learn: %s", exc, exc_info=True)
+
         current_state = self.world.observe()
         observed_event = bus.publish(
             type=EventType.WORLD_STATE_OBSERVED.value,
@@ -1055,6 +1073,7 @@ class SystemDecisionPipeline:
         action = self._objective_world_action(objective)
         sim_result = self.world.simulate(action, current_state)
         sim_payload = sim_result.model_dump(mode="json")
+        sim_payload["action"] = action  # Store action for learner consumption
         blocked = sim_result.prediction.risk >= risk_threshold
         sim_event = bus.publish(
             type=EventType.WORLD_SIMULATION_RUN.value,

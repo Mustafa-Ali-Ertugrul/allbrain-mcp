@@ -7,8 +7,10 @@ from allbrain.models.schemas import EventRead
 from allbrain.world.environment import EnvironmentTracker
 from allbrain.world.models import SimulationResult, WorldState
 from allbrain.world.prediction import PredictionBridge
+from allbrain.world.prediction_learner import BetaPredictor, LearnedPredictionBridge
 from allbrain.world.simulation import SimulationBridge
-from allbrain.world.transitions import StateTransitionBridge
+from allbrain.world.transition_learner import TransitionLearner
+from allbrain.world.transitions import LearnedTransitionBridge, StateTransitionBridge
 from allbrain.foundations import canonical_event_sort
 
 
@@ -39,9 +41,30 @@ class WorldModel:
         prediction_engine: PredictionBridge | None = None,
     ) -> None:
         self.tracker = tracker or EnvironmentTracker()
-        self.transitions = transition_engine or StateTransitionBridge()
-        self.predictions = prediction_engine or PredictionBridge()
-        self.simulator = SimulationBridge(self.transitions, self.predictions)
+        self._base_transitions = transition_engine or StateTransitionBridge()
+        self._base_predictions = prediction_engine or PredictionBridge()
+        self._learner: TransitionLearner | None = None
+        self._predictor: BetaPredictor | None = None
+        self.simulator = SimulationBridge(self._base_transitions, self._base_predictions)
+
+    def learn(self, events: list) -> None:
+        """Learn transition and prediction patterns from the event log.
+
+        Builds a TransitionLearner and BetaPredictor from the given events,
+        then swaps in LearnedTransitionBridge and LearnedPredictionBridge
+        (with the hardcoded bridges as fallback).
+
+        Calling ``learn`` with an empty or short event list is safe —
+        the learned bridges fall back to the hardcoded bridges when
+        insufficient data exists.
+        """
+        self._learner = TransitionLearner()
+        self._learner.learn(events)
+        self._predictor = BetaPredictor()
+        self._predictor.learn_from_events(events)
+        learned_t = LearnedTransitionBridge(self._learner, fallback=self._base_transitions)
+        learned_p = LearnedPredictionBridge(self._predictor, fallback=self._base_predictions)
+        self.simulator = SimulationBridge(learned_t, learned_p)
 
     def observe(self) -> WorldState:
         return self.tracker.capture()
