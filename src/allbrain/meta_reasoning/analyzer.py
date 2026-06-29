@@ -10,6 +10,8 @@ class DecisionAnalyzer:
         selected_plan: FuturePlan,
         candidates: list[FuturePlan],
         foresight_result,
+        *,
+        historical_success: float | None = None,
     ) -> list[DecisionReason]:
         if candidates:
             avg_success = sum(p.predicted_success for p in candidates) / len(candidates)
@@ -20,6 +22,7 @@ class DecisionAnalyzer:
         success_delta = round(selected_plan.predicted_success - avg_success, 6)
         risk_delta = round(avg_risk - selected_plan.cumulative_risk, 6)
         horizon_factor = round(1.0 / max(1, selected_plan.horizon), 6)
+        hist = historical_success if historical_success is not None else 0.0
         return [
             DecisionReason(
                 factor="predicted_success",
@@ -44,7 +47,7 @@ class DecisionAnalyzer:
             ),
             DecisionReason(
                 factor="historical_success",
-                contribution=0.0,
-                explanation="Historical success rate placeholder; see Sprint 38 for real source",
+                contribution=round(hist, 6),
+                explanation=f"Historical success rate: {hist:.2f}",
             ),
         ]
