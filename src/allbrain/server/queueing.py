@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import timezone, timedelta
+from datetime import UTC, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import update
@@ -284,7 +284,7 @@ class QueueCoordinator:
             expires = (
                 record.lease_expires_at
                 if record.lease_expires_at.tzinfo is not None
-                else record.lease_expires_at.replace(tzinfo=timezone.utc)
+                else record.lease_expires_at.replace(tzinfo=UTC)
             )
             if utc_now() > expires:
                 raise ValueError("lease has expired")
