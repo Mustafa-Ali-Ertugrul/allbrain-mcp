@@ -39,7 +39,12 @@ def _check_null_bytes_recursive(obj: Any) -> None:
 
 
 class BaseInputModel(BaseModel):
-    """Base for all input models — rejects null bytes + sanitizes string fields."""
+    """Base for all input models with security validation.
+
+    Rejects null bytes, sanitizes strings for prompt injection,
+    and enforces size limits on dict fields to prevent DoS attacks.
+    All MCP tool input models should inherit from this.
+    """
 
     @field_validator("*", mode="after")
     @classmethod
@@ -74,6 +79,11 @@ class BaseInputModel(BaseModel):
 
 
 class SaveEventInput(BaseInputModel):
+    """Input model for save_event MCP tool.
+
+    Validates event type, payload size, and optional metadata fields.
+    Inherits security validation from BaseInputModel.
+    """
     model_config = ConfigDict(extra="forbid", strict=True)
 
     type: str = Field(min_length=1)

@@ -22,6 +22,12 @@ from allbrain.storage.database import ensure_event_payload_version_column, open_
 
 
 class BrainRepository:
+    """Central repository for event-sourced project state.
+
+    Manages projects, sessions, and events using SQLAlchemy/SQLModel.
+    Provides event append, list, and replay operations with automatic
+    payload versioning and security redaction.
+    """
     def __init__(self, engine: Engine, *, owns_engine: bool = True):
         self.engine = engine
         self.owns_engine = owns_engine
@@ -32,6 +38,10 @@ class BrainRepository:
             self.engine.dispose()
 
     def get_or_create_project(self, db: DbSession, project_path: str | Path | None) -> Project:
+        """Get existing project or create new one for the given path.
+
+        Canonicalizes project path for consistent lookups.
+        """
         canonical_path = canonicalize_project_path(project_path)
         project = db.exec(select(Project).where(Project.canonical_project_path == canonical_path)).first()
         if project is not None:
@@ -60,6 +70,11 @@ class BrainRepository:
         client_name: str | None = None,
         client_version: str | None = None,
     ) -> Session:
+        """Create new active session for an agent.
+
+        Sessions track agent activity within a project and are used
+        for event attribution and session-scoped queries.
+        """
         with open_session(self.engine) as db:
             project = self.get_or_create_project(db, project_path)
             session = Session(

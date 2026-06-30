@@ -22,6 +22,12 @@ class RandomLike(Protocol):
 
 
 class SchedulerV1:
+    """Agent task assignment scheduler using epsilon-greedy selection.
+
+    Balances exploitation (highest-scoring agent) with exploration (random selection)
+    using configurable epsilon. Scores agents based on capability match, health,
+    and historical performance metrics.
+    """
     def __init__(
         self,
         registry: CapabilityRegistry | None = None,
@@ -47,6 +53,17 @@ class SchedulerV1:
         metrics: dict[str, dict[str, Any]],
         task_state: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        """Assign task to best candidate agent using epsilon-greedy selection.
+
+        Scores all candidates, filters by capability threshold, and selects either
+        the highest-scoring agent (exploitation) or a random eligible agent (exploration).
+
+        Returns:
+            Assignment decision with selected agent_id, score, breakdown, and reason.
+
+        Raises:
+            ValueError: If no eligible agents available for assignment.
+        """
         scored = [
             self.score_agent(
                 agent_id=agent_id,
