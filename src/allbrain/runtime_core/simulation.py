@@ -203,19 +203,73 @@ class SimulationOrchestrator:
         Returns:
             Tuple of (foresight payload, last event ID, emitted events)
         """
-        analysis = self.foresight.analyze(action, limit=foresight_limit, max_horizon=max_horizon)
-        analysis_event = bus.publish(
-            type=EventType.FORESIGHT_ANALYSIS.value,
-            payload=analysis.model_dump(mode="json"),
+        from allbrain.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
+
+        current_state = self.world.observe()
+        observed_event = bus.publish(
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            payload=current_state.model_dump(mode="json"),
             caused_by=caused_by,
         )
+        engine = ForesightEngine(max_horizon=max_horizon)
+        analysis = engine.analyze(current_state, action, limit=foresight_limit)
+        analysis_payload = analysis.model_dump(mode="json")
+        generated_event = bus.publish(
+            type=EventType.FORESIGHT_GENERATED.value,
+            payload={
+                "action": action,
+                "plans_count": len(analysis.plans),
+                "plan_ids": [f"plan_{idx}" for idx in range(len(analysis.plans))],
+                "template_version": FORESIGHT_TEMPLATE_VERSION,
+                "analysis_id": analysis_payload["analysis_id"],
+            },
+            caused_by=observed_event.id,
+        )
+        evaluated_events: list[EventRead] = []
+        for idx, plan in enumerate(analysis.plans):
+            plan_payload = plan.model_dump(mode="json")
+            plan_payload["analysis_id"] = analysis_payload["analysis_id"]
+            plan_payload["plan_id"] = f"plan_{idx}"
+            ev_event = bus.publish(
+                type=EventType.FORESIGHT_EVALUATED.value,
+                payload=plan_payload,
+                caused_by=generated_event.id,
+                impact_score=plan.predicted_success,
+            )
+            evaluated_events.append(ev_event)
+        rationale = (
+            f"best={analysis.best_plan.predicted_success:.2f} "
+            f"horizon={analysis.expected_plan.horizon} "
+            f"spread={analysis.plan_spread:.2f}"
+        )
+        recommendation_event = bus.publish(
+            type=EventType.FORESIGHT_RECOMMENDED.value,
+            payload={
+                "analysis_id": analysis_payload["analysis_id"],
+                "best_plan": analysis.best_plan.model_dump(mode="json"),
+                "expected_plan": analysis.expected_plan.model_dump(mode="json"),
+                "rationale": rationale,
+                "template_version": FORESIGHT_TEMPLATE_VERSION,
+            },
+            caused_by=evaluated_events[-1].id if evaluated_events else generated_event.id,
+            impact_score=analysis.plan_spread,
+        )
         summary = {
-            "analysis_id": analysis.analysis_id,
-            "action": analysis.action,
-            "plans": [plan.model_dump(mode="json") for plan in analysis.plans],
+            "action": action,
+            "analysis_id": analysis_payload["analysis_id"],
             "best_plan": analysis.best_plan.model_dump(mode="json"),
+            "safest_plan": analysis.safest_plan.model_dump(mode="json"),
+            "fastest_plan": analysis.fastest_plan.model_dump(mode="json"),
+            "expected_plan": analysis.expected_plan.model_dump(mode="json"),
+            "plan_spread": analysis.plan_spread,
+            "strategy_uncertainty": analysis.strategy_uncertainty,
+            "horizon_risk": analysis.horizon_risk,
+            "template_version": analysis.template_version,
+            "rationale": rationale,
         }
-        return summary, analysis_event.id, [analysis_event]
+        last_event_id = recommendation_event.id
+        emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events, recommendation_event]
+        return summary, last_event_id, emitted_events
 
     def scenario_step(
         self,
@@ -235,17 +289,72 @@ class SimulationOrchestrator:
         Returns:
             Tuple of (scenario payload, last event ID, emitted events)
         """
+        from allbrain.scenarios import SCENARIO_TEMPLATE_VERSION
+
         current_state = self.world.observe()
-        analysis = self.scenarios.generate(action, current_state, limit=scenarios_limit)
-        analysis_event = bus.publish(
-            type=EventType.SCENARIO_ANALYSIS.value,
-            payload=analysis.model_dump(mode="json"),
+        observed_event = bus.publish(
+            type=EventType.WORLD_STATE_OBSERVED.value,
+            payload=current_state.model_dump(mode="json"),
             caused_by=caused_by,
+        )
+        analysis = self.scenarios.analyze(current_state, action, limit=scenarios_limit)
+        analysis_payload = analysis.model_dump(mode="json")
+        generated_event = bus.publish(
+            type=EventType.SCENARIO_GENERATED.value,
+            payload={
+                "action": action,
+                "templates": [item.scenario for item in analysis.results],
+                "template_version": SCENARIO_TEMPLATE_VERSION,
+                "analysis_id": analysis_payload["analysis_id"],
+            },
+            caused_by=observed_event.id,
+        )
+        evaluated_events: list[EventRead] = []
+        for result in analysis.results:
+            payload = {
+                "analysis_id": analysis_payload["analysis_id"],
+                "scenario": result.scenario,
+                "prediction": result.prediction.model_dump(mode="json"),
+                "confidence": result.confidence,
+            }
+            ev_event = bus.publish(
+                type=EventType.SCENARIO_EVALUATED.value,
+                payload=payload,
+                caused_by=generated_event.id,
+                impact_score=result.confidence,
+            )
+            evaluated_events.append(ev_event)
+        rationale = (
+            f"best={analysis.best_case.prediction.success_probability:.2f} "
+            f"vs expected={analysis.expected_case.prediction.success_probability:.2f}, "
+            f"spread={analysis.prediction_spread:.2f}"
+        )
+        recommendation_event = bus.publish(
+            type=EventType.SCENARIO_RECOMMENDED.value,
+            payload={
+                "analysis_id": analysis_payload["analysis_id"],
+                "best_case": analysis.best_case.model_dump(mode="json"),
+                "expected_case": analysis.expected_case.model_dump(mode="json"),
+                "rationale": rationale,
+                "template_version": SCENARIO_TEMPLATE_VERSION,
+            },
+            caused_by=evaluated_events[-1].id,
+            impact_score=analysis.prediction_spread,
         )
         summary = {
             "action": action,
-            "scenarios": [sc.model_dump(mode="json") for sc in analysis.scenarios],
-            "best_case": analysis.best_case.model_dump(mode="json") if analysis.best_case else None,
-            "worst_case": analysis.worst_case.model_dump(mode="json") if analysis.worst_case else None,
+            "analysis_id": analysis_payload["analysis_id"],
+            "best_case": analysis.best_case.model_dump(mode="json"),
+            "expected_case": analysis.expected_case.model_dump(mode="json"),
+            "worst_case": analysis.worst_case.model_dump(mode="json"),
+            "safest_case": analysis.safest_case.model_dump(mode="json"),
+            "prediction_spread": analysis.prediction_spread,
+            "risk_volatility": analysis.risk_volatility,
+            "uncertainty": analysis.uncertainty,
+            "confidence_total": analysis.confidence_total,
+            "template_version": analysis.template_version,
+            "rationale": rationale,
         }
-        return summary, analysis_event.id, [analysis_event]
+        last_event_id = recommendation_event.id
+        emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events, recommendation_event]
+        return summary, last_event_id, emitted_events
