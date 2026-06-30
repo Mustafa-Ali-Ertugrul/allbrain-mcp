@@ -121,7 +121,7 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             enable_uncertainty=data.enable_uncertainty,
             enable_information_seeking=data.enable_information_seeking,
         )
-        if data.execute_mode == "queued_runtime":
+        if data.execute_mode == "queued_runtime" and result.get("status") not in ("BLOCKED", "FAILED"):
             result["queue"] = QueueCoordinator(context).enqueue_pipeline_result(result)
         audit_tool_call(
             context,

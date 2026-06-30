@@ -152,6 +152,14 @@ class GitBrain:
                 paths.update(committed_paths)
             except GitCommandError:
                 pass
+        tracked_paths: set[str] = set()
+        if self.repo is not None:
+            try:
+                with self._git_env():
+                    tracked = self.repo.git.ls_files().splitlines()
+                tracked_paths = {path.strip().replace("\\", "/") for path in tracked if path.strip()}
+            except GitCommandError:
+                pass
         changes: list[dict[str, str]] = []
         for path in sorted(paths):
             old = before_files.get(path)
@@ -161,7 +169,7 @@ class GitBrain:
             if path in committed_paths and path not in before_files and path not in after_files:
                 kind = "modified"
             elif path not in before_files:
-                kind = "added"
+                kind = "modified" if path in tracked_paths else "added"
             elif path not in after_files or new == "missing":
                 kind = "deleted"
             else:

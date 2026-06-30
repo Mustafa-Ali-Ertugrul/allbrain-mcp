@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import timedelta
+from datetime import timezone, timedelta
 from typing import Any
 
 from sqlalchemy import update
@@ -280,6 +280,14 @@ class QueueCoordinator:
             raise ValueError("queue item not found")
         if record.state != "leased" or record.lease_id != lease_id or record.leased_by != server_instance_id:
             raise ValueError("invalid or expired lease")
+        if record.lease_expires_at is not None:
+            expires = (
+                record.lease_expires_at
+                if record.lease_expires_at.tzinfo is not None
+                else record.lease_expires_at.replace(tzinfo=timezone.utc)
+            )
+            if utc_now() > expires:
+                raise ValueError("lease has expired")
         return record
 
     def _event(self, db, event_type: str, record: QueueItemRecord, extra: dict[str, Any]) -> None:
