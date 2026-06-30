@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sqlite3
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -18,6 +19,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--db-path", type=Path, default=default_db_path())
     parser.add_argument("--max-stale-ratio", type=float, default=0.25)
+    parser.add_argument("--window-hours", type=float, default=1.0)
     args = parser.parse_args()
     if not args.db_path.exists():
         print(f"[FAIL] Database does not exist: {args.db_path}")
@@ -76,14 +78,21 @@ def main() -> int:
 
     # Sessions
     session_stats = cur.execute("SELECT status, COUNT(*) FROM session GROUP BY status").fetchall()
-    print("[OK] Sessions by status:")
+    print("[INFO] Lifetime sessions by status:")
     for status, count in session_stats:
         print(f"  - {status:15s} {count:3d}")
 
     total_sessions = sum(c for _, c in session_stats)
     print(f"  Total: {total_sessions}")
-    eventful_sessions = sum(count for status, count in session_stats if status != "empty")
-    stale_count = next((count for status, count in session_stats if status == "stale"), 0)
+    cutoff = (datetime.now(UTC) - timedelta(hours=args.window_hours)).replace(tzinfo=None).isoformat(sep=" ")
+    recent_stats = cur.execute(
+        "SELECT status, COUNT(*) FROM session WHERE started_at >= ? GROUP BY status", (cutoff,)
+    ).fetchall()
+    print(f"[OK] Recent sessions by status ({args.window_hours:g}h):")
+    for status, count in recent_stats:
+        print(f"  - {status:15s} {count:3d}")
+    eventful_sessions = sum(count for status, count in recent_stats if status != "empty")
+    stale_count = next((count for status, count in recent_stats if status == "stale"), 0)
     stale_ratio = stale_count / max(1, eventful_sessions)
     if stale_ratio > args.max_stale_ratio:
         failures.append(f"stale session ratio {stale_ratio:.1%} exceeds {args.max_stale_ratio:.1%}")

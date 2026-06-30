@@ -13,6 +13,7 @@ from allbrain.server.app import (
     resume_with_intent_impl,
     save_event_impl,
 )
+from allbrain.server.tools.intents import register_tools as register_intent_tools
 from allbrain.storage import BrainRepository, SnapshotRepo, create_engine_for_path, init_db
 
 
@@ -31,6 +32,15 @@ def make_context(repo: BrainRepository, project_root: Path, agent: str) -> Brain
         project_path=str(project_root.resolve()),
         active_session=repo.create_session(project_root, agent),
     )
+
+
+class ToolRegistry:
+    def __init__(self) -> None:
+        self.tools = {}
+
+    def tool(self, function):
+        self.tools[function.__name__] = function
+        return function
 
 
 def test_intent_extractor_maps_semantic_events_and_ignores_tool_call(tmp_path: Path) -> None:
@@ -179,6 +189,31 @@ def test_intent_mcp_tools_return_intents_and_contradictions(tmp_path: Path) -> N
     assert intents.data["count"] == 2
     assert contradictions.ok
     assert contradictions.data["count"] == 1
+
+
+def test_registered_intent_tools_use_bound_project_context(tmp_path: Path) -> None:
+    repo, project_root = make_repo(tmp_path)
+    context = make_context(repo, project_root, "codex")
+    registry = ToolRegistry()
+    register_intent_tools(registry, context)
+
+    assert registry.tools["extract_intents"]()["ok"] is True
+    assert registry.tools["extract_intents"](10)["ok"] is True
+    assert registry.tools["detect_contradictions"]()["ok"] is True
+    assert registry.tools["detect_contradictions"](10)["ok"] is True
+
+
+def test_intent_impl_rejects_per_call_project_override(tmp_path: Path) -> None:
+    repo, project_root = make_repo(tmp_path)
+    context = make_context(repo, project_root, "codex")
+
+    intents = extract_intents_impl(context, project_path=str(tmp_path / "other"))
+    contradictions = detect_contradictions_impl(context, project_path=str(tmp_path / "other"))
+
+    assert intents.ok is False
+    assert "project_path" in (intents.error or "")
+    assert contradictions.ok is False
+    assert "project_path" in (contradictions.error or "")
 
 
 def test_snapshot_v7_stores_intent_and_contradiction_summaries(tmp_path: Path) -> None:

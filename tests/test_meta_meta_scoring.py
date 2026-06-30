@@ -43,12 +43,11 @@ class TestMetaEvaluator:
     def test_per_fault_type_isolation(self):
         store = EvaluatorStore()
         evaluator = MetaEvaluator(store)
-        import random
 
-        for _ in range(50):
-            evaluator.evaluate("s1", "timeout", 0.95, 0.90)
-        for _ in range(50):
-            evaluator.evaluate("s1", "overload", random.uniform(0.1, 0.9), random.uniform(0.1, 0.9))
+        for index in range(50):
+            score = 0.1 + (index % 10) * 0.08
+            evaluator.evaluate("s1", "timeout", score, 0.05 + score * 0.9)
+            evaluator.evaluate("s1", "overload", score, 0.95 - score * 0.9)
         p1 = store.get("s1", "timeout")
         p2 = store.get("s1", "overload")
         assert p1.accuracy > p2.accuracy
@@ -73,12 +72,10 @@ class TestMetaEvaluator:
     def test_per_evaluator_isolation(self):
         store = EvaluatorStore()
         evaluator = MetaEvaluator(store)
-        for _ in range(50):
-            evaluator.evaluate("a", "timeout", 0.95, 0.90)
-        import random
-
-        for _ in range(50):
-            evaluator.evaluate("b", "timeout", random.uniform(0.1, 0.9), random.uniform(0.1, 0.9))
+        for index in range(50):
+            score = 0.1 + (index % 10) * 0.08
+            evaluator.evaluate("a", "timeout", score, 0.05 + score * 0.9)
+            evaluator.evaluate("b", "timeout", score, 0.95 - score * 0.9)
         pa = store.get("a", "timeout")
         pb = store.get("b", "timeout")
         assert pa.accuracy > pb.accuracy
