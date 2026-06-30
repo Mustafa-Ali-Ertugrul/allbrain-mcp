@@ -6,6 +6,8 @@ from typing import Any
 
 from uuid6 import uuid7
 
+from allbrain.server.constants import DEFAULT_AUTO_SNAPSHOT_THRESHOLD
+
 
 @dataclass
 class BrainContext:
@@ -17,8 +19,8 @@ class BrainContext:
     client_name: str | None = None
     client_version: str | None = None
     central_audit_enabled: bool = False
-    auto_snapshot_threshold: int = 100
-    snapshot_check_interval: int = 100
+    auto_snapshot_threshold: int = DEFAULT_AUTO_SNAPSHOT_THRESHOLD
+    snapshot_check_interval: int = DEFAULT_AUTO_SNAPSHOT_THRESHOLD
 
     def __init__(self: BrainContext, **kwargs: Any) -> None:
         for k, v in kwargs.items():

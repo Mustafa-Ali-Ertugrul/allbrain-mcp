@@ -1,22 +1,14 @@
 from __future__ import annotations
 
-from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
-
-EVENT_WEIGHTS = {
-    EventType.GOAL_SET.value: 10,
-    EventType.TASK_STARTED.value: 3,
-    EventType.TASK_COMPLETED.value: 5,
-    EventType.FILE_MODIFIED.value: 1,
-    EventType.FAILURE.value: 8,
-    EventType.TASK_BLOCKED.value: 8,
-    EventType.TOOL_CALL.value: 0,
-    EventType.TOOL_CALL_OUTCOME.value: 0,
-    EventType.SESSION_STARTED.value: 0,
-    EventType.SESSION_SUMMARY.value: 10,
-    EventType.SNAPSHOT_CREATED.value: 0,
-}
+from allbrain.snapshot.constants import DEFAULT_EVENT_WEIGHT, EVENT_WEIGHTS
 
 
 def snapshot_weight(events: list[EventRead]) -> int:
-    return sum(EVENT_WEIGHTS.get(event.type, 0) for event in events)
+    """Calculate snapshot trigger weight from a list of events.
+
+    Uses EVENT_WEIGHTS mapping from snapshot.constants to assign semantic
+    weight to each event type. Higher weights indicate more significant
+    state changes that warrant earlier snapshot creation.
+    """
+    return sum(EVENT_WEIGHTS.get(event.type, DEFAULT_EVENT_WEIGHT) for event in events)
