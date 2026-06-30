@@ -28,6 +28,7 @@ class SchedulerV1:
     using configurable epsilon. Scores agents based on capability match, health,
     and historical performance metrics.
     """
+
     def __init__(
         self,
         registry: CapabilityRegistry | None = None,

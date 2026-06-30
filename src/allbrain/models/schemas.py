@@ -84,6 +84,7 @@ class SaveEventInput(BaseInputModel):
     Validates event type, payload size, and optional metadata fields.
     Inherits security validation from BaseInputModel.
     """
+
     model_config = ConfigDict(extra="forbid", strict=True)
 
     type: str = Field(min_length=1)

@@ -11,6 +11,7 @@ UNHEALTHY_FAILURE_THRESHOLD = 5
 @dataclass(frozen=True)
 class AgentCapability:
     """Agent capability in a specific domain with associated skills."""
+
     domain: str
     skills: set[str]
 
@@ -22,6 +23,7 @@ class TaskRequirements:
     Extracted from task payload to determine which agents have the
     necessary capabilities to execute the task.
     """
+
     domain: str
     required_skills: set[str]
 
@@ -46,6 +48,7 @@ class AgentHealth:
     tasks to unhealthy agents. Agents become unhealthy after
     UNHEALTHY_FAILURE_THRESHOLD consecutive failures.
     """
+
     consecutive_failures: int = 0
     last_failure_at: datetime | None = None
     last_failure_reason: str | None = None
@@ -81,6 +84,7 @@ class AgentProfile:
     legacy skill weights. Used by the scheduler to match agents to tasks
     and route work to healthy, capable agents.
     """
+
     agent_id: str
     version: str = DEFAULT_AGENT_VERSION
     capabilities: tuple[AgentCapability, ...] = field(default_factory=tuple)

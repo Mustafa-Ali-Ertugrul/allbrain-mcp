@@ -21,6 +21,7 @@ class AgentRegistry:
     their runtime adapters. Provides lookup by ID and capability-based
     filtering for orchestration.
     """
+
     def __init__(self) -> None:
         self._definitions: dict[str, AgentDefinition] = {}
         self._adapters: dict[str, AgentAdapter] = {}

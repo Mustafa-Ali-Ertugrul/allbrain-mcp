@@ -13,7 +13,9 @@ from allbrain.runtime_core.event_bus import RuntimeEventBus
 from allbrain.runtime_core.execution import ExecutionPlanningBridge
 from allbrain.runtime_core.learning import ClosedLoopLearningEngine
 from allbrain.runtime_core.memory import GlobalExperienceMemoryBuilder
+from allbrain.runtime_core.observability import ObservabilityCollector
 from allbrain.runtime_core.planning import GoalDecompositionBridge, StrategicPlanningBridge
+from allbrain.runtime_core.simulation import SimulationOrchestrator
 from allbrain.runtime_core.state import RuntimeStateMachine, RuntimeStatus
 
 if TYPE_CHECKING:
@@ -53,6 +55,15 @@ class SystemDecisionPipeline:
         self.meta_reasoning = MetaReasoningManager()
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
+
+        # Simulation orchestrator (extracted)
+        self.simulation = SimulationOrchestrator(
+            world=self.world,
+            counterfactual=self.counterfactual,
+            scenarios=self.scenarios,
+            foresight=self.foresight,
+            uuid7_generator=uuid7,
+        )
 
     # NOTE: Only 6 enable_* flags are exposed via the public MCP API
     # (RunDecisionPipelineInput). The remaining ~15 enable_* references
@@ -262,7 +273,7 @@ class SystemDecisionPipeline:
 
             world_simulation_payload: dict[str, Any] | None = None
             if simulate_before_execute:
-                world_simulation_payload, last_event_id, world_events = self._simulation_step(
+                world_simulation_payload, last_event_id, world_events = self.simulation.simulation_step(
                     bus, context, project_path, objective, last_event_id, risk_threshold, limit
                 )
                 emitted.extend(world_events)
@@ -301,24 +312,24 @@ class SystemDecisionPipeline:
 
             counterfactual_payload: dict[str, Any] | None = None
             if enable_counterfactual:
-                action = self._objective_world_action(objective)
-                counterfactual_payload, last_event_id, cf_events = self._counterfactual_step(
+                action = ObservabilityCollector.extract_objective_action(objective)
+                counterfactual_payload, last_event_id, cf_events = self.simulation.counterfactual_step(
                     bus, action, last_event_id, regret_threshold, counterfactual_limit
                 )
                 emitted.extend(cf_events)
 
             scenario_payload: dict[str, Any] | None = None
             if enable_scenarios:
-                action = self._objective_world_action(objective)
-                scenario_payload, last_event_id, sc_events = self._scenario_step(
+                action = ObservabilityCollector.extract_objective_action(objective)
+                scenario_payload, last_event_id, sc_events = self.simulation.scenario_step(
                     bus, action, last_event_id, scenarios_limit
                 )
                 emitted.extend(sc_events)
 
             foresight_payload: dict[str, Any] | None = None
             if enable_foresight:
-                action = self._objective_world_action(objective)
-                foresight_payload, last_event_id, fs_events = self._foresight_step(
+                action = ObservabilityCollector.extract_objective_action(objective)
+                foresight_payload, last_event_id, fs_events = self.simulation.foresight_step(
                     bus, action, last_event_id, foresight_limit, max_horizon
                 )
                 emitted.extend(fs_events)
@@ -333,7 +344,7 @@ class SystemDecisionPipeline:
             uncertainty_payload: dict[str, Any] | None = None
             belief_state: object | None = None
             if enable_uncertainty and meta_reasoning_payload is not None:
-                layer_indicators = self._collect_layer_indicators(
+                layer_indicators = ObservabilityCollector.collect_layer_indicators(
                     world_simulation_payload,
                     counterfactual_payload,
                     scenario_payload,
@@ -345,7 +356,7 @@ class SystemDecisionPipeline:
                 historical = (
                     float(getattr(belief_state, "mean", 0.7))
                     if belief_state is not None
-                    else self._collect_historical_rate(context, project_path, objective=objective)
+                    else ObservabilityCollector.collect_historical_rate(context, project_path, objective=objective)
                 )
                 evidence = sum(layer_indicators) / len(layer_indicators) if layer_indicators else 0.0
                 uncertainty_payload, last_event_id, un_events = self._uncertainty_step(
@@ -603,115 +614,6 @@ class SystemDecisionPipeline:
             "events": [event.model_dump(mode="json") for event in emitted],
         }
 
-    def _simulation_step(
-        self,
-        bus: RuntimeEventBus,
-        context: BrainContext,
-        project_path: str | None,
-        objective: dict[str, Any],
-        caused_by: str,
-        risk_threshold: float,
-        limit: int = 500,
-    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
-        # Learn from prior events so learned bridges are used when data exists
-        resolved = project_path or getattr(context, "project_path", None)
-        if resolved:
-            try:
-                events = context.repository.list_events(project_path=resolved, limit=limit)
-                self.world.learn(events)
-            except Exception as exc:
-                logger.debug("Failed to load events for world simulation learn: %s", exc, exc_info=True)
-
-        current_state = self.world.observe()
-        observed_event = bus.publish(
-            type=EventType.WORLD_STATE_OBSERVED.value,
-            payload=current_state.model_dump(mode="json"),
-            caused_by=caused_by,
-        )
-        action = self._objective_world_action(objective)
-        sim_result = self.world.simulate(action, current_state)
-        sim_payload = sim_result.model_dump(mode="json")
-        sim_payload["action"] = action  # Store action for learner consumption
-        blocked = sim_result.prediction.risk >= risk_threshold
-        sim_event = bus.publish(
-            type=EventType.WORLD_SIMULATION_RUN.value,
-            payload=sim_payload,
-            caused_by=observed_event.id,
-            impact_score=sim_result.prediction.risk,
-        )
-        return (
-            {
-                "simulation": sim_payload,
-                "prediction": sim_result.prediction.model_dump(mode="json"),
-                "blocked": blocked,
-            },
-            sim_event.id,
-            [observed_event, sim_event],
-        )
-
-    def _counterfactual_step(
-        self, bus: RuntimeEventBus, action: str, caused_by: str, regret_threshold: float, counterfactual_limit: int
-    ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
-        from allbrain.counterfactual import recommendation_severity
-
-        current_state = self.world.observe()
-        observed_event = bus.publish(
-            type=EventType.WORLD_STATE_OBSERVED.value,
-            payload=current_state.model_dump(mode="json"),
-            caused_by=caused_by,
-        )
-        generated_payload: dict[str, Any] = {"action": action, "alternatives": []}
-        unknown = not self.counterfactual.generator.generate(action)
-        if unknown:
-            generated_payload["reason"] = "unknown_action"
-        generated_event = bus.publish(
-            type=EventType.COUNTERFACTUAL_GENERATED.value,
-            payload=generated_payload,
-            caused_by=observed_event.id,
-        )
-        alternatives = self.counterfactual.generator.generate(action)[:counterfactual_limit]
-        results_payloads: list[dict[str, Any]] = []
-        evaluated_events: list[EventRead] = []
-        for alternative in alternatives:
-            result = self.counterfactual.evaluator.compare(current_state, action, alternative)
-            ev_event = bus.publish(
-                type=EventType.COUNTERFACTUAL_EVALUATED.value,
-                payload=result.model_dump(mode="json"),
-                caused_by=generated_event.id,
-            )
-            results_payloads.append(result.model_dump(mode="json"))
-            evaluated_events.append(ev_event)
-        best_payload: dict[str, Any] | None = None
-        recommendation_event: EventRead | None = None
-        if results_payloads:
-            best_payload = max(results_payloads, key=lambda item: item["improvement"])
-            if best_payload["improvement"] >= regret_threshold:
-                severity = recommendation_severity(best_payload["improvement"])
-                last_id = evaluated_events[-1].id if evaluated_events else generated_event.id
-                recommendation_event = bus.publish(
-                    type=EventType.COUNTERFACTUAL_RECOMMENDATION.value,
-                    payload={"best": best_payload, "threshold": regret_threshold, "severity": severity},
-                    caused_by=last_id,
-                    impact_score=best_payload["improvement"],
-                )
-        summary = {
-            "action": action,
-            "alternatives": alternatives,
-            "unknown_action": unknown,
-            "results": results_payloads,
-            "best": best_payload,
-            "decision_regret": best_payload["regret"] if best_payload else 0.0,
-            "recommendation_emitted": recommendation_event is not None,
-        }
-        last_event_id = (recommendation_event or (evaluated_events[-1] if evaluated_events else generated_event)).id
-        emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events]
-        if recommendation_event is not None:
-            emitted_events.append(recommendation_event)
-        return summary, last_event_id, emitted_events
-
-    def _objective_world_action(self, objective: dict[str, Any]) -> str:
-        return str(objective.get("kind", "execute"))
-
     def _meta_reasoning_step(
         self,
         bus: RuntimeEventBus,
@@ -780,61 +682,6 @@ class SystemDecisionPipeline:
         last_event_id = completed_event.id
         emitted_events: list[EventRead] = [started_event, explained_event, completed_event]
         return summary, last_event_id, emitted_events
-
-    def _collect_layer_indicators(
-        self,
-        world_simulation_payload: dict[str, Any] | None,
-        counterfactual_payload: dict[str, Any] | None,
-        scenario_payload: dict[str, Any] | None,
-        foresight_payload: dict[str, Any] | None,
-        meta_reasoning_payload: dict[str, Any] | None,
-    ) -> list[float]:
-        indicators: list[float] = []
-        if world_simulation_payload is not None:
-            sim = world_simulation_payload.get("prediction", {})
-            if isinstance(sim, dict) and isinstance(sim.get("success_probability"), (int, float)):
-                indicators.append(float(sim["success_probability"]))
-        if counterfactual_payload is not None:
-            best = counterfactual_payload.get("best")
-            if isinstance(best, dict):
-                pred = best.get("alternative_prediction") or best.get("actual_prediction")
-                if isinstance(pred, dict) and isinstance(pred.get("success_probability"), (int, float)):
-                    indicators.append(float(pred["success_probability"]))
-        if scenario_payload is not None:
-            best_case = scenario_payload.get("best_case", {})
-            if isinstance(best_case, dict):
-                pred = best_case.get("prediction", {})
-                if isinstance(pred, dict) and isinstance(pred.get("success_probability"), (int, float)):
-                    indicators.append(float(pred["success_probability"]))
-        if foresight_payload is not None:
-            best_plan = foresight_payload.get("best_plan", {})
-            if isinstance(best_plan, dict) and isinstance(best_plan.get("predicted_success"), (int, float)):
-                indicators.append(float(best_plan["predicted_success"]))
-        if meta_reasoning_payload is not None:
-            conf = meta_reasoning_payload.get("confidence", {})
-            if isinstance(conf, dict) and isinstance(conf.get("confidence"), (int, float)):
-                indicators.append(float(conf["confidence"]))
-        return indicators
-
-    def _collect_historical_rate(
-        self, context: BrainContext, project_path: str | None, *, objective: dict[str, Any] | None = None
-    ) -> float:
-        from allbrain.uncertainty import observed_success_rate
-
-        resolved = project_path or getattr(context, "project_path", None)
-        if not resolved:
-            return 0.7
-        try:
-            events = context.repository.list_events(project_path=resolved, limit=5000)
-        except Exception as exc:
-            logger.debug("Failed to collect historical event rate: %s", exc, exc_info=True)
-            return 0.7
-        context_key = None
-        if isinstance(objective, dict):
-            kind = objective.get("kind")
-            if isinstance(kind, str) and kind:
-                context_key = kind
-        return observed_success_rate(events, context_key=context_key)
 
     def _uncertainty_step(
         self,

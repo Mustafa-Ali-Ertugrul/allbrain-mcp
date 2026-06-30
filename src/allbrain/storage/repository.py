@@ -28,6 +28,7 @@ class BrainRepository:
     Provides event append, list, and replay operations with automatic
     payload versioning and security redaction.
     """
+
     def __init__(self, engine: Engine, *, owns_engine: bool = True):
         self.engine = engine
         self.owns_engine = owns_engine
