@@ -18,6 +18,10 @@ class EventType(StrEnum):
     TASK_PRIORITY_CHANGED = "task_priority_changed"
     HANDOFF_CREATED = "handoff_created"
     TOOL_CALL = "tool_call"
+    TOOL_CALL_OUTCOME = "tool_call_outcome"
+    SESSION_STARTED = "session_started"
+    SESSION_SUMMARY = "session_summary"
+    SNAPSHOT_CREATED = "snapshot_created"
     SUBTASK_CREATED = "subtask_created"
     SUBTASK_STARTED = "subtask_started"
     SUBTASK_COMPLETED = "subtask_completed"
@@ -243,6 +247,7 @@ class EventType(StrEnum):
 
 
 SemanticEventType = {
+    EventType.SESSION_SUMMARY,
     EventType.GOAL_SET,
     EventType.TASK_CREATED,
     EventType.TASK_ASSIGNED,

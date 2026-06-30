@@ -56,6 +56,8 @@ def audit_tool_call(
     session_id: int,
     _session: Any | None = None,
 ) -> None:
+    if getattr(context, "central_audit_enabled", False):
+        return
     context.repository.append_event(
         project_path=context.project_path,
         session_id=session_id,
@@ -71,13 +73,18 @@ def audit_tool_call(
     )
 
 
-def maybe_auto_snapshot(context: BrainContext, *, project_path: str | Path) -> None:
-    if not context.increment_and_check_event_count():
-        return
+def maybe_auto_snapshot(
+    context: BrainContext,
+    *,
+    project_path: str | Path,
+    force_baseline: bool = False,
+) -> None:
+    """Create snapshots from persistent event progress, not process-local counters."""
     project = context.repository.get_project_by_path(project_path)
     if project is None or project.id is None:
         return
     from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
+    from allbrain.snapshot.constants import MAX_SNAPSHOT_EVENT_COUNT, NON_SEMANTIC_EVENT_TYPES
     from allbrain.snapshot.trigger import snapshot_weight
     from allbrain.storage.snapshot_repo import SnapshotRepo
 
@@ -85,9 +92,11 @@ def maybe_auto_snapshot(context: BrainContext, *, project_path: str | Path) -> N
     latest = snapshot_repo.get_latest(project.id)
     event_cursor = latest.event_cursor if latest is not None else None
     events = context.repository.list_events_after(project_path=context.project_path, event_cursor=event_cursor)
-    if snapshot_weight(events) < context.auto_snapshot_threshold:
+    semantic_events = [event for event in events if event.type not in NON_SEMANTIC_EVENT_TYPES]
+    baseline_due = latest is None and force_baseline and bool(semantic_events)
+    if not baseline_due and snapshot_weight(events) < context.auto_snapshot_threshold:
         return
-    all_events = context.repository.list_events(project_path=context.project_path, limit=50000)
+    all_events = context.repository.list_events(project_path=context.project_path, limit=MAX_SNAPSHOT_EVENT_COUNT)
     SnapshotEngine(SnapshotBuilder(include_derived=False), snapshot_repo).build_snapshot(
         project_id=project.id, events=all_events
     )

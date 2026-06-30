@@ -19,8 +19,19 @@ from allbrain.orchestrator.metrics import AgentPerformanceReducer
 
 # is_compatible, OrchestratedResumeEngine imported locally to avoid circular import
 from allbrain.runtime_core import SystemDecisionPipeline
+from allbrain.runtime_core.constants import (
+    DEFAULT_COUNTERFACTUAL_LIMIT,
+    DEFAULT_FORESIGHT_LIMIT,
+    DEFAULT_MAX_HORIZON,
+    DEFAULT_PIPELINE_EVENT_LIMIT,
+    DEFAULT_REGRET_THRESHOLD,
+    DEFAULT_RISK_THRESHOLD,
+    DEFAULT_SCENARIO_RECOMMENDATION_THRESHOLD,
+    DEFAULT_SCENARIOS_LIMIT,
+)
 from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
+from allbrain.server.queueing import QueueCoordinator
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
@@ -120,6 +131,8 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             enable_uncertainty=data.enable_uncertainty,
             enable_information_seeking=data.enable_information_seeking,
         )
+        if data.execute_mode == "queued_runtime" and result.get("status") not in ("BLOCKED", "FAILED"):
+            result["queue"] = QueueCoordinator(context).enqueue_pipeline_result(result)
         audit_tool_call(
             context,
             tool_name="run_decision_pipeline",
@@ -140,7 +153,7 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def orchestrate_project(
-        limit: int = 5000,
+        limit: int = DEFAULT_PIPELINE_EVENT_LIMIT,
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
@@ -156,18 +169,18 @@ def register_tools(mcp, context: BrainContext) -> None:
     def run_decision_pipeline(
         objective: dict[str, Any],
         execute_mode: str = "event_only",
-        limit: int = 5000,
+        limit: int = DEFAULT_PIPELINE_EVENT_LIMIT,
         simulate_before_execute: bool = False,
-        risk_threshold: float = 0.7,
+        risk_threshold: float = DEFAULT_RISK_THRESHOLD,
         enable_counterfactual: bool = False,
-        counterfactual_limit: int = 3,
-        regret_threshold: float = 0.20,
+        counterfactual_limit: int = DEFAULT_COUNTERFACTUAL_LIMIT,
+        regret_threshold: float = DEFAULT_REGRET_THRESHOLD,
         enable_scenarios: bool = False,
-        scenarios_limit: int = 4,
-        scenario_recommendation_threshold: float = 0.50,
+        scenarios_limit: int = DEFAULT_SCENARIOS_LIMIT,
+        scenario_recommendation_threshold: float = DEFAULT_SCENARIO_RECOMMENDATION_THRESHOLD,
         enable_foresight: bool = False,
-        foresight_limit: int = 5,
-        max_horizon: int = 5,
+        foresight_limit: int = DEFAULT_FORESIGHT_LIMIT,
+        max_horizon: int = DEFAULT_MAX_HORIZON,
         enable_meta_reasoning: bool = False,
         enable_uncertainty: bool = False,
         enable_information_seeking: bool = False,

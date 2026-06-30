@@ -64,10 +64,62 @@ class MemoryBuilder:
                         source_event_ids=[event.id for event in task_events],
                     )
                 )
+        items.extend(self._session_items(events, semantic))
+        items.extend(self._goal_items(events, semantic))
         items.extend(self._collaboration_items(events, semantic))
         items.extend(self._organizational_items(events, semantic))
         items.extend(self._governance_items(events, semantic))
         items.extend(self._runtime_core_items(events, semantic))
+        return items
+
+    def _session_items(self, events: list[EventRead], semantic: SemanticMemory) -> list[MemoryItem]:
+        items: list[MemoryItem] = []
+        for event in canonical_event_sort(events):
+            if event.type != EventType.SESSION_SUMMARY.value:
+                continue
+            payload = event.payload
+            session_id = str(payload.get("session_id") or event.session_id)
+            goals = "; ".join(str(value) for value in payload.get("goals", []) if value)
+            files = ", ".join(str(value) for value in payload.get("files", []) if value)
+            tools = ", ".join(str(value) for value in payload.get("tools", []) if value)
+            errors = "; ".join(str(value) for value in payload.get("errors", []) if value)
+            status = str(payload.get("status") or "unknown")
+            agent = str(payload.get("agent") or event.agent_id or "unknown")
+            content = (
+                f"session {session_id}: status={status}; agent={agent}; "
+                f"goals={goals or 'none'}; files={files or 'none'}; "
+                f"tools={tools or 'none'}; errors={errors or 'none'}"
+            )
+            items.append(
+                semantic.make_item(
+                    id=f"session:{session_id}",
+                    content=content,
+                    tags={"kind": "session", "session_id": session_id, "status": status, "agent": agent},
+                    timestamp=event.created_at,
+                    importance_score=0.8 if errors else 0.65,
+                    source_event_ids=[event.id],
+                )
+            )
+        return items
+
+    def _goal_items(self, events: list[EventRead], semantic: SemanticMemory) -> list[MemoryItem]:
+        items: list[MemoryItem] = []
+        for event in canonical_event_sort(events):
+            if event.type != EventType.GOAL_SET.value or event.payload.get("task_id"):
+                continue
+            goal = event.payload.get("goal") or event.payload.get("description") or event.payload.get("summary")
+            if not isinstance(goal, str) or not goal:
+                continue
+            items.append(
+                semantic.make_item(
+                    id=f"goal:{event.id}",
+                    content=f"goal: {goal}; agent={event.agent_id or 'unknown'}",
+                    tags={"kind": "goal", "status": str(event.payload.get("status") or "active")},
+                    timestamp=event.created_at,
+                    importance_score=0.7,
+                    source_event_ids=[event.id],
+                )
+            )
         return items
 
     def _task_summary(self, task_id: str, events: list[EventRead]) -> str:

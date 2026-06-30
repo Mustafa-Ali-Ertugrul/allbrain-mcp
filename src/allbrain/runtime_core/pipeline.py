@@ -82,8 +82,8 @@ class SystemDecisionPipeline:
         enable_uncertainty: bool = False,
         enable_information_seeking: bool = False,
     ) -> dict[str, Any]:
-        if execute_mode not in {"event_only", "mock_runtime"}:
-            raise ValueError("execute_mode must be 'event_only' or 'mock_runtime'")
+        if execute_mode not in {"event_only", "mock_runtime", "queued_runtime"}:
+            raise ValueError("execute_mode must be 'event_only', 'mock_runtime', or 'queued_runtime'")
         if not 0.0 <= risk_threshold <= 1.0:
             raise ValueError("risk_threshold must be between 0.0 and 1.0")
         if not 0.0 <= regret_threshold <= 1.0:
