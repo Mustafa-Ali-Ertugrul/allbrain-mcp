@@ -17,8 +17,10 @@ LEASE_RECOVER_BATCH_SIZE = 100
 """Number of expired leases to recover in a single batch."""
 
 # Snapshot trigger
-DEFAULT_AUTO_SNAPSHOT_THRESHOLD = 100
-"""Default semantic event count before auto-snapshot is triggered."""
+DEFAULT_AUTO_SNAPSHOT_THRESHOLD = 50
+"""Default snapshot weight threshold before auto-snapshot is triggered.
+Lower threshold (50 vs 100) ensures snapshots are created more frequently,
+improving observability and reducing snapshot-build latency."""
 
 MIN_SNAPSHOT_EVENT_COUNT = 10
 """Minimum semantic events required before considering snapshot."""
