@@ -11,6 +11,15 @@ from uuid6 import uuid7
 from allbrain.agents.queue import QueueItem, TaskQueue
 from allbrain.reliability.idempotency import IdempotencyKeyBuilder
 
+# Optional real Redis client
+try:
+    import redis.asyncio as aioredis
+
+    HAS_REDIS = True
+except ImportError:
+    aioredis = None  # type: ignore[assignment]
+    HAS_REDIS = False
+
 
 @dataclass
 class _StoredItem:
@@ -31,9 +40,10 @@ class RedisQueueStore:
 class RedisTaskQueue(TaskQueue):
     """Lease-aware Redis queue adapter.
 
-    Sprint 14 keeps external Redis optional. When no Redis client is supplied,
-    this class uses a deterministic local store with Redis-like semantics so
-    recovery and duplicate-delivery behavior can be tested without services.
+    When a `redis_url` is supplied and the `redis` package is installed
+    (`pip install allbrain-mcp[distributed]`), this adapter connects to a real
+    Redis instance.  Otherwise it falls back to an in-memory simulation so that
+    offline / chaos tests work without a broker.
     """
 
     def __init__(
@@ -43,14 +53,43 @@ class RedisTaskQueue(TaskQueue):
         lease_ttl_seconds: int = 60,
         max_attempts: int = 3,
         store: RedisQueueStore | None = None,
+        redis_url: str | None = None,
     ) -> None:
         self.worker_id = worker_id
         self.lease_ttl_seconds = lease_ttl_seconds
         self.max_attempts = max_attempts
-        self.store = store or RedisQueueStore()
         self._key_builder = IdempotencyKeyBuilder()
+        self._redis_url = redis_url
+        self._redis_client: aioredis.Redis | None = None  # type: ignore[arg-type]
+
+        # Use real Redis when possible, otherwise fall back to local simulation.
+        if redis_url and HAS_REDIS:
+            self._use_real = True
+            self.store: RedisQueueStore | None = None
+        else:
+            self._use_real = False
+            self.store = store or RedisQueueStore()
+
+    async def _get_redis(self) -> aioredis.Redis | None:  # type: ignore[valid-type]
+        if self._redis_client is None and self._redis_url and HAS_REDIS:
+            self._redis_client = await aioredis.from_url(self._redis_url)  # type: ignore[union-attr]
+        return self._redis_client
 
     async def enqueue(self, item: QueueItem) -> None:
+        if self._use_real:
+            client = await self._get_redis()
+            if client:
+                key = str(
+                    item.metadata.get("idempotency_key")
+                    or self._key_builder.queue_item_key(item)
+                )
+                await client.hset(
+                    f"queue:{key}",
+                    mapping={"state": "queued", "payload": item.model_dump_json()},
+                )
+                await client.rpush("queue:order", key)
+                return
+        # Fallback to local simulation
         key = str(item.metadata.get("idempotency_key") or self._key_builder.queue_item_key(item))
         existing = self.store.records.get(key)
         if existing and existing.state in {"queued", "leased", "completed"}:
@@ -60,6 +99,26 @@ class RedisTaskQueue(TaskQueue):
         self.store.order.append(key)
 
     async def dequeue(self, timeout: float | None = None) -> QueueItem | None:
+        if self._use_real:
+            client = await self._get_redis()
+            if client:
+                # Simplified real-redis dequeue: pop from queue:order
+                while True:
+                    key = await client.lpop("queue:order")
+                    if key is None:
+                        return None
+                    key = key.decode()
+                    data = await client.hgetall(f"queue:{key}")
+                    if not data:
+                        continue
+                    state = data.get(b"state", b"").decode()
+                    if state != "queued":
+                        continue
+                    await client.hset(f"queue:{key}", "state", "leased")
+                    from allbrain.models.schemas import ToolResult
+
+                    return QueueItem.model_validate_json(data[b"payload"])
+        # Fallback
         deadline = None if timeout is None else _now() + timedelta(seconds=timeout)
         while True:
             await self.recover_expired()
@@ -85,11 +144,24 @@ class RedisTaskQueue(TaskQueue):
         return None
 
     async def ack(self, item: QueueItem) -> None:
+        if self._use_real:
+            client = await self._get_redis()
+            if client:
+                key = _key(item)
+                await client.hset(f"queue:{key}", "state", "completed")
+                return
         key = _key(item)
         if key in self.store.records:
             self.store.records[key].state = "completed"
 
     async def nack(self, item: QueueItem, *, requeue: bool = True, reason: str | None = None) -> None:
+        if self._use_real:
+            client = await self._get_redis()
+            if client and requeue:
+                key = _key(item)
+                await client.hset(f"queue:{key}", "state", "queued")
+                await client.rpush("queue:order", key)
+            return
         key = _key(item)
         record = self.store.records.get(key)
         if not record:
@@ -125,7 +197,13 @@ class RedisTaskQueue(TaskQueue):
         return self.qsize() == 0
 
     def capabilities(self) -> dict[str, object]:
-        return {"backend": "redis", "persistent": True, "lease_aware": True, "distributed_ready": True, "available": True}
+        cap: dict[str, object] = {"backend": "redis", "persistent": True, "lease_aware": True, "available": True}
+        if self._use_real:
+            cap["distributed_ready"] = True
+        else:
+            cap["distributed_ready"] = False
+            cap["simulation"] = True
+        return cap
 
 
 def _key(item: QueueItem) -> str:

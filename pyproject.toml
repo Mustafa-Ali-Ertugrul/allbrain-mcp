@@ -17,6 +17,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+distributed = [
+    "redis>=5.0.0,<6.0",
+    "aio-pika>=9.0.0,<10.0",
+]
 dev = [
     "bandit>=1.8.0",
     "pytest>=8.0.0",

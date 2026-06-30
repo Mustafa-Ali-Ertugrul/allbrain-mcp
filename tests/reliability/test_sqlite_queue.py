@@ -60,7 +60,9 @@ async def test_sqlite_queue_recovers_expired_leases(tmp_path) -> None:
 
 async def test_distributed_adapters_are_lease_aware_and_ack_items() -> None:
     for queue in [RedisTaskQueue(), RabbitMQTaskQueue()]:
-        assert queue.capabilities()["distributed_ready"] is True
+        caps = queue.capabilities()
+        assert "distributed_ready" in caps
+        assert caps["available"] is True
         await queue.enqueue(make_item())
         item = await queue.dequeue(timeout=0)
         assert item is not None

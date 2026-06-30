@@ -195,8 +195,13 @@ class TestLearnEnoughEvents:
             events.extend([obs, sim])
 
         model.learn(events)
-        state = model.observe()
-        result = model.simulate("deploy", state)
+        # Use a clean state (no git_dirty) to isolate the learned-prediction test
+        # from any real git-dirtiness in the working tree.
+        clean_state = WorldState(
+            timestamp=datetime.now(timezone.utc),
+            resources={"internet": True},
+        )
+        result = model.simulate("deploy", clean_state)
 
         # Prior Beta(1,1) + 3 × (success_weight=0.8, failure_weight=0.2)
         # α = 1 + 2.4 = 3.4,  β = 1 + 0.6 = 1.6
