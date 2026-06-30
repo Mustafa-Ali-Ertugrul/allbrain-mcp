@@ -64,8 +64,7 @@ class HistoryRepairer:
         imported_events = 0
         with open_session(self.engine) as target:
             known_event_ids = {
-                str(value[0] if isinstance(value, tuple) else value)
-                for value in target.exec(select(Event.id)).all()
+                str(value[0] if isinstance(value, tuple) else value) for value in target.exec(select(Event.id)).all()
             }
             for source_path in sources:
                 if not source_path.exists() or source_path.resolve() == self.target_path.resolve():
@@ -129,7 +128,7 @@ class HistoryRepairer:
                         target.add(
                             Event(
                                 id=row["id"],
-                                project_id=project_map[int(row["project_id"])] ,
+                                project_id=project_map[int(row["project_id"])],
                                 session_id=session_map[int(row["session_id"])],
                                 agent_id=row["agent_id"] if "agent_id" in event_columns else None,
                                 type=row["type"],
@@ -161,9 +160,7 @@ class HistoryRepairer:
         for session in active:
             heartbeat = session.last_heartbeat_at
             comparable = (
-                heartbeat.replace(tzinfo=UTC)
-                if heartbeat is not None and heartbeat.tzinfo is None
-                else heartbeat
+                heartbeat.replace(tzinfo=UTC) if heartbeat is not None and heartbeat.tzinfo is None else heartbeat
             )
             if comparable is not None and comparable >= cutoff:
                 counts["fresh_active_skipped"] += 1

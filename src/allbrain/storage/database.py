@@ -59,12 +59,8 @@ def ensure_session_lifecycle_columns(engine: Engine) -> None:
         for name, sql_type in columns.items():
             if name not in existing:
                 conn.exec_driver_sql(f"ALTER TABLE session ADD COLUMN {name} {sql_type}")
-        conn.exec_driver_sql(
-            "CREATE INDEX IF NOT EXISTS ix_session_server_instance_id ON session (server_instance_id)"
-        )
-        conn.exec_driver_sql(
-            "CREATE INDEX IF NOT EXISTS ix_session_last_heartbeat_at ON session (last_heartbeat_at)"
-        )
+        conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_session_server_instance_id ON session (server_instance_id)")
+        conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_session_last_heartbeat_at ON session (last_heartbeat_at)")
 
 
 def open_session(engine: Engine) -> Session:
