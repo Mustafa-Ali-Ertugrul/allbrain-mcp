@@ -1,4 +1,4 @@
-﻿{
+{
   "mcpServers": {
     "allbrain": {
       "command": "uv",
@@ -11,7 +11,7 @@
         "--agent",
         "claude-code",
         "--db-path",
-        "C:/Users/Ali/.allbrain/allbrain.db"
+        "C:/ABMCP/.allbrain.db"
       ],
       "cwd": ".",
       "env": {},

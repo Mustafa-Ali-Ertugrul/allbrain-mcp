@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "allbrain": {
@@ -13,7 +13,7 @@
         "--agent",
         "opencode",
         "--db-path",
-        "C:/Users/Ali/.allbrain/allbrain.db"
+        "C:/ABMCP/.allbrain.db"
       ],
       "cwd": ".",
       "enabled": true,

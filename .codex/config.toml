@@ -1,4 +1,4 @@
-﻿[mcp_servers.allbrain]
+[mcp_servers.allbrain]
 command = "uv"
 args = [
     "run",
@@ -9,7 +9,7 @@ args = [
     "--agent",
     "codex",
     "--db-path",
-    "C:/Users/Ali/.allbrain/allbrain.db",
+    "C:/ABMCP/.allbrain.db",
 ]
 cwd = "."
 startup_timeout_sec = 20
