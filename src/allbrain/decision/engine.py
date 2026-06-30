@@ -113,7 +113,6 @@ class DecisionEngine:
 
     @staticmethod
     def _validate_context(ctx: DecisionContext) -> None:
-        required = {"agent_id", "task_type"}
         if not ctx.agent_id or not ctx.task_type:
             raise ValueError("DecisionContext must have agent_id and task_type")
 

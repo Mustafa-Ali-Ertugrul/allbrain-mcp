@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -73,10 +74,8 @@ class WorkerPool:
                 in_flight = self._in_flight
             if in_flight == 0 and self.queue.empty():
                 return
-            try:
+            with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(self._idle_event.wait(), timeout=0.5)
-            except TimeoutError:
-                pass
 
     def stats(self) -> list[WorkerStats]:
         return list(self._stats)

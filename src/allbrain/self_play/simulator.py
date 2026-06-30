@@ -31,10 +31,7 @@ class Simulator:
         gap = abs(score_a - score_b)
         confidence = min(1.0, max(0.05, gap * 2.0))
 
-        if score_a >= score_b:
-            winner = policy_a
-        else:
-            winner = policy_b
+        winner = policy_a if score_a >= score_b else policy_b
 
         return MatchResult(
             policy_a=policy_a,

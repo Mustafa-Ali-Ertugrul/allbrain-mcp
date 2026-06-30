@@ -63,7 +63,7 @@ def validate_forecast(p: dict) -> None:
         try:
             v = int(v)
         except (TypeError, ValueError):
-            raise ValueError("horizon must be int")
+            raise ValueError("horizon must be int") from None
 
 
 def make_drift_payload(

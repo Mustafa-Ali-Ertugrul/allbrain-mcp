@@ -46,17 +46,16 @@ class MetaPolicyManager:
         )
 
         if enable_drift_detection and should_snapshot(self._policy_state):
-            if self._snapshot:
-                if detect_policy_drift(self._snapshot, self._policy_state):
-                    self._policy_state = PolicyState(
-                        mode_stats=self._snapshot.mode_stats,
-                        exploration_rate=self._snapshot.exploration_rate,
-                        temperature=self._snapshot.temperature,
-                        last_updated=self._policy_state.last_updated,
-                        decision_count=self._policy_state.decision_count,
-                        drift_detected=True,
-                        snapshot_id=str(self._snapshot.decision_count),
-                    )
+            if self._snapshot and detect_policy_drift(self._snapshot, self._policy_state):
+                self._policy_state = PolicyState(
+                    mode_stats=self._snapshot.mode_stats,
+                    exploration_rate=self._snapshot.exploration_rate,
+                    temperature=self._snapshot.temperature,
+                    last_updated=self._policy_state.last_updated,
+                    decision_count=self._policy_state.decision_count,
+                    drift_detected=True,
+                    snapshot_id=str(self._snapshot.decision_count),
+                )
             self._snapshot = self._policy_state
 
         return mode

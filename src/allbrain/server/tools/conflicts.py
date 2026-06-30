@@ -29,7 +29,6 @@ def detect_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ConflictInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         conflicts = ConflictDetector().detect(events, threshold=data.threshold)
         audit_tool_call(
@@ -52,7 +51,6 @@ def resolve_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ConflictInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         conflicts = ConflictDetector().detect(events, threshold=data.threshold)
         agent_view = ParallelContextBuilder().build_agent_view(events)

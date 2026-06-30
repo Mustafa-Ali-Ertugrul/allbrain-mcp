@@ -134,17 +134,17 @@ class DependencyEngine:
         return result
 
     def _find_cycle(self, graph: TaskGraph) -> list[str] | None:
-        WHITE, GRAY, BLACK = 0, 1, 2
-        color: dict[str, int] = {nid: WHITE for nid in graph.nodes}
+        white, gray, black = 0, 1, 2
+        color: dict[str, int] = {nid: white for nid in graph.nodes}
         parent: dict[str, str | None] = {nid: None for nid in graph.nodes}
         adj: dict[str, list[str]] = {nid: [] for nid in graph.nodes}
         for edge in graph.depends_on_edges():
             adj[edge.from_id].append(edge.to_id)
 
         def dfs(node_id: str) -> list[str] | None:
-            color[node_id] = GRAY
+            color[node_id] = gray
             for succ in adj[node_id]:
-                if color[succ] == GRAY:
+                if color[succ] == gray:
                     cycle: list[str] = [succ]
                     cur = node_id
                     while cur != succ:
@@ -153,16 +153,16 @@ class DependencyEngine:
                     cycle.append(succ)
                     cycle.reverse()
                     return cycle
-                if color[succ] == WHITE:
+                if color[succ] == white:
                     parent[succ] = node_id
                     found = dfs(succ)
                     if found:
                         return found
-            color[node_id] = BLACK
+            color[node_id] = black
             return None
 
         for nid in sorted(graph.nodes):
-            if color[nid] == WHITE:
+            if color[nid] == white:
                 cycle = dfs(nid)
                 if cycle:
                     return cycle

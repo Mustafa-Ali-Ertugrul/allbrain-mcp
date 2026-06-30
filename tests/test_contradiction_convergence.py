@@ -54,7 +54,7 @@ def test_contradiction_convergence_no_checkpoint():
     That divergence is now impossible because both views consume only
     the CONTRADICTION_DETECTED stream.
     """
-    conflicting_intents = [
+    [
         _make_intent("i1", "codex", "JWT refactor", "task_started", ["auth.py"]),
         _make_intent("i2", "claude", "Auth cleanup", "task_started", ["auth.py"]),
     ]

@@ -87,8 +87,6 @@ def test_internal_error_masked(tmp_path: Path, monkeypatch) -> None:
     """Internal (non-ValidationError, non-UserInputError) must be masked."""
     context = make_context(tmp_path)
 
-    original = context.repository.append_event
-
     def _broken(*args: object, **kwargs: object) -> object:
         raise RuntimeError("DB connection lost")
 
@@ -103,8 +101,6 @@ def test_internal_error_masked(tmp_path: Path, monkeypatch) -> None:
 def test_internal_error_path_not_leaked(tmp_path: Path, monkeypatch) -> None:
     """Internal error must NOT leak filesystem paths."""
     context = make_context(tmp_path)
-
-    original = context.repository.append_event
 
     def _broken(*args: object, **kwargs: object) -> object:
         raise RuntimeError("/home/user/secret_project/db.sqlite not found")

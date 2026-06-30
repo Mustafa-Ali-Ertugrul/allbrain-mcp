@@ -317,7 +317,7 @@ def test_workflow_engine_create_workflow_detects_cycle() -> None:
                 {"from": "n_b", "to": "n_a"},
             ],
         )
-        assert False, "Expected ValueError"
+        raise AssertionError("Expected ValueError")
     except ValueError as exc:
         assert "cycle" in str(exc).lower() or "invalid" in str(exc).lower()
 

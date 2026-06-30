@@ -58,8 +58,8 @@ class TestQualityGate:
         ls = c.splitlines()
         inh = False
         forb = [r"\bCapabilityManager\(", r"\bCapabilityReducer\("]
-        for n, l in enumerate(ls, 1):
-            s = l.strip()
+        for n, line in enumerate(ls, 1):
+            s = line.strip()
             if s.startswith("def _read_capability_score"):
                 inh = True
                 continue
@@ -68,7 +68,7 @@ class TestQualityGate:
             if inh:
                 continue
             for p in forb:
-                assert not re.search(p, l), "revision/manager.py:" + str(n) + " contains " + repr(p)
+                assert not re.search(p, line), "revision/manager.py:" + str(n) + " contains " + repr(p)
 
     def test_selection_score_unchanged(self):
         from allbrain.routing.scorer import extended_selection_score, selection_score

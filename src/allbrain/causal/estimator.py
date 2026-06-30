@@ -53,10 +53,7 @@ def _normalized_outcomes(
             continue
 
         telemetry = payload.get("telemetry_score") or payload.get("runtime_score")
-        if isinstance(telemetry, (int, float)):
-            ctx_factor = max(0.3, min(1.0, float(telemetry) * 2.0))
-        else:
-            ctx_factor = 0.5
+        ctx_factor = max(0.3, min(1.0, float(telemetry) * 2.0)) if isinstance(telemetry, (int, float)) else 0.5
 
         raw_score = max(0.0, min(1.0, float(score)))
         scores.append(raw_score * ctx_factor)

@@ -56,14 +56,11 @@ class MetaEvaluator:
 
         mean_s = sum(scores) / n
         mean_d = sum(deltas) / n
-        cov = sum((s - mean_s) * (d - mean_d) for s, d in zip(scores, deltas)) / n
+        cov = sum((s - mean_s) * (d - mean_d) for s, d in zip(scores, deltas, strict=False)) / n
         var_s = sum((s - mean_s) ** 2 for s in scores) / n
         var_d = sum((d - mean_d) ** 2 for d in deltas) / n
 
-        if var_s < 1e-6 or var_d < 1e-6:
-            accuracy = 0.5
-        else:
-            accuracy = max(-1.0, min(1.0, cov / ((var_s * var_d) ** 0.5)))
+        accuracy = 0.5 if var_s < 1e-06 or var_d < 1e-06 else max(-1.0, min(1.0, cov / (var_s * var_d) ** 0.5))
 
         bias = mean_s - mean_d if mean_s > 0 else 0.0
 

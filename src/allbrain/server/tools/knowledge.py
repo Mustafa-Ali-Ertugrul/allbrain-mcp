@@ -192,7 +192,6 @@ def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = QueryBeliefInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         try:
             events = context.repository.list_events(
                 project_path=context.project_path, limit=data.limit, session_id=bound_session_id
@@ -237,7 +236,6 @@ def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> T
     try:
         data = EstimateInformationGainV2Input.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         try:
             action_enum = InformationAction(data.action)
         except ValueError:
@@ -250,7 +248,7 @@ def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> T
             events = []
         manager = BeliefManager(prior_alpha=data.prior_alpha, prior_beta=data.prior_beta)
         belief = manager.query(events, context_key=data.context_key)
-        base = ACTION_VOI_TABLE.get(action_enum.value, {"gain": 0.0, "cost": 0.0})
+        ACTION_VOI_TABLE.get(action_enum.value, {"gain": 0.0, "cost": 0.0})
         evaluator = InformationSeekingEvaluator()
         gain, cost, voi = evaluator.evaluate(action_enum, [], belief=belief)
         rationale = (

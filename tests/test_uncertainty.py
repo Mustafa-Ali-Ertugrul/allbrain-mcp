@@ -149,11 +149,13 @@ def test_u9_manager_integration() -> None:
 
 
 def test_u10_pydantic_validation() -> None:
-    with pytest.raises(Exception):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
         ConfidenceComponent(name="x", score=1.5)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         KnowledgeGap(topic="x", severity=-0.1, description="x", recoverable=True)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         UncertaintyEstimate(
             confidence=1.5,
             uncertainty=0.0,

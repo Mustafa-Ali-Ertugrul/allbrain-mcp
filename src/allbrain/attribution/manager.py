@@ -39,10 +39,7 @@ class AttributionManager:
         ordered = canonical_event_sort(events)
         event_ids = [str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")]
 
-        if signal_rewards is None:
-            signal_rewards = initial_signal_rewards()
-        else:
-            signal_rewards = dict(signal_rewards)
+        signal_rewards = initial_signal_rewards() if signal_rewards is None else dict(signal_rewards)
         if signal_counts is None:
             signal_counts = initial_signal_counts()
 

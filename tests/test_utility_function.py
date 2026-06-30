@@ -30,7 +30,7 @@ class TestUtilityFunction:
     def test_safety_fail_gives_negative_inf(self):
         s = StrategyStats("memory_corruption", "rs", "rl", 10, 2, 8, 0.2, 0.2)
         result = Objective.compute("memory_corruption", "rl", s, 0.2, 3)
-        store = ObjectiveStore()
+        ObjectiveStore()
         w = ObjectiveWeights("memory_corruption")
         u = UtilityFunction.compute(result, w, "p1", "rl")
         assert not u.safety_pass

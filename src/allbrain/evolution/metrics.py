@@ -11,7 +11,7 @@ class LearningMetrics:
     def build(self, events: list[EventRead]) -> dict[str, Any]:
         counts = Counter(event.type for event in events)
         learning = OrganizationalLearning().learn(events)
-        recommendations = counts["recommendation_generated"]
+        counts["recommendation_generated"]
         applied = counts["recommendation_applied"]
         rejected = counts["recommendation_rejected"]
         outcomes = applied + rejected

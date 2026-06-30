@@ -103,7 +103,7 @@ def _diverse_top_k(
     seen_clusters: set[str] = set()
     seen_clusters.add(actual_cluster)
 
-    for aid, mean, cluster in candidates:
+    for aid, _mean, cluster in candidates:
         if len(selected) >= COUNTERFACTUAL_TOP_K:
             break
         if len(seen_clusters) < CAUSAL_DIVERSITY_CLUSTERS:

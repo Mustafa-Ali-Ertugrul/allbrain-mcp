@@ -671,7 +671,7 @@ async def test_e2e_workflow_through_runtime() -> None:
     assert result1.output
 
     # Step 3: complete n1, schedule n2
-    step2 = engine.step(
+    engine.step(
         graph,
         candidate_agents=["mock-agent"],
         metrics=metrics,

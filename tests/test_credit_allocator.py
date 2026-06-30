@@ -10,7 +10,7 @@ from allbrain.attribution import (
 class TestCreditAllocator:
     def test_proportional_split(self):
         allocs = allocate_credit(1.0, {"a": 0.5, "b": 0.5})
-        total = sum(a.contribution for a in allocs)
+        sum(a.contribution for a in allocs)
         assert len(allocs) == 2
 
     def test_floor_redistribution(self):
@@ -21,7 +21,7 @@ class TestCreditAllocator:
     def test_decay_stability(self):
         a1 = allocate_credit(0.5, {"capability": 0.6, "learning": 0.4})
         a2 = allocate_credit(0.5, {"capability": 0.6, "learning": 0.4})
-        for alloc1, alloc2 in zip(a1, a2):
+        for alloc1, alloc2 in zip(a1, a2, strict=False):
             assert alloc1.signal == alloc2.signal
 
     def test_negative_rewards(self):

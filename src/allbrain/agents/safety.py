@@ -15,15 +15,15 @@ class SafetyError(Exception):
     """Raised when a safety check fails before/during/after execution."""
 
 
-class CostCeilingExceeded(SafetyError):
+class CostCeilingExceeded(SafetyError):  # noqa: N818
     """Raised when the cost ceiling is exceeded."""
 
 
-class RateLimitExceeded(SafetyError):
+class RateLimitExceeded(SafetyError):  # noqa: N818
     """Raised when rate limit is hit."""
 
 
-class InputRejected(SafetyError):
+class InputRejected(SafetyError):  # noqa: N818
     """Raised when input fails sanitization."""
 
 
@@ -111,10 +111,7 @@ class SafetyWrapper:
         result = self.adapter.execute(task=clean_task, context=context)
 
         # 6. Track cost
-        if result.metadata:
-            cost = result.metadata.get("cost_usd", estimated)
-        else:
-            cost = estimated
+        cost = result.metadata.get("cost_usd", estimated) if result.metadata else estimated
         self.state.workflow_cost += float(cost)
         self.state.call_timestamps.append(time.time())
 

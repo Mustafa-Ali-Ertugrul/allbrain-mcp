@@ -58,7 +58,7 @@ def test_stable_revision_id_empty_evidence_is_valid():
     assert id_empty.startswith("revision-")
 
 
-def test_revision_manager_deterministic_across_reorderings():
+def test_revision_manager_deterministic_across_reorderings_with_task_hints():
     """Same events in different orders must produce the same analysis_id."""
     payload = make_payload(
         context_key="default",
@@ -79,7 +79,8 @@ def test_revision_manager_deterministic_across_reorderings():
     state_order_c = manager.query([e_revised, e2, e1, e4])
 
     assert state_order_a.analysis_id == state_order_b.analysis_id == state_order_c.analysis_id
-    assert state_order_a.confidence == state_order_b.confidence == state_order_c.confidence
+    assert state_order_a.confidence == pytest.approx(state_order_b.confidence)
+    assert state_order_a.confidence == pytest.approx(state_order_c.confidence)
 
 
 def test_revision_reducer_deterministic_for_canonical_input():

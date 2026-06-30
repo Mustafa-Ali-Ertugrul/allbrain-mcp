@@ -58,8 +58,8 @@ class TestQualityGate:
         lines = c.splitlines()
         inh = False
         forb = [r"\bRoutingManager\(", r"\bRoutingReducer\("]
-        for n, l in enumerate(lines, 1):
-            s = l.strip()
+        for n, line in enumerate(lines, 1):
+            s = line.strip()
             if s.startswith("def _read_selected_agent_score"):
                 inh = True
                 continue
@@ -68,4 +68,4 @@ class TestQualityGate:
             if inh:
                 continue
             for p in forb:
-                assert not re.search(p, l), "revision/manager.py:" + str(n) + " contains " + repr(p)
+                assert not re.search(p, line), "revision/manager.py:" + str(n) + " contains " + repr(p)

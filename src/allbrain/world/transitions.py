@@ -56,7 +56,7 @@ class LearnedTransitionBridge:
             return self._fallback.predict(state, action)
 
         # 4. Monte Carlo sampling
-        env_states, probs = zip(*dist)
+        env_states, probs = zip(*dist, strict=False)
         chosen_env: dict[str, str] = _random.choices(env_states, weights=probs, k=1)[0]
 
         # 5. Merge chosen environment into current state (same semantics as

@@ -2,24 +2,12 @@ from __future__ import annotations
 
 import logging
 
-logger = logging.getLogger(__name__)
-
 from fastmcp import FastMCP
 
 from allbrain.server.context import BrainContext
 from allbrain.server.tools import register_all_tools
 
-
-def create_mcp_server(context: BrainContext) -> FastMCP:
-    mcp = FastMCP("AllBrain MCP")
-    register_all_tools(mcp, context)
-    return mcp
-
-
-# ---------------------------------------------------------------------------
 # Re-exports of all *_impl functions for backward compatibility with tests.
-# ---------------------------------------------------------------------------
-
 from allbrain.server.tools.conflicts import (
     detect_conflicts_impl,
     resolve_conflicts_impl,
@@ -97,3 +85,11 @@ from allbrain.server.tools.world import (
     observe_world_impl,
     simulate_action_impl,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def create_mcp_server(context: BrainContext) -> FastMCP:
+    mcp = FastMCP("AllBrain MCP")
+    register_all_tools(mcp, context)
+    return mcp

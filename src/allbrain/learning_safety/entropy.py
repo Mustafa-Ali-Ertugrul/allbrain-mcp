@@ -70,9 +70,9 @@ class EntropyCalculator:
                 cycle_count=0,
             )
         probs = [c / total for c in counts.values()]
-        H = shannon_entropy(probs)
+        h = shannon_entropy(probs)
         return EntropyState(
-            entropy=H,
+            entropy=h,
             n_strategies=len(counts),
             epsilon_current=0.0,
             cycle_count=0,

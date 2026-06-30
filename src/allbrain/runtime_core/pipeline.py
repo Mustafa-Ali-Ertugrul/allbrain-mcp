@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -237,7 +238,7 @@ class SystemDecisionPipeline:
                 last_event_id = self._transition(
                     machine, publish, RuntimeStatus.BLOCKED, final_decision["reason"], last_event_id
                 )
-                completed = publish(
+                publish(
                     EventType.PIPELINE_RUN_COMPLETED.value,
                     {"status": "BLOCKED", "final_decision": final_decision},
                     caused_by=last_event_id,
@@ -1333,7 +1334,7 @@ class SystemDecisionPipeline:
             events = []
 
         manager = ReputationManager()
-        prior = manager.query(events, agent_id=agent_id)
+        manager.query(events, agent_id=agent_id)
 
         from allbrain.reputation.estimator import reputation_score as compute_score
 
@@ -1453,12 +1454,9 @@ class SystemDecisionPipeline:
         from allbrain.reputation import ReputationManager
 
         ctx = getattr(self, "_context", None)
-        events = []
         if ctx is not None:
-            try:
+            with contextlib.suppress(ImportError):
                 from allbrain.runtime_core.arbitration import ArbitrationBridge
-            except ImportError:
-                pass
 
         vote = VoteRecord(
             agent_id=str(vote_payload.get("agent_id", "")),
@@ -2299,7 +2297,6 @@ class SystemDecisionPipeline:
                     )
                     scored_events.append(we2)
                     ws_items = ws_mgr.get_active_items()
-                episodes_payloads: list = []
                 if enable_episodic:
                     from allbrain.episodic import (
                         EpisodicManager,
@@ -2348,8 +2345,7 @@ class SystemDecisionPipeline:
                             caused_by=req.id,
                         )
                         scored_events.append(re)
-                    episodes_payloads = ret_result.get("episodes", [])
-                concepts_payloads: list = []
+                    ret_result.get("episodes", [])
                 if enable_semantic:
                     from allbrain.episodic import Episode
                     from allbrain.semantic import (
@@ -2397,7 +2393,7 @@ class SystemDecisionPipeline:
                             )
                             scored_events.append(fe)
                     sem_ret = sem_mgr.retrieve(tuple(ws_item_ids), limit=5)
-                    concepts_payloads = sem_ret.get("concepts", [])
+                    sem_ret.get("concepts", [])
             elif enable_decision_engine:
                 from allbrain.decision import DecisionManager, make_decision_payload
 
@@ -2453,9 +2449,9 @@ class SystemDecisionPipeline:
                 drift_score = float(dyn_state.get("drift", {}).get("drift_score", 0.0))
                 trend_label = str(dyn_state.get("trend", {}).get("label", "stable"))
                 forecast_score = float(dyn_state.get("forecast", {}).get("predicted_capability", 0.0))
-                from allbrain.causal import CausalManager as CMS
+                from allbrain.causal import CausalManager
 
-                causal_mgr = CMS()
+                causal_mgr = CausalManager()
                 causal_state = causal_mgr.query(events, agent_id=aid, task_type=task_type)
                 impacts = causal_state.get("impacts", {})
                 impact_score = 0.0

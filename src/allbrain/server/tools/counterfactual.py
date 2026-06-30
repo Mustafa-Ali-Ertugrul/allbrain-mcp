@@ -32,7 +32,6 @@ def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolRe
     try:
         data = CounterfactualInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         world_model = WorldModel()
         engine = CounterfactualEngine()
         current_state = world_model.observe()

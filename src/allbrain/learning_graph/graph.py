@@ -40,7 +40,7 @@ class LearningGraph:
         return dict(self._nodes)
 
     def validate_topology(self) -> bool:
-        for nid, node in self._nodes.items():
+        for _nid, node in self._nodes.items():
             for dep in node.dependencies:
                 if dep not in self._nodes:
                     return False

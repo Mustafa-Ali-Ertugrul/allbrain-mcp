@@ -13,7 +13,7 @@ class TestDriftGuard:
     def test_no_event_until_window_full(self):
         guard = DriftGuard(window_size=4, drift_threshold=0.30)
         guard.configure("timeout", "retry_spike")
-        for i in range(3):
+        for _i in range(3):
             ev = guard.record("A", 0.5)
             assert ev is None
 

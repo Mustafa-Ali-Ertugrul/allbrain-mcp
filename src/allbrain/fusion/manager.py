@@ -27,7 +27,7 @@ class FusionManager:
         task_type: str = "default",
     ) -> dict[str, Any]:
         ordered = canonical_event_sort(events)
-        event_ids = [str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")]
+        [str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")]
 
         cap_vals: list[float] = []
         learn_vals: list[float] = []

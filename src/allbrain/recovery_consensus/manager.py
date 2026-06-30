@@ -114,7 +114,7 @@ class RecoveryConsensusManager:
             1 for d in decisions if d["consensus_score"] >= self._arbiter._min_consensus_ratio
         )
 
-        state = RecoveryConsensusState(
+        RecoveryConsensusState(
             candidates=tuple(all_candidates),
             decisions=tuple(self._decision_to_frozen(d) for d in decisions),
             total_decisions=len(decisions),

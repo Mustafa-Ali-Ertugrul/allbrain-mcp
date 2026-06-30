@@ -63,10 +63,10 @@ def calibrate_signals(
     Returns (cap, learn, dyn, causal) normalized values.
     """
     c, _ = normalize_signal(capability_values)
-    l, _ = normalize_signal(learning_values)
+    learn, _ = normalize_signal(learning_values)
     d, _ = normalize_signal(dynamics_values)
     a, _ = normalize_signal(causal_values)
-    return [c], [l], [d], [a]
+    return [c], [learn], [d], [a]
 
 
 def signal_stats(values: list[float]) -> dict[str, float]:

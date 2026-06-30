@@ -1,0 +1,622 @@
+﻿B027 `TaskQueue.ack` is an empty method in an abstract base class, but has no abstract decorator
+  --> src\allbrain\agents\queue.py:56:5
+   |
+54 |           }
+55 |
+56 | /     async def ack(self, item: QueueItem) -> None:
+57 | |         """Optional completion hook for persistent queues."""
+   | |_____________________________________________________________^
+58 |
+59 |       async def nack(self, item: QueueItem, *, requeue: bool = True, reason: str | None = None) -> None:
+   |
+
+B027 `TaskQueue.nack` is an empty method in an abstract base class, but has no abstract decorator
+  --> src\allbrain\agents\queue.py:59:5
+   |
+57 |           """Optional completion hook for persistent queues."""
+58 |
+59 | /     async def nack(self, item: QueueItem, *, requeue: bool = True, reason: str | None = None) -> None:
+60 | |         """Optional failure hook for persistent queues."""
+   | |__________________________________________________________^
+61 |
+62 |       async def renew_lease(self, item: QueueItem) -> None:
+   |
+
+B027 `TaskQueue.renew_lease` is an empty method in an abstract base class, but has no abstract decorator
+  --> src\allbrain\agents\queue.py:62:5
+   |
+60 |           """Optional failure hook for persistent queues."""
+61 |
+62 | /     async def renew_lease(self, item: QueueItem) -> None:
+63 | |         """Optional lease renewal hook for persistent queues."""
+   | |________________________________________________________________^
+64 |
+65 |       async def recover_expired(self) -> int:
+   |
+
+B027 `TaskQueue.close` is an empty method in an abstract base class, but has no abstract decorator
+  --> src\allbrain\agents\queue.py:69:5
+   |
+67 |           return 0
+68 |
+69 | /     async def close(self) -> None:
+70 | |         """Optional cleanup hook."""
+   | |____________________________________^
+   |
+
+N818 Exception name `CostCeilingExceeded` should be named with an Error suffix
+  --> src\allbrain\agents\safety.py:18:7
+   |
+18 | class CostCeilingExceeded(SafetyError):
+   |       ^^^^^^^^^^^^^^^^^^^
+19 |     """Raised when the cost ceiling is exceeded."""
+   |
+
+N818 Exception name `RateLimitExceeded` should be named with an Error suffix
+  --> src\allbrain\agents\safety.py:22:7
+   |
+22 | class RateLimitExceeded(SafetyError):
+   |       ^^^^^^^^^^^^^^^^^
+23 |     """Raised when rate limit is hit."""
+   |
+
+N818 Exception name `InputRejected` should be named with an Error suffix
+  --> src\allbrain\agents\safety.py:26:7
+   |
+26 | class InputRejected(SafetyError):
+   |       ^^^^^^^^^^^^^
+27 |     """Raised when input fails sanitization."""
+   |
+
+B007 Loop control variable `mean` not used within loop body
+   --> src\allbrain\causal\intervention.py:106:14
+    |
+104 |     seen_clusters.add(actual_cluster)
+105 |
+106 |     for aid, mean, cluster in candidates:
+    |              ^^^^
+107 |         if len(selected) >= COUNTERFACTUAL_TOP_K:
+108 |             break
+    |
+help: Rename unused `mean` to `_mean`
+
+B008 Do not perform function call `typer.Option` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+  --> src\allbrain\cli\main.py:27:21
+   |
+25 | @app.command()
+26 | def start(
+27 |     project: Path = typer.Option(Path("."), "--project", "-p", help="Project root to bind."),
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+28 |     agent: str = typer.Option("unknown", "--agent", "-a", help="Agent name for the session."),
+29 |     db_path: Path | None = typer.Option(None, "--db-path", help="SQLite DB path. Defaults to ~/.allbrain/allbrain.db."),
+   |
+
+B008 Do not perform function call `typer.Option` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+  --> src\allbrain\cli\main.py:29:28
+   |
+27 |     project: Path = typer.Option(Path("."), "--project", "-p", help="Project root to bind."),
+28 |     agent: str = typer.Option("unknown", "--agent", "-a", help="Agent name for the session."),
+29 |     db_path: Path | None = typer.Option(None, "--db-path", help="SQLite DB path. Defaults to ~/.allbrain/allbrain.db."),
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+30 | ) -> None:
+31 |     run_mcp_server(project=project, agent=agent, db_path=db_path)
+   |
+
+UP035 `typing.FrozenSet` is deprecated, use `frozenset` instead
+ --> src\allbrain\decision\model.py:5:1
+  |
+3 | from dataclasses import dataclass, field
+4 | from enum import StrEnum
+5 | from typing import FrozenSet
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+6 |
+7 | DECISION_TEMPLATE_VERSION = 1
+  |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+  --> src\allbrain\dynamics\events.py:66:13
+   |
+64 |             v = int(v)
+65 |         except (TypeError, ValueError):
+66 |             raise ValueError("horizon must be int")
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+  --> src\allbrain\fusion\analyzer.py:46:9
+   |
+44 |           eid = str(getattr(event, "id", ""))
+45 |
+46 | /         if et in (EventType.AGENT_CAPABILITY_LEARNED.value, EventType.AGENT_CAPABILITY_DECAYED.value):
+47 | |             if payload.get("agent_id"):
+   | |_______________________________________^
+48 |                   eids_a.add(eid)
+   |
+help: Combine `if` statements using `and`
+
+E741 Ambiguous variable name: `l`
+  --> src\allbrain\fusion\calibration.py:66:5
+   |
+64 |     """
+65 |     c, _ = normalize_signal(capability_values)
+66 |     l, _ = normalize_signal(learning_values)
+   |     ^
+67 |     d, _ = normalize_signal(dynamics_values)
+68 |     a, _ = normalize_signal(causal_values)
+   |
+
+N806 Variable `H` in function should be lowercase
+  --> src\allbrain\learning_safety\entropy.py:73:9
+   |
+71 |             )
+72 |         probs = [c / total for c in counts.values()]
+73 |         H = shannon_entropy(probs)
+   |         ^
+74 |         return EntropyState(
+75 |             entropy=H,
+   |
+
+N806 Variable `H` in function should be lowercase
+  --> src\allbrain\learning_safety\explorer.py:53:9
+   |
+51 |         total = sum(relevant_counts.values())
+52 |         probs = [c / total for c in relevant_counts.values()] if total > 0 else []
+53 |         H = shannon_entropy(probs) if probs else 0.0
+   |         ^
+54 |
+55 |         if candidates and self._rng.random() < eps:
+   |
+
+N817 CamelCase `PolicyMode` imported as acronym `PM`
+  --> src\allbrain\meta_policy\learner.py:70:44
+   |
+69 | def _default_mode_stats() -> dict[str, ModeStats]:
+70 |     from allbrain.meta_policy.model import PolicyMode as PM
+   |                                            ^^^^^^^^^^^^^^^^
+71 |
+72 |     return {
+   |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> src\allbrain\predictive_failure\manager.py:505:9
+    |
+504 |           # 6. Learning step (after execution, before avoided event)
+505 | /         if mitigation is not None and action is not None:
+506 | |             if self._outcome_tracker is not None and self._learning_engine is not None:
+    | |_______________________________________________________________________________________^
+507 |                   outcome = self._outcome_tracker.measure(
+508 |                       fault_id=fault_id,
+    |
+help: Combine `if` statements using `and`
+
+N814 Camelcase `CausalManager` imported as constant `CMS`
+    --> src\allbrain\runtime_core\pipeline.py:2452:45
+     |
+2450 |                 trend_label = str(dyn_state.get("trend", {}).get("label", "stable"))
+2451 |                 forecast_score = float(dyn_state.get("forecast", {}).get("predicted_capability", 0.0))
+2452 |                 from allbrain.causal import CausalManager as CMS
+     |                                             ^^^^^^^^^^^^^^^^^^^^
+2453 |
+2454 |                 causal_mgr = CMS()
+     |
+
+E402 Module level import not at top of file
+ --> src\allbrain\server\app.py:7:1
+  |
+5 | logger = logging.getLogger(__name__)
+6 |
+7 | from fastmcp import FastMCP
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |
+9 | from allbrain.server.context import BrainContext
+  |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:9:1
+   |
+ 7 | from fastmcp import FastMCP
+ 8 |
+ 9 | from allbrain.server.context import BrainContext
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10 | from allbrain.server.tools import register_all_tools
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:10:1
+   |
+ 9 | from allbrain.server.context import BrainContext
+10 | from allbrain.server.tools import register_all_tools
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:23:1
+   |
+21 |   # ---------------------------------------------------------------------------
+22 |
+23 | / from allbrain.server.tools.conflicts import (
+24 | |     detect_conflicts_impl,
+25 | |     resolve_conflicts_impl,
+26 | | )
+   | |_^
+27 |   from allbrain.server.tools.counterfactual import (
+28 |       generate_counterfactual_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:27:1
+   |
+25 |       resolve_conflicts_impl,
+26 |   )
+27 | / from allbrain.server.tools.counterfactual import (
+28 | |     generate_counterfactual_impl,
+29 | |     rank_alternatives_impl,
+30 | | )
+   | |_^
+31 |   from allbrain.server.tools.events import list_events_impl, save_event_impl
+32 |   from allbrain.server.tools.foresight import (
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:31:1
+   |
+29 |     rank_alternatives_impl,
+30 | )
+31 | from allbrain.server.tools.events import list_events_impl, save_event_impl
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 | from allbrain.server.tools.foresight import (
+33 |     estimate_confidence_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:32:1
+   |
+30 |   )
+31 |   from allbrain.server.tools.events import list_events_impl, save_event_impl
+32 | / from allbrain.server.tools.foresight import (
+33 | |     estimate_confidence_impl,
+34 | |     evaluate_plan_impl,
+35 | |     explain_decision_impl,
+36 | |     generate_future_plans_impl,
+37 | | )
+   | |_^
+38 |   from allbrain.server.tools.git import (
+39 |       get_git_context_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:38:1
+   |
+36 |       generate_future_plans_impl,
+37 |   )
+38 | / from allbrain.server.tools.git import (
+39 | |     get_git_context_impl,
+40 | |     get_git_status_impl,
+41 | |     get_recent_changes_impl,
+42 | | )
+   | |_^
+43 |   from allbrain.server.tools.intents import (
+44 |       detect_contradictions_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:43:1
+   |
+41 |       get_recent_changes_impl,
+42 |   )
+43 | / from allbrain.server.tools.intents import (
+44 | |     detect_contradictions_impl,
+45 | |     extract_intents_impl,
+46 | | )
+   | |_^
+47 |   from allbrain.server.tools.knowledge import (
+48 |       detect_knowledge_gaps_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:47:1
+   |
+45 |       extract_intents_impl,
+46 |   )
+47 | / from allbrain.server.tools.knowledge import (
+48 | |     detect_knowledge_gaps_impl,
+49 | |     estimate_information_gain_impl,
+50 | |     estimate_information_gain_v2_impl,
+51 | |     estimate_uncertainty_impl,
+52 | |     identify_information_needs_impl,
+53 | |     query_belief_impl,
+54 | |     recommend_policy_impl,
+55 | | )
+   | |_^
+56 |   from allbrain.server.tools.memory import (
+57 |       build_memory_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:56:1
+   |
+54 |       recommend_policy_impl,
+55 |   )
+56 | / from allbrain.server.tools.memory import (
+57 | |     build_memory_impl,
+58 | |     retrieve_memory_impl,
+59 | | )
+   | |_^
+60 |   from allbrain.server.tools.observability import (
+61 |       compare_agents_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:60:1
+   |
+58 |       retrieve_memory_impl,
+59 |   )
+60 | / from allbrain.server.tools.observability import (
+61 | |     compare_agents_impl,
+62 | |     get_observability_dashboard_impl,
+63 | |     get_reliability_status_impl,
+64 | |     get_system_metrics_impl,
+65 | |     get_workflow_graph_impl,
+66 | |     get_workflow_trace_impl,
+67 | |     replay_workflow_impl,
+68 | | )
+   | |_^
+69 |   from allbrain.server.tools.orchestrator import (
+70 |       orchestrate_project_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:69:1
+   |
+67 |       replay_workflow_impl,
+68 |   )
+69 | / from allbrain.server.tools.orchestrator import (
+70 | |     orchestrate_project_impl,
+71 | |     run_decision_pipeline_impl,
+72 | | )
+   | |_^
+73 |   from allbrain.server.tools.scenarios import (
+74 |       evaluate_scenarios_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:73:1
+   |
+71 |       run_decision_pipeline_impl,
+72 |   )
+73 | / from allbrain.server.tools.scenarios import (
+74 | |     evaluate_scenarios_impl,
+75 | |     generate_scenarios_impl,
+76 | | )
+   | |_^
+77 |   from allbrain.server.tools.snapshots import (
+78 |       create_snapshot_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:77:1
+   |
+75 |       generate_scenarios_impl,
+76 |   )
+77 | / from allbrain.server.tools.snapshots import (
+78 | |     create_snapshot_impl,
+79 | |     resume_project_impl,
+80 | |     resume_with_intent_impl,
+81 | | )
+   | |_^
+82 |   from allbrain.server.tools.tasks import (
+83 |       add_task_dependency_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:82:1
+   |
+80 |       resume_with_intent_impl,
+81 |   )
+82 | / from allbrain.server.tools.tasks import (
+83 | |     add_task_dependency_impl,
+84 | |     assign_task_impl,
+85 | |     change_task_priority_impl,
+86 | |     create_task_impl,
+87 | |     get_task_graph_impl,
+88 | |     handoff_task_impl,
+89 | | )
+   | |_^
+90 |   from allbrain.server.tools.ui import (
+91 |       get_ui_graph_view_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:90:1
+   |
+88 |       handoff_task_impl,
+89 |   )
+90 | / from allbrain.server.tools.ui import (
+91 | |     get_ui_graph_view_impl,
+92 | |     get_ui_metrics_view_impl,
+93 | |     get_ui_replay_view_impl,
+94 | |     get_ui_trace_view_impl,
+95 | | )
+   | |_^
+96 |   from allbrain.server.tools.world import (
+97 |       observe_world_impl,
+   |
+
+E402 Module level import not at top of file
+  --> src\allbrain\server\app.py:96:1
+   |
+94 |       get_ui_trace_view_impl,
+95 |   )
+96 | / from allbrain.server.tools.world import (
+97 | |     observe_world_impl,
+98 | |     simulate_action_impl,
+99 | | )
+   | |_^
+   |
+
+N806 Variable `WHITE` in function should be lowercase
+   --> src\allbrain\workflow\graph.py:137:9
+    |
+136 |     def _find_cycle(self, graph: TaskGraph) -> list[str] | None:
+137 |         WHITE, GRAY, BLACK = 0, 1, 2
+    |         ^^^^^
+138 |         color: dict[str, int] = {nid: WHITE for nid in graph.nodes}
+139 |         parent: dict[str, str | None] = {nid: None for nid in graph.nodes}
+    |
+
+N806 Variable `GRAY` in function should be lowercase
+   --> src\allbrain\workflow\graph.py:137:16
+    |
+136 |     def _find_cycle(self, graph: TaskGraph) -> list[str] | None:
+137 |         WHITE, GRAY, BLACK = 0, 1, 2
+    |                ^^^^
+138 |         color: dict[str, int] = {nid: WHITE for nid in graph.nodes}
+139 |         parent: dict[str, str | None] = {nid: None for nid in graph.nodes}
+    |
+
+N806 Variable `BLACK` in function should be lowercase
+   --> src\allbrain\workflow\graph.py:137:22
+    |
+136 |     def _find_cycle(self, graph: TaskGraph) -> list[str] | None:
+137 |         WHITE, GRAY, BLACK = 0, 1, 2
+    |                      ^^^^^
+138 |         color: dict[str, int] = {nid: WHITE for nid in graph.nodes}
+139 |         parent: dict[str, str | None] = {nid: None for nid in graph.nodes}
+    |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+  --> src\allbrain\workflow\state_machine.py:48:9
+   |
+46 |               if preds and not all(p.status == WorkflowStatus.COMPLETED for p in preds):
+47 |                   return False, ["Dependencies not met"]
+48 | /         if target == WorkflowStatus.READY and current == WorkflowStatus.FAILED:
+49 | |             if node.retry_count >= node.max_retries:
+   | |____________________________________________________^
+50 |                   return False, ["Retry budget exhausted"]
+51 |           return True, []
+   |
+help: Combine `if` statements using `and`
+
+E741 Ambiguous variable name: `l`
+  --> tests\test_capability_quality_gate.py:61:16
+   |
+59 |         inh = False
+60 |         forb = [r"\bCapabilityManager\(", r"\bCapabilityReducer\("]
+61 |         for n, l in enumerate(ls, 1):
+   |                ^
+62 |             s = l.strip()
+63 |             if s.startswith("def _read_capability_score"):
+   |
+
+B017 Do not assert blind exception: `Exception`
+   --> tests\test_information_seeking.py:279:10
+    |
+278 | def test_pydantic_validation() -> None:
+279 |     with pytest.raises(Exception):
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^
+280 |         InformationNeed(topic="x", expected_gain=1.5, cost=0.0, priority=0.0)
+281 |     with pytest.raises(Exception):
+    |
+
+B017 Do not assert blind exception: `Exception`
+   --> tests\test_information_seeking.py:281:10
+    |
+279 |     with pytest.raises(Exception):
+280 |         InformationNeed(topic="x", expected_gain=1.5, cost=0.0, priority=0.0)
+281 |     with pytest.raises(Exception):
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^
+282 |         InformationPlan(
+283 |             analysis_id="00000000-0000-0000-0000-000000000000",
+    |
+
+N817 CamelCase `ForesightAnalysis` imported as acronym `FA`
+  --> tests\test_meta_reasoning.py:71:43
+   |
+69 | def test_no_evidence_uncertainty_high() -> None:
+70 |     from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, FuturePlan
+71 |     from allbrain.foresight.models import ForesightAnalysis as FA
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^
+72 |
+73 |     empty_plan = FuturePlan(actions=["dummy"])
+   |
+
+F811 Redefinition of unused `test_revision_manager_deterministic_across_reorderings` from line 61
+   --> tests\test_revision_determinism.py:126:5
+    |
+126 | def test_revision_manager_deterministic_across_reorderings():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_revision_manager_deterministic_across_reorderings` redefined here
+127 |     """Manager.query() sorts via canonical_event_sort ΓÇö order-independent."""
+128 |     payload = make_payload(
+    |
+   ::: tests\test_revision_determinism.py:61:5
+    |
+ 61 | def test_revision_manager_deterministic_across_reorderings():
+    |     ------------------------------------------------------ previous definition of `test_revision_manager_deterministic_across_reorderings` here
+ 62 |     """Same events in different orders must produce the same analysis_id."""
+ 63 |     payload = make_payload(
+    |
+help: Remove definition: `test_revision_manager_deterministic_across_reorderings`
+
+B017 Do not assert blind exception: `Exception`
+  --> tests\test_revision_estimator.py:80:10
+   |
+78 | def test_policy_is_frozen():
+79 |     p = RevisionPolicy()
+80 |     with pytest.raises(Exception):
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^
+81 |         p.contradiction_penalty = 0.99  # type: ignore[misc]
+   |
+
+B017 Do not assert blind exception: `Exception`
+  --> tests\test_revision_policy.py:85:10
+   |
+84 |     p = RevisionPolicy()
+85 |     with pytest.raises(Exception):
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^
+86 |         p.contradiction_penalty = 0.99  # type: ignore[misc]
+   |
+
+E741 Ambiguous variable name: `l`
+  --> tests\test_routing_quality_gate.py:61:16
+   |
+59 |         inh = False
+60 |         forb = [r"\bRoutingManager\(", r"\bRoutingReducer\("]
+61 |         for n, l in enumerate(lines, 1):
+   |                ^
+62 |             s = l.strip()
+63 |             if s.startswith("def _read_selected_agent_score"):
+   |
+
+B017 Do not assert blind exception: `Exception`
+   --> tests\test_uncertainty.py:152:10
+    |
+151 | def test_u10_pydantic_validation() -> None:
+152 |     with pytest.raises(Exception):
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^
+153 |         ConfidenceComponent(name="x", score=1.5)
+154 |     with pytest.raises(Exception):
+    |
+
+B017 Do not assert blind exception: `Exception`
+   --> tests\test_uncertainty.py:154:10
+    |
+152 |     with pytest.raises(Exception):
+153 |         ConfidenceComponent(name="x", score=1.5)
+154 |     with pytest.raises(Exception):
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^
+155 |         KnowledgeGap(topic="x", severity=-0.1, description="x", recoverable=True)
+156 |     with pytest.raises(Exception):
+    |
+
+B017 Do not assert blind exception: `Exception`
+   --> tests\test_uncertainty.py:156:10
+    |
+154 |     with pytest.raises(Exception):
+155 |         KnowledgeGap(topic="x", severity=-0.1, description="x", recoverable=True)
+156 |     with pytest.raises(Exception):
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^
+157 |         UncertaintyEstimate(
+158 |             confidence=1.5,
+    |
+
+Found 52 errors.

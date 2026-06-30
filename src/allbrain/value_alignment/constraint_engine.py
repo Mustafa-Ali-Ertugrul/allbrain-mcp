@@ -24,10 +24,7 @@ class ConstraintEngine:
 
         for c in self._constraints:
             val = metrics.get(c.metric, 0.0)
-            if c.name == "safety_min":
-                threshold = safety_threshold
-            else:
-                threshold = c.threshold
+            threshold = safety_threshold if c.name == "safety_min" else c.threshold
             met = val >= threshold
             constraint_results[c.name] = met
             if not met:

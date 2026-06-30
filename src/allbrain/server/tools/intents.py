@@ -28,7 +28,6 @@ def extract_intents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = IntentInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         intents = IntentExtractor().extract(events)
         audit_tool_call(
@@ -53,7 +52,6 @@ def detect_contradictions_impl(context: BrainContext, **kwargs: Any) -> ToolResu
     try:
         data = IntentInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         intents = IntentExtractor().extract(events)
         contradictions = ContradictionDetector().detect(intents)

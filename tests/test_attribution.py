@@ -25,7 +25,7 @@ class TestAttribution:
         assert len(allocs) == 0
 
     def test_cf_confidence_bias(self):
-        allocs_no_cf = allocate_credit(0.8, {"capability": 0.5, "learning": 0.5})
+        allocate_credit(0.8, {"capability": 0.5, "learning": 0.5})
         allocs_cf = allocate_credit(
             0.8, {"capability": 0.5, "learning": 0.5}, cf_scores={"capability": 0.5, "learning": 0.5}
         )

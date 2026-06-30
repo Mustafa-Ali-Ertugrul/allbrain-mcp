@@ -50,7 +50,7 @@ class BeliefReducer:
             return
 
         context_key = _context_key_of(event)
-        bucket = self._contexts.setdefault(context_key, {"successes": 0, "failures": 0, "blocked": 0})
+        self._contexts.setdefault(context_key, {"successes": 0, "failures": 0, "blocked": 0})
 
         if outcome is OutcomeKind.SUCCESS:
             self._bump(context_key, "successes", 1)

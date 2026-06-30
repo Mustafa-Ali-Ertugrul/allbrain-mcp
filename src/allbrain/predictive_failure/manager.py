@@ -359,7 +359,6 @@ class PredictiveFailureManager:
                                         )
 
                 # Sprint 75: Objective Governance — compute objectives + utility + trader
-                obj_winner: str | None = None
                 if (
                     self._objective_evaluator is not None
                     and self._tradeoff_engine is not None
@@ -424,7 +423,7 @@ class PredictiveFailureManager:
                     )
                     tradeoff = self._tradeoff_selector.select(obj_results, frontier)
                     if tradeoff.winner is not None:
-                        obj_winner = tradeoff.winner.strategy
+                        pass
 
                     # Sprint 75: Value Alignment — check constraints
                     if self._constraint_engine is not None and tradeoff.winner is not None:
@@ -503,384 +502,385 @@ class PredictiveFailureManager:
             )
 
         # 6. Learning step (after execution, before avoided event)
-        learning_outcome_measured = False
-        if mitigation is not None and action is not None:
-            if self._outcome_tracker is not None and self._learning_engine is not None:
-                outcome = self._outcome_tracker.measure(
-                    fault_id=fault_id,
-                    fault_type=fault_type,
-                    plan_id=mitigation.plan_id,
-                    strategy=mitigation.strategy,
-                    pre_risk=risk_score,
-                    urgency=mitigation.urgency,
-                    timestamp=now,
+        if (
+            mitigation is not None
+            and action is not None
+            and self._outcome_tracker is not None
+            and self._learning_engine is not None
+        ):
+            outcome = self._outcome_tracker.measure(
+                fault_id=fault_id,
+                fault_type=fault_type,
+                plan_id=mitigation.plan_id,
+                strategy=mitigation.strategy,
+                pre_risk=risk_score,
+                urgency=mitigation.urgency,
+                timestamp=now,
+            )
+            events.append(
+                {
+                    "event_type": EventType.OUTCOME_MEASURED.value,
+                    "outcome_id": outcome.outcome_id,
+                    "fault_id": outcome.fault_id,
+                    "plan_id": outcome.plan_id,
+                    "strategy": outcome.strategy,
+                    "pre_risk": outcome.pre_risk,
+                    "post_risk": outcome.post_risk,
+                    "risk_delta": outcome.risk_delta,
+                    "failure_prevented": outcome.failure_prevented,
+                    "stability_delta": outcome.stability_delta,
+                }
+            )
+
+            primary_signal = top_signals[0] if top_signals else "unknown"
+
+            sim_effectiveness_for_record = None
+            if self._outcome_validator is not None and outcome.pre_risk > 0:
+                sim_eff = (outcome.pre_risk - outcome.post_risk) / outcome.pre_risk if outcome.pre_risk > 0 else 0.0
+                real_eff: float | None = None
+                real_result = self._outcome_validator.call_real_provider(
+                    mitigation.strategy,
+                    outcome.pre_risk,
+                    mitigation.urgency,
                 )
-                events.append(
-                    {
-                        "event_type": EventType.OUTCOME_MEASURED.value,
-                        "outcome_id": outcome.outcome_id,
-                        "fault_id": outcome.fault_id,
-                        "plan_id": outcome.plan_id,
-                        "strategy": outcome.strategy,
-                        "pre_risk": outcome.pre_risk,
-                        "post_risk": outcome.post_risk,
-                        "risk_delta": outcome.risk_delta,
-                        "failure_prevented": outcome.failure_prevented,
-                        "stability_delta": outcome.stability_delta,
-                    }
+                if real_result is not None:
+                    real_post, _, _ = real_result
+                    real_eff = (outcome.pre_risk - real_post) / outcome.pre_risk if outcome.pre_risk > 0 else 0.0
+
+                combined_eff, was_capped = self._outcome_validator.compute_combined_effectiveness(
+                    sim_effectiveness=sim_eff,
+                    real_effectiveness=real_eff,
                 )
-
-                primary_signal = top_signals[0] if top_signals else "unknown"
-
-                sim_effectiveness_for_record = None
-                if self._outcome_validator is not None and outcome.pre_risk > 0:
-                    sim_eff = (outcome.pre_risk - outcome.post_risk) / outcome.pre_risk if outcome.pre_risk > 0 else 0.0
-                    real_eff: float | None = None
-                    real_result = self._outcome_validator.call_real_provider(
-                        mitigation.strategy,
-                        outcome.pre_risk,
-                        mitigation.urgency,
-                    )
-                    if real_result is not None:
-                        real_post, _, _ = real_result
-                        real_eff = (outcome.pre_risk - real_post) / outcome.pre_risk if outcome.pre_risk > 0 else 0.0
-
-                    combined_eff, was_capped = self._outcome_validator.compute_combined_effectiveness(
-                        sim_effectiveness=sim_eff,
-                        real_effectiveness=real_eff,
-                    )
-                    sim_effectiveness_for_record = combined_eff
-                    if was_capped:
-                        events.append(
-                            {
-                                "event_type": EventType.SIMULATION_WEIGHT_CAPPED.value,
-                                "fault_type": fault_type,
-                                "simulation_weight": self._outcome_validator.simulation_weight,
-                                "real_weight": self._outcome_validator.real_weight,
-                                "is_real_provider_set": (self._outcome_validator.is_real_provider_set()),
-                            }
-                        )
-
-                learning_record = self._learning_engine.make_learning_record(
-                    fault_id=fault_id,
-                    fault_type=fault_type,
-                    signal_type=primary_signal,
-                    strategy=mitigation.strategy,
-                    risk_delta=outcome.risk_delta,
-                    pre_risk=outcome.pre_risk,
-                    success=outcome.risk_delta > 0,
-                    occurred_at=now,
-                )
-
-                stats, _unused = self._learning_engine.update(learning_record)
-
-                if self._drift_guard is not None and stats is not None and sim_effectiveness_for_record is not None:
-                    self._drift_guard.configure(fault_type, primary_signal)
-                    drift_event = self._drift_guard.record(
-                        stats.strategy,
-                        sim_effectiveness_for_record,
-                    )
-                    if drift_event is not None:
-                        events.append(
-                            {
-                                "event_type": EventType.LEARNING_DRIFT_DETECTED.value,
-                                "fault_type": drift_event.fault_type,
-                                "signal_type": drift_event.signal_type,
-                                "metric_value": drift_event.metric_value,
-                                "threshold": drift_event.threshold,
-                                "details": dict(drift_event.details),
-                            }
-                        )
-
-                events.append(
-                    {
-                        "event_type": EventType.MITIGATION_EVALUATED.value,
-                        "learning_id": learning_record.learning_id,
-                        "fault_id": fault_id,
-                        "fault_type": fault_type,
-                        "signal_type": learning_record.signal_type,
-                        "strategy": learning_record.strategy,
-                        "effectiveness_score": learning_record.effectiveness_score,
-                        "success": learning_record.success,
-                    }
-                )
-
-                if stats is not None:
+                sim_effectiveness_for_record = combined_eff
+                if was_capped:
                     events.append(
                         {
-                            "event_type": EventType.STRATEGY_UPDATED.value,
-                            "fault_type": stats.fault_type,
-                            "signal_type": stats.signal_type,
-                            "strategy": stats.strategy,
-                            "total_uses": stats.total_uses,
-                            "successes": stats.successes,
-                            "failures": stats.failures,
-                            "avg_effectiveness": stats.avg_effectiveness,
-                            "success_rate": stats.success_rate,
-                            "disabled": stats.disabled,
+                            "event_type": EventType.SIMULATION_WEIGHT_CAPPED.value,
+                            "fault_type": fault_type,
+                            "simulation_weight": self._outcome_validator.simulation_weight,
+                            "real_weight": self._outcome_validator.real_weight,
+                            "is_real_provider_set": (self._outcome_validator.is_real_provider_set()),
                         }
                     )
 
-                    # Sprint 73: Self-Play Simulation (isolated)
-                    if self._match_engine is not None:
-                        sp_candidates = sorted(
+            learning_record = self._learning_engine.make_learning_record(
+                fault_id=fault_id,
+                fault_type=fault_type,
+                signal_type=primary_signal,
+                strategy=mitigation.strategy,
+                risk_delta=outcome.risk_delta,
+                pre_risk=outcome.pre_risk,
+                success=outcome.risk_delta > 0,
+                occurred_at=now,
+            )
+
+            stats, _unused = self._learning_engine.update(learning_record)
+
+            if self._drift_guard is not None and stats is not None and sim_effectiveness_for_record is not None:
+                self._drift_guard.configure(fault_type, primary_signal)
+                drift_event = self._drift_guard.record(
+                    stats.strategy,
+                    sim_effectiveness_for_record,
+                )
+                if drift_event is not None:
+                    events.append(
+                        {
+                            "event_type": EventType.LEARNING_DRIFT_DETECTED.value,
+                            "fault_type": drift_event.fault_type,
+                            "signal_type": drift_event.signal_type,
+                            "metric_value": drift_event.metric_value,
+                            "threshold": drift_event.threshold,
+                            "details": dict(drift_event.details),
+                        }
+                    )
+
+            events.append(
+                {
+                    "event_type": EventType.MITIGATION_EVALUATED.value,
+                    "learning_id": learning_record.learning_id,
+                    "fault_id": fault_id,
+                    "fault_type": fault_type,
+                    "signal_type": learning_record.signal_type,
+                    "strategy": learning_record.strategy,
+                    "effectiveness_score": learning_record.effectiveness_score,
+                    "success": learning_record.success,
+                }
+            )
+
+            if stats is not None:
+                events.append(
+                    {
+                        "event_type": EventType.STRATEGY_UPDATED.value,
+                        "fault_type": stats.fault_type,
+                        "signal_type": stats.signal_type,
+                        "strategy": stats.strategy,
+                        "total_uses": stats.total_uses,
+                        "successes": stats.successes,
+                        "failures": stats.failures,
+                        "avg_effectiveness": stats.avg_effectiveness,
+                        "success_rate": stats.success_rate,
+                        "disabled": stats.disabled,
+                    }
+                )
+
+                # Sprint 73: Self-Play Simulation (isolated)
+                if self._match_engine is not None:
+                    sp_candidates = sorted(
+                        {
+                            s.strategy
+                            for s in self._learning_engine.stats.values()
+                            if s.fault_type == fault_type and not s.disabled
+                        }
+                    )
+                    # Fallback: also include router family candidates if meta_router is set
+                    if len(sp_candidates) < 2 and candidates and len(candidates) >= 2:
+                        sp_candidates = sorted(set(sp_candidates) | set(candidates))
+                    sp_results = self._match_engine.run_simulated_round(
+                        fault_type=fault_type,
+                        candidates=sp_candidates,
+                        all_stats=self._learning_engine.stats,
+                    )
+                    for sp_result in sp_results:
+                        events.append(
                             {
-                                s.strategy
-                                for s in self._learning_engine.stats.values()
-                                if s.fault_type == fault_type and not s.disabled
+                                "event_type": EventType.MATCH_PLAYED.value,
+                                **sp_result.to_payload(),
                             }
                         )
-                        # Fallback: also include router family candidates if meta_router is set
-                        if len(sp_candidates) < 2 and candidates and len(candidates) >= 2:
-                            sp_candidates = sorted(set(sp_candidates) | set(candidates))
-                        sp_results = self._match_engine.run_simulated_round(
-                            fault_type=fault_type,
-                            candidates=sp_candidates,
-                            all_stats=self._learning_engine.stats,
+
+                if self._policy_store is not None:
+                    policy = self._policy_store.update_if_needed(
+                        fault_type,
+                        self._learning_engine.stats,
+                    )
+                    if policy is not None:
+                        events.append(
+                            {
+                                "event_type": EventType.POLICY_IMPROVED.value,
+                                "fault_type": policy.fault_type,
+                                "version": policy.version,
+                                "created_at": policy.created_at,
+                                "disabled_strategies": sorted(policy.disabled_strategies),
+                                "strategy_preferences": dict(policy.strategy_preferences),
+                                "urgency_multipliers": dict(policy.urgency_multipliers),
+                            }
                         )
-                        for sp_result in sp_results:
+
+                        # 6.5 Self-repair: snapshot + validate + health check
+                        stability = None
+                        if self._snapshot_manager is not None:
+                            drift_count = (
+                                self._health_monitor.get_anomaly_count(fault_type)
+                                if self._health_monitor is not None
+                                else 0
+                            )
+                            safety_count = (
+                                self._health_monitor.get_safety_violations(fault_type)
+                                if self._health_monitor is not None
+                                else 0
+                            )
+                            if self._validation_gate is not None:
+                                stability = self._validation_gate.compute_stability(
+                                    fault_type=fault_type,
+                                    version=policy.version,
+                                    all_stats=self._learning_engine.stats,
+                                    drift_events_recent=drift_count,
+                                    safety_violations=safety_count,
+                                )
+                                val_result = self._validation_gate.validate(
+                                    fault_type=fault_type,
+                                    version=policy.version,
+                                    all_stats=self._learning_engine.stats,
+                                    drift_events_recent=drift_count,
+                                    safety_violations=safety_count,
+                                )
+                                if not val_result.accepted:
+                                    events.append(
+                                        {
+                                            "event_type": EventType.POLICY_VALIDATION_FAILED.value,
+                                            "fault_type": fault_type,
+                                            "policy_version": policy.version,
+                                            "stability_score": val_result.stability_score,
+                                            "failure_reasons": list(val_result.failure_reasons),
+                                        }
+                                    )
+
+                            self._snapshot_manager.take_snapshot(
+                                fault_type=fault_type,
+                                version=policy.version,
+                                stability_score=(stability.stability_score if stability is not None else 0.5),
+                                stats_snapshot=policy.stats_snapshot,
+                            )
                             events.append(
                                 {
-                                    "event_type": EventType.MATCH_PLAYED.value,
-                                    **sp_result.to_payload(),
+                                    "event_type": EventType.POLICY_SNAPSHOTTED.value,
+                                    "snapshot_id": (self._snapshot_manager.get_history(fault_type)[-1].snapshot_id),
+                                    "fault_type": fault_type,
+                                    "policy_version": policy.version,
+                                    "stability_score": (stability.stability_score if stability is not None else 0.5),
                                 }
                             )
 
-                    if self._policy_store is not None:
-                        policy = self._policy_store.update_if_needed(
-                            fault_type,
-                            self._learning_engine.stats,
-                        )
-                        if policy is not None:
-                            events.append(
-                                {
-                                    "event_type": EventType.POLICY_IMPROVED.value,
-                                    "fault_type": policy.fault_type,
-                                    "version": policy.version,
-                                    "created_at": policy.created_at,
-                                    "disabled_strategies": sorted(policy.disabled_strategies),
-                                    "strategy_preferences": dict(policy.strategy_preferences),
-                                    "urgency_multipliers": dict(policy.urgency_multipliers),
-                                }
-                            )
-
-                            # 6.5 Self-repair: snapshot + validate + health check
-                            stability = None
-                            if self._snapshot_manager is not None:
-                                drift_count = (
-                                    self._health_monitor.get_anomaly_count(fault_type)
-                                    if self._health_monitor is not None
-                                    else 0
-                                )
-                                safety_count = (
-                                    self._health_monitor.get_safety_violations(fault_type)
-                                    if self._health_monitor is not None
-                                    else 0
-                                )
-                                if self._validation_gate is not None:
-                                    stability = self._validation_gate.compute_stability(
+                        # Sprint 72: Soft Blend — if stability < threshold, blend with previous version
+                        if self._policy_blender is not None and stability is not None:
+                            stbl_score = stability.stability_score if hasattr(stability, "stability_score") else 0.5
+                            if self._policy_blender.should_blend(stbl_score):
+                                history = self._policy_store.get_history(fault_type)
+                                if len(history) >= 2:
+                                    old_version = history[-2]
+                                    old_data = {
+                                        **dict(old_version.strategy_preferences),
+                                        **dict(old_version.urgency_multipliers),
+                                    }
+                                    new_data = {
+                                        **dict(policy.strategy_preferences),
+                                        **dict(policy.urgency_multipliers),
+                                    }
+                                    blend_result = self._policy_blender.blend(
+                                        old_policy_id=f"v{old_version.version}",
+                                        new_policy_id=f"v{policy.version}",
                                         fault_type=fault_type,
-                                        version=policy.version,
-                                        all_stats=self._learning_engine.stats,
-                                        drift_events_recent=drift_count,
-                                        safety_violations=safety_count,
+                                        old_data=old_data,
+                                        new_data=new_data,
+                                        stability_score=stbl_score,
                                     )
-                                    val_result = self._validation_gate.validate(
-                                        fault_type=fault_type,
-                                        version=policy.version,
-                                        all_stats=self._learning_engine.stats,
-                                        drift_events_recent=drift_count,
-                                        safety_violations=safety_count,
-                                    )
-                                    if not val_result.accepted:
+                                    if blend_result is not None:
                                         events.append(
                                             {
-                                                "event_type": EventType.POLICY_VALIDATION_FAILED.value,
-                                                "fault_type": fault_type,
-                                                "policy_version": policy.version,
-                                                "stability_score": val_result.stability_score,
-                                                "failure_reasons": list(val_result.failure_reasons),
+                                                "event_type": EventType.POLICY_BLENDED.value,
+                                                "old_policy_id": blend_result.old_policy_id,
+                                                "new_policy_id": blend_result.new_policy_id,
+                                                "fault_type": blend_result.fault_type,
+                                                "old_weight": blend_result.old_weight,
+                                                "new_weight": blend_result.new_weight,
+                                                "stability_score": blend_result.stability_score,
                                             }
                                         )
 
-                                self._snapshot_manager.take_snapshot(
-                                    fault_type=fault_type,
-                                    version=policy.version,
-                                    stability_score=(stability.stability_score if stability is not None else 0.5),
-                                    stats_snapshot=policy.stats_snapshot,
+                        # Sprint 74: Learning Graph — update node performance + maybe rewrite
+                        if self._learning_graph is not None:
+                            perf = stats.success_rate if stats is not None else 0.5
+                            for nid in ["meta_scorer", "weight_optimizer", "competition_engine"]:
+                                node = self._learning_graph.get_node(nid)
+                                if node is not None:
+                                    self._learning_graph.update_performance(nid, perf)
+                                    events.append(
+                                        {
+                                            "event_type": EventType.LEARNING_NODE_UPDATED.value,
+                                            "node_id": nid,
+                                            "node_type": node.node_type,
+                                            "performance": node.performance,
+                                            "version": node.version,
+                                        }
+                                    )
+                            if self._graph_rewriter is not None:
+                                rewrite = self._graph_rewriter.maybe_rewrite()
+                                if rewrite is not None:
+                                    events.append(
+                                        {
+                                            "event_type": EventType.LEARNING_GRAPH_REWRITTEN.value,
+                                            "node_id": rewrite.node_id,
+                                            "param_name": rewrite.param_name,
+                                            "old_value": rewrite.old_value,
+                                            "new_value": rewrite.new_value,
+                                            "delta": rewrite.delta,
+                                            "triggered_by": rewrite.triggered_by,
+                                            "version": rewrite.version,
+                                        }
+                                    )
+
+                        # Sprint 75: Objective Rebalancing (every 25 cycles, low oscillation)
+                        if self._objective_evaluator is not None:
+                            osc_low = True
+                            if self._oscillation_detector is not None:
+                                osc_low = not self._oscillation_detector.is_oscillating(fault_type)
+                            reb = self._objective_evaluator.maybe_rebalance(fault_type, osc_low)
+                            if reb is not None:
+                                from allbrain.objective_system import (
+                                    make_objective_rebalanced_payload,
                                 )
+
                                 events.append(
                                     {
-                                        "event_type": EventType.POLICY_SNAPSHOTTED.value,
-                                        "snapshot_id": (self._snapshot_manager.get_history(fault_type)[-1].snapshot_id),
-                                        "fault_type": fault_type,
-                                        "policy_version": policy.version,
-                                        "stability_score": (
-                                            stability.stability_score if stability is not None else 0.5
+                                        "event_type": EventType.OBJECTIVE_REBALANCED.value,
+                                        **make_objective_rebalanced_payload(
+                                            fault_type=fault_type,
+                                            safety=reb.safety,
+                                            stability=reb.stability,
+                                            success=reb.success,
+                                            efficiency=reb.efficiency,
+                                            version=reb.version,
                                         ),
                                     }
                                 )
 
-                            # Sprint 72: Soft Blend — if stability < threshold, blend with previous version
-                            if self._policy_blender is not None and stability is not None:
-                                stbl_score = stability.stability_score if hasattr(stability, "stability_score") else 0.5
-                                if self._policy_blender.should_blend(stbl_score):
-                                    history = self._policy_store.get_history(fault_type)
-                                    if len(history) >= 2:
-                                        old_version = history[-2]
-                                        old_data = {
-                                            **dict(old_version.strategy_preferences),
-                                            **dict(old_version.urgency_multipliers),
-                                        }
-                                        new_data = {
-                                            **dict(policy.strategy_preferences),
-                                            **dict(policy.urgency_multipliers),
-                                        }
-                                        blend_result = self._policy_blender.blend(
-                                            old_policy_id=f"v{old_version.version}",
-                                            new_policy_id=f"v{policy.version}",
-                                            fault_type=fault_type,
-                                            old_data=old_data,
-                                            new_data=new_data,
-                                            stability_score=stbl_score,
-                                        )
-                                        if blend_result is not None:
-                                            events.append(
-                                                {
-                                                    "event_type": EventType.POLICY_BLENDED.value,
-                                                    "old_policy_id": blend_result.old_policy_id,
-                                                    "new_policy_id": blend_result.new_policy_id,
-                                                    "fault_type": blend_result.fault_type,
-                                                    "old_weight": blend_result.old_weight,
-                                                    "new_weight": blend_result.new_weight,
-                                                    "stability_score": blend_result.stability_score,
-                                                }
-                                            )
-
-                            # Sprint 74: Learning Graph — update node performance + maybe rewrite
-                            if self._learning_graph is not None:
-                                perf = stats.success_rate if stats is not None else 0.5
-                                for nid in ["meta_scorer", "weight_optimizer", "competition_engine"]:
-                                    node = self._learning_graph.get_node(nid)
-                                    if node is not None:
-                                        self._learning_graph.update_performance(nid, perf)
-                                        events.append(
-                                            {
-                                                "event_type": EventType.LEARNING_NODE_UPDATED.value,
-                                                "node_id": nid,
-                                                "node_type": node.node_type,
-                                                "performance": node.performance,
-                                                "version": node.version,
-                                            }
-                                        )
-                                if self._graph_rewriter is not None:
-                                    rewrite = self._graph_rewriter.maybe_rewrite()
-                                    if rewrite is not None:
-                                        events.append(
-                                            {
-                                                "event_type": EventType.LEARNING_GRAPH_REWRITTEN.value,
-                                                "node_id": rewrite.node_id,
-                                                "param_name": rewrite.param_name,
-                                                "old_value": rewrite.old_value,
-                                                "new_value": rewrite.new_value,
-                                                "delta": rewrite.delta,
-                                                "triggered_by": rewrite.triggered_by,
-                                                "version": rewrite.version,
-                                            }
-                                        )
-
-                            # Sprint 75: Objective Rebalancing (every 25 cycles, low oscillation)
-                            if self._objective_evaluator is not None:
-                                osc_low = True
-                                if self._oscillation_detector is not None:
-                                    osc_low = not self._oscillation_detector.is_oscillating(fault_type)
-                                reb = self._objective_evaluator.maybe_rebalance(fault_type, osc_low)
-                                if reb is not None:
-                                    from allbrain.objective_system import (
-                                        make_objective_rebalanced_payload,
+                        if self._health_monitor is not None and stability is not None:
+                            anomaly = self._health_monitor.check(
+                                fault_type,
+                                stability,
+                            )
+                            if anomaly:
+                                history = (
+                                    self._snapshot_manager.get_history(fault_type)
+                                    if self._snapshot_manager is not None
+                                    else []
+                                )
+                                plan = None
+                                if self._rollback_engine is not None:
+                                    plan = self._rollback_engine.plan_rollback(
+                                        fault_type=fault_type,
+                                        current_version=policy.version,
+                                        history=history,
+                                        stability=stability,
                                     )
-
+                                if plan is not None:
                                     events.append(
                                         {
-                                            "event_type": EventType.OBJECTIVE_REBALANCED.value,
-                                            **make_objective_rebalanced_payload(
-                                                fault_type=fault_type,
-                                                safety=reb.safety,
-                                                stability=reb.stability,
-                                                success=reb.success,
-                                                efficiency=reb.efficiency,
-                                                version=reb.version,
-                                            ),
+                                            "event_type": EventType.ROLLBACK_TRIGGERED.value,
+                                            "rollback_id": plan.rollback_id,
+                                            "fault_type": plan.fault_type,
+                                            "from_version": plan.from_version,
+                                            "to_version": plan.to_version,
+                                            "strategy": plan.strategy,
+                                            "triggered_by": plan.triggered_by,
                                         }
                                     )
-
-                            if self._health_monitor is not None and stability is not None:
-                                anomaly = self._health_monitor.check(
-                                    fault_type,
-                                    stability,
-                                )
-                                if anomaly:
-                                    history = (
-                                        self._snapshot_manager.get_history(fault_type)
-                                        if self._snapshot_manager is not None
-                                        else []
-                                    )
-                                    plan = None
                                     if self._rollback_engine is not None:
-                                        plan = self._rollback_engine.plan_rollback(
+                                        self._rollback_engine.execute(
+                                            plan,
+                                            self._policy_store,
+                                        )
+                                    events.append(
+                                        {
+                                            "event_type": EventType.ROLLBACK_COMPLETED.value,
+                                            "rollback_id": plan.rollback_id,
+                                            "fault_type": plan.fault_type,
+                                            "from_version": plan.from_version,
+                                            "to_version": plan.to_version,
+                                            "success": True,
+                                        }
+                                    )
+                                    if self._recovery_executor is not None:
+                                        recovery = self._recovery_executor.stabilize(
                                             fault_type=fault_type,
-                                            current_version=policy.version,
-                                            history=history,
-                                            stability=stability,
+                                            plan=plan,
+                                            health_monitor=self._health_monitor,
+                                            drift_guard=self._drift_guard,
                                         )
-                                    if plan is not None:
                                         events.append(
                                             {
-                                                "event_type": EventType.ROLLBACK_TRIGGERED.value,
-                                                "rollback_id": plan.rollback_id,
-                                                "fault_type": plan.fault_type,
-                                                "from_version": plan.from_version,
-                                                "to_version": plan.to_version,
-                                                "strategy": plan.strategy,
-                                                "triggered_by": plan.triggered_by,
+                                                "event_type": EventType.SYSTEM_RECOVERED.value,
+                                                "recovery_id": recovery.recovery_id,
+                                                "rollback_id": recovery.rollback_id,
+                                                "fault_type": recovery.fault_type,
+                                                "stabilized": recovery.stabilized,
+                                                "post_recovery_stability": recovery.post_recovery_stability,
+                                                "cycles_to_stable": recovery.cycles_to_stable,
                                             }
                                         )
-                                        if self._rollback_engine is not None:
-                                            self._rollback_engine.execute(
-                                                plan,
-                                                self._policy_store,
-                                            )
-                                        events.append(
-                                            {
-                                                "event_type": EventType.ROLLBACK_COMPLETED.value,
-                                                "rollback_id": plan.rollback_id,
-                                                "fault_type": plan.fault_type,
-                                                "from_version": plan.from_version,
-                                                "to_version": plan.to_version,
-                                                "success": True,
-                                            }
-                                        )
-                                        if self._recovery_executor is not None:
-                                            recovery = self._recovery_executor.stabilize(
-                                                fault_type=fault_type,
-                                                plan=plan,
-                                                health_monitor=self._health_monitor,
-                                                drift_guard=self._drift_guard,
-                                            )
-                                            events.append(
-                                                {
-                                                    "event_type": EventType.SYSTEM_RECOVERED.value,
-                                                    "recovery_id": recovery.recovery_id,
-                                                    "rollback_id": recovery.rollback_id,
-                                                    "fault_type": recovery.fault_type,
-                                                    "stabilized": recovery.stabilized,
-                                                    "post_recovery_stability": recovery.post_recovery_stability,
-                                                    "cycles_to_stable": recovery.cycles_to_stable,
-                                                }
-                                            )
 
-                if self._rollback_engine is not None:
-                    self._rollback_engine.advance_cycle()
+            if self._rollback_engine is not None:
+                self._rollback_engine.advance_cycle()
 
         # Sprint 73: Meta-Optimizer (every N cycles) — outside policy update
         if self._weight_optimizer is not None:

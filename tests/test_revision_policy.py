@@ -79,8 +79,10 @@ def test_policy_validated_on_construction():
 
 
 def test_policy_is_immutable():
+    from dataclasses import FrozenInstanceError
+
     import pytest
 
     p = RevisionPolicy()
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         p.contradiction_penalty = 0.99  # type: ignore[misc]

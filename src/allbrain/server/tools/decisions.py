@@ -27,7 +27,6 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
     try:
         data = RunDecisionPipelineInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         from allbrain.runtime_core import SystemDecisionPipeline
 
         result = SystemDecisionPipeline().run(

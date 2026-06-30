@@ -56,7 +56,7 @@ class CapabilityLearner:
             {
                 domain: self.get_capability(agent_id, domain)
                 for (_, domain), _ in self._success.items()
-                if _ == agent_id or True  # not used; replaced below
+                if True  # not used; replaced below
             }
             if False
             else {domain: self.get_capability(agent_id, domain) for (aid, domain) in self._success if aid == agent_id}

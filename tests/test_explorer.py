@@ -140,6 +140,6 @@ class TestExplorer:
 
     def test_explorer_default_settings(self):
         calc = EntropyCalculator()
-        explorer = Explorer(calc)
+        Explorer(calc)
         assert calc.base_epsilon == DEFAULT_BASE_EPSILON
         assert calc.decay_rate == DEFAULT_DECAY_RATE

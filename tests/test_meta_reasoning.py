@@ -50,7 +50,6 @@ def _objective(**overrides):
 def test_high_confidence_when_all_factors_high() -> None:
     state = WorldState(timestamp=datetime.now(UTC))
     analysis = ForesightEngine().analyze(state, "deploy")
-    selected = analysis.best_plan
     estimate = ConfidenceEngine().estimate(analysis.best_plan, analysis, historical_success=0.7)
 
     assert estimate.confidence > 0.7
@@ -69,10 +68,9 @@ def test_low_confidence_when_foresight_score_low() -> None:
 
 def test_no_evidence_uncertainty_high() -> None:
     from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, FuturePlan
-    from allbrain.foresight.models import ForesightAnalysis as FA
 
     empty_plan = FuturePlan(actions=["dummy"])
-    analysis = FA(
+    analysis = ForesightAnalysis(
         analysis_id=uuid4(),
         action="x",
         best_plan=empty_plan,

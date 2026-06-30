@@ -31,7 +31,6 @@ def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ObserveWorldInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         world_model = WorldModel()
         state = world_model.observe()
         event = context.repository.append_event(
@@ -65,7 +64,6 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = SimulateActionInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         world_model = WorldModel()
         state = world_model.observe()
         observation_event = context.repository.append_event(

@@ -84,7 +84,6 @@ def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         check_tool_rate("assign_task")
         data = AssignTaskInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         task_state = TaskStateReducer().build(events)
         task = get_task_or_raise(task_state, data.task_id)
@@ -205,7 +204,6 @@ def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = HandoffTaskInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         task_state = TaskStateReducer().build(events)
         task = get_task_or_raise(task_state, data.task_id)
@@ -288,7 +286,6 @@ def get_task_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         limit = int(kwargs.get("limit", 5000) or 5000)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=limit)
         task_state = TaskStateReducer().build(events)
         metrics = AgentPerformanceReducer().reduce(events)

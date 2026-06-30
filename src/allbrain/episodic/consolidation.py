@@ -26,6 +26,4 @@ def should_store_episode(
         return True
     if reward >= high_reward_threshold:
         return True
-    if reward <= low_reward_threshold:
-        return True
-    return False
+    return reward <= low_reward_threshold

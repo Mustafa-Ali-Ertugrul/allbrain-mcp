@@ -115,7 +115,7 @@ class TestEndToEndRecursive:
         for i in range(60):
             r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout", signals=[RiskSignal(sigs[i % 5], 0.85, 5)])
             all_evs.extend(r["events"])
-        all_types = _event_types(all_evs)
+        _event_types(all_evs)
         assert len(all_evs) > 0  # just verify it doesn't crash
 
     def test_no_crash_with_all_74_off(self):

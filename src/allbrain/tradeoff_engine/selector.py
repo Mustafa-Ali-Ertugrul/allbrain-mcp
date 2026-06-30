@@ -22,10 +22,7 @@ class Selector:
         else:
             # Fallback: pick max utility among all, safety-passed first
             safe = [r for r in results if r.safety_pass]
-            if safe:
-                winner = max(safe, key=lambda r: r.utility)
-            else:
-                winner = max(results, key=lambda r: r.safety)
+            winner = max(safe, key=lambda r: r.utility) if safe else max(results, key=lambda r: r.safety)
 
         return TradeoffResult(
             fault_type=winner.fault_type if winner else "unknown",

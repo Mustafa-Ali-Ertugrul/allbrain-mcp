@@ -95,10 +95,7 @@ def maybe_auto_snapshot(context: BrainContext, *, project_path: str | Path) -> N
 
 def get_task_or_raise(task_state: dict[str, Any], task_id: str) -> dict[str, Any]:
     tasks_dict = task_state.get("tasks") if isinstance(task_state, dict) else None
-    if isinstance(tasks_dict, dict):
-        task = tasks_dict.get(task_id)
-    else:
-        task = task_state.get(task_id)
+    task = tasks_dict.get(task_id) if isinstance(tasks_dict, dict) else task_state.get(task_id)
     if task is None:
         raise UserInputError(f"Task {task_id} not found")
     return task

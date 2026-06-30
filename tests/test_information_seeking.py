@@ -276,9 +276,11 @@ def test_mcp_estimate_information_gain_unknown_action(tmp_path) -> None:
 
 
 def test_pydantic_validation() -> None:
-    with pytest.raises(Exception):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
         InformationNeed(topic="x", expected_gain=1.5, cost=0.0, priority=0.0)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         InformationPlan(
             analysis_id="00000000-0000-0000-0000-000000000000",
             needs=[],

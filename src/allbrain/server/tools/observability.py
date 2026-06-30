@@ -34,7 +34,6 @@ def get_observability_dashboard_impl(context: BrainContext, **kwargs: Any) -> To
     try:
         data = OrchestratorInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         audit_tool_call(
             context,
@@ -197,7 +196,6 @@ def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = OrchestratorInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         comparison = ObservabilityBuilder().agent_comparison(events)
         audit_tool_call(

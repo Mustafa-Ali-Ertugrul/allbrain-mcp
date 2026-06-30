@@ -65,7 +65,6 @@ class TestRecoveryConsensusManager:
 
 class TestEndToEnd:
     def test_generate_evaluate_arbitrate(self):
-        faults = [{"fault_id": "f1", "component": "worker", "severity": "low", "fault_type": "failure"}]
 
         gen = StrategyGenerator()
         ev = Evaluator()

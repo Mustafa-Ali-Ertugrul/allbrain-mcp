@@ -53,20 +53,20 @@ class TaskQueue(ABC):
             "distributed_ready": False,
         }
 
-    async def ack(self, item: QueueItem) -> None:
+    async def ack(self, item: QueueItem) -> None:  # noqa: B027
         """Optional completion hook for persistent queues."""
 
-    async def nack(self, item: QueueItem, *, requeue: bool = True, reason: str | None = None) -> None:
+    async def nack(self, item: QueueItem, *, requeue: bool = True, reason: str | None = None) -> None:  # noqa: B027
         """Optional failure hook for persistent queues."""
 
-    async def renew_lease(self, item: QueueItem) -> None:
+    async def renew_lease(self, item: QueueItem) -> None:  # noqa: B027
         """Optional lease renewal hook for persistent queues."""
 
     async def recover_expired(self) -> int:
         """Optional expired in-flight recovery hook."""
         return 0
 
-    async def close(self) -> None:
+    async def close(self) -> None:  # noqa: B027
         """Optional cleanup hook."""
 
 

@@ -67,9 +67,9 @@ def default_mode_stats() -> dict[str, ModeStats]:
 
 
 def _default_mode_stats() -> dict[str, ModeStats]:
-    from allbrain.meta_policy.model import PolicyMode as PM
+    from allbrain.meta_policy.model import PolicyMode
 
     return {
         m.value: ModeStats(mode=m.value, count=0, avg_reward=0.0, ema_reward=0.0, variance=0.0)
-        for m in [PM.FUSION, PM.CAUSAL, PM.DYNAMIC, PM.LEGACY]
+        for m in [PolicyMode.FUSION, PolicyMode.CAUSAL, PolicyMode.DYNAMIC, PolicyMode.LEGACY]
     }

@@ -68,7 +68,7 @@ class TestManagerConsolidation:
         mgr._total = 501
         mgr._retained = 501
         ep = _make_episode("ep_trim", ["new_item"])
-        result = mgr.consolidate(ep)
+        mgr.consolidate(ep)
         assert len(mgr.get_all_concepts()) <= 500
 
 

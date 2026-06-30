@@ -56,7 +56,7 @@ class RiskDriftDetector:
         mean_x = sum(xs) / n
         mean_y = sum(scores) / n
 
-        numerator = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, scores))
+        numerator = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, scores, strict=False))
         denominator = sum((x - mean_x) ** 2 for x in xs)
 
         if denominator == 0:

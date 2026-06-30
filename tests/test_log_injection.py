@@ -66,7 +66,7 @@ def test_exception_context_not_logged_verbatim(caplog: pytest.LogCaptureFixture,
     """When a regular ValueError is raised, the error message should not
     contain user-controlled input verbatim in a way that injects log lines."""
     context = make_context(tmp_path)
-    result = create_task_impl(context, goal="x\nERROR: injected during exception")
+    create_task_impl(context, goal="x\nERROR: injected during exception")
     # This should pass (goal is valid) or fail with a clear error
     # The key assertion: log records should not contain the injected text
     for record in caplog.records:

@@ -75,7 +75,6 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         check_tool_rate("list_events")
         data = ListEventsInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(
             project_path=context.project_path,
             session_id=data.session_id,

@@ -232,7 +232,7 @@ class WorkflowEngine:
         max_steps: int = 100,
     ) -> WorkflowResult:
         all_events: list[dict[str, Any]] = []
-        for step in range(max_steps):
+        for _step in range(max_steps):
             step_result = self.step(
                 graph,
                 candidate_agents=candidate_agents,

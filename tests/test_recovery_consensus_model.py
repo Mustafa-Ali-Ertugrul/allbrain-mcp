@@ -41,7 +41,7 @@ class TestConstants:
             assert s in STRATEGY_PROFILES
 
     def test_strategy_profiles_have_tuples(self):
-        for name, profile in STRATEGY_PROFILES.items():
+        for _name, profile in STRATEGY_PROFILES.items():
             assert len(profile) == 3
             risk, success, confidence = profile
             assert 0.0 <= risk <= 1.0

@@ -50,7 +50,7 @@ class Explorer:
         }
         total = sum(relevant_counts.values())
         probs = [c / total for c in relevant_counts.values()] if total > 0 else []
-        H = shannon_entropy(probs) if probs else 0.0
+        h = shannon_entropy(probs) if probs else 0.0
 
         if candidates and self._rng.random() < eps:
             chosen = self._rng.choice(candidates)
@@ -60,7 +60,7 @@ class Explorer:
                 selected_strategy=chosen,
                 was_exploration=True,
                 epsilon=eps,
-                entropy_at_decision=H,
+                entropy_at_decision=h,
             )
 
         return ExplorationDecision(
@@ -69,7 +69,7 @@ class Explorer:
             selected_strategy=recommended,
             was_exploration=False,
             epsilon=eps,
-            entropy_at_decision=H,
+            entropy_at_decision=h,
         )
 
     def advance_cycle(self) -> None:

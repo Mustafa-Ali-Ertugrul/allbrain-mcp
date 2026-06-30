@@ -32,6 +32,6 @@ class PlanRanker:
         expected_plan = sorted_by_score[median_index]
         return {
             "plan_spread": round(max(successes) - min(successes), 6),
-            "strategy_uncertainty": round(1.0 - sum(c * p for c, p in zip(confidences, successes)), 6),
+            "strategy_uncertainty": round(1.0 - sum(c * p for c, p in zip(confidences, successes, strict=False)), 6),
             "horizon_risk": expected_plan.cumulative_risk,
         }

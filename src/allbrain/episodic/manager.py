@@ -119,7 +119,7 @@ class EpisodicManager:
 
         # Update retrieval metadata on matched episodes (create new Episode objects)
         updated: list[Episode] = []
-        for ep, sim in matched:
+        for ep, _sim in matched:
             updated.append(
                 Episode(
                     episode_id=ep.episode_id,

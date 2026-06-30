@@ -128,7 +128,6 @@ def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = EvaluatePlanInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         world_model = WorldModel()
         engine = ForesightEngine(max_horizon=data.max_horizon)
         current_state = world_model.observe()
@@ -211,7 +210,6 @@ def _lookup_foresight_plan(
     if plan_payload is None:
         return None, None
     analysis_id = event.payload.get("analysis_id")
-    foresight_payload: dict[str, Any] | None = None
     candidates: list[dict[str, Any]] = []
     if isinstance(analysis_id, str):
         for ev in events:
