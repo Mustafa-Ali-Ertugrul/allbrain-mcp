@@ -146,11 +146,15 @@ class BrainRepository:
             project = self.get_or_create_project(db, project_path)
             sessions = db.exec(
                 select(Session).where(Session.project_id == project.id, Session.status == "active")
-            ).all()
+).all()
             for session in sessions:
                 heartbeat = session.last_heartbeat_at or session.started_at
                 comparable_heartbeat = heartbeat if heartbeat.tzinfo is not None else heartbeat.replace(tzinfo=UTC)
-                comparable_cutoff = stale_before if stale_before.tzinfo is not None else stale_before.replace(tzinfo=UTC)
+                comparable_cutoff = (
+                    stale_before
+                    if stale_before.tzinfo is not None
+                    else stale_before.replace(tzinfo=UTC)
+                )
                 if comparable_heartbeat >= comparable_cutoff:
                     continue
                 events = db.exec(

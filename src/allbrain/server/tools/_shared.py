@@ -91,7 +91,8 @@ def maybe_auto_snapshot(
     latest = snapshot_repo.get_latest(project.id)
     event_cursor = latest.event_cursor if latest is not None else None
     events = context.repository.list_events_after(project_path=context.project_path, event_cursor=event_cursor)
-    semantic_events = [event for event in events if event.type not in {"tool_call", "tool_call_outcome", "session_started", "snapshot_created"}]
+    skip_types = {"tool_call", "tool_call_outcome", "session_started", "snapshot_created"}
+    semantic_events = [event for event in events if event.type not in skip_types]
     baseline_due = latest is None and force_baseline and bool(semantic_events)
     if not baseline_due and snapshot_weight(events) < context.auto_snapshot_threshold:
         return

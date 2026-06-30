@@ -155,7 +155,8 @@ def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolRes
             detail_limit=0,
         )
 
-        semantic_events = [e for e in events if e.type not in {"tool_call", "tool_call_outcome", "session_started", "snapshot_created"}]
+        skip_types = {"tool_call", "tool_call_outcome", "session_started", "snapshot_created"}
+        semantic_events = [e for e in events if e.type not in skip_types]
         memory_event_count = len(semantic_events)
         memory_items = 0
         memory_categories: dict[str, int] = {}
