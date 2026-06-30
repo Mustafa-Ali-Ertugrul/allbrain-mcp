@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 ARBITRATION_TEMPLATE_VERSION = 1
 
 VOTE_CONFIDENCE_WEIGHT = 0.4

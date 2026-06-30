@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
@@ -12,10 +12,10 @@ from allbrain.foresight import (
     ForesightAnalysis,
     ForesightEngine,
     ForesightProjection,
+    FuturePlan,
     MultiStepSimulator,
     PlanEvaluator,
     PlanRanker,
-    FuturePlan,
 )
 from allbrain.replay import EventReplayEngine
 from allbrain.runtime_core import SystemDecisionPipeline
@@ -57,7 +57,7 @@ def test_generate_plans() -> None:
 
 
 def test_best_plan_has_highest_predicted_success() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     engine = ForesightEngine()
 
     analysis = engine.analyze(state, "deploy")
@@ -68,7 +68,7 @@ def test_best_plan_has_highest_predicted_success() -> None:
 
 
 def test_safest_plan_has_lowest_cumulative_risk() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     engine = ForesightEngine()
 
     analysis = engine.analyze(state, "deploy")
@@ -78,7 +78,7 @@ def test_safest_plan_has_lowest_cumulative_risk() -> None:
 
 
 def test_fastest_plan_has_smallest_horizon() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     engine = ForesightEngine()
 
     analysis = engine.analyze(state, "deploy")
@@ -88,7 +88,7 @@ def test_fastest_plan_has_smallest_horizon() -> None:
 
 
 def test_step_states_debug_hook_chain() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     simulator = MultiStepSimulator(SimulationBridge(StateTransitionBridge(), PredictionBridge()))
 
     final_state, predictions, step_states = simulator.simulate(state, ["deploy", "run_tests"])
@@ -101,7 +101,7 @@ def test_step_states_debug_hook_chain() -> None:
 
 
 def test_horizon_metrics() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     engine = ForesightEngine()
 
     analysis = engine.analyze(state, "deploy")
@@ -198,7 +198,7 @@ def test_learning_receives_strategy_metrics(tmp_path) -> None:
 
 
 def test_max_horizon_rejects_long_plan() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     simulator = MultiStepSimulator(SimulationBridge(StateTransitionBridge(), PredictionBridge()))
     evaluator = PlanEvaluator(simulator, max_horizon=2)
 
@@ -235,7 +235,7 @@ def test_pipeline_rejects_invalid_max_horizon(tmp_path) -> None:
 
 
 def test_unknown_action_returns_empty_analysis() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     engine = ForesightEngine()
 
     analysis = engine.analyze(state, "nonexistent_action")

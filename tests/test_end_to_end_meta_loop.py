@@ -3,15 +3,20 @@ from __future__ import annotations
 import pytest
 
 from allbrain.events.schemas import EventType
+from allbrain.learning_safety import EntropyCalculator, Explorer
+from allbrain.meta_optimizer import WeightOptimizer
+from allbrain.meta_scoring import MetaScorer, ProfileStore
+from allbrain.mitigation_learning import (
+    LearningEngine,
+    OutcomeTracker,
+    PolicyStore,
+    StrategyOptimizer,
+)
+from allbrain.policy_competition import CompetitionEngine
+from allbrain.policy_routing import MetaPolicyRouter
 from allbrain.predictive_failure import PredictiveFailureManager
 from allbrain.predictive_failure.model import RiskSignal
-from allbrain.mitigation_learning import OutcomeTracker, LearningEngine, PolicyStore, StrategyOptimizer
-from allbrain.learning_safety import EntropyCalculator, Explorer
-from allbrain.policy_routing import MetaPolicyRouter
-from allbrain.policy_competition import CompetitionEngine
-from allbrain.meta_scoring import MetaScorer, ProfileStore
 from allbrain.self_play import MatchEngine, WinMatrix
-from allbrain.meta_optimizer import WeightOptimizer
 
 
 def _event_types(events):
@@ -121,8 +126,9 @@ class TestEndToEndMetaLoop:
         assert scorer.profile_store is opt.profile_store
 
     def test_pipeline_has_decision_flags(self):
-        from allbrain.runtime_core.pipeline import SystemDecisionPipeline
         import inspect
+
+        from allbrain.runtime_core.pipeline import SystemDecisionPipeline
         sig = inspect.signature(SystemDecisionPipeline.run)
         for name in ["enable_counterfactual", "enable_scenarios", "enable_foresight", "enable_meta_reasoning", "enable_uncertainty", "enable_information_seeking"]:
             assert name in sig.parameters, f"{name} missing from pipeline"

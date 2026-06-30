@@ -1,25 +1,25 @@
 from __future__ import annotations
 
 from allbrain.causal import (
+    CAUSAL_DIVERSITY_CLUSTERS,
+    CAUSAL_IMPACT_THRESHOLD,
+    CAUSAL_MIN_SAMPLES,
     CAUSAL_TEMPLATE_VERSION,
     COUNTERFACTUAL_TOP_K,
-    CAUSAL_MIN_SAMPLES,
-    CAUSAL_IMPACT_THRESHOLD,
-    CAUSAL_DIVERSITY_CLUSTERS,
-    ImpactDirection,
-    CounterfactualResult,
     CausalImpact,
     CausalState,
-    simulate_intervention,
-    top_alternatives,
+    CounterfactualResult,
+    ImpactDirection,
     estimate_treatment_effect,
     make_counterfactual_payload,
     make_impact_payload,
+    simulate_intervention,
+    top_alternatives,
     validate_counterfactual,
     validate_impact,
 )
-from allbrain.routing import causal_selection_score
 from allbrain.events.schemas import EventType
+from allbrain.routing import causal_selection_score
 
 
 class E:

@@ -6,13 +6,12 @@ from typing import Any
 from allbrain.episodic.consolidation import should_store_episode
 from allbrain.episodic.importance import compute_importance, compute_novelty
 from allbrain.episodic.model import (
-    Episode,
-    MAX_EPISODES,
     DEFAULT_RETRIEVAL_LIMIT,
+    MAX_EPISODES,
     NOVELTY_SAMPLE_WINDOW,
+    Episode,
 )
 from allbrain.episodic.retrieval import retrieve_similar
-
 
 EVICTION_REASON_CAPACITY = "max_episodes_exceeded"
 

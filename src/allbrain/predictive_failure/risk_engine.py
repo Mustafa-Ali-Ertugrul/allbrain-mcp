@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.predictive_failure.model import RiskSignal, SIGNAL_TO_FAULT_TYPE
+from allbrain.predictive_failure.model import SIGNAL_TO_FAULT_TYPE, RiskSignal
 
 
 def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:

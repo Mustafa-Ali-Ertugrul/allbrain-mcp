@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from allbrain.attribution.model import (
-    ATTRIBUTION_IMPORTANCE_THRESHOLD,
     ATTRIBUTION_HYSTERESIS,
+    ATTRIBUTION_IMPORTANCE_THRESHOLD,
 )
 
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.attribution.model import ATTRIBUTION_TEMPLATE_VERSION
 
-
 CREDIT_KEYS: frozenset[str] = frozenset(
     {"decision_id", "signal", "contribution", "confidence"}
 )

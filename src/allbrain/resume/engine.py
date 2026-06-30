@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.core import StateEngine
 from allbrain.context import ContextBuilder
+from allbrain.core import StateEngine
 from allbrain.models.schemas import EventRead
 
 

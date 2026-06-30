@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.tradeoff_engine.model import UtilityResult, ParetoFrontier, TradeoffResult
+from allbrain.tradeoff_engine.model import ParetoFrontier, TradeoffResult, UtilityResult
 
 
 class Selector:

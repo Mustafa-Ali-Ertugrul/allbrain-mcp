@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from allbrain.workspace import (
-    WorkspaceManager, make_ws_added_payload, make_ws_updated_payload, make_ws_removed_payload,
+    WorkspaceManager,
+    make_ws_added_payload,
+    make_ws_removed_payload,
+    make_ws_updated_payload,
 )
 
 

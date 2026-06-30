@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import math
-from typing import Iterable
+from collections.abc import Iterable
 
 from allbrain.learning_safety.model import (
-    EntropyState,
     DEFAULT_BASE_EPSILON,
     DEFAULT_DECAY_RATE,
+    EntropyState,
 )
 
 

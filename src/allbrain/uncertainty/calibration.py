@@ -31,9 +31,7 @@ def observed_success_rate(events: list[Any], *, total_threshold: int = 100, cont
                 continue
         if event_type.endswith("task_completed") or event_type == "pipeline_run_completed":
             completed += 1
-        elif event_type.endswith("task_failed") or event_type == "pipeline_run_failed":
-            failed += 1
-        elif event_type == "task_blocked":
+        elif event_type.endswith("task_failed") or event_type == "pipeline_run_failed" or event_type == "task_blocked":
             failed += 1
 
     total = completed + failed

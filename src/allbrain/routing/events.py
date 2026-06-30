@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.routing.model import ROUTING_TEMPLATE_VERSION
 
-
 REQ_KEYS = frozenset({"task_id", "task_type", "context_key"})
 SCORED_KEYS = frozenset({"agent_id", "task_type", "selection_score", "reputation", "runtime_score", "calibrated_trust"})
 SELECTED_KEYS = frozenset({"task_id", "task_type", "agent_id", "selection_score"})

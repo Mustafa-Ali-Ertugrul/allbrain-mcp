@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -106,7 +106,7 @@ class AgentAdapter(ABC):
         if success:
             self._health = AgentHealth(
                 status=AgentStatus.HEALTHY,
-                last_check_at=datetime.now(timezone.utc),
+                last_check_at=datetime.now(UTC),
                 consecutive_failures=0,
             )
         else:
@@ -114,7 +114,7 @@ class AgentAdapter(ABC):
             status = AgentStatus.UNHEALTHY if failures >= 5 else AgentStatus.DEGRADED
             self._health = AgentHealth(
                 status=status,
-                last_check_at=datetime.now(timezone.utc),
+                last_check_at=datetime.now(UTC),
                 error_message=error,
                 consecutive_failures=failures,
             )

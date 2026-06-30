@@ -3,12 +3,12 @@ from __future__ import annotations
 import hashlib
 
 from allbrain.predictive_failure.model import (
+    DEFAULT_MITIGATION,
+    LEVEL_FAILURE,
+    MITIGATION_STRATEGIES,
+    STRATEGY_URGENCY,
     FailurePrediction,
     MitigationPlan,
-    MITIGATION_STRATEGIES,
-    DEFAULT_MITIGATION,
-    STRATEGY_URGENCY,
-    LEVEL_FAILURE,
 )
 
 

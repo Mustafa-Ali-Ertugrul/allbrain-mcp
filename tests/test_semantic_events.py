@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from allbrain.semantic.events import (
-    validate_concept_created,
-    validate_concept_updated,
-    validate_concept_forgotten,
     make_concept_created_payload,
-    make_concept_updated_payload,
     make_concept_forgotten_payload,
+    make_concept_updated_payload,
+    validate_concept_created,
+    validate_concept_forgotten,
+    validate_concept_updated,
 )
 
 

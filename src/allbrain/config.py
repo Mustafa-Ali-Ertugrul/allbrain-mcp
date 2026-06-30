@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-
 APP_DIR_NAME = ".allbrain"
 DB_FILE_NAME = "allbrain.db"
 

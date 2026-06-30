@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from math import log
 from typing import Any, Protocol
 
 from allbrain.orchestrator.agent_profile import AgentProfile, TaskRequirements
 from allbrain.orchestrator.capabilities import CapabilityRegistry
-
 
 EPSILON = 0.10
 RECOVERY_AFTER = timedelta(minutes=15)
@@ -191,10 +190,10 @@ class SchedulerV1:
     def _recovery_probe(self, last_failure_at: datetime | None) -> bool:
         if last_failure_at is None:
             return False
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         # last_failure_at may be naive (legacy data); treat as UTC for comparison
         if last_failure_at.tzinfo is None:
-            last_failure_at = last_failure_at.replace(tzinfo=timezone.utc)
+            last_failure_at = last_failure_at.replace(tzinfo=UTC)
         return now - last_failure_at >= RECOVERY_AFTER
 
     def _confidence(self, total_tasks: int) -> float:

@@ -3,20 +3,20 @@ from __future__ import annotations
 import pytest
 
 from allbrain.events.schemas import EventType
-from allbrain.self_repair import (
-    ValidationGate,
-    PolicyHealthMonitor,
-    RollbackEngine,
-    PolicySnapshotManager,
-    RecoveryExecutor,
-)
 from allbrain.mitigation_learning import (
-    OutcomeTracker,
     LearningEngine,
+    OutcomeTracker,
     PolicyStore,
 )
-from allbrain.predictive_failure.model import RiskSignal
 from allbrain.predictive_failure.manager import PredictiveFailureManager
+from allbrain.predictive_failure.model import RiskSignal
+from allbrain.self_repair import (
+    PolicyHealthMonitor,
+    PolicySnapshotManager,
+    RecoveryExecutor,
+    RollbackEngine,
+    ValidationGate,
+)
 
 
 def _event_types(events):

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.attention.events import validate_attention, validate_budget, validate_reallocation
+from allbrain.events.schemas import EventType
 
 
 class AttentionReducer:

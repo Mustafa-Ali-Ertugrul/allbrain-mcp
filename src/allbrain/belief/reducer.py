@@ -11,8 +11,8 @@ from allbrain.belief.estimator import (
     tally_outcomes,
 )
 from allbrain.belief.models import BeliefState, OutcomeKind
-from allbrain.events.schemas import EventType
 from allbrain.belief.updater import update_state
+from allbrain.events.schemas import EventType
 
 
 class BeliefReducer:
@@ -30,7 +30,7 @@ class BeliefReducer:
             self._seen_ids.add(event_id)
 
         event_type = str(getattr(event, "type", ""))
-        
+
         # 1. Authoritative Override: If a BELIEF_COMPUTED event arrives, it replaces the tally
         if event_type == EventType.BELIEF_COMPUTED.value:
             payload = getattr(event, "payload", None)
@@ -48,7 +48,7 @@ class BeliefReducer:
         outcome = _outcome_of(event)
         if outcome is None:
             return
-            
+
         context_key = _context_key_of(event)
         bucket = self._contexts.setdefault(context_key, {"successes": 0, "failures": 0, "blocked": 0})
 
@@ -66,7 +66,7 @@ class BeliefReducer:
     def snapshot(self, *, context_key: str = "default") -> BeliefState:
         bucket = self._contexts.get(context_key, {"successes": 0, "failures": 0, "blocked": 0})
         sample_count = bucket["successes"] + bucket["failures"] + bucket["blocked"]
-        
+
         return update_state(
             context_key=context_key,
             successes=bucket["successes"],

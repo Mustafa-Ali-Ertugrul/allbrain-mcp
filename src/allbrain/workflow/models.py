@@ -61,7 +61,7 @@ class TaskNode:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "TaskNode":
+    def from_dict(cls, data: dict[str, Any]) -> TaskNode:
         return cls(
             node_id=data["node_id"],
             task_id=data["task_id"],
@@ -93,7 +93,7 @@ class TaskEdge:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "TaskEdge":
+    def from_dict(cls, data: dict[str, Any]) -> TaskEdge:
         return cls(
             from_id=data["from_id"],
             to_id=data["to_id"],
@@ -119,7 +119,7 @@ class SubtaskResult:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "SubtaskResult":
+    def from_dict(cls, data: dict[str, Any]) -> SubtaskResult:
         return cls(
             node_id=data["node_id"],
             agent_id=data.get("agent_id"),
@@ -180,7 +180,7 @@ class TaskGraph:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "TaskGraph":
+    def from_dict(cls, data: dict[str, Any]) -> TaskGraph:
         graph = cls(
             nodes={nid: TaskNode.from_dict(n) for nid, n in data.get("nodes", {}).items()},
             edges=[TaskEdge.from_dict(e) for e in data.get("edges", [])],

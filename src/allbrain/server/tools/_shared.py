@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
-from allbrain.server.context import BrainContext
 from allbrain.models.schemas import UserInputError
+from allbrain.server.context import BrainContext
 
 # NOTE: Circular-safe imports — SnapshotRepo, SnapshotBuilder etc. are
 # imported locally inside the functions that need them to avoid triggering
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 def datetime_now_iso() -> str:
     from datetime import datetime, timezone
 
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def snapshot_to_dict(snapshot) -> dict[str, Any]:
@@ -76,9 +77,9 @@ def maybe_auto_snapshot(context: BrainContext, *, project_path: str | Path) -> N
     project = context.repository.get_project_by_path(project_path)
     if project is None or project.id is None:
         return
-    from allbrain.storage.snapshot_repo import SnapshotRepo
     from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
     from allbrain.snapshot.trigger import snapshot_weight
+    from allbrain.storage.snapshot_repo import SnapshotRepo
 
     snapshot_repo = SnapshotRepo(context.repository.engine)
     latest = snapshot_repo.get_latest(project.id)

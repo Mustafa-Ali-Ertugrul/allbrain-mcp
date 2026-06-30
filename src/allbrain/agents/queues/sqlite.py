@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
-from typing import Any, Iterator
+from datetime import UTC, datetime, timedelta, timezone
+from typing import Any
 
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, col, select
@@ -224,7 +225,7 @@ def _deserialize_item(data: dict[str, Any]) -> QueueItem:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @contextmanager

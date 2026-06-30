@@ -5,7 +5,11 @@ from allbrain.graph import WorkflowGraphBuilder
 from allbrain.memory import MemoryBuilder
 from allbrain.observability import DashboardDataBuilder
 from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import GlobalExperienceMemoryBuilder, RuntimeCoreStateBuilder, SystemDecisionPipeline
+from allbrain.runtime_core import (
+    GlobalExperienceMemoryBuilder,
+    RuntimeCoreStateBuilder,
+    SystemDecisionPipeline,
+)
 from allbrain.server.app import run_decision_pipeline_impl
 from tests.test_sprint12_memory_policy_ui import events, make_context
 

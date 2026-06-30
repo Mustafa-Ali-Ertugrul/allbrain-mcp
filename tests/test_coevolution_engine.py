@@ -3,13 +3,13 @@ from __future__ import annotations
 import pytest
 
 from allbrain.coevolution import (
-    Coupling,
-    CouplingMatrix,
-    Dynamics,
-    CoEvolutionState,
     COEVOLUTION_DAMPING,
     COEVOLUTION_MAX_STRENGTH,
     COEVOLUTION_MIN_STRENGTH,
+    CoEvolutionState,
+    Coupling,
+    CouplingMatrix,
+    Dynamics,
 )
 
 

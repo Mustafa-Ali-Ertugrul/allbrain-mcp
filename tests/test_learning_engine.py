@@ -4,9 +4,9 @@ import pytest
 
 from allbrain.mitigation_learning.learning_engine import LearningEngine
 from allbrain.mitigation_learning.model import (
-    MIN_USES_FOR_DISABLE,
     DISABLE_SUCCESS_RATE_THRESHOLD,
     LEARNING_EMA_ALPHA,
+    MIN_USES_FOR_DISABLE,
 )
 
 

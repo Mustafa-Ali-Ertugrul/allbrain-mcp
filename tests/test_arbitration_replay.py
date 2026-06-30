@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.arbitration.events import make_vote_payload, make_consensus_payload
+from allbrain.arbitration.events import make_consensus_payload, make_vote_payload
 from allbrain.events.schemas import EventType
 from allbrain.replay import EventReplayEngine
 

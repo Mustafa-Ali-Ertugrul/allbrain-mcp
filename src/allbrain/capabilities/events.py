@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.capabilities.model import CAPABILITY_TEMPLATE_VERSION
 
-
 REG_KEYS: frozenset[str] = frozenset({"agent_id", "capability", "weight"})
 CLASSIFIED_KEYS: frozenset[str] = frozenset({"task_id", "task_type"})
 MATCHED_KEYS: frozenset[str] = frozenset({"agent_id", "task_type", "match_score", "match_kind"})

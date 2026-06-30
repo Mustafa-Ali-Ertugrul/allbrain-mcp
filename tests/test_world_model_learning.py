@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any
 
 import pytest
@@ -18,7 +18,6 @@ from allbrain.world import (
     WorldState,
 )
 from allbrain.world.manager import WorldModel
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -36,7 +35,7 @@ def _make_obs(env: dict[str, str], *, obs_id: str = "obs-1") -> Any:
         source="world",
         file_path=None,
         payload={
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "environment_state": env,
             "resources": {"internet": True},
             "system_state": {"cpu_usage": 50.0},
@@ -44,7 +43,7 @@ def _make_obs(env: dict[str, str], *, obs_id: str = "obs-1") -> Any:
         },
         task_hint=None,
         importance=None,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 
@@ -68,7 +67,7 @@ def _make_sim(
     payload: dict[str, Any] = {
         "simulation_id": sim_id,
         "next_state": {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "environment_state": next_env,
             "resources": {"internet": True},
             "system_state": {"cpu_usage": 50.0},
@@ -97,7 +96,7 @@ def _make_sim(
         importance=None,
         caused_by=obs_id,
         impact_score=risk,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 
@@ -198,7 +197,7 @@ class TestLearnEnoughEvents:
         # Use a clean state (no git_dirty) to isolate the learned-prediction test
         # from any real git-dirtiness in the working tree.
         clean_state = WorldState(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             resources={"internet": True},
         )
         result = model.simulate("deploy", clean_state)

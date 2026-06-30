@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from allbrain.decision import DecisionEngine, DecisionContext, build_minimal_trace, build_debug_trace, make_contract
+from allbrain.decision import (
+    DecisionContext,
+    DecisionEngine,
+    build_debug_trace,
+    build_minimal_trace,
+    make_contract,
+)
 
 
 class TestExplainability:
@@ -11,7 +17,7 @@ class TestExplainability:
         assert "final_score" in trace
 
     def test_debug_trace(self):
-        ctx = DecisionContext(agent_id="a", task_type="t", contract=make_contract(debug=True, fusion=True), 
+        ctx = DecisionContext(agent_id="a", task_type="t", contract=make_contract(debug=True, fusion=True),
                               telemetry={"reputation": 0.8}, learning={"calibrated_trust": 0.5}, dynamics={"drift_score": 0.1},
                               causal={"impact_score": 0.3}, capability={"match_score": 0.8},
                               fusion={"capability": 0.8, "learning": 0.7, "dynamics": 0.5, "causal": 0.6})

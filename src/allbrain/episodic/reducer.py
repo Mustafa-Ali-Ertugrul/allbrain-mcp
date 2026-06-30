@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.episodic.events import (
     validate_episode_created,
-    validate_episode_retrieved,
     validate_episode_forgotten,
+    validate_episode_retrieved,
 )
 from allbrain.episodic.model import Episode, EpisodicState
+from allbrain.events.schemas import EventType
 
 
 class EpisodicReducer:

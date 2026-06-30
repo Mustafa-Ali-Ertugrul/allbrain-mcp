@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.causal.model import CAUSAL_TEMPLATE_VERSION
 
-
 COUNTERFACTUAL_KEYS: frozenset[str] = frozenset(
     {"agent_id", "task_type", "actual_agent", "alternative_agent",
      "actual_outcome", "alternative_outcome", "impact_score", "confidence", "sample_count"}

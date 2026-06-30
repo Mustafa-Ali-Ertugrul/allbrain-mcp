@@ -3,12 +3,12 @@ from __future__ import annotations
 import pytest
 
 from allbrain.soft_repair import (
-    AlphaController,
-    StabilityAdapter,
-    PolicyBlender,
-    BLEND_ALPHA_MIN,
     BLEND_ALPHA_MAX,
+    BLEND_ALPHA_MIN,
     SOFT_REPAIR_TEMPLATE_VERSION,
+    AlphaController,
+    PolicyBlender,
+    StabilityAdapter,
 )
 from allbrain.soft_repair.policy_blender import _blend_dicts
 

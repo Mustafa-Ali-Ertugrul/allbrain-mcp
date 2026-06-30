@@ -4,8 +4,8 @@ from typing import Any
 
 from allbrain.events.schemas import EventType
 from allbrain.policy_routing.events import (
-    validate_policy_family_selected,
     validate_family_candidate_evaluated,
+    validate_policy_family_selected,
 )
 from allbrain.policy_routing.model import POLICY_ROUTING_TEMPLATE_VERSION
 

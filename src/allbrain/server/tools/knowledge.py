@@ -6,6 +6,27 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.belief import BeliefManager
+from allbrain.events import EventType
+from allbrain.information_seeking import InformationSeekingManager
+from allbrain.information_seeking.evaluator import ACTION_VOI_TABLE, InformationSeekingEvaluator
+from allbrain.information_seeking.models import (
+    INFORMATION_SEEKING_TEMPLATE_VERSION,
+    InformationAction,
+)
+from allbrain.memory import MemoryBuilder, MemoryRetriever
+from allbrain.models.schemas import (
+    DetectKnowledgeGapsInput,
+    EstimateInformationGainInput,
+    EstimateInformationGainV2Input,
+    EstimateUncertaintyInput,
+    IdentifyInformationNeedsInput,
+    QueryBeliefInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.policy import RoutingEngine
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
@@ -13,27 +34,8 @@ from allbrain.server.tools._shared import (
     maybe_auto_snapshot,
     observability_project_and_limit,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    EstimateUncertaintyInput,
-    DetectKnowledgeGapsInput,
-    IdentifyInformationNeedsInput,
-    EstimateInformationGainInput,
-    QueryBeliefInput,
-    EstimateInformationGainV2Input,
-)
-from allbrain.events import EventType
 from allbrain.uncertainty import UncertaintyManager, observed_success_rate
 from allbrain.uncertainty.models import KnowledgeGap
-from allbrain.information_seeking import InformationSeekingManager
-from allbrain.information_seeking.evaluator import ACTION_VOI_TABLE
-from allbrain.information_seeking.models import InformationAction, INFORMATION_SEEKING_TEMPLATE_VERSION
-from allbrain.belief import BeliefManager
-from allbrain.information_seeking.evaluator import InformationSeekingEvaluator
-from allbrain.memory import MemoryRetriever, MemoryBuilder
-from allbrain.policy import RoutingEngine
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +188,6 @@ def estimate_information_gain_impl(context: BrainContext, **kwargs: Any) -> Tool
 
 
 def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    from allbrain.belief import BeliefManager
     try:
         data = QueryBeliefInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
@@ -230,8 +231,6 @@ def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 
 
 def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    from allbrain.belief import BeliefManager
-    from allbrain.information_seeking.evaluator import InformationSeekingEvaluator
     try:
         data = EstimateInformationGainV2Input.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from allbrain.episodic.model import Episode
-from allbrain.semantic.model import (
-    CONSOLIDATION_MIN_EPISODES,
-    CONSOLIDATION_THRESHOLD,
-    CONFIDENCE_DECAY_RATE,
-    MAX_CONCEPTS,
-    SemanticConcept,
-)
 from allbrain.semantic.abstraction import (
     extract_pattern_from_episode,
     generalize_signature,
     pattern_overlap,
+)
+from allbrain.semantic.model import (
+    CONFIDENCE_DECAY_RATE,
+    CONSOLIDATION_MIN_EPISODES,
+    CONSOLIDATION_THRESHOLD,
+    MAX_CONCEPTS,
+    SemanticConcept,
 )
 
 

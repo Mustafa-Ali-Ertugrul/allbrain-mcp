@@ -94,7 +94,7 @@ class InMemoryTaskQueue(TaskQueue):
                 await asyncio.wait_for(self._wait_for_item(), timeout=timeout)
             else:
                 await self._wait_for_item()
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return None
         if not self._queue:
             return None

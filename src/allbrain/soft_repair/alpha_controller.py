@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.soft_repair.model import BLEND_ALPHA_MIN, BLEND_ALPHA_MAX
+from allbrain.soft_repair.model import BLEND_ALPHA_MAX, BLEND_ALPHA_MIN
 
 
 class AlphaController:

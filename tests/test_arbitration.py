@@ -2,6 +2,14 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.arbitration.events import (
+    make_arb_decision_payload,
+    make_consensus_payload,
+    make_vote_payload,
+    validate_arb_decision_payload,
+    validate_consensus_payload,
+    validate_vote_payload,
+)
 from allbrain.arbitration.model import VoteRecord
 from allbrain.arbitration.scorer import (
     agreement_ratio,
@@ -10,14 +18,6 @@ from allbrain.arbitration.scorer import (
     vote_score,
     weighted_resolve,
     winner,
-)
-from allbrain.arbitration.events import (
-    make_arb_decision_payload,
-    make_consensus_payload,
-    make_vote_payload,
-    validate_arb_decision_payload,
-    validate_consensus_payload,
-    validate_vote_payload,
 )
 
 

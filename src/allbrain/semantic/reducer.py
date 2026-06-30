@@ -5,8 +5,8 @@ from typing import Any
 from allbrain.events.schemas import EventType
 from allbrain.semantic.events import (
     validate_concept_created,
-    validate_concept_updated,
     validate_concept_forgotten,
+    validate_concept_updated,
 )
 from allbrain.semantic.model import SemanticConcept, SemanticState
 

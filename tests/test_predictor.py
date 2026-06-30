@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from allbrain.predictive_failure.model import (
-    FailurePrediction,
+    LEVEL_FAILURE,
     LEVEL_SAFE,
     LEVEL_WARNING,
-    LEVEL_FAILURE,
+    FailurePrediction,
 )
 from allbrain.predictive_failure.predictor import Predictor
 

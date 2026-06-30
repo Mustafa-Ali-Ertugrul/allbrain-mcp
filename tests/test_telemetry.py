@@ -2,6 +2,12 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.telemetry.events import (
+    make_completed_payload,
+    make_runtime_updated_payload,
+    make_started_payload,
+    validate_completed_payload,
+)
 from allbrain.telemetry.metrics import (
     duration_component,
     mean_duration,
@@ -9,12 +15,6 @@ from allbrain.telemetry.metrics import (
     retry_component,
     runtime_score,
     success_rate,
-)
-from allbrain.telemetry.events import (
-    make_completed_payload,
-    make_runtime_updated_payload,
-    make_started_payload,
-    validate_completed_payload,
 )
 from allbrain.telemetry.model import MAX_DURATION_MS, MAX_RETRIES
 

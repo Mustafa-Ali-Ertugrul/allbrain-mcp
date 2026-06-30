@@ -3,13 +3,13 @@ from __future__ import annotations
 import pytest
 
 from allbrain.mitigation_learning.policy_store import PolicyStore
-from allbrain.self_repair.rollback_engine import RollbackEngine
 from allbrain.self_repair.model import (
-    StabilityReport,
-    PolicySnapshot,
     MIN_STABILITY_THRESHOLD,
     STABLE_BASELINE,
+    PolicySnapshot,
+    StabilityReport,
 )
+from allbrain.self_repair.rollback_engine import RollbackEngine
 
 
 def _report(stability):

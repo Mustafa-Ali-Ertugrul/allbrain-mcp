@@ -4,19 +4,19 @@ import pytest
 
 from allbrain.events.schemas import EventType
 from allbrain.learning_safety import (
+    DriftGuard,
     EntropyCalculator,
     Explorer,
     OutcomeValidator,
-    DriftGuard,
 )
 from allbrain.mitigation_learning import (
-    OutcomeTracker,
     LearningEngine,
-    StrategyOptimizer,
+    OutcomeTracker,
     PolicyStore,
+    StrategyOptimizer,
 )
-from allbrain.predictive_failure.model import RiskSignal
 from allbrain.predictive_failure.manager import PredictiveFailureManager
+from allbrain.predictive_failure.model import RiskSignal
 
 
 def _event_types(events):

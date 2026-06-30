@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from allbrain.workspace import compute_activation, apply_decay, WorkspaceItem, DECAY_RATE
 import math
+
+from allbrain.workspace import DECAY_RATE, WorkspaceItem, apply_decay, compute_activation
 
 
 class TestActivation:

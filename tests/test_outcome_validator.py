@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.learning_safety.outcome_validator import OutcomeValidator
 from allbrain.learning_safety.model import MAX_SIMULATION_WEIGHT
+from allbrain.learning_safety.outcome_validator import OutcomeValidator
 
 
 class TestOutcomeValidator:

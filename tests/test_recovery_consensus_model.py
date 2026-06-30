@@ -3,18 +3,18 @@ from __future__ import annotations
 import pytest
 
 from allbrain.recovery_consensus.model import (
+    CONSENSUS_MIN_RATIO,
     CONSENSUS_TEMPLATE_VERSION,
-    MAX_CANDIDATES,
-    MIN_CANDIDATES,
-    DEFAULT_SUCCESS_WEIGHT,
     DEFAULT_CONFIDENCE_WEIGHT,
     DEFAULT_RISK_WEIGHT,
-    CONSENSUS_MIN_RATIO,
+    DEFAULT_SUCCESS_WEIGHT,
+    MAX_CANDIDATES,
+    MIN_CANDIDATES,
     STRATEGY_PROFILES,
     CandidateStrategy,
+    RecoveryConsensusState,
     RecoveryDecision,
     ScoredCandidate,
-    RecoveryConsensusState,
 )
 
 

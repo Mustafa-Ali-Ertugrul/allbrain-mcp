@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.workspace import select_workspace_items, WorkspaceItem, MIN_ACTIVATION
+from allbrain.workspace import MIN_ACTIVATION, WorkspaceItem, select_workspace_items
 
 
 class TestSelector:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+
 from allbrain.value_alignment.model import VALUE_ALIGNMENT_TEMPLATE_VERSION
 
 ALIGNMENT_FAILED_KEYS: frozenset[str] = frozenset({"fault_type", "overall_score", "hard_violations", "soft_penalties"})

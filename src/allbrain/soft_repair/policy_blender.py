@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.soft_repair.model import (
-    BlendedPolicy,
-    BlendConfig,
-    DEFAULT_BLEND_THRESHOLD,
-)
 from allbrain.soft_repair.alpha_controller import AlphaController
+from allbrain.soft_repair.model import (
+    DEFAULT_BLEND_THRESHOLD,
+    BlendConfig,
+    BlendedPolicy,
+)
 from allbrain.soft_repair.stability_adapter import StabilityAdapter
 
 

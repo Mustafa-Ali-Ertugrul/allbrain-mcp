@@ -1,43 +1,43 @@
-from allbrain.dynamics.model import (
-    DYNAMICS_TEMPLATE_VERSION,
-    DRIFT_EMA_SHORT_WINDOW,
-    DRIFT_EMA_LONG_WINDOW,
-    DRIFT_THRESHOLD,
-    DRIFT_MEDIUM_THRESHOLD,
-    DRIFT_HIGH_THRESHOLD,
-    MIN_OBSERVATIONS_FOR_DRIFT,
-    DENSITY_PENALTY_FACTOR,
-    TREND_SLOPE_WINDOW,
-    TREND_IMPROVING_EPSILON,
-    TREND_DEGRADING_EPSILON,
-    TREND_HYSTERESIS_COUNT,
-    TREND_OSCILLATION_VARIANCE,
-    FORECAST_DEFAULT_HORIZON,
-    FORECAST_CAP_PER_STEP,
-    FORECAST_VARIANCE_DAMPING_THRESHOLD,
-    FORECAST_DAMPING_FACTOR,
-    FORECAST_LOW_CONFIDENCE_THRESHOLD,
-    ROUTING_DRIFT_PENALTY_MIN,
-    ROUTING_TREND_BOOST_MAGNITUDE,
-    DriftLevel,
-    TrendLabel,
-    DriftState,
-    TrendState,
-    ForecastState,
-)
 from allbrain.dynamics.drift import detect_drift, learning_confidence_attenuation
-from allbrain.dynamics.trend import classify_trend
-from allbrain.dynamics.forecast import predict
 from allbrain.dynamics.events import (
     make_drift_payload,
-    make_trend_payload,
     make_forecast_payload,
+    make_trend_payload,
     validate_drift,
-    validate_trend,
     validate_forecast,
+    validate_trend,
+)
+from allbrain.dynamics.forecast import predict
+from allbrain.dynamics.manager import CapabilityDynamicsManager
+from allbrain.dynamics.model import (
+    DENSITY_PENALTY_FACTOR,
+    DRIFT_EMA_LONG_WINDOW,
+    DRIFT_EMA_SHORT_WINDOW,
+    DRIFT_HIGH_THRESHOLD,
+    DRIFT_MEDIUM_THRESHOLD,
+    DRIFT_THRESHOLD,
+    DYNAMICS_TEMPLATE_VERSION,
+    FORECAST_CAP_PER_STEP,
+    FORECAST_DAMPING_FACTOR,
+    FORECAST_DEFAULT_HORIZON,
+    FORECAST_LOW_CONFIDENCE_THRESHOLD,
+    FORECAST_VARIANCE_DAMPING_THRESHOLD,
+    MIN_OBSERVATIONS_FOR_DRIFT,
+    ROUTING_DRIFT_PENALTY_MIN,
+    ROUTING_TREND_BOOST_MAGNITUDE,
+    TREND_DEGRADING_EPSILON,
+    TREND_HYSTERESIS_COUNT,
+    TREND_IMPROVING_EPSILON,
+    TREND_OSCILLATION_VARIANCE,
+    TREND_SLOPE_WINDOW,
+    DriftLevel,
+    DriftState,
+    ForecastState,
+    TrendLabel,
+    TrendState,
 )
 from allbrain.dynamics.reducer import CapabilityDynamicsReducer
-from allbrain.dynamics.manager import CapabilityDynamicsManager
+from allbrain.dynamics.trend import classify_trend
 
 __all__ = [
     "CapabilityDynamicsManager",

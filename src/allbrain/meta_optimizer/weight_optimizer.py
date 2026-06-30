@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+from allbrain.meta_optimizer.gradient_estimator import GradientEstimator
+from allbrain.meta_optimizer.model import (
+    META_OPTIMIZER_EXPLORATION_BOUND,
+    META_OPTIMIZER_UPDATE_INTERVAL,
+    META_OPTIMIZER_WEIGHT_MAX,
+    META_OPTIMIZER_WEIGHT_MIN,
+)
 from allbrain.meta_scoring.model import ScoringProfile
 from allbrain.meta_scoring.profile_store import ProfileStore
-from allbrain.meta_optimizer.model import (
-    META_OPTIMIZER_WEIGHT_MIN,
-    META_OPTIMIZER_WEIGHT_MAX,
-    META_OPTIMIZER_UPDATE_INTERVAL,
-    META_OPTIMIZER_EXPLORATION_BOUND,
-)
-from allbrain.meta_optimizer.gradient_estimator import GradientEstimator
 
 
 class WeightOptimizer:

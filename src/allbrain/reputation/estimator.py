@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Iterable
-
+from collections.abc import Iterable
 
 REPUTATION_TEMPLATE_VERSION = 1
 REPUTATION_MAX_RETRY = 5.0
@@ -17,7 +16,7 @@ def _stable_reputation_id(agent_id: str, event_ids: Iterable[str] | None = None)
     if event_ids is None:
         event_ids = []
     event_key = "|".join(sorted(str(eid) for eid in event_ids))
-    digest = hashlib.sha256(f"{agent_id}:{event_key}".encode("utf-8")).digest()
+    digest = hashlib.sha256(f"{agent_id}:{event_key}".encode()).digest()
     return f"reputation-{digest.hex()[:12]}"
 
 

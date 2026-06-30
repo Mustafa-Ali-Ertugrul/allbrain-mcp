@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.mitigation_learning.outcome_tracker import OutcomeTracker
 from allbrain.mitigation_learning.model import STRATEGY_BASE_EFFECTIVENESS
+from allbrain.mitigation_learning.outcome_tracker import OutcomeTracker
 
 
 class TestOutcomeTracker:

@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.meta_scoring import ProfileStore, ScoringProfile
+from allbrain.events.schemas import EventType
 from allbrain.meta_optimizer import (
-    WeightOptimizer,
-    GradientEstimator,
-    StabilityController,
-    MetaOptimizerReducer,
     META_OPTIMIZER_LEARNING_RATE,
-    META_OPTIMIZER_WEIGHT_MIN,
-    META_OPTIMIZER_WEIGHT_MAX,
     META_OPTIMIZER_UPDATE_INTERVAL,
-    validate_weights_adapated,
+    META_OPTIMIZER_WEIGHT_MAX,
+    META_OPTIMIZER_WEIGHT_MIN,
+    GradientEstimator,
+    MetaOptimizerReducer,
+    StabilityController,
+    WeightOptimizer,
+    make_meta_optimizer_guarded_payload,
     make_weights_adapated_payload,
     validate_meta_optimizer_guarded,
-    make_meta_optimizer_guarded_payload,
+    validate_weights_adapated,
 )
-from allbrain.events.schemas import EventType
+from allbrain.meta_scoring import ProfileStore, ScoringProfile
 
 
 class TestGradientEstimator:

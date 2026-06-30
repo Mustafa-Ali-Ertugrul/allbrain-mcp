@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from typing import Any
+
 from allbrain.events.schemas import EventType
-from allbrain.objective_system.events import validate_objective_updated, validate_objective_rebalanced
+from allbrain.objective_system.events import (
+    validate_objective_rebalanced,
+    validate_objective_updated,
+)
 from allbrain.objective_system.model import OBJECTIVE_SYSTEM_TEMPLATE_VERSION
 
 

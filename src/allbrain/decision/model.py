@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import FrozenSet
 
-
 DECISION_TEMPLATE_VERSION = 1
 
 
@@ -26,7 +25,7 @@ class DecisionContract:
     depends only on contract version + explicit signal keys.
     """
     version: int
-    active_signals: FrozenSet[str]  # e.g., frozenset({"fusion", "causal", "dynamics"})
+    active_signals: frozenset[str]  # e.g., frozenset({"fusion", "causal", "dynamics"})
     debug: bool = False
 
     def has_signal(self, signal: str) -> bool:

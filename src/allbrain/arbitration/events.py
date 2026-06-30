@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.arbitration.model import ARBITRATION_TEMPLATE_VERSION
 
-
 VOTE_REQUIRED_KEYS: frozenset[str] = frozenset(
     {"agent_id", "candidate_id", "confidence", "reputation", "calibrated_trust", "context_key"}
 )

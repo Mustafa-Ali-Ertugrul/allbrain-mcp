@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.dynamics import classify_trend, TrendLabel
+from allbrain.dynamics import TrendLabel, classify_trend
 from allbrain.dynamics.model import TREND_HYSTERESIS_COUNT, TREND_OSCILLATION_VARIANCE
 
 

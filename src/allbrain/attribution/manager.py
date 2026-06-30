@@ -2,16 +2,20 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
+from allbrain.attribution.allocator import allocate_credit
+from allbrain.attribution.counterfactual import estimate_signal_impact
+from allbrain.attribution.estimator import (
+    initial_signal_counts,
+    initial_signal_rewards,
+    update_signal_reward,
+)
+from allbrain.attribution.matrix import detect_importance_change
 from allbrain.attribution.model import (
     ATTRIBUTION_COUNTERFACTUAL_INTERVAL,
     AttributionResult,
     CreditAllocation,
 )
-from allbrain.attribution.allocator import allocate_credit
-from allbrain.attribution.counterfactual import estimate_signal_impact
-from allbrain.attribution.estimator import update_signal_reward, initial_signal_rewards, initial_signal_counts
-from allbrain.attribution.matrix import detect_importance_change
+from allbrain.foundations import canonical_event_sort
 
 
 class AttributionManager:

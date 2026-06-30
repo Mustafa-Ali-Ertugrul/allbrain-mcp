@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events.schemas import EventType
-from allbrain.routing.events import validate_selected, validate_scored
+from allbrain.routing.events import validate_scored, validate_selected
 from allbrain.routing.model import RoutingState
 from allbrain.routing.scorer import _stable_routing_id
 

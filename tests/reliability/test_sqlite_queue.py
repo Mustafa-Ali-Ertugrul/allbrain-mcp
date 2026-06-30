@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from allbrain.agents.queue import QueueItem
-from allbrain.agents.queues import RedisTaskQueue, RabbitMQTaskQueue, SQLiteTaskQueue
+from allbrain.agents.queues import RabbitMQTaskQueue, RedisTaskQueue, SQLiteTaskQueue
 from allbrain.models.entities import QueueItemRecord, utc_now
 from allbrain.storage import create_engine_for_path, init_db
 from allbrain.storage.database import open_session

@@ -10,12 +10,16 @@ from allbrain.calibration import (
     CalibrationReducer,
     CalibrationState,
     calibrated_trust,
+)
+from allbrain.calibration import (
     make_payload as make_calibration_payload,
 )
 from allbrain.events.schemas import EventType
 from allbrain.revision import (
     RevisionManager,
     RevisionReducer,
+)
+from allbrain.revision import (
     make_payload as make_revision_payload,
 )
 from allbrain.revision.policies import RevisionPolicy

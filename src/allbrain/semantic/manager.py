@@ -21,12 +21,11 @@ from allbrain.semantic.model import (
     CONFIDENCE_DECAY_RATE,
     CONSOLIDATION_MIN_EPISODES,
     CONSOLIDATION_THRESHOLD,
-    MAX_CONCEPTS,
     DEFAULT_SEMANTIC_LIMIT,
+    MAX_CONCEPTS,
     SemanticConcept,
 )
 from allbrain.semantic.retrieval import retrieve_semantic
-
 
 EVICTION_REASON_CAPACITY = "max_concepts_exceeded"
 EVICTION_REASON_DECAY = "confidence_below_threshold"

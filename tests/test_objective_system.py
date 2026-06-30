@@ -1,16 +1,24 @@
 from __future__ import annotations
 
 import pytest
-from allbrain.objective_system import (
-    Objective, ObjectiveStore, ObjectiveEvaluator, ObjectiveWeights,
-    ObjectivePriority, OBJECTIVE_DEFAULTS_GLOBAL,
-    FAULT_TYPE_SAFETY_THRESHOLDS, FAULT_TYPE_WEIGHTS,
-    ObjectiveSystemReducer,
-    validate_objective_updated, make_objective_updated_payload,
-    validate_objective_rebalanced, make_objective_rebalanced_payload,
-)
-from allbrain.mitigation_learning.model import StrategyStats
+
 from allbrain.events.schemas import EventType
+from allbrain.mitigation_learning.model import StrategyStats
+from allbrain.objective_system import (
+    FAULT_TYPE_SAFETY_THRESHOLDS,
+    FAULT_TYPE_WEIGHTS,
+    OBJECTIVE_DEFAULTS_GLOBAL,
+    Objective,
+    ObjectiveEvaluator,
+    ObjectivePriority,
+    ObjectiveStore,
+    ObjectiveSystemReducer,
+    ObjectiveWeights,
+    make_objective_rebalanced_payload,
+    make_objective_updated_payload,
+    validate_objective_rebalanced,
+    validate_objective_updated,
+)
 
 
 class TestObjective:

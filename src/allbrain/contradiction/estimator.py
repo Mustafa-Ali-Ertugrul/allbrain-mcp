@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 
 def _stable_contradiction_id(evidence_event_ids: Iterable[str] | None = None) -> str:

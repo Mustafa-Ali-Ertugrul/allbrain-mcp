@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 CAPABILITY_TEMPLATE_VERSION = 1
 
 EXACT_MATCH = 1.0

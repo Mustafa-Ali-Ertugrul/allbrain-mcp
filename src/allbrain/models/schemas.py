@@ -57,7 +57,7 @@ class BaseInputModel(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def _check_dict_sizes(self) -> "BaseInputModel":
+    def _check_dict_sizes(self) -> BaseInputModel:
         """Enforce size limits on all dict-typed fields."""
         import json
 
@@ -110,7 +110,7 @@ class SaveEventInput(BaseInputModel):
         return value
 
     @model_validator(mode="after")
-    def validate_task_payload(self) -> "SaveEventInput":
+    def validate_task_payload(self) -> SaveEventInput:
         task_events_requiring_id = {
             EventType.TASK_ASSIGNED.value,
             EventType.SELECTION_DECISION.value,

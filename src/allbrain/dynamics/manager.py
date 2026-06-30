@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.dynamics.drift import detect_drift
+from allbrain.dynamics.forecast import predict
+from allbrain.dynamics.trend import classify_trend
 from allbrain.events.schemas import EventType
 from allbrain.foundations import canonical_event_sort
-from allbrain.dynamics.drift import detect_drift
-from allbrain.dynamics.trend import classify_trend
-from allbrain.dynamics.forecast import predict
 
 
 class CapabilityDynamicsManager:
@@ -42,12 +42,7 @@ class CapabilityDynamicsManager:
 
             if et == EventType.AGENT_CAPABILITY_OBSERVED.value:
                 obs_count += 1
-            elif et == EventType.AGENT_CAPABILITY_LEARNED.value:
-                ns = payload.get("new_score")
-                if isinstance(ns, (int, float)):
-                    scores.append(float(ns))
-                obs_count = max(obs_count, 1)
-            elif et == EventType.AGENT_CAPABILITY_DECAYED.value:
+            elif et == EventType.AGENT_CAPABILITY_LEARNED.value or et == EventType.AGENT_CAPABILITY_DECAYED.value:
                 ns = payload.get("new_score")
                 if isinstance(ns, (int, float)):
                     scores.append(float(ns))

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.events.schemas import EventType
 from allbrain.attribution import (
-    make_credit_payload, make_attribution_update_payload, make_importance_payload,
+    make_attribution_update_payload,
+    make_credit_payload,
+    make_importance_payload,
 )
+from allbrain.events.schemas import EventType
 from allbrain.replay import EventReplayEngine
 
 

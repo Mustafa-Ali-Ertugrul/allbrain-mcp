@@ -5,12 +5,12 @@ import time
 
 from allbrain.mitigation_learning.policy_store import PolicyStore
 from allbrain.self_repair.model import (
+    MIN_CYCLES_BETWEEN_ROLLBACKS,
+    MIN_STABILITY_THRESHOLD,
+    STABLE_BASELINE,
+    PolicySnapshot,
     RollbackPlan,
     StabilityReport,
-    PolicySnapshot,
-    STABLE_BASELINE,
-    MIN_STABILITY_THRESHOLD,
-    MIN_CYCLES_BETWEEN_ROLLBACKS,
 )
 
 

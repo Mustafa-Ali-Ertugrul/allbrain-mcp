@@ -2,19 +2,19 @@ from __future__ import annotations
 
 import hashlib
 import time
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from allbrain.adaptive_recovery.model import (
     DEFAULT_MAX_CHAIN_LENGTH,
-    PATTERN_MOVE_THRESHOLD,
     PATTERN_MOVE_MIN_SAMPLES,
-    RecoveryStep,
+    PATTERN_MOVE_THRESHOLD,
     RecoveryChain,
+    RecoveryStep,
 )
 
 if TYPE_CHECKING:
-    from allbrain.recovery_consensus.model import CandidateStrategy
     from allbrain.failure_memory.manager import FailureMemoryManager
+    from allbrain.recovery_consensus.model import CandidateStrategy
 
 
 def _chain_id(fault_id: str, fault_type: str) -> str:

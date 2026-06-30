@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from allbrain.recovery_consensus.strategy_generator import StrategyGenerator
-from allbrain.recovery_consensus.evaluator import Evaluator
 from allbrain.recovery_consensus.arbiter import Arbiter
+from allbrain.recovery_consensus.evaluator import Evaluator
 from allbrain.recovery_consensus.model import (
     CandidateStrategy,
     RecoveryConsensusState,
 )
+from allbrain.recovery_consensus.strategy_generator import StrategyGenerator
 
 if TYPE_CHECKING:
     from allbrain.failure_memory.manager import FailureMemoryManager

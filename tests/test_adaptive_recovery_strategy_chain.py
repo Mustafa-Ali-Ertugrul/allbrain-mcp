@@ -3,12 +3,12 @@ from __future__ import annotations
 import pytest
 
 from allbrain.adaptive_recovery import (
-    StrategyChain,
+    DEFAULT_MAX_CHAIN_LENGTH,
+    PATTERN_MOVE_MIN_SAMPLES,
+    PATTERN_MOVE_THRESHOLD,
     RecoveryChain,
     RecoveryStep,
-    DEFAULT_MAX_CHAIN_LENGTH,
-    PATTERN_MOVE_THRESHOLD,
-    PATTERN_MOVE_MIN_SAMPLES,
+    StrategyChain,
 )
 from allbrain.recovery_consensus.model import CandidateStrategy
 

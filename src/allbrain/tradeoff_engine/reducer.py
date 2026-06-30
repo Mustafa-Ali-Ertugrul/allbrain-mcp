@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Any
+
 from allbrain.events.schemas import EventType
 from allbrain.tradeoff_engine.events import validate_tradeoff_analyzed, validate_utility_computed
 from allbrain.tradeoff_engine.model import TRADEOFF_ENGINE_TEMPLATE_VERSION

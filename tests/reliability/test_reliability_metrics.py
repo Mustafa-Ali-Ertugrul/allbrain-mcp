@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from allbrain.events import EventType
 from allbrain.reliability import ReliabilityMetrics
-from allbrain.server.app import get_reliability_status_impl, get_system_metrics_impl, save_event_impl
+from allbrain.server.app import (
+    get_reliability_status_impl,
+    get_system_metrics_impl,
+    save_event_impl,
+)
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 

@@ -2,12 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.routing.scorer import (
-    best_agent,
-    rank_agents,
-    score_bounds,
-    selection_score,
-)
 from allbrain.routing.events import (
     make_req_payload,
     make_scored_payload,
@@ -15,6 +9,12 @@ from allbrain.routing.events import (
     validate_req,
     validate_scored,
     validate_selected,
+)
+from allbrain.routing.scorer import (
+    best_agent,
+    rank_agents,
+    score_bounds,
+    selection_score,
 )
 
 

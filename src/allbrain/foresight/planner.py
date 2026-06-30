@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 DEPLOY_PLANS: list[list[str]] = [
     ["deploy"],
     ["run_tests", "deploy"],

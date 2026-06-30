@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.decision import DecisionEngine, DecisionContext, DecisionResult
+from allbrain.decision import DecisionContext, DecisionEngine, DecisionResult
 
 
 def _make_ctx(*, debug=False, fusion=False, causal=False, dynamics=False):

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.telemetry.model import TELEMETRY_TEMPLATE_VERSION
 
-
 STARTED_REQUIRED_KEYS: frozenset[str] = frozenset({"agent_id", "task_id", "tool_name"})
 COMPLETED_REQUIRED_KEYS: frozenset[str] = frozenset(
     {"agent_id", "task_id", "tool_name", "duration_ms", "success", "retry_count"}

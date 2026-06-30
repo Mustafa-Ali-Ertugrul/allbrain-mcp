@@ -5,10 +5,10 @@ from typing import Any
 from allbrain.events.schemas import EventType
 from allbrain.resilience.events import (
     validate_anomaly_detected,
-    validate_recovery_planned,
-    validate_recovery_cancelled,
-    validate_snapshot_created,
     validate_failure_analyzed,
+    validate_recovery_cancelled,
+    validate_recovery_planned,
+    validate_snapshot_created,
 )
 from allbrain.resilience.model import (
     RESILIENCE_TEMPLATE_VERSION,

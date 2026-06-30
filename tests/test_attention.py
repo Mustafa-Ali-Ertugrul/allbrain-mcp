@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from allbrain.attention import (
-    AttentionManager, allocate_budget, schedule_attention,
-    ATTENTION_MIN_ALLOCATION, ATTENTION_MAX_ALLOCATION,
+    ATTENTION_MAX_ALLOCATION,
+    ATTENTION_MIN_ALLOCATION,
+    AttentionManager,
+    allocate_budget,
+    schedule_attention,
 )
 
 

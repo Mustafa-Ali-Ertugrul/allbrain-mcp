@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 UNCERTAINTY_COMPUTED_TEMPLATE_VERSION = 1
 
 REQUIRED_KEYS: frozenset[str] = frozenset(

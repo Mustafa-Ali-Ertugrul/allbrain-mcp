@@ -4,10 +4,10 @@ import math
 
 from allbrain.meta_policy.model import (
     META_POLICY_KL_THRESHOLD,
-    META_POLICY_SNAPSHOT_INTERVAL,
     META_POLICY_MIN_ENTROPY,
-    PolicyState,
+    META_POLICY_SNAPSHOT_INTERVAL,
     ModeStats,
+    PolicyState,
 )
 
 

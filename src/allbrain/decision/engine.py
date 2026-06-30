@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import hashlib
 
+from allbrain.decision.backends import (
+    causal_backend,
+    dynamics_backend,
+    fusion_backend,
+    legacy_backend,
+)
 from allbrain.decision.model import DecisionContext, DecisionMode, DecisionResult
 from allbrain.decision.resolver import resolve_mode
-from allbrain.decision.backends import fusion_backend, causal_backend, dynamics_backend, legacy_backend
 
 
 class DecisionEngine:
@@ -112,5 +117,5 @@ class DecisionEngine:
 
 
 def _stable_decision_id(agent_id: str, task_type: str, mode: str, score: float) -> str:
-    d = hashlib.sha256(f"{agent_id}:{task_type}:{mode}:{score:.6f}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{agent_id}:{task_type}:{mode}:{score:.6f}".encode()).digest()
     return f"dec-{d.hex()[:12]}"

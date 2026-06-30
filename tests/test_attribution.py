@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from allbrain.attribution import (
-    allocate_credit, AttributionManager,
-    ATTRIBUTION_MIN_CONTRIBUTION, ATTRIBUTION_CF_CONFIDENCE,
+    ATTRIBUTION_CF_CONFIDENCE,
+    ATTRIBUTION_MIN_CONTRIBUTION,
     ATTRIBUTION_PROPORTIONAL_WEIGHT,
+    AttributionManager,
+    allocate_credit,
 )
 
 

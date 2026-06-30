@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.failure_memory.store import FailureMemoryStore
 from allbrain.failure_memory.learner import Learner
 from allbrain.failure_memory.model import (
-    DEFAULT_SUCCESS_DELTA,
     DEFAULT_FAILURE_DELTA,
+    DEFAULT_SUCCESS_DELTA,
     PATTERN_MIN_SAMPLES,
     PATTERN_SUCCESS_THRESHOLD,
     FailurePattern,
 )
+from allbrain.failure_memory.store import FailureMemoryStore
 
 
 class TestLearner:

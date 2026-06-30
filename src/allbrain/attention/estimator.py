@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from allbrain.attention.model import (
-    ATTENTION_IMPORTANCE_ALPHA,
     ATTENTION_COST_CAP,
+    ATTENTION_IMPORTANCE_ALPHA,
     SIGNAL_COSTS,
 )
 

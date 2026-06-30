@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.information_seeking.models import InformationAction, InformationNeed
 
-
 ACTION_VOI_TABLE: dict[str, dict[str, float]] = {
     "request_feedback":    {"gain": 0.35, "cost": 0.05},
     "collect_history":     {"gain": 0.40, "cost": 0.15},

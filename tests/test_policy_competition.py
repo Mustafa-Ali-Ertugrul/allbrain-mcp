@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.policy_competition import (
+    COMPETITION_CANDIDATE_COUNT,
     CompetitionEngine,
     PolicyCandidate,
-    COMPETITION_CANDIDATE_COUNT,
 )
-from allbrain.mitigation_learning.model import StrategyStats
 
 
 def _make_stats(**overrides) -> StrategyStats:

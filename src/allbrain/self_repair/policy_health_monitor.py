@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from allbrain.self_repair.model import (
-    StabilityReport,
     MIN_STABILITY_THRESHOLD,
     STABLE_BASELINE,
+    StabilityReport,
 )
 
 

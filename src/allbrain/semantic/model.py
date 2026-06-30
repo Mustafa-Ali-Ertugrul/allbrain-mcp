@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-
 MAX_CONCEPTS = 500
 CONSOLIDATION_MIN_EPISODES = 3
 CONSOLIDATION_THRESHOLD = 0.30

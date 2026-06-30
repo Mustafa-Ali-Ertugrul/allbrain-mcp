@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.core.merge import StateMerger
-from allbrain.core.state_machine import ProjectState
-from allbrain.core.state_machine import StateMachine
+from allbrain.core.state_machine import ProjectState, StateMachine
 from allbrain.models.schemas import EventRead
 
 

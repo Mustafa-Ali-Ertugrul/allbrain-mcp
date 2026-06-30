@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.failure_memory.model import (
-    DEFAULT_NEUTRAL_BIAS,
-    DEFAULT_BIAS_WEIGHT,
-    DEFAULT_SUCCESS_DELTA,
-    DEFAULT_FAILURE_DELTA,
-)
-from allbrain.failure_memory.store import FailureMemoryStore
-from allbrain.failure_memory.retriever import FailureMemoryRetriever
 from allbrain.failure_memory.learner import Learner
+from allbrain.failure_memory.model import (
+    DEFAULT_BIAS_WEIGHT,
+    DEFAULT_FAILURE_DELTA,
+    DEFAULT_NEUTRAL_BIAS,
+    DEFAULT_SUCCESS_DELTA,
+)
+from allbrain.failure_memory.retriever import FailureMemoryRetriever
+from allbrain.failure_memory.store import FailureMemoryStore
 
 
 class FailureMemoryManager:

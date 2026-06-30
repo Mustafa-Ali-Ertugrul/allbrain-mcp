@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -245,7 +245,7 @@ def test_is_known_event_basic_check() -> None:
 
 
 def test_list_events_ordered_by_id_not_created_at(tmp_path) -> None:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from allbrain.models.entities import Event
     from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
@@ -270,8 +270,8 @@ def test_list_events_ordered_by_id_not_created_at(tmp_path) -> None:
         type="x", source="test", payload={"i": 3},
     )
 
-    earlier = datetime(2020, 1, 1, tzinfo=timezone.utc)
-    later = datetime(2030, 1, 1, tzinfo=timezone.utc)
+    earlier = datetime(2020, 1, 1, tzinfo=UTC)
+    later = datetime(2030, 1, 1, tzinfo=UTC)
     with open_session(repo.engine) as db:
         for row in (db.get(Event, e1.id), db.get(Event, e2.id), db.get(Event, e3.id)):
             assert row is not None

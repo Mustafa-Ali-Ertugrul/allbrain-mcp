@@ -166,8 +166,9 @@ def test_observed_success_rate_empty_log() -> None:
 
 
 def test_observed_success_rate_with_events() -> None:
-    from allbrain.models.schemas import EventRead
     from uuid import uuid4
+
+    from allbrain.models.schemas import EventRead
     base_time = datetime(2026, 1, 1, 12, 0, 0)
     event_list = []
     for _ in range(8):

@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-
 META_POLICY_TEMPLATE_VERSION = 1
 META_POLICY_EMA_ALPHA = 0.1
 META_POLICY_EXPLORATION_MIN = 0.05

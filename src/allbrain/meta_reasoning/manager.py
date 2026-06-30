@@ -10,7 +10,6 @@ from allbrain.meta_reasoning.models import DecisionExplanation
 from allbrain.meta_reasoning.rejection import RejectionAnalyzer
 from allbrain.uncertainty.calibration import observed_success_rate
 
-
 HISTORICAL_SUCCESS_FALLBACK = 0.7
 
 

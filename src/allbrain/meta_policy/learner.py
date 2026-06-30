@@ -44,7 +44,7 @@ def update_exploration_rate(
     old_rate: float,
     decision_count: int,
 ) -> float:
-    from allbrain.meta_policy.model import META_POLICY_EXPLORATION_MIN, META_POLICY_EXPLORATION_MAX
+    from allbrain.meta_policy.model import META_POLICY_EXPLORATION_MAX, META_POLICY_EXPLORATION_MIN
     decay = max(META_POLICY_EXPLORATION_MIN, old_rate * 0.99)
     return min(META_POLICY_EXPLORATION_MAX, max(META_POLICY_EXPLORATION_MIN, decay))
 

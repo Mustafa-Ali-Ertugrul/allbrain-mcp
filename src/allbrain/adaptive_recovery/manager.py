@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from allbrain.adaptive_recovery.model import (
-    DEFAULT_MAX_CHAIN_LENGTH,
-    CHAIN_OUTCOME_SUCCESS,
-    CHAIN_OUTCOME_FAILED,
     CHAIN_OUTCOME_ESCALATED,
+    CHAIN_OUTCOME_FAILED,
+    CHAIN_OUTCOME_SUCCESS,
+    DEFAULT_MAX_CHAIN_LENGTH,
     RecoveryChain,
 )
 from allbrain.adaptive_recovery.strategy_chain import StrategyChain

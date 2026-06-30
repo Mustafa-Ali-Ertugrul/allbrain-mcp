@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.semantic.model import SEMANTIC_TEMPLATE_VERSION
 
-
 CONCEPT_CREATED_KEYS: frozenset[str] = frozenset({"concept_id", "pattern_signature", "confidence"})
 CONCEPT_UPDATED_KEYS: frozenset[str] = frozenset({"concept_id", "confidence"})
 CONCEPT_FORGOTTEN_KEYS: frozenset[str] = frozenset({"concept_id", "reason"})

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -16,8 +16,8 @@ from allbrain.meta_reasoning import (
     DecisionReason,
     ExplanationGenerator,
     MetaReasoningManager,
-    RejectionAnalyzer,
     RejectedAlternative,
+    RejectionAnalyzer,
 )
 from allbrain.replay import EventReplayEngine
 from allbrain.runtime_core import SystemDecisionPipeline
@@ -48,7 +48,7 @@ def _objective(**overrides):
 
 
 def test_high_confidence_when_all_factors_high() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     analysis = ForesightEngine().analyze(state, "deploy")
     selected = analysis.best_plan
     estimate = ConfidenceEngine().estimate(analysis.best_plan, analysis, historical_success=0.7)
@@ -59,7 +59,7 @@ def test_high_confidence_when_all_factors_high() -> None:
 
 
 def test_low_confidence_when_foresight_score_low() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     analysis = ForesightEngine().analyze(state, "deploy")
     lowest_success_plan = min(analysis.plans, key=lambda p: p.predicted_success)
     estimate = ConfidenceEngine().estimate(lowest_success_plan, analysis, historical_success=0.7)
@@ -68,8 +68,8 @@ def test_low_confidence_when_foresight_score_low() -> None:
 
 
 def test_no_evidence_uncertainty_high() -> None:
-    from allbrain.foresight.models import ForesightAnalysis as FA, FORESIGHT_TEMPLATE_VERSION
-    from allbrain.foresight.models import FuturePlan
+    from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, FuturePlan
+    from allbrain.foresight.models import ForesightAnalysis as FA
 
     empty_plan = FuturePlan(actions=["dummy"])
     analysis = FA(
@@ -92,7 +92,7 @@ def test_no_evidence_uncertainty_high() -> None:
 
 
 def test_rejection_lower_score() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     analysis = ForesightEngine().analyze(state, "deploy")
     selected = analysis.best_plan
     candidates = analysis.plans
@@ -102,7 +102,7 @@ def test_rejection_lower_score() -> None:
 
 
 def test_rejection_higher_risk() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     analysis = ForesightEngine().analyze(state, "deploy")
     selected = analysis.safest_plan
     candidates = analysis.plans
@@ -122,7 +122,7 @@ def test_rejection_insufficient_evidence() -> None:
 
 
 def test_explanation_reasons_generated() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     analysis = ForesightEngine().analyze(state, "deploy")
     selected = analysis.best_plan
     candidates = analysis.plans
@@ -135,7 +135,7 @@ def test_explanation_reasons_generated() -> None:
 
 
 def test_explanation_rejected_plans_included() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     analysis = ForesightEngine().analyze(state, "deploy")
     selected = analysis.best_plan
     candidates = analysis.plans
@@ -229,7 +229,7 @@ def test_negative_contribution_supported() -> None:
         horizon=1,
         confidence=0.5,
     )
-    analysis = ForesightEngine().analyze(WorldState(timestamp=datetime.now(timezone.utc)), "deploy")
+    analysis = ForesightEngine().analyze(WorldState(timestamp=datetime.now(UTC)), "deploy")
     reasons = DecisionAnalyzer().analyze(selected, [better, candidate], analysis)
     success_reason = next(r for r in reasons if r.factor == "predicted_success")
     risk_reason = next(r for r in reasons if r.factor == "cumulative_risk")

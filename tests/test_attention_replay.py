@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from allbrain.attention import (
+    make_attention_payload,
+    make_budget_payload,
+    make_reallocation_payload,
+)
 from allbrain.events.schemas import EventType
-from allbrain.attention import make_attention_payload, make_budget_payload, make_reallocation_payload
 from allbrain.replay import EventReplayEngine
 
 

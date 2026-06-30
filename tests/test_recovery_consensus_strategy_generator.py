@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.recovery_consensus.strategy_generator import StrategyGenerator
 from allbrain.recovery_consensus.model import CandidateStrategy
+from allbrain.recovery_consensus.strategy_generator import StrategyGenerator
 
 
 class TestStrategyGeneratorInit:

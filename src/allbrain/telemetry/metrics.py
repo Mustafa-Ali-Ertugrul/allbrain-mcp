@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from allbrain.telemetry.model import (
     MAX_DURATION_MS,
@@ -16,7 +16,7 @@ def _stable_telemetry_id(agent_id: str, event_ids: Iterable[str] | None = None) 
     if event_ids is None:
         event_ids = []
     event_key = "|".join(sorted(str(eid) for eid in event_ids))
-    digest = hashlib.sha256(f"{agent_id}:{event_key}".encode("utf-8")).digest()
+    digest = hashlib.sha256(f"{agent_id}:{event_key}".encode()).digest()
     return f"telemetry-{digest.hex()[:12]}"
 
 

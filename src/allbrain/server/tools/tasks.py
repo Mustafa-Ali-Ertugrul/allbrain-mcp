@@ -6,16 +6,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from allbrain.server.context import BrainContext
-from allbrain.server.tools._shared import (
-    append_selection_decision,
-    audit_tool_call,
-    bind_session_id,
-    get_task_or_raise,
-    maybe_auto_snapshot,
-)
-from allbrain.security.rate_limit import check_tool_rate
-from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.events import EventType
 from allbrain.models.schemas import (
     AssignTaskInput,
     CreateTaskInput,
@@ -26,8 +17,6 @@ from allbrain.models.schemas import (
     ToolResult,
     UserInputError,
 )
-from allbrain.storage.repository import event_to_read
-from allbrain.events import EventType
 from allbrain.orchestrator import (
     AgentStateBuilder,
     DeterministicScheduler,
@@ -36,6 +25,17 @@ from allbrain.orchestrator import (
     TaskStateReducer,
 )
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
+from allbrain.security.rate_limit import check_tool_rate
+from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.server.context import BrainContext
+from allbrain.server.tools._shared import (
+    append_selection_decision,
+    audit_tool_call,
+    bind_session_id,
+    get_task_or_raise,
+    maybe_auto_snapshot,
+)
+from allbrain.storage.repository import event_to_read
 
 logger = logging.getLogger(__name__)
 

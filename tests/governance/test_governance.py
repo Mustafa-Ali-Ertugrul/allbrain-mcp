@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from allbrain.events import EventType
-from allbrain.governance import AutonomousGovernanceCoordinator, GovernanceMetrics, GovernanceStateBuilder
+from allbrain.governance import (
+    AutonomousGovernanceCoordinator,
+    GovernanceMetrics,
+    GovernanceStateBuilder,
+)
 from allbrain.graph import WorkflowGraphBuilder
 from allbrain.memory import MemoryBuilder
 from allbrain.observability import DashboardDataBuilder

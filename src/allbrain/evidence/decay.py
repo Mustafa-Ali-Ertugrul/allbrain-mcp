@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 
-
 DEFAULT_DECAY_THRESHOLD = 1000
 
 

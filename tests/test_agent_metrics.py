@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 from allbrain.models.schemas import EventRead
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
@@ -19,7 +19,7 @@ def event(event_id: str, type: str, agent_id: str, payload: dict) -> EventRead:
         impact_score=None,
         caused_by=None,
         branch=agent_id,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 

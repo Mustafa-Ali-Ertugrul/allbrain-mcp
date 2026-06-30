@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.self_repair.validation_gate import ValidationGate
-from allbrain.self_repair.model import MIN_STABILITY_THRESHOLD
 from allbrain.mitigation_learning.model import StrategyStats
+from allbrain.self_repair.model import MIN_STABILITY_THRESHOLD
+from allbrain.self_repair.validation_gate import ValidationGate
 
 
 def _make_stats(ft, sig, strat, uses=10, succ=8, eff=0.7):

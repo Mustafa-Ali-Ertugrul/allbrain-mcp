@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-
 ARBITRATION_FILES = [
     "scorer.py",
     "reducer.py",
@@ -28,9 +27,10 @@ class TestQualityGate:
             _assert_no_nondeterminism("src/allbrain/arbitration", f)
 
     def test_does_not_change_confidence(self):
-        from allbrain.revision import RevisionManager, make_payload as make_rev_payload
         from allbrain.arbitration.events import make_consensus_payload
         from allbrain.events.schemas import EventType
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as make_rev_payload
 
         class E:
             def __init__(self, t, i, p):

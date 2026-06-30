@@ -13,7 +13,6 @@ from allbrain.config import canonicalize_project_path, default_db_path
 from allbrain.server import BrainContext, create_mcp_server
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 
-
 app = typer.Typer(no_args_is_help=True)
 console = Console(stderr=True)
 

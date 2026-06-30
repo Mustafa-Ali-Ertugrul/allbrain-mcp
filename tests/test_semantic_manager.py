@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from allbrain.semantic.model import SemanticConcept
-from allbrain.semantic.manager import SemanticManager
 from allbrain.episodic import Episode
+from allbrain.semantic.manager import SemanticManager
+from allbrain.semantic.model import SemanticConcept
 
 
 def _make_episode(ep_id: str, items: list[str], reward: float = 0.8, importance: float = 0.6) -> Episode:

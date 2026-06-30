@@ -20,7 +20,7 @@ def _stable_dynamics_id(key: str, event_ids: list[str] | None = None) -> str:
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{key}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{key}:{ek}".encode()).digest()
     return f"dyn-drift-{d.hex()[:12]}"
 
 
@@ -75,9 +75,7 @@ def detect_drift(
 
     if drift_score >= DRIFT_HIGH_THRESHOLD:
         level = DriftLevel.HIGH
-    elif drift_score >= DRIFT_MEDIUM_THRESHOLD:
-        level = DriftLevel.MEDIUM
-    elif drift_score >= DRIFT_THRESHOLD:
+    elif drift_score >= DRIFT_MEDIUM_THRESHOLD or drift_score >= DRIFT_THRESHOLD:
         level = DriftLevel.MEDIUM
     else:
         level = DriftLevel.LOW

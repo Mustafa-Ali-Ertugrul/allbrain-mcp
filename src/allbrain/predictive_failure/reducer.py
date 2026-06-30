@@ -4,12 +4,12 @@ from typing import Any
 
 from allbrain.events.schemas import EventType
 from allbrain.predictive_failure.events import (
-    validate_signal_detected,
-    validate_risk_computed,
+    validate_failure_avoided,
     validate_failure_predicted,
     validate_mitigation_planned,
     validate_recovery_executed,
-    validate_failure_avoided,
+    validate_risk_computed,
+    validate_signal_detected,
 )
 from allbrain.predictive_failure.model import PREDICTIVE_FAILURE_TEMPLATE_VERSION
 

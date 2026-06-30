@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.self_repair.recovery_executor import PolicySnapshotManager, RecoveryExecutor
 from allbrain.self_repair.model import (
-    StabilityReport,
-    RollbackPlan,
-    STABLE_BASELINE,
     MIN_STABILITY_THRESHOLD,
+    STABLE_BASELINE,
+    RollbackPlan,
+    StabilityReport,
 )
 from allbrain.self_repair.policy_health_monitor import PolicyHealthMonitor
+from allbrain.self_repair.recovery_executor import PolicySnapshotManager, RecoveryExecutor
 
 
 class TestSnapshotManager:

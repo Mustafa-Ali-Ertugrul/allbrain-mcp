@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.uncertainty.models import KnowledgeGap
 
-
 MIN_SAMPLES_THRESHOLD = 5
 HIGH_SEVERITY = 0.7
 MEDIUM_SEVERITY = 0.4

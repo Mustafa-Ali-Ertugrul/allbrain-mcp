@@ -6,12 +6,12 @@ from pathlib import Path
 from allbrain.contradiction import (
     CONTRADICTION_TEMPLATE_VERSION,
     INCOMPATIBLE_LIFECYCLE,
-    ContradictionDetector,
-    ContradictionManager,
-    ContradictionReducer,
     SEVERITY_GOAL_DIVERGENCE,
     SEVERITY_LIFECYCLE_INCOMPATIBLE_SAME_GOAL,
     SEVERITY_LIFECYCLE_INCOMPATIBLE_SHARED,
+    ContradictionDetector,
+    ContradictionManager,
+    ContradictionReducer,
     dedup_contradictions,
 )
 from allbrain.contradiction.estimator import (

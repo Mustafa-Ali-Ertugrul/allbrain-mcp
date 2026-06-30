@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from allbrain.arbitration.model import (
     VOTE_CONFIDENCE_WEIGHT,
@@ -15,7 +15,7 @@ def _stable_id(prefix: str, key: str, event_ids: Iterable[str] | None = None) ->
     if event_ids is None:
         event_ids = []
     event_key = "|".join(sorted(str(eid) for eid in event_ids))
-    digest = hashlib.sha256(f"{key}:{event_key}".encode("utf-8")).digest()
+    digest = hashlib.sha256(f"{key}:{event_key}".encode()).digest()
     return f"{prefix}-{digest.hex()[:12]}"
 
 

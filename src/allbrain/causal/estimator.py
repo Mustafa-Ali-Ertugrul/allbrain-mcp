@@ -7,8 +7,8 @@ from allbrain.causal.model import (
     CAUSAL_CONFIDENCE_SHRINK,
     CAUSAL_IMPACT_THRESHOLD,
     CAUSAL_MIN_SAMPLES,
-    ImpactDirection,
     CausalImpact,
+    ImpactDirection,
 )
 from allbrain.events.schemas import EventType
 
@@ -18,7 +18,7 @@ def _stable_causal_id(key: str, event_ids: list[str] | None = None) -> str:
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{key}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{key}:{ek}".encode()).digest()
     return f"causal-est-{d.hex()[:12]}"
 
 

@@ -1,5 +1,5 @@
 from allbrain.workflow.aggregator import ResultAggregator
-from allbrain.workflow.engine import WorkflowEngine, WorkflowResult, StepResult
+from allbrain.workflow.engine import StepResult, WorkflowEngine, WorkflowResult
 from allbrain.workflow.graph import DependencyEngine, ValidationResult
 from allbrain.workflow.models import (
     AggregatedResult,

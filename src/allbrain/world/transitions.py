@@ -5,7 +5,6 @@ import random as _random
 from allbrain.world.models import WorldState
 from allbrain.world.transition_learner import TransitionLearner
 
-
 _ACTION_ENV: dict[str, dict[str, str]] = {
     "deploy": {"deployment": "running"},
     "run_tests": {"tests": "passed"},

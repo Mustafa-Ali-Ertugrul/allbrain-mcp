@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.dynamics.model import DYNAMICS_TEMPLATE_VERSION
 
-
 DRIFT_KEYS: frozenset[str] = frozenset(
     {"agent_id", "task_type", "drift_score", "drift_level", "ema_short", "ema_long"}
 )

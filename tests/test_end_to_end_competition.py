@@ -3,16 +3,24 @@ from __future__ import annotations
 import pytest
 
 from allbrain.events.schemas import EventType
+from allbrain.learning_safety import DriftGuard, EntropyCalculator, Explorer, OutcomeValidator
+from allbrain.mitigation_learning import (
+    LearningEngine,
+    OutcomeTracker,
+    PolicyStore,
+    StrategyOptimizer,
+)
+from allbrain.policy_competition import CompetitionEngine
+from allbrain.policy_routing import MetaPolicyRouter
 from allbrain.predictive_failure import PredictiveFailureManager
 from allbrain.predictive_failure.model import RiskSignal
-from allbrain.mitigation_learning import OutcomeTracker, LearningEngine, PolicyStore, StrategyOptimizer
-from allbrain.learning_safety import EntropyCalculator, Explorer, OutcomeValidator, DriftGuard
 from allbrain.self_repair import (
-    ValidationGate, PolicyHealthMonitor, RollbackEngine,
-    PolicySnapshotManager, RecoveryExecutor,
+    PolicyHealthMonitor,
+    PolicySnapshotManager,
+    RecoveryExecutor,
+    RollbackEngine,
+    ValidationGate,
 )
-from allbrain.policy_routing import MetaPolicyRouter
-from allbrain.policy_competition import CompetitionEngine
 from allbrain.soft_repair import PolicyBlender
 
 

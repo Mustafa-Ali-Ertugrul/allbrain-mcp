@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.failure_memory.model import FailurePattern, RecoveryExperience
 from allbrain.failure_memory.store import FailureMemoryStore
-from allbrain.failure_memory.model import RecoveryExperience, FailurePattern
 
 
 class FailureMemoryRetriever:

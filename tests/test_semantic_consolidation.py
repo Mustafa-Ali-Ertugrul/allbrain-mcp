@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from allbrain.semantic.model import SemanticConcept
 from allbrain.semantic.consolidation import (
+    apply_decay_to_all,
     compute_concept_confidence,
     find_matching_concept,
     should_create_concept,
     should_forget_concept,
-    apply_decay_to_all,
     trim_to_capacity,
 )
+from allbrain.semantic.model import SemanticConcept
 
 
 class TestComputeConceptConfidence:

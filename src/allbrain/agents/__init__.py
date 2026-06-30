@@ -1,4 +1,10 @@
-from allbrain.agents.adapter import AgentAdapter, AgentHealth, AgentStatus, ExecutionContext, RetryPolicy
+from allbrain.agents.adapter import (
+    AgentAdapter,
+    AgentHealth,
+    AgentStatus,
+    ExecutionContext,
+    RetryPolicy,
+)
 from allbrain.agents.definition import (
     AgentCapability,
     AgentCost,

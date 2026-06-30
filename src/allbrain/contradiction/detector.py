@@ -3,7 +3,6 @@ from __future__ import annotations
 from allbrain.events import EventType
 from allbrain.intent.models import Intent
 
-
 SEVERITY_GOAL_DIVERGENCE = 50
 SEVERITY_LIFECYCLE_INCOMPATIBLE_SAME_GOAL = 85
 SEVERITY_LIFECYCLE_INCOMPATIBLE_SHARED = 70

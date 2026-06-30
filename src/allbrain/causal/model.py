@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
-
 CAUSAL_TEMPLATE_VERSION = 1
 
 COUNTERFACTUAL_TOP_K = 3

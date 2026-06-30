@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.tradeoff_engine.model import UtilityResult, ParetoFrontier
+from allbrain.tradeoff_engine.model import ParetoFrontier, UtilityResult
 
 
 class ParetoAnalyzer:

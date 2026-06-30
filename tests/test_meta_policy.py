@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from allbrain.meta_policy import (
-    select_mode, PolicyState, ModeStats,
     META_POLICY_EXPLORATION_MAX,
+    ModeStats,
+    PolicyState,
+    select_mode,
 )
 
 

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from allbrain.learning_safety.model import MAX_SIMULATION_WEIGHT
-
 
 RealProvider = Callable[[str, float, float], tuple[float, bool, float]]
 

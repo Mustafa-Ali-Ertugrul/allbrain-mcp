@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from allbrain.learning import (
     INITIAL_CAPABILITY,
+    LEARNING_DELTA_THRESHOLD,
     LEARNING_EMA_BIAS,
     LEARNING_RETENTION,
-    LEARNING_DELTA_THRESHOLD,
     LearnedCapabilityState,
     ema_update,
     make_decayed_payload,

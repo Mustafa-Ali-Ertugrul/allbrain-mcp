@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.decision import DecisionEngine, DecisionContext, make_contract
+from allbrain.decision import DecisionContext, DecisionEngine, make_contract
 
 
 class TestDecisionRegression:

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.belief.estimator import list_known_context_keys, tally_outcomes, _stable_analysis_id
+from allbrain.belief.estimator import _stable_analysis_id, list_known_context_keys, tally_outcomes
 from allbrain.belief.models import BeliefState
 from allbrain.belief.updater import update_state
-from allbrain.foundations import canonical_event_sort
 from allbrain.events.schemas import EventType
+from allbrain.foundations import canonical_event_sort
 
 
 class BeliefManager:
@@ -23,7 +23,7 @@ class BeliefManager:
     ) -> BeliefState:
         ordered = canonical_event_sort(events)
         all_event_ids = {str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")}
-        
+
         # Find LAST BELIEF_COMPUTED for this context (baseline checkpoint)
         checkpoint: dict[str, Any] | None = None
         checkpoint_index = -1
@@ -34,7 +34,7 @@ class BeliefManager:
                 if isinstance(payload, dict) and payload.get("context_key") == context_key:
                     checkpoint = payload
                     checkpoint_index = i
-        
+
         if checkpoint is not None:
             # Baseline + trailing: use checkpoint as baseline, tally task events after it
             successes = checkpoint.get("successes", 0)
@@ -48,7 +48,7 @@ class BeliefManager:
         else:
             # Recompute path: tally all task events
             successes, failures, blocked = tally_outcomes(ordered, context_key=context_key)
-        
+
         sample_count = successes + failures + blocked
         analysis = analysis_id or _stable_analysis_id(context_key, all_event_ids)
         return update_state(

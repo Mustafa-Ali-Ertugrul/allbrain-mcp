@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-from allbrain.models.schemas import EventRead
 from allbrain.foundations import canonical_event_sort
+from allbrain.models.schemas import EventRead
 
 
 class RuntimeCoreStateBuilder:

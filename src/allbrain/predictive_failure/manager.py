@@ -4,18 +4,18 @@ import time
 from typing import Any
 
 from allbrain.events.schemas import EventType
+from allbrain.predictive_failure.mitigation_planner import MitigationPlanner
 from allbrain.predictive_failure.model import (
-    RiskSignal,
-    SIGNAL_TO_FAULT_TYPE,
+    DEFAULT_MITIGATION,
     LEVEL_FAILURE,
     MITIGATION_STRATEGIES,
-    DEFAULT_MITIGATION,
+    SIGNAL_TO_FAULT_TYPE,
     STRATEGY_URGENCY,
+    RiskSignal,
 )
-from allbrain.predictive_failure.risk_engine import RiskEngine
 from allbrain.predictive_failure.predictor import Predictor
-from allbrain.predictive_failure.mitigation_planner import MitigationPlanner
 from allbrain.predictive_failure.proactive_executor import ProactiveExecutor
+from allbrain.predictive_failure.risk_engine import RiskEngine
 
 
 class PredictiveFailureManager:
@@ -317,7 +317,9 @@ class PredictiveFailureManager:
 
                                 # Sprint 74: Meta-Meta Scoring — evaluate the evaluator
                                 if self._meta_evaluator is not None:
-                                    from allbrain.meta_meta_scoring import make_evaluator_profile_updated_payload
+                                    from allbrain.meta_meta_scoring import (
+                                        make_evaluator_profile_updated_payload,
+                                    )
                                     mm_result = self._meta_evaluator.evaluate(
                                         evaluator_id=f"meta_scorer::{fault_type}",
                                         fault_type=fault_type,
@@ -342,7 +344,12 @@ class PredictiveFailureManager:
                 obj_winner: str | None = None
                 if self._objective_evaluator is not None and self._tradeoff_engine is not None and self._tradeoff_selector is not None:
                     from allbrain.objective_system import Objective, make_objective_updated_payload
-                    from allbrain.tradeoff_engine import UtilityFunction, ParetoAnalyzer, make_tradeoff_analyzed_payload, make_utility_computed_payload
+                    from allbrain.tradeoff_engine import (
+                        ParetoAnalyzer,
+                        UtilityFunction,
+                        make_tradeoff_analyzed_payload,
+                        make_utility_computed_payload,
+                    )
                     store = self._objective_store
                     weights = store.get(fault_type) if store is not None else None
                     if weights is None:
@@ -373,8 +380,8 @@ class PredictiveFailureManager:
 
                     # Sprint 75: Value Alignment — check constraints
                     if self._constraint_engine is not None and tradeoff.winner is not None:
-                        from allbrain.value_alignment import make_alignment_failed_payload
                         from allbrain.objective_system.model import FAULT_TYPE_SAFETY_THRESHOLDS
+                        from allbrain.value_alignment import make_alignment_failed_payload
                         st = FAULT_TYPE_SAFETY_THRESHOLDS.get(fault_type, 0.50)
                         align_score = self._constraint_engine.check(fault_type,
                             {"safety": tradeoff.winner.safety, "stability": tradeoff.winner.stability}, st)
@@ -389,8 +396,9 @@ class PredictiveFailureManager:
                                     soft_penalties=align_score.soft_penalties)})
 
                 if final_strategy != default_strategy:
-                    from allbrain.predictive_failure.model import MitigationPlan
                     import hashlib
+
+                    from allbrain.predictive_failure.model import MitigationPlan
                     urgency = STRATEGY_URGENCY.get(final_strategy, 0.30)
                     import allbrain.predictive_failure.mitigation_planner as mp
                     expected_reduction = mp._clamp(urgency * prediction.probability)
@@ -720,7 +728,9 @@ class PredictiveFailureManager:
                                     osc_low = not self._oscillation_detector.is_oscillating(fault_type)
                                 reb = self._objective_evaluator.maybe_rebalance(fault_type, osc_low)
                                 if reb is not None:
-                                    from allbrain.objective_system import make_objective_rebalanced_payload
+                                    from allbrain.objective_system import (
+                                        make_objective_rebalanced_payload,
+                                    )
                                     events.append({"event_type": EventType.OBJECTIVE_REBALANCED.value,
                                         **make_objective_rebalanced_payload(fault_type=fault_type,
                                             safety=reb.safety, stability=reb.stability,
@@ -789,7 +799,11 @@ class PredictiveFailureManager:
         # Sprint 73: Meta-Optimizer (every N cycles) — outside policy update
         if self._weight_optimizer is not None:
             optimizer_stbl = stability.stability_score if (stability is not None and hasattr(stability, "stability_score")) else 0.5
-            from allbrain.meta_optimizer import StabilityController, make_weights_adapated_payload, make_meta_optimizer_guarded_payload
+            from allbrain.meta_optimizer import (
+                StabilityController,
+                make_meta_optimizer_guarded_payload,
+                make_weights_adapated_payload,
+            )
             gate = StabilityController()
             if gate.allow_update(optimizer_stbl) and stats is not None:
                 delta_success = stats.success_rate

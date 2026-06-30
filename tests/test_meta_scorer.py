@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.events.schemas import EventType
 from allbrain.meta_scoring import (
+    META_SCORING_OVERRIDE_CONFIDENCE,
     MetaScorer,
+    MetaScoreResult,
+    MetaScoringReducer,
     ProfileStore,
     ScoringProfile,
-    MetaScoreResult,
-    META_SCORING_OVERRIDE_CONFIDENCE,
-    MetaScoringReducer,
-    validate_scoring_profile_updated,
     make_scoring_profile_updated_payload,
+    validate_scoring_profile_updated,
 )
-from allbrain.events.schemas import EventType
 
 
 class TestMetaScorer:

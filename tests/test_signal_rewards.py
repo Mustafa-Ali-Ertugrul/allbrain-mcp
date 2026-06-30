@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.attribution import update_signal_reward, initial_signal_rewards, AttributionManager
+from allbrain.attribution import AttributionManager, initial_signal_rewards, update_signal_reward
 
 
 class TestSignalRewards:

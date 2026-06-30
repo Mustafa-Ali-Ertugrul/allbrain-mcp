@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Iterable
-
+from collections.abc import Iterable
 
 CALIBRATION_TEMPLATE_VERSION = 1
 
@@ -16,7 +15,7 @@ def _stable_calibration_id(context_key: str, event_ids: Iterable[str] | None = N
     if event_ids is None:
         event_ids = []
     event_key = "|".join(sorted(str(eid) for eid in event_ids))
-    digest = hashlib.sha256(f"{context_key}:{event_key}".encode("utf-8")).digest()
+    digest = hashlib.sha256(f"{context_key}:{event_key}".encode()).digest()
     return f"calibration-{digest.hex()[:12]}"
 
 

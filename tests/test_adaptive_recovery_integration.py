@@ -3,11 +3,11 @@ from __future__ import annotations
 import pytest
 
 from allbrain.adaptive_recovery import (
+    CHAIN_OUTCOME_ESCALATED,
+    CHAIN_OUTCOME_FAILED,
+    CHAIN_OUTCOME_SUCCESS,
     AdaptiveRecoveryManager,
     AdaptiveRecoveryReducer,
-    CHAIN_OUTCOME_SUCCESS,
-    CHAIN_OUTCOME_FAILED,
-    CHAIN_OUTCOME_ESCALATED,
 )
 from allbrain.recovery_consensus.model import CandidateStrategy
 

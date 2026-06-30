@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from allbrain.models.schemas import EventRead
 from allbrain.orchestrator.metrics import TaskOutcomeReducer
@@ -24,7 +24,7 @@ def event(event_id: str, type: str, task_id: str, created_at: datetime) -> Event
 
 
 def test_task_outcome_tracks_duration_agent_changes_and_terminal_state() -> None:
-    started = datetime(2026, 6, 18, tzinfo=timezone.utc)
+    started = datetime(2026, 6, 18, tzinfo=UTC)
     events = [
         event("1", "task_started", "task_a", started),
         event("2", "handoff_created", "task_a", started + timedelta(seconds=2)),

@@ -1,32 +1,32 @@
 from __future__ import annotations
 
 from allbrain.dynamics import (
-    DYNAMICS_TEMPLATE_VERSION,
-    DRIFT_EMA_SHORT_WINDOW,
-    DRIFT_EMA_LONG_WINDOW,
-    DRIFT_THRESHOLD,
-    DRIFT_MEDIUM_THRESHOLD,
-    DRIFT_HIGH_THRESHOLD,
-    MIN_OBSERVATIONS_FOR_DRIFT,
     DENSITY_PENALTY_FACTOR,
+    DRIFT_EMA_LONG_WINDOW,
+    DRIFT_EMA_SHORT_WINDOW,
+    DRIFT_HIGH_THRESHOLD,
+    DRIFT_MEDIUM_THRESHOLD,
+    DRIFT_THRESHOLD,
+    DYNAMICS_TEMPLATE_VERSION,
+    MIN_OBSERVATIONS_FOR_DRIFT,
     DriftLevel,
     DriftState,
+    ForecastState,
     TrendLabel,
     TrendState,
-    ForecastState,
-    detect_drift,
     classify_trend,
-    predict,
+    detect_drift,
     learning_confidence_attenuation,
     make_drift_payload,
-    make_trend_payload,
     make_forecast_payload,
+    make_trend_payload,
+    predict,
     validate_drift,
-    validate_trend,
     validate_forecast,
+    validate_trend,
 )
-from allbrain.routing import dynamics_selection_score
 from allbrain.events.schemas import EventType
+from allbrain.routing import dynamics_selection_score
 
 
 class TestDriftDetection:

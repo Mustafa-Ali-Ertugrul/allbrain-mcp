@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from allbrain.mitigation_learning.model import (
-    StrategyStats,
     MIN_USES_FOR_OPTIMIZER,
+    StrategyStats,
 )
 
 

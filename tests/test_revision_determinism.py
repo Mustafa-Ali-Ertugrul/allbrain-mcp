@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.revision import RevisionManager, RevisionReducer, make_payload
 from allbrain.events.schemas import EventType
+from allbrain.revision import RevisionManager, RevisionReducer, make_payload
 
 
 def _make_event(event_id: str, event_type: str, payload: dict | None = None):

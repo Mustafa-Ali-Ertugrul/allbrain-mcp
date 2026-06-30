@@ -3,7 +3,6 @@ from __future__ import annotations
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
 
-
 EVENT_WEIGHTS = {
     EventType.GOAL_SET.value: 10,
     EventType.TASK_STARTED.value: 3,

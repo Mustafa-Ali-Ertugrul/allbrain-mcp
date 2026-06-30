@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
-from allbrain.causal.intervention import top_alternatives
 from allbrain.causal.estimator import estimate_treatment_effect
+from allbrain.causal.intervention import top_alternatives
+from allbrain.foundations import canonical_event_sort
 
 
 class CausalManager:

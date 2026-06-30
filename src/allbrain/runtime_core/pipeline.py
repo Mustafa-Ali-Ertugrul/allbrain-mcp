@@ -26,12 +26,12 @@ class SystemDecisionPipeline:
     def __init__(self) -> None:
         from uuid6 import uuid7
 
-        from allbrain.governance import AutonomousGovernanceCoordinator
         from allbrain.counterfactual import CounterfactualEngine
         from allbrain.foresight import ForesightEngine
+        from allbrain.governance import AutonomousGovernanceCoordinator
         from allbrain.information_seeking import InformationSeekingManager
-        from allbrain.scenarios import ScenarioEngine
         from allbrain.meta_reasoning import MetaReasoningManager
+        from allbrain.scenarios import ScenarioEngine
         from allbrain.uncertainty import UncertaintyManager
         from allbrain.world import WorldModel
 
@@ -53,6 +53,11 @@ class SystemDecisionPipeline:
         self.uncertainty = UncertaintyManager()
         self.information_seeking = InformationSeekingManager()
 
+    # NOTE: Only 6 enable_* flags are exposed via the public MCP API
+    # (RunDecisionPipelineInput). The remaining ~15 enable_* references
+    # in this file are parameters of internal helper methods (_routing_step,
+    # _execute_* etc.) that are NOT reachable from production. They are
+    # kept for now but may be removed in a future cleanup pass.
     def run(
         self,
         context: BrainContext,
@@ -566,8 +571,8 @@ class SystemDecisionPipeline:
         foresight_payload: dict[str, Any],
         caused_by: str,
     ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
-        from allbrain.meta_reasoning import META_REASONING_TEMPLATE_VERSION
         from allbrain.foresight.models import ForesightAnalysis, FuturePlan
+        from allbrain.meta_reasoning import META_REASONING_TEMPLATE_VERSION
 
         best_plan_payload = foresight_payload["best_plan"]
         best_plan = FuturePlan.model_validate(best_plan_payload)
@@ -1100,7 +1105,8 @@ class SystemDecisionPipeline:
                          else "contradiction_resolution"
         magnitude     = abs(belief_after - belief_before)
         """
-        from allbrain.drift import detect_drift, make_payload as make_drift_payload
+        from allbrain.drift import detect_drift
+        from allbrain.drift import make_payload as make_drift_payload
 
         belief_before = float(getattr(belief_state, "mean", 0.0)) if belief_state is not None else 0.0
         belief_after = float(revision_payload.get("new_confidence", belief_before))
@@ -1159,6 +1165,8 @@ class SystemDecisionPipeline:
         from allbrain.reputation import (
             ReputationManager,
             _stable_reputation_id,
+        )
+        from allbrain.reputation import (
             make_payload as make_reputation_payload,
         )
 
@@ -1366,7 +1374,7 @@ class SystemDecisionPipeline:
         The AGENT_RUNTIME_UPDATED event is NOT emitted here —
         it is a projection event computed by the reducer.
         """
-        from allbrain.telemetry import make_started_payload, make_completed_payload
+        from allbrain.telemetry import make_completed_payload, make_started_payload
 
         agent_id = str(scheduler_result.get("assignment", {}).get("agent_id", "unknown")) if scheduler_result else "unknown"
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
@@ -1398,13 +1406,15 @@ class SystemDecisionPipeline:
         Sprint 52: reads registered agent capabilities from event log
         and computes capability match scores per agent.
         """
-        from allbrain.reputation import ReputationManager
-        from allbrain.telemetry import TelemetryManager
         from allbrain.capabilities import (
             make_classified_payload,
             make_matched_payload,
+        )
+        from allbrain.capabilities import (
             match_score as cap_match_score,
         )
+        from allbrain.reputation import ReputationManager
+        from allbrain.telemetry import TelemetryManager
 
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
         task_type = str(scheduler_result.get("assignment", {}).get("agent_id", "implementation")) if scheduler_result else "implementation"
@@ -1465,13 +1475,15 @@ class SystemDecisionPipeline:
         Emits AGENT_CAPABILITY_OBSERVED + AGENT_CAPABILITY_LEARNED/DECAYED.
         """
         from allbrain.capabilities import CapabilityManager
-        from allbrain.learning import CapabilityLearningManager
         from allbrain.learning import (
-            make_observed_payload,
-            make_learned_payload,
-            make_decayed_payload,
-            observation as learn_observation,
+            CapabilityLearningManager,
             ema_update,
+            make_decayed_payload,
+            make_learned_payload,
+            make_observed_payload,
+        )
+        from allbrain.learning import (
+            observation as learn_observation,
         )
 
         learning_mgr = CapabilityLearningManager()
@@ -1548,8 +1560,7 @@ class SystemDecisionPipeline:
         (causal purity — Refinement #1). Emits threshold-gated events.
         """
         from allbrain.capabilities import CapabilityManager
-        from allbrain.causal import CausalManager
-        from allbrain.causal import make_counterfactual_payload, make_impact_payload
+        from allbrain.causal import CausalManager, make_counterfactual_payload, make_impact_payload
         from allbrain.causal.model import CAUSAL_IMPACT_THRESHOLD, CAUSAL_MIN_SAMPLES
 
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
@@ -1636,16 +1647,21 @@ class SystemDecisionPipeline:
         Emits threshold-gated DRIFT/TREND/FORECAST events.
         """
         from allbrain.capabilities import CapabilityManager
-        from allbrain.dynamics import CapabilityDynamicsManager
         from allbrain.dynamics import (
+            CapabilityDynamicsManager,
             make_drift_payload,
-            make_trend_payload,
             make_forecast_payload,
+            make_trend_payload,
         )
         from allbrain.dynamics.drift import detect_drift
-        from allbrain.dynamics.trend import classify_trend
         from allbrain.dynamics.forecast import predict
-        from allbrain.dynamics.model import DRIFT_THRESHOLD, FORECAST_DEFAULT_HORIZON, MIN_OBSERVATIONS_FOR_DRIFT, TREND_HYSTERESIS_COUNT
+        from allbrain.dynamics.model import (
+            DRIFT_THRESHOLD,
+            FORECAST_DEFAULT_HORIZON,
+            MIN_OBSERVATIONS_FOR_DRIFT,
+            TREND_HYSTERESIS_COUNT,
+        )
+        from allbrain.dynamics.trend import classify_trend
 
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
 
@@ -1749,8 +1765,7 @@ class SystemDecisionPipeline:
         Refinement #1: projection only — no derived global state.
         """
         from allbrain.capabilities import CapabilityManager
-        from allbrain.fusion import FusionManager
-        from allbrain.fusion import make_fusion_payload, make_calibration_payload
+        from allbrain.fusion import FusionManager, make_calibration_payload, make_fusion_payload
 
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
 
@@ -1840,23 +1855,35 @@ class SystemDecisionPipeline:
 
         Known agents = union of reputation and telemetry event participants.
         """
+        from allbrain.capabilities import CapabilityManager
+        from allbrain.dynamics import CapabilityDynamicsManager
+        from allbrain.learning import CapabilityLearningManager
         from allbrain.reputation import ReputationManager
-        from allbrain.telemetry import TelemetryManager
         from allbrain.revision import RevisionManager
+        from allbrain.routing import (
+            adaptive_selection_score as routing_adaptive_score,
+        )
+        from allbrain.routing import (
+            best_agent as routing_best_agent,
+        )
+        from allbrain.routing import (
+            causal_selection_score as routing_causal_score,
+        )
+        from allbrain.routing import (
+            dynamics_selection_score as routing_dynamics_score,
+        )
+        from allbrain.routing import (
+            extended_selection_score as routing_extended_score,
+        )
         from allbrain.routing import (
             make_req_payload,
             make_scored_payload,
             make_selected_payload,
-            best_agent as routing_best_agent,
-            selection_score as routing_selection_score,
-            extended_selection_score as routing_extended_score,
-            adaptive_selection_score as routing_adaptive_score,
-            dynamics_selection_score as routing_dynamics_score,
-            causal_selection_score as routing_causal_score,
         )
-        from allbrain.capabilities import CapabilityManager
-        from allbrain.learning import CapabilityLearningManager
-        from allbrain.dynamics import CapabilityDynamicsManager
+        from allbrain.routing import (
+            selection_score as routing_selection_score,
+        )
+        from allbrain.telemetry import TelemetryManager
 
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
         task_type = str(scheduler_result.get("assignment", {}).get("agent_id", "implementation")) if scheduler_result else "implementation"
@@ -1913,7 +1940,7 @@ class SystemDecisionPipeline:
                     caused_by=req.id,
                 )
                 scored_events.append(pe)
-                from allbrain.decision import DecisionEngine, DecisionContext, make_contract
+                from allbrain.decision import DecisionContext, DecisionEngine, make_contract
                 ctx = DecisionContext(
                     agent_id=aid, task_type=task_type,
                     contract=make_contract(**{selected: True}),
@@ -1925,7 +1952,12 @@ class SystemDecisionPipeline:
                 result = DecisionEngine().decide(ctx)
                 s = float(result.score)
                 if enable_attribution:
-                    from allbrain.attribution import AttributionManager, make_credit_payload, make_attribution_update_payload, make_importance_payload
+                    from allbrain.attribution import (
+                        AttributionManager,
+                        make_attribution_update_payload,
+                        make_credit_payload,
+                        make_importance_payload,
+                    )
                     attr_mgr = AttributionManager()
                     attr_result = attr_mgr.attribute(
                         events, agent_id=aid, task_type=task_type,
@@ -1957,7 +1989,12 @@ class SystemDecisionPipeline:
                         )
                         scored_events.append(ae)
                 if enable_attention:
-                    from allbrain.attention import AttentionManager, make_attention_payload, make_budget_payload, make_reallocation_payload
+                    from allbrain.attention import (
+                        AttentionManager,
+                        make_attention_payload,
+                        make_budget_payload,
+                        make_reallocation_payload,
+                    )
                     attention_mgr = AttentionManager()
                     att_result = attention_mgr.allocate(
                         events,
@@ -1997,7 +2034,11 @@ class SystemDecisionPipeline:
                         )
                         scored_events.append(re)
                 if enable_workspace:
-                    from allbrain.workspace import WorkspaceManager, make_ws_added_payload, make_ws_updated_payload
+                    from allbrain.workspace import (
+                        WorkspaceManager,
+                        make_ws_added_payload,
+                        make_ws_updated_payload,
+                    )
                     ws_mgr = WorkspaceManager()
                     ws_result = ws_mgr.update(
                         events,
@@ -2025,7 +2066,12 @@ class SystemDecisionPipeline:
                     ws_items = ws_mgr.get_active_items()
                 episodes_payloads: list = []
                 if enable_episodic:
-                    from allbrain.episodic import EpisodicManager, make_episode_created_payload, make_episode_retrieved_payload, make_episode_forgotten_payload
+                    from allbrain.episodic import (
+                        EpisodicManager,
+                        make_episode_created_payload,
+                        make_episode_forgotten_payload,
+                        make_episode_retrieved_payload,
+                    )
                     ep_mgr = EpisodicManager()
                     ws_item_ids = [item.item_id for item in ws_items] if enable_workspace and ws_items else []
                     ep_result = ep_mgr.store_episode(
@@ -2069,8 +2115,14 @@ class SystemDecisionPipeline:
                     episodes_payloads = ret_result.get("episodes", [])
                 concepts_payloads: list = []
                 if enable_semantic:
-                    from allbrain.semantic import SemanticManager, CONSOLIDATION_THRESHOLD, make_concept_created_payload, make_concept_updated_payload, make_concept_forgotten_payload
                     from allbrain.episodic import Episode
+                    from allbrain.semantic import (
+                        CONSOLIDATION_THRESHOLD,
+                        SemanticManager,
+                        make_concept_created_payload,
+                        make_concept_forgotten_payload,
+                        make_concept_updated_payload,
+                    )
                     sem_mgr = SemanticManager()
                     # Consolidate episode into semantic concepts
                     if ep_result.get("stored"):
@@ -2546,13 +2598,13 @@ class SystemDecisionPipeline:
         Skips RESILIENCE_ prefixed events to prevent recursive loops.
         """
         from allbrain.resilience import (
+            DEFAULT_GUARDRAIL_THRESHOLD,
             ResilienceManager,
             make_anomaly_detected_payload,
-            make_recovery_planned_payload,
-            make_recovery_cancelled_payload,
-            make_snapshot_created_payload,
             make_failure_analyzed_payload,
-            DEFAULT_GUARDRAIL_THRESHOLD,
+            make_recovery_cancelled_payload,
+            make_recovery_planned_payload,
+            make_snapshot_created_payload,
         )
 
         mgr = ResilienceManager(guardrail_threshold=DEFAULT_GUARDRAIL_THRESHOLD)

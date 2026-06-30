@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from allbrain.semantic.model import SemanticConcept
 from allbrain.semantic.abstraction import (
-    pattern_overlap,
-    generalize_signature,
     extract_pattern_from_episode,
+    generalize_signature,
+    pattern_overlap,
 )
+from allbrain.semantic.model import SemanticConcept
 
 
 class TestPatternOverlap:

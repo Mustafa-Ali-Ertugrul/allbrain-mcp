@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-
 TELEMETRY_FILES = ["metrics.py", "reducer.py", "manager.py", "events.py", "model.py"]
 
 
@@ -22,9 +21,10 @@ class TestQualityGate:
             _assert_no_nondeterminism("src/allbrain/telemetry", f)
 
     def test_does_not_change_confidence(self):
-        from allbrain.revision import RevisionManager, make_payload as make_rev_payload
-        from allbrain.telemetry.events import make_runtime_updated_payload
         from allbrain.events.schemas import EventType
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as make_rev_payload
+        from allbrain.telemetry.events import make_runtime_updated_payload
 
         class E:
             def __init__(self, t, i, p):

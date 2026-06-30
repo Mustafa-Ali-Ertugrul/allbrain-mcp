@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from allbrain.recovery_consensus.model import (
-    CandidateStrategy,
-    ScoredCandidate,
-    DEFAULT_SUCCESS_WEIGHT,
     DEFAULT_CONFIDENCE_WEIGHT,
     DEFAULT_RISK_WEIGHT,
+    DEFAULT_SUCCESS_WEIGHT,
+    CandidateStrategy,
+    ScoredCandidate,
 )
 
 if TYPE_CHECKING:

@@ -4,12 +4,12 @@ import hashlib
 from typing import Any
 
 from allbrain.mitigation_learning.model import (
-    LearningRecord,
-    StrategyStats,
-    PolicyVersion,
+    DISABLE_SUCCESS_RATE_THRESHOLD,
     LEARNING_EMA_ALPHA,
     MIN_USES_FOR_DISABLE,
-    DISABLE_SUCCESS_RATE_THRESHOLD,
+    LearningRecord,
+    PolicyVersion,
+    StrategyStats,
 )
 
 

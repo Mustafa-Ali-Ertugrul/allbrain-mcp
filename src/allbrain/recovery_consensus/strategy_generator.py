@@ -4,9 +4,9 @@ import hashlib
 from typing import Any
 
 from allbrain.recovery_consensus.model import (
+    MAX_CANDIDATES,
     STRATEGY_PROFILES,
     CandidateStrategy,
-    MAX_CANDIDATES,
 )
 
 

@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from allbrain.objective_system.model import ObjectiveWeights, ObjectiveResult, ObjectivePriority, OBJECTIVE_PRIORITY_DEFAULTS
-from allbrain.tradeoff_engine.model import UtilityResult, UTILITY_SAFETY_MULTIPLIER
+from allbrain.objective_system.model import (
+    OBJECTIVE_PRIORITY_DEFAULTS,
+    ObjectivePriority,
+    ObjectiveResult,
+    ObjectiveWeights,
+)
+from allbrain.tradeoff_engine.model import UTILITY_SAFETY_MULTIPLIER, UtilityResult
 
 
 class UtilityFunction:

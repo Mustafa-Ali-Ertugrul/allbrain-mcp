@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from allbrain.agents.queue import QueueItem, TaskQueue
 from allbrain.workflow.models import SubtaskResult
-
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ class WorkerPool:
                 return
             try:
                 await asyncio.wait_for(self._idle_event.wait(), timeout=0.5)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
 
     def stats(self) -> list[WorkerStats]:

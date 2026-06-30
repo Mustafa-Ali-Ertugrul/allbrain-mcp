@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.meta_meta_scoring import MetaEvaluator, EvaluatorStore
+from allbrain.meta_meta_scoring import EvaluatorStore, MetaEvaluator
 
 
 class TestEvaluatorEvaluation:

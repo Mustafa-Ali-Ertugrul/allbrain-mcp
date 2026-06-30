@@ -6,27 +6,27 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.events import EventType
+from allbrain.foresight import ForesightEngine
+from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis, FuturePlan
+from allbrain.meta_reasoning import ConfidenceEngine, MetaReasoningManager
+from allbrain.models.schemas import (
+    EstimateConfidenceInput,
+    EvaluatePlanInput,
+    ExplainDecisionInput,
+    GenerateFuturePlansInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
     maybe_auto_snapshot,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    GenerateFuturePlansInput,
-    EvaluatePlanInput,
-    ExplainDecisionInput,
-    EstimateConfidenceInput,
-)
-from allbrain.events import EventType
-from allbrain.world import WorldModel
-from allbrain.foresight import ForesightEngine
-from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis, FuturePlan
-from allbrain.meta_reasoning import ConfidenceEngine, MetaReasoningManager
 from allbrain.uncertainty import observed_success_rate
+from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -282,8 +282,9 @@ def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult
 
 
 def _dummy_foresight_result(selected_plan, analysis_id: str):
-    from allbrain.foresight.models import ForesightAnalysis
     from uuid6 import uuid7
+
+    from allbrain.foresight.models import ForesightAnalysis
     return ForesightAnalysis(
         analysis_id=uuid7(),
         action="lookup",

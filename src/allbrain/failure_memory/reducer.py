@@ -4,17 +4,17 @@ from typing import Any
 
 from allbrain.events.schemas import EventType
 from allbrain.failure_memory.events import (
-    validate_failure_memory_stored,
     validate_failure_memory_retrieved,
+    validate_failure_memory_stored,
     validate_failure_pattern_detected,
     validate_recovery_experience_updated,
     validate_recovery_learning_applied,
 )
 from allbrain.failure_memory.model import (
     FAILURE_MEMORY_TEMPLATE_VERSION,
+    FailurePattern,
     FailureRecord,
     RecoveryExperience,
-    FailurePattern,
 )
 
 

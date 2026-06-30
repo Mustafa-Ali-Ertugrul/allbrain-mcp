@@ -4,11 +4,11 @@ from typing import Any
 
 from allbrain.calibration.estimator import calibrated_trust, mean_calibration_error
 from allbrain.events.schemas import EventType
-from allbrain.uncertainty.events import validate_payload as validate_uncertainty_payload
 from allbrain.revision.estimator import _stable_revision_id, revise
 from allbrain.revision.events import validate_payload
 from allbrain.revision.policies import REVISION_TEMPLATE_VERSION, RevisionPolicy
 from allbrain.revision.state import RevisionState
+from allbrain.uncertainty.events import validate_payload as validate_uncertainty_payload
 
 
 class RevisionReducer:

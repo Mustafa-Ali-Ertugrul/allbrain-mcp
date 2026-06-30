@@ -4,11 +4,11 @@ import pytest
 
 from allbrain.episodic.events import (
     make_episode_created_payload,
-    make_episode_retrieved_payload,
     make_episode_forgotten_payload,
+    make_episode_retrieved_payload,
     validate_episode_created,
-    validate_episode_retrieved,
     validate_episode_forgotten,
+    validate_episode_retrieved,
 )
 
 

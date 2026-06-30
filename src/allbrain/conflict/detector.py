@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.conflict.scoring import ConflictScorer
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
-from allbrain.conflict.scoring import ConflictScorer
-
 
 CONFLICT_EVENT_TYPES = {
     EventType.FILE_MODIFIED.value,

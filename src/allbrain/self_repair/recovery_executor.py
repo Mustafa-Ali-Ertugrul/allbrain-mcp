@@ -6,11 +6,11 @@ from typing import Any
 
 from allbrain.mitigation_learning.policy_store import PolicyStore
 from allbrain.self_repair.model import (
-    PolicySnapshot,
-    RollbackPlan,
-    RecoveryReport,
-    STABLE_BASELINE,
     MAX_SNAPSHOTS_PER_FAULT,
+    STABLE_BASELINE,
+    PolicySnapshot,
+    RecoveryReport,
+    RollbackPlan,
 )
 
 

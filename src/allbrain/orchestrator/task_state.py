@@ -8,7 +8,6 @@ from uuid6 import uuid7
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
 
-
 TASK_EVENT_TYPES = {
     EventType.TASK_CREATED.value,
     EventType.TASK_ASSIGNED.value,

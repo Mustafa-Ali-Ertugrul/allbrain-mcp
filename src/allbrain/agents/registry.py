@@ -69,7 +69,7 @@ class AgentRegistry:
         }
 
     @classmethod
-    def discover_from_env(cls, *, include_mock: bool = False) -> "AgentRegistry":
+    def discover_from_env(cls, *, include_mock: bool = False) -> AgentRegistry:
         """Auto-discover agents from environment variables."""
         registry = cls()
 

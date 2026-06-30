@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.fusion.model import FUSION_TEMPLATE_VERSION
 
-
 FUSION_KEYS: frozenset[str] = frozenset(
     {"agent_id", "task_type", "unified_score", "capability", "learning", "dynamics", "causal"}
 )

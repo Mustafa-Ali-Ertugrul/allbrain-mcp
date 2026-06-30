@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Callable
 
 from uuid6 import uuid7
 
 from allbrain.reliability.worker_heartbeat import utc_clock
-
 
 Clock = Callable[[], datetime]
 

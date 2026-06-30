@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from allbrain.learning.model import (
     INITIAL_CAPABILITY,
@@ -14,7 +14,7 @@ def _stable_learning_id(key: str, event_ids: Iterable[str] | None = None) -> str
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{key}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{key}:{ek}".encode()).digest()
     return f"learn-{d.hex()[:12]}"
 
 

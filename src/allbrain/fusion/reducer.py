@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events.schemas import EventType
-from allbrain.fusion.events import validate_fusion, validate_calibration
+from allbrain.fusion.events import validate_calibration, validate_fusion
 
 
 class FusionReducer:

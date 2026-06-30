@@ -70,7 +70,8 @@ class TestManagerEqualsReducer:
 
 class TestRuntimeScoreLastWins:
     def test_last_wins(self):
-        from allbrain.revision import RevisionManager, make_payload as make_revision_payload
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as make_revision_payload
 
         events = [
             E(EventType.AGENT_RUNTIME_UPDATED.value, "1", make_runtime_updated_payload(agent_id="a", mean_duration_ms=0, success_rate=0.5, mean_retry_count=0, runtime_score_val=0.5)),

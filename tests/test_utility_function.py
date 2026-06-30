@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import pytest
+
+from allbrain.events.schemas import EventType
+from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.objective_system import Objective, ObjectiveStore, ObjectiveWeights
 from allbrain.tradeoff_engine import (
-    UtilityFunction, UtilityResult, TradeoffResult,
-    validate_utility_computed, make_utility_computed_payload,
-    validate_tradeoff_analyzed, make_tradeoff_analyzed_payload,
     TradeoffReducer,
+    TradeoffResult,
+    UtilityFunction,
+    UtilityResult,
+    make_tradeoff_analyzed_payload,
+    make_utility_computed_payload,
+    validate_tradeoff_analyzed,
+    validate_utility_computed,
 )
-from allbrain.mitigation_learning.model import StrategyStats
-from allbrain.events.schemas import EventType
 
 
 class TestUtilityFunction:

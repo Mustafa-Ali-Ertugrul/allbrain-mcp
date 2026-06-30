@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from allbrain.meta_scoring.model import ScoringProfile
 from allbrain.meta_optimizer.model import META_OPTIMIZER_LEARNING_RATE
+from allbrain.meta_scoring.model import ScoringProfile
 
 
 class GradientEstimator:

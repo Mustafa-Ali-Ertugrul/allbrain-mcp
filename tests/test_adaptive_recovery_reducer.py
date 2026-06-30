@@ -2,14 +2,19 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.adaptive_recovery import AdaptiveRecoveryReducer, CHAIN_OUTCOME_SUCCESS, CHAIN_OUTCOME_FAILED, CHAIN_OUTCOME_ESCALATED
+from allbrain.adaptive_recovery import (
+    CHAIN_OUTCOME_ESCALATED,
+    CHAIN_OUTCOME_FAILED,
+    CHAIN_OUTCOME_SUCCESS,
+    AdaptiveRecoveryReducer,
+)
 from allbrain.adaptive_recovery.events import (
+    make_adaptive_recovery_completed_payload,
     make_chain_created_payload,
-    make_step_started_payload,
     make_step_failed_payload,
+    make_step_started_payload,
     make_step_succeeded_payload,
     make_strategy_switched_payload,
-    make_adaptive_recovery_completed_payload,
 )
 from allbrain.events.schemas import EventType
 

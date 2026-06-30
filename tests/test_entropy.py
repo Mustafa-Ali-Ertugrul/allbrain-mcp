@@ -6,8 +6,8 @@ import pytest
 
 from allbrain.learning_safety.entropy import (
     EntropyCalculator,
-    shannon_entropy,
     entropy_decay,
+    shannon_entropy,
 )
 from allbrain.learning_safety.model import DEFAULT_BASE_EPSILON, DEFAULT_DECAY_RATE
 

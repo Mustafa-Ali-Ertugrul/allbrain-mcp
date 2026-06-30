@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from allbrain.causal.graph import build_causal_graph, count_edges, causal_chain_types, transitive_closure
+from allbrain.causal.graph import (
+    build_causal_graph,
+    causal_chain_types,
+    count_edges,
+    transitive_closure,
+)
 
 
 class E:

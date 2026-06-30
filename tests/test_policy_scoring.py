@@ -5,9 +5,9 @@ import math
 import pytest
 
 from allbrain.policy_competition import (
-    PolicyScorer,
-    PolicyCandidate,
     COMPETITION_SCORE_WEIGHTS,
+    PolicyCandidate,
+    PolicyScorer,
 )
 
 

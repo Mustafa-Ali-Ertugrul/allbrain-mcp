@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from allbrain.attribution import allocate_credit, ATTRIBUTION_MIN_CONTRIBUTION, ATTRIBUTION_PROPORTIONAL_WEIGHT
+from allbrain.attribution import (
+    ATTRIBUTION_MIN_CONTRIBUTION,
+    ATTRIBUTION_PROPORTIONAL_WEIGHT,
+    allocate_credit,
+)
 
 
 class TestCreditAllocator:

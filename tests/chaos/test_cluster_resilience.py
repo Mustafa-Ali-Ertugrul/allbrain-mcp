@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from allbrain.distributed import ClusterManager, NodeIdentity, WorkerRegistry
 from allbrain.resilience import Bulkhead, CircuitBreaker, FallbackRouter, RetryPolicy
@@ -8,7 +8,7 @@ from allbrain.resilience import Bulkhead, CircuitBreaker, FallbackRouter, RetryP
 
 class Clock:
     def __init__(self) -> None:
-        self.now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        self.now = datetime(2026, 1, 1, tzinfo=UTC)
 
     def __call__(self) -> datetime:
         return self.now
@@ -19,7 +19,7 @@ class Clock:
 
 def test_cluster_registers_discovers_and_marks_stale_workers() -> None:
     registry = WorkerRegistry()
-    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 1, tzinfo=UTC)
     registry.register("w1", node_id="node-a", capabilities={"skills": ["coding"]})
     registry.heartbeat("w1", now=now)
 

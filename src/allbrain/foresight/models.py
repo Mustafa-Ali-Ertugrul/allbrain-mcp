@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from allbrain.world.models import WorldState
 
-
 FORESIGHT_TEMPLATE_VERSION = 1
 
 

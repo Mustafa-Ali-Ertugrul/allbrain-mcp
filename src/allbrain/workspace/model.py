@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-
 DEFAULT_CAPACITY = 7
 MAX_CAPACITY = 15
 MIN_ACTIVATION = 0.10

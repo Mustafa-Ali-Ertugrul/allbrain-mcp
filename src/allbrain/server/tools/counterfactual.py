@@ -6,23 +6,23 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.counterfactual import AlternativeRanker, CounterfactualEngine
+from allbrain.counterfactual.models import recommendation_severity
+from allbrain.events import EventType
+from allbrain.models.schemas import (
+    AlternativeRankingInput,
+    CounterfactualInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
     maybe_auto_snapshot,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    CounterfactualInput,
-    AlternativeRankingInput,
-)
-from allbrain.events import EventType
 from allbrain.world import WorldModel
-from allbrain.counterfactual import CounterfactualEngine, AlternativeRanker
-from allbrain.counterfactual.models import recommendation_severity
 
 logger = logging.getLogger(__name__)
 

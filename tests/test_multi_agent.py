@@ -12,7 +12,13 @@ from allbrain.server.app import (
     resume_project_impl,
     save_event_impl,
 )
-from allbrain.storage import BrainRepository, SnapshotRepo, create_engine_for_path, init_db, open_session
+from allbrain.storage import (
+    BrainRepository,
+    SnapshotRepo,
+    create_engine_for_path,
+    init_db,
+    open_session,
+)
 
 
 def make_repo(tmp_path: Path) -> tuple[BrainRepository, Path]:

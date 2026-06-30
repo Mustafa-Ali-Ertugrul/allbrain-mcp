@@ -4,17 +4,17 @@ from typing import Any
 
 from allbrain.events.schemas import EventType
 from allbrain.recovery_consensus.events import (
+    validate_consensus_reached,
     validate_strategies_generated,
     validate_strategy_evaluated,
-    validate_consensus_reached,
     validate_strategy_rejected,
     validate_strategy_selected,
 )
 from allbrain.recovery_consensus.model import (
     CONSENSUS_TEMPLATE_VERSION,
     CandidateStrategy,
-    RecoveryDecision,
     RecoveryConsensusState,
+    RecoveryDecision,
 )
 
 

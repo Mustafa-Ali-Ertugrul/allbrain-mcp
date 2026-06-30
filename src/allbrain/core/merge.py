@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 MERGE_STRATEGY = {
     "goal": "replace_if_present",
     "working_files": "set_union",
@@ -26,9 +25,7 @@ class StateMerger:
                     merged[key] = value
             elif strategy == "replace":
                 merged[key] = delta.get(key, base.get(key))
-            elif strategy == "set_union":
-                merged[key] = self._append_unique(base.get(key, []), delta.get(key, []))
-            elif strategy == "append_unique":
+            elif strategy == "set_union" or strategy == "append_unique":
                 merged[key] = self._append_unique(base.get(key, []), delta.get(key, []))
             elif strategy == "append":
                 merged[key] = list(base.get(key, [])) + list(delta.get(key, []))

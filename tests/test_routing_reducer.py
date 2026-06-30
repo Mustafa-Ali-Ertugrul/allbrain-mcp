@@ -68,7 +68,8 @@ class TestManagerEqualsReducer:
 
 class TestSelectedLastWins:
     def test_last_wins(self):
-        from allbrain.revision import RevisionManager, make_payload as make_rev
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as make_rev
         evts = [
             E(EventType.AGENT_SELECTED.value, "1", make_selected_payload(task_id="t", task_type="x", agent_id="a", selection_score=0.5)),
             E(EventType.AGENT_SELECTED.value, "2", make_selected_payload(task_id="t", task_type="x", agent_id="b", selection_score=0.9)),

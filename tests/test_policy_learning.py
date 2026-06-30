@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.meta_policy import update_mode_stats, ModeStats, compute_reward
+from allbrain.meta_policy import ModeStats, compute_reward, update_mode_stats
 
 
 class TestPolicyLearning:

@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-
 ATTENTION_TEMPLATE_VERSION = 1
 
 ATTENTION_MIN_ALLOCATION = 0.10

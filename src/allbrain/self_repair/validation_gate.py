@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.self_repair.model import (
-    ValidationResult,
-    StabilityReport,
     MIN_STABILITY_THRESHOLD,
+    StabilityReport,
+    ValidationResult,
 )
 
 

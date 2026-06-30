@@ -5,7 +5,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 INFORMATION_SEEKING_TEMPLATE_VERSION = 1
 
 

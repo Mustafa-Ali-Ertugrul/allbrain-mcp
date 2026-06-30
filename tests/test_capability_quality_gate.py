@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-
 FS = ["scorer.py", "reducer.py", "manager.py", "events.py", "model.py"]
 
 
@@ -19,9 +18,10 @@ class TestQualityGate:
             _n("src/allbrain/capabilities", f)
 
     def test_does_not_change_confidence(self):
-        from allbrain.revision import RevisionManager, make_payload as mr
         from allbrain.capabilities.events import make_matched_payload
         from allbrain.events.schemas import EventType
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as mr
 
         class E:
             def __init__(self, t, i, p):
@@ -50,7 +50,7 @@ class TestQualityGate:
                 assert not re.search(p, l), "revision/manager.py:" + str(n) + " contains " + repr(p)
 
     def test_selection_score_unchanged(self):
-        from allbrain.routing.scorer import selection_score, extended_selection_score
+        from allbrain.routing.scorer import extended_selection_score, selection_score
         s1 = selection_score(reputation=0.5, runtime_score=0.5, calibrated_trust=0.5, consensus_score=0.5)
         s2 = extended_selection_score(reputation=0.5, runtime_score=0.5, calibrated_trust=0.5, consensus_score=0.5, capability_match=0.5)
         assert s1 != s2

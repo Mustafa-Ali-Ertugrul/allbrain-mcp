@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
@@ -73,7 +73,7 @@ def test_simulate_emits_world_simulation_run_event(tmp_path) -> None:
 
 
 def test_prediction_high_risk_for_untested_deploy() -> None:
-    fresh_state = WorldState(timestamp=datetime.now(timezone.utc))
+    fresh_state = WorldState(timestamp=datetime.now(UTC))
     prediction = PredictionBridge().evaluate(fresh_state, "deploy")
 
     assert prediction.risk >= 0.5
@@ -101,7 +101,7 @@ def test_history_latest_derived_from_events(tmp_path) -> None:
     history = WorldHistory(context)
     latest = history.latest_state()
     assert latest is not None
-    assert latest.timestamp <= datetime.now(timezone.utc)
+    assert latest.timestamp <= datetime.now(UTC)
 
     latest_sim = history.latest_simulation()
     assert latest_sim is not None
@@ -110,7 +110,7 @@ def test_history_latest_derived_from_events(tmp_path) -> None:
 
 def test_transition_immutability() -> None:
     original = WorldState(
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         environment_state={"tests": "passed"},
     )
     snapshot_env = dict(original.environment_state)

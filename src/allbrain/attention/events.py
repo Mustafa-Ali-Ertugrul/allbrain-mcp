@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.attention.model import ATTENTION_TEMPLATE_VERSION
 
-
 ALLOC_KEYS: frozenset[str] = frozenset(
     {"signal", "importance", "cost", "allocation"}
 )

@@ -31,7 +31,7 @@ class AgentCapability:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "AgentCapability":
+    def from_dict(cls, data: dict[str, Any]) -> AgentCapability:
         return cls(
             domain=str(data["domain"]),
             skills=frozenset(data.get("skills", [])),
@@ -55,7 +55,7 @@ class AgentCost:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "AgentCost":
+    def from_dict(cls, data: dict[str, Any]) -> AgentCost:
         return cls(
             avg_cost_per_call=float(data.get("avg_cost_per_call", 0.0)),
             avg_input_token_cost=float(data.get("avg_input_token_cost", 0.0)),
@@ -78,7 +78,7 @@ class LatencyProfile:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "LatencyProfile":
+    def from_dict(cls, data: dict[str, Any]) -> LatencyProfile:
         return cls(
             p50_ms=int(data.get("p50_ms", 0)),
             p95_ms=int(data.get("p95_ms", 0)),
@@ -106,7 +106,7 @@ class SafetyLimits:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "SafetyLimits":
+    def from_dict(cls, data: dict[str, Any]) -> SafetyLimits:
         return cls(
             max_cost_per_call=float(data.get("max_cost_per_call", 1.0)),
             max_cost_per_workflow=float(data.get("max_cost_per_workflow", 10.0)),
@@ -147,7 +147,7 @@ class AgentDefinition:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "AgentDefinition":
+    def from_dict(cls, data: dict[str, Any]) -> AgentDefinition:
         return cls(
             id=str(data["id"]),
             name=str(data.get("name", data["id"])),

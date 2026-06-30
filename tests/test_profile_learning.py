@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from allbrain.meta_scoring import ProfileStore, ScoringProfile
-from allbrain.meta_scoring.model import META_SCORING_WEIGHT_MIN, META_SCORING_WEIGHT_MAX
+from allbrain.meta_scoring.model import META_SCORING_WEIGHT_MAX, META_SCORING_WEIGHT_MIN
 
 
 class TestProfileLearning:

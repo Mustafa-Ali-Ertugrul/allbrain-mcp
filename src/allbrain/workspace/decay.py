@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 
-from allbrain.workspace.model import WorkspaceItem, DECAY_RATE
+from allbrain.workspace.model import DECAY_RATE, WorkspaceItem
 
 
 def apply_decay(

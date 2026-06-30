@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from allbrain.server import BrainContext
 from allbrain.events import EventType
+from allbrain.server import BrainContext
 from allbrain.server.app import (
     add_task_dependency_impl,
     assign_task_impl,

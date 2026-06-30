@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import pytest
-from allbrain.value_alignment import (
-    ConstraintEngine, AlignmentScoreTracker, ValueAlignmentReducer,
-    validate_alignment_failed, make_alignment_failed_payload,
-)
+
 from allbrain.events.schemas import EventType
+from allbrain.value_alignment import (
+    AlignmentScoreTracker,
+    ConstraintEngine,
+    ValueAlignmentReducer,
+    make_alignment_failed_payload,
+    validate_alignment_failed,
+)
 
 
 class TestValueAlignment:

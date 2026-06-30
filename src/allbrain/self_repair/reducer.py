@@ -6,8 +6,8 @@ from allbrain.events.schemas import EventType
 from allbrain.self_repair.events import (
     validate_policy_snapshotted,
     validate_policy_validation_failed,
-    validate_rollback_triggered,
     validate_rollback_completed,
+    validate_rollback_triggered,
     validate_system_recovered,
 )
 from allbrain.self_repair.model import SELF_REPAIR_TEMPLATE_VERSION

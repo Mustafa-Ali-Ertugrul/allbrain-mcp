@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from collections import deque
 
+from allbrain.meta_meta_scoring.evaluator_store import EvaluatorStore
 from allbrain.meta_meta_scoring.model import (
-    META_EVALUATOR_WINDOW_SIZE,
     META_EVALUATOR_ACCURACY_THRESHOLD,
     META_EVALUATOR_BIAS_THRESHOLD,
+    META_EVALUATOR_WINDOW_SIZE,
     MetaEvaluatorResult,
 )
-from allbrain.meta_meta_scoring.evaluator_store import EvaluatorStore
 
 
 class MetaEvaluator:

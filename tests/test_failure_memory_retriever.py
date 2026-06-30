@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.failure_memory.store import FailureMemoryStore
-from allbrain.failure_memory.retriever import FailureMemoryRetriever
 from allbrain.failure_memory.model import FailureRecord
+from allbrain.failure_memory.retriever import FailureMemoryRetriever
+from allbrain.failure_memory.store import FailureMemoryStore
 
 
 def _record(ft: str = "timeout", strategy: str = "retry", success: bool = True) -> FailureRecord:

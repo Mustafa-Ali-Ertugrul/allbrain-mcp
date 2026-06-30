@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.decision.events import validate_decision
+from allbrain.events.schemas import EventType
 
 
 class DecisionReducer:

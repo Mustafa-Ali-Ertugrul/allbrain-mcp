@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.adaptive_recovery import AdaptiveRecoveryManager, CHAIN_OUTCOME_SUCCESS, CHAIN_OUTCOME_FAILED, CHAIN_OUTCOME_ESCALATED
+from allbrain.adaptive_recovery import (
+    CHAIN_OUTCOME_ESCALATED,
+    CHAIN_OUTCOME_FAILED,
+    CHAIN_OUTCOME_SUCCESS,
+    AdaptiveRecoveryManager,
+)
 from allbrain.events.schemas import EventType
 from allbrain.recovery_consensus.model import CandidateStrategy
 

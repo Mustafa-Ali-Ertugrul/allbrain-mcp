@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from allbrain.episodic.model import (
-    IMPORTANCE_THRESHOLD,
     HIGH_REWARD_THRESHOLD,
+    IMPORTANCE_THRESHOLD,
     LOW_REWARD_THRESHOLD,
 )
 

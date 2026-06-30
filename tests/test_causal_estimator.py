@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.causal import estimate_treatment_effect, CausalImpact
+from allbrain.causal import CausalImpact, estimate_treatment_effect
 from allbrain.events.schemas import EventType
 
 

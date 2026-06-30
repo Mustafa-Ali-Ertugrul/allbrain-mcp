@@ -7,7 +7,6 @@ from datetime import datetime
 from math import sqrt
 from typing import Any
 
-
 VECTOR_SIZE = 32
 
 

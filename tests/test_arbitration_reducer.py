@@ -102,7 +102,8 @@ class TestVoteOrderIndependence:
 
 class TestConsensusLastWins:
     def test_last_wins(self):
-        from allbrain.revision import RevisionManager, make_payload as make_revision_payload
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as make_revision_payload
 
         events = [
             E(EventType.AGENT_CONSENSUS_REACHED.value, "1", make_consensus_payload(context_key="default", winner_candidate="c1", score=0.5, agreement_ratio=0.5, method="weighted")),

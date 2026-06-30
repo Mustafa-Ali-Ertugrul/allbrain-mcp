@@ -6,6 +6,19 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.events import EventType
+from allbrain.models.schemas import (
+    OrchestratorInput,
+    RunDecisionPipelineInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.orchestrator import TaskStateReducer
+from allbrain.orchestrator.metrics import AgentPerformanceReducer
+
+# is_compatible, OrchestratedResumeEngine imported locally to avoid circular import
+from allbrain.runtime_core import SystemDecisionPipeline
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
@@ -13,20 +26,9 @@ from allbrain.server.tools._shared import (
     maybe_auto_snapshot,
     merge_agent_metrics,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    OrchestratorInput,
-    RunDecisionPipelineInput,
-    ToolResult,
-    UserInputError,
-)
-from allbrain.events import EventType
-from allbrain.orchestrator import TaskStateReducer
-from allbrain.orchestrator.metrics import AgentPerformanceReducer
+
 # SnapshotRepo imported locally in resume_project_impl to avoid circular import
 from allbrain.snapshot.adapters import SnapshotAdapter
-# is_compatible, OrchestratedResumeEngine imported locally to avoid circular import
-from allbrain.runtime_core import SystemDecisionPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +42,9 @@ def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         if project is None or project.id is None:
             raise ValueError("project does not exist")
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
-        from allbrain.snapshot.versions import is_compatible
         from allbrain.resume.orchestrated import OrchestratedResumeEngine
         from allbrain.server.tools.snapshots import resume_project_impl
+        from allbrain.snapshot.versions import is_compatible
 
         base = resume_project_impl(
             context,

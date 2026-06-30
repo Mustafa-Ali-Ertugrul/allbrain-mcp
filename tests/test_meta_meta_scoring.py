@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.events.schemas import EventType
 from allbrain.meta_meta_scoring import (
-    MetaEvaluator,
-    EvaluatorStore,
     EvaluatorProfile,
+    EvaluatorStore,
+    MetaEvaluator,
     MetaEvaluatorResult,
     MetaMetaScoringReducer,
-    validate_evaluator_profile_updated,
     make_evaluator_profile_updated_payload,
+    validate_evaluator_profile_updated,
 )
-from allbrain.events.schemas import EventType
 
 
 class TestMetaEvaluator:

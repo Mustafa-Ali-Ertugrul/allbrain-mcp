@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import pytest
+
+from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.objective_system import Objective
 from allbrain.objective_system.model import ObjectiveWeights
 from allbrain.tradeoff_engine import (
-    UtilityFunction, ParetoAnalyzer, Selector,
-    UtilityResult, ParetoFrontier, TradeoffResult,
+    ParetoAnalyzer,
+    ParetoFrontier,
+    Selector,
+    TradeoffResult,
+    UtilityFunction,
+    UtilityResult,
 )
-from allbrain.mitigation_learning.model import StrategyStats
 
 
 def _ur(id, safety, stability, success, eff, safety_pass=True):

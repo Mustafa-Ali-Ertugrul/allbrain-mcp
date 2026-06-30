@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import psutil
 
@@ -49,7 +49,7 @@ class EnvironmentTracker:
         disk = psutil.disk_usage(os.getcwd())
 
         return WorldState(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             system_state={
                 "cpu_usage": round(cpu, 2),
                 "memory_usage": round(mem.percent, 2),

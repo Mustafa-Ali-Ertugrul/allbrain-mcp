@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.dynamics.events import validate_drift, validate_forecast, validate_trend
 from allbrain.events.schemas import EventType
-from allbrain.dynamics.events import validate_drift, validate_trend, validate_forecast
 
 
 class CapabilityDynamicsReducer:

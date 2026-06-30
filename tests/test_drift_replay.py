@@ -11,6 +11,8 @@ from allbrain.replay import EventReplayEngine
 from allbrain.revision import (
     RevisionManager,
     RevisionReducer,
+)
+from allbrain.revision import (
     make_payload as make_revision_payload,
 )
 

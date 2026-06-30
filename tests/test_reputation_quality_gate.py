@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-
 REPUTATION_FILES = [
     "estimator.py",
     "reducer.py",
@@ -46,9 +45,10 @@ class TestQualityGate:
         change agent_reputation — but it MUST NOT modify the `confidence` field,
         which is the Sprint 46 contract.
         """
-        from allbrain.revision import RevisionManager, make_payload as make_revision_payload
-        from allbrain.reputation.events import make_payload as make_reputation_payload
         from allbrain.events.schemas import EventType
+        from allbrain.reputation.events import make_payload as make_reputation_payload
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as make_revision_payload
 
         class E:
             def __init__(self, t, i, p):

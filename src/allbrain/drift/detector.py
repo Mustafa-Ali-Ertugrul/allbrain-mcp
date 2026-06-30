@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
-
 DRIFT_THRESHOLD: float = 0.10
 """Minimum |belief_after - belief_before| to emit a BELIEF_DRIFT_DETECTED event.
 

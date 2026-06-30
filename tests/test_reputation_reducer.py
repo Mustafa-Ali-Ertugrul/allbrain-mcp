@@ -128,7 +128,8 @@ class TestLastWins:
             E(EventType.AGENT_REPUTATION_UPDATED.value, "2", make_reputation_payload(agent_id="a", task_id="t2", success=s2[0], confidence=s2[1], duration_ms=s2[2], retry_count=s2[3], reputation_score=score2, analysis_id="y")),
             E(EventType.AGENT_REPUTATION_UPDATED.value, "3", make_reputation_payload(agent_id="a", task_id="t3", success=s3[0], confidence=s3[1], duration_ms=s3[2], retry_count=s3[3], reputation_score=score3, analysis_id="z")),
         ]
-        from allbrain.revision import RevisionManager, make_payload as make_revision_payload
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as make_revision_payload
         rev_manager = RevisionManager()
         base_events = list(events) + [
             E(EventType.BELIEF_REVISED.value, "rev1", make_revision_payload(context_key="default", old_confidence=0.9, new_confidence=0.6, reason="contradiction", evidence_count=0)),

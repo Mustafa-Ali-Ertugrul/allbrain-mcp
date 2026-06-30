@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import platform
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any
 
 from uuid6 import uuid7
@@ -17,12 +17,12 @@ class NodeIdentity:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def create(cls, *, node_id: str | None = None, metadata: dict[str, Any] | None = None) -> "NodeIdentity":
+    def create(cls, *, node_id: str | None = None, metadata: dict[str, Any] | None = None) -> NodeIdentity:
         return cls(
             node_id=node_id or str(uuid7()),
             hostname=platform.node() or "unknown",
             process_id=str(uuid7()),
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             metadata=metadata or {},
         )
 

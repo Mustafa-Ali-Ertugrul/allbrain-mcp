@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Any
+
 from allbrain.events.schemas import EventType
 from allbrain.value_alignment.events import validate_alignment_failed
 from allbrain.value_alignment.model import VALUE_ALIGNMENT_TEMPLATE_VERSION

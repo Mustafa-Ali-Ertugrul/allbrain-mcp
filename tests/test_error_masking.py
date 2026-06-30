@@ -6,7 +6,7 @@ from allbrain.models.schemas import (
     UserInputError,
 )
 from allbrain.server import BrainContext
-from allbrain.server.app import save_event_impl, create_task_impl
+from allbrain.server.app import create_task_impl, save_event_impl
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 
 

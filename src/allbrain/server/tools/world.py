@@ -6,22 +6,22 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.events import EventType
+from allbrain.models.schemas import (
+    ObserveWorldInput,
+    SimulateActionInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
     maybe_auto_snapshot,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    ObserveWorldInput,
-    SimulateActionInput,
-)
-from allbrain.events import EventType
-from allbrain.world import WorldModel
 from allbrain.storage.repository import event_to_read
+from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 

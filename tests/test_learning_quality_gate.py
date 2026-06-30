@@ -15,7 +15,7 @@ from allbrain.learning import (
     make_observed_payload,
     observation,
 )
-from allbrain.learning.model import LEARNING_RETENTION, LEARNING_EMA_BIAS
+from allbrain.learning.model import LEARNING_EMA_BIAS, LEARNING_RETENTION
 
 
 class E:

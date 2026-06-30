@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any
 
 import pytest
@@ -16,7 +16,6 @@ from allbrain.world.transition_learner import (
     _state_signature,
 )
 from allbrain.world.transitions import LearnedTransitionBridge, StateTransitionBridge
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -34,7 +33,7 @@ def _make_obs(env: dict[str, str], *, obs_id: str = "obs-1") -> Any:
         source="world",
         file_path=None,
         payload={
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "environment_state": env,
             "resources": {"internet": True},
             "system_state": {"cpu_usage": 50.0},
@@ -42,7 +41,7 @@ def _make_obs(env: dict[str, str], *, obs_id: str = "obs-1") -> Any:
         },
         task_hint=None,
         importance=None,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 
@@ -67,7 +66,7 @@ def _make_sim(
         payload={
             "simulation_id": sim_id,
             "next_state": {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "environment_state": next_env,
                 "resources": {"internet": True},
                 "system_state": {"cpu_usage": 50.0},
@@ -85,13 +84,13 @@ def _make_sim(
         importance=None,
         caused_by=obs_id,
         impact_score=risk,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 
 def _state(env: dict[str, str] | None = None) -> WorldState:
     return WorldState(
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         environment_state=env or {},
     )
 

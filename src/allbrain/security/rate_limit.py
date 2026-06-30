@@ -76,7 +76,6 @@ class SlidingWindowCounter:
             self._buckets.pop(key, None)
 
 
-import os
 
 # Rate limit defaults (generous — catch runaway loops, not normal usage).
 # Override via env vars:

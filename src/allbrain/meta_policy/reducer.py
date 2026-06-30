@@ -3,7 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events.schemas import EventType
-from allbrain.meta_policy.events import validate_policy_eval, validate_policy_update, validate_policy_drift
+from allbrain.meta_policy.events import (
+    validate_policy_drift,
+    validate_policy_eval,
+    validate_policy_update,
+)
 
 
 class MetaPolicyReducer:

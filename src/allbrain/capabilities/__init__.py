@@ -1,17 +1,3 @@
-from allbrain.capabilities.model import (
-    CAPABILITY_TEMPLATE_VERSION,
-    EXACT_MATCH,
-    PARTIAL_MATCH,
-    NO_MATCH,
-    MATCH_EPSILON,
-    CapabilityState,
-)
-from allbrain.capabilities.scorer import (
-    _stable_capability_id,
-    match_kind,
-    match_score,
-    normalize_task_type,
-)
 from allbrain.capabilities.events import (
     make_classified_payload,
     make_matched_payload,
@@ -21,7 +7,21 @@ from allbrain.capabilities.events import (
     validate_registered,
 )
 from allbrain.capabilities.manager import CapabilityManager
+from allbrain.capabilities.model import (
+    CAPABILITY_TEMPLATE_VERSION,
+    EXACT_MATCH,
+    MATCH_EPSILON,
+    NO_MATCH,
+    PARTIAL_MATCH,
+    CapabilityState,
+)
 from allbrain.capabilities.reducer import CapabilityReducer
+from allbrain.capabilities.scorer import (
+    _stable_capability_id,
+    match_kind,
+    match_score,
+    normalize_task_type,
+)
 
 __all__ = [
     "CAPABILITY_TEMPLATE_VERSION",

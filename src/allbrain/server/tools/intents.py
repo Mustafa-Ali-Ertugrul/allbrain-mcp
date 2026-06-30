@@ -6,19 +6,19 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from allbrain.server.context import BrainContext
-from allbrain.server.tools._shared import (
-    audit_tool_call,
-    bind_session_id,
-)
-from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.contradiction.detector import ContradictionDetector
+from allbrain.intent.extractor import IntentExtractor
 from allbrain.models.schemas import (
     IntentInput,
     ToolResult,
     UserInputError,
 )
-from allbrain.intent.extractor import IntentExtractor
-from allbrain.contradiction.detector import ContradictionDetector
+from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.server.context import BrainContext
+from allbrain.server.tools._shared import (
+    audit_tool_call,
+    bind_session_id,
+)
 
 logger = logging.getLogger(__name__)
 

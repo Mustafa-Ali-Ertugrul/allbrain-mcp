@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events import EventType
+from allbrain.foundations import canonical_event_sort
 from allbrain.governance.autonomy import AutonomyBoundaryController
 from allbrain.models.schemas import EventRead
-from allbrain.foundations import canonical_event_sort
 
 
 class GovernanceStateBuilder:

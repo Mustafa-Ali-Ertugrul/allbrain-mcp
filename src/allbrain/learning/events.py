@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.learning.model import LEARNING_TEMPLATE_VERSION
 
-
 OBSERVED_KEYS: frozenset[str] = frozenset(
     {"agent_id", "task_type", "success", "runtime_score", "selection_score"}
 )

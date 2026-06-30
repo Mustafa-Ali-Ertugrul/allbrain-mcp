@@ -3,13 +3,13 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from allbrain.events.schemas import EventType
 from allbrain.meta_policy.model import (
     REWARD_WEIGHT_DECISION,
     REWARD_WEIGHT_OUTCOME,
     REWARD_WEIGHT_STABILITY,
     RewardSignal,
 )
-from allbrain.events.schemas import EventType
 
 
 def _stable_meta_id(key: str, event_ids: list[str] | None = None) -> str:
@@ -17,7 +17,7 @@ def _stable_meta_id(key: str, event_ids: list[str] | None = None) -> str:
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{key}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{key}:{ek}".encode()).digest()
     return f"meta-{d.hex()[:12]}"
 
 

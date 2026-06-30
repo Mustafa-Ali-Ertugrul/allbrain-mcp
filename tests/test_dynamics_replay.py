@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from allbrain.dynamics import make_drift_payload, make_forecast_payload, make_trend_payload
 from allbrain.events.schemas import EventType
-from allbrain.dynamics import make_drift_payload, make_trend_payload, make_forecast_payload
 from allbrain.replay import EventReplayEngine
 
 

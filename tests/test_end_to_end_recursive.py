@@ -2,20 +2,25 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.coevolution import CouplingMatrix, Dynamics, OscillationDetector
 from allbrain.events.schemas import EventType
+from allbrain.learning_graph import GraphRewriter, LearningGraph, LearningNode
+from allbrain.learning_safety import EntropyCalculator, Explorer
+from allbrain.meta_meta_scoring import EvaluatorStore, MetaEvaluator
+from allbrain.meta_optimizer import WeightOptimizer
+from allbrain.meta_scoring import MetaScorer, ProfileStore
+from allbrain.mitigation_learning import (
+    LearningEngine,
+    OutcomeTracker,
+    PolicyStore,
+    StrategyOptimizer,
+)
+from allbrain.policy_competition import CompetitionEngine
+from allbrain.policy_routing import MetaPolicyRouter
 from allbrain.predictive_failure import PredictiveFailureManager
 from allbrain.predictive_failure.model import RiskSignal
-from allbrain.mitigation_learning import OutcomeTracker, LearningEngine, PolicyStore, StrategyOptimizer
-from allbrain.learning_safety import EntropyCalculator, Explorer
-from allbrain.policy_routing import MetaPolicyRouter
-from allbrain.policy_competition import CompetitionEngine
-from allbrain.meta_scoring import MetaScorer, ProfileStore
 from allbrain.self_play import MatchEngine, WinMatrix
-from allbrain.meta_optimizer import WeightOptimizer
-from allbrain.meta_meta_scoring import MetaEvaluator, EvaluatorStore
-from allbrain.learning_graph import LearningGraph, GraphRewriter, LearningNode
-from allbrain.coevolution import CouplingMatrix, Dynamics, OscillationDetector
-from allbrain.self_repair import ValidationGate, PolicySnapshotManager
+from allbrain.self_repair import PolicySnapshotManager, ValidationGate
 
 
 def _event_types(events):
@@ -128,8 +133,9 @@ class TestEndToEndRecursive:
             assert not r.get("error")
 
     def test_pipeline_has_decision_flags(self):
-        from allbrain.runtime_core.pipeline import SystemDecisionPipeline
         import inspect
+
+        from allbrain.runtime_core.pipeline import SystemDecisionPipeline
         sig = inspect.signature(SystemDecisionPipeline.run)
         for name in ["enable_counterfactual", "enable_scenarios", "enable_foresight", "enable_meta_reasoning", "enable_uncertainty", "enable_information_seeking"]:
             assert name in sig.parameters, f"{name} missing"

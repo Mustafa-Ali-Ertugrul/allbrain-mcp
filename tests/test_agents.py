@@ -5,6 +5,7 @@ import asyncio
 import pytest
 
 from allbrain.agents.adapter import AgentHealth, AgentStatus, ExecutionContext
+from allbrain.agents.adapters.mock import MockAdapter
 from allbrain.agents.definition import (
     AgentCapability,
     AgentCost,
@@ -27,10 +28,8 @@ from allbrain.agents.safety import (
     sanitize_task,
 )
 from allbrain.agents.worker import WorkerPool
-from allbrain.agents.adapters.mock import MockAdapter
 from allbrain.workflow.models import SubtaskResult, TaskGraph, TaskNode, WorkflowStatus
 from allbrain.workflow.scheduler import SubtaskAssignment
-
 
 # ---------- AgentDefinition ----------
 

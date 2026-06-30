@@ -13,7 +13,6 @@ from allbrain.foundations.versioning import (
     normalize_payload,
 )
 
-
 __all__ = [
     "KNOWN_EVENT_PREFIXES",
     "PayloadUpcaster",

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.objective_system.model import (
-    ObjectiveResult, ObjectiveSnapshot,
-    FAULT_TYPE_SAFETY_THRESHOLDS,
-    EFFICIENCY_PREVENTION_WEIGHT,
     EFFICIENCY_CYCLE_WEIGHT,
+    EFFICIENCY_PREVENTION_WEIGHT,
+    FAULT_TYPE_SAFETY_THRESHOLDS,
+    ObjectiveResult,
+    ObjectiveSnapshot,
 )
 
 

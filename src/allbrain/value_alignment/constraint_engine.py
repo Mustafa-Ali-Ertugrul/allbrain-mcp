@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.value_alignment.model import Constraint, AlignmentScore, AlignmentResult
+from allbrain.value_alignment.model import AlignmentResult, AlignmentScore, Constraint
 
 
 class ConstraintEngine:

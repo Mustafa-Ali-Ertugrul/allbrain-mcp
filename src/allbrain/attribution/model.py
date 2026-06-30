@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-
 ATTRIBUTION_TEMPLATE_VERSION = 1
 ATTRIBUTION_MIN_CONTRIBUTION = 0.05
 ATTRIBUTION_CONFIDENCE_ALPHA = 0.10

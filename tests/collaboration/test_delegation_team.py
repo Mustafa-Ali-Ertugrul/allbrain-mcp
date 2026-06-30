@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from allbrain.collaboration import CollaborationContext, CollaborationManager, DelegationPolicy, DelegationService, TeamBuilder
+from allbrain.collaboration import (
+    CollaborationContext,
+    CollaborationManager,
+    DelegationPolicy,
+    DelegationService,
+    TeamBuilder,
+)
 
 
 def test_delegation_flow_and_policy_are_deterministic() -> None:

@@ -14,7 +14,7 @@ def _stable_routing_id(task_type: str, event_ids: list[str] | None = None) -> st
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{task_type}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{task_type}:{ek}".encode()).digest()
     return f"routing-{d.hex()[:12]}"
 
 

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 from allbrain.events.schemas import EventType
 from allbrain.revision import (
     RevisionManager,
     RevisionReducer,
+)
+from allbrain.revision import (
     make_payload as make_revision_payload,
 )
 from allbrain.uncertainty import (

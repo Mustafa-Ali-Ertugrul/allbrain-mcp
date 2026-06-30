@@ -3,8 +3,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from allbrain.fusion.model import FUSION_OVERLAP_THRESHOLD
 from allbrain.events.schemas import EventType
+from allbrain.fusion.model import FUSION_OVERLAP_THRESHOLD
 
 
 def _pearson_correlation(x: list[float], y: list[float]) -> float:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
@@ -55,7 +55,7 @@ def test_generate_alternatives() -> None:
 
 
 def test_counterfactual_improvement() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc), environment_state={"tests": "passed"})
+    state = WorldState(timestamp=datetime.now(UTC), environment_state={"tests": "passed"})
     simulator = SimulationBridge(StateTransitionBridge(), PredictionBridge())
     evaluator = CounterfactualEvaluator(simulator)
 
@@ -71,7 +71,7 @@ def test_counterfactual_improvement() -> None:
 
 
 def test_regret_calculation() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     simulator = SimulationBridge(StateTransitionBridge(), PredictionBridge())
     evaluator = CounterfactualEvaluator(simulator)
 
@@ -82,7 +82,7 @@ def test_regret_calculation() -> None:
 
 
 def test_alternative_ranking() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc), environment_state={"tests": "passed"})
+    state = WorldState(timestamp=datetime.now(UTC), environment_state={"tests": "passed"})
     ranker = AlternativeRanker()
 
     ranked = ranker.rank(state, ["deploy", "run_tests", "rollback"])

@@ -4,10 +4,10 @@ import time
 from typing import Any
 
 from allbrain.mitigation_learning.model import (
-    StrategyStats,
-    PolicyVersion,
     POLICY_UPDATE_MIN_RECORDS,
     POLICY_UPDATE_SUCCESS_RATE_DELTA,
+    PolicyVersion,
+    StrategyStats,
 )
 
 

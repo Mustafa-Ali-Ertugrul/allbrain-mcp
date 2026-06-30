@@ -2,13 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
-from allbrain.fusion.model import SignalWeights
-from allbrain.fusion.calibration import normalize_signal
-from allbrain.fusion.analyzer import compute_overlap_matrix, detect_overlap_violations, _shared_event_lineage
-from allbrain.fusion.weights import calibrate_weights, default_weights
-from allbrain.fusion.fusion import build_signal_vector, unified_decision_score
 from allbrain.events.schemas import EventType
+from allbrain.foundations import canonical_event_sort
+from allbrain.fusion.analyzer import (
+    _shared_event_lineage,
+    compute_overlap_matrix,
+    detect_overlap_violations,
+)
+from allbrain.fusion.calibration import normalize_signal
+from allbrain.fusion.fusion import build_signal_vector, unified_decision_score
+from allbrain.fusion.model import SignalWeights
+from allbrain.fusion.weights import calibrate_weights, default_weights
 
 
 class FusionManager:

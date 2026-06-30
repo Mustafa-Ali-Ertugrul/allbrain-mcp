@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+
 from allbrain.tradeoff_engine.model import TRADEOFF_ENGINE_TEMPLATE_VERSION
 
 TRADEOFF_ANALYZED_KEYS: frozenset[str] = frozenset({"fault_type", "frontier_size", "dominated_count"})

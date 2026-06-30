@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from allbrain.events.schemas import EventType
-from allbrain.fusion import make_fusion_payload, make_calibration_payload
+from allbrain.fusion import make_calibration_payload, make_fusion_payload
 from allbrain.replay import EventReplayEngine
 
 
@@ -51,10 +51,10 @@ class TestFusionReplay:
         assert r1 == r2
 
     def test_mixed_with_all_reducers(self):
-        from allbrain.learning import make_learned_payload
-        from allbrain.dynamics import make_drift_payload
-        from allbrain.causal import make_counterfactual_payload
         from allbrain.capabilities.events import make_matched_payload
+        from allbrain.causal import make_counterfactual_payload
+        from allbrain.dynamics import make_drift_payload
+        from allbrain.learning import make_learned_payload
         evts = [
             E(EventType.CAPABILITY_MATCHED.value, "e1",
               make_matched_payload(agent_id="a", task_type="t", match_score=0.8, match_kind="exact")),

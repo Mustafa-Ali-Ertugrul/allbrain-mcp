@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from allbrain.attention.model import (
-    ATTENTION_MIN_ALLOCATION,
     ATTENTION_MAX_ALLOCATION,
+    ATTENTION_MIN_ALLOCATION,
     AttentionWeight,
 )
 

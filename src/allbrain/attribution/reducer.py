@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.attribution.events import (
+    validate_attribution_update,
+    validate_credit,
+    validate_importance,
+)
 from allbrain.events.schemas import EventType
-from allbrain.attribution.events import validate_credit, validate_attribution_update, validate_importance
 
 
 class AttributionReducer:

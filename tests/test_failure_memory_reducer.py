@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.failure_memory.reducer import FailureMemoryReducer
+from allbrain.events.schemas import EventType
 from allbrain.failure_memory.events import (
-    make_failure_memory_stored_payload,
     make_failure_memory_retrieved_payload,
+    make_failure_memory_stored_payload,
     make_failure_pattern_detected_payload,
     make_recovery_experience_updated_payload,
     make_recovery_learning_applied_payload,
 )
-from allbrain.events.schemas import EventType
+from allbrain.failure_memory.reducer import FailureMemoryReducer
 
 
 def _event(etype: str, payload: dict, eid: str = "e1") -> object:

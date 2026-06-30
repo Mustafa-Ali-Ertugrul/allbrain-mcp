@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.workspace.model import WORKSPACE_TEMPLATE_VERSION
 
-
 WS_UPDATED_KEYS: frozenset[str] = frozenset({"active_count", "capacity"})
 WS_ADDED_KEYS: frozenset[str] = frozenset({"item_id", "activation", "source"})
 WS_REMOVED_KEYS: frozenset[str] = frozenset({"item_id", "reason"})

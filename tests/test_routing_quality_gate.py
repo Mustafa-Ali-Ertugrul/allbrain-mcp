@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-
 FILES = ["scorer.py", "reducer.py", "manager.py", "events.py", "model.py"]
 
 
@@ -19,9 +18,10 @@ class TestQualityGate:
             _no_nondet("src/allbrain/routing", f)
 
     def test_does_not_change_confidence(self):
-        from allbrain.revision import RevisionManager, make_payload as mr
-        from allbrain.routing.events import make_selected_payload
         from allbrain.events.schemas import EventType
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as mr
+        from allbrain.routing.events import make_selected_payload
 
         class E:
             def __init__(self, t, i, p):

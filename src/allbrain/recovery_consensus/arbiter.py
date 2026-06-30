@@ -4,10 +4,10 @@ import hashlib
 from typing import Any
 
 from allbrain.recovery_consensus.model import (
+    CONSENSUS_MIN_RATIO,
     CandidateStrategy,
     RecoveryDecision,
     ScoredCandidate,
-    CONSENSUS_MIN_RATIO,
 )
 
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from allbrain.value_alignment import ConstraintEngine, AlignmentScoreTracker, Constraint
+
+from allbrain.value_alignment import AlignmentScoreTracker, Constraint, ConstraintEngine
 from allbrain.value_alignment.model import AlignmentResult
 
 
