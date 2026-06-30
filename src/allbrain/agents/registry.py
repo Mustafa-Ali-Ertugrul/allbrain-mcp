@@ -15,11 +15,23 @@ from allbrain.agents.definition import (
 
 
 class AgentRegistry:
+    """Central registry for agent definitions and adapters.
+
+    Manages the lifecycle of agent definitions (register/unregister) and
+    their runtime adapters. Provides lookup by ID and capability-based
+    filtering for orchestration.
+    """
+
     def __init__(self) -> None:
         self._definitions: dict[str, AgentDefinition] = {}
         self._adapters: dict[str, AgentAdapter] = {}
 
     def register(self, definition: AgentDefinition) -> None:
+        """Register an agent definition.
+
+        Raises:
+            ValueError: If agent ID is already registered.
+        """
         if definition.id in self._definitions:
             raise ValueError(f"Agent '{definition.id}' already registered")
         self._definitions[definition.id] = definition
@@ -40,6 +52,7 @@ class AgentRegistry:
         return list(self._definitions.values())
 
     def list_by_capability(self, domain: str) -> list[AgentDefinition]:
+        """Return all agents that have capability in the specified domain."""
         return [d for d in self._definitions.values() if d.has_capability(domain)]
 
     def has(self, agent_id: str) -> bool:
@@ -70,7 +83,11 @@ class AgentRegistry:
 
     @classmethod
     def discover_from_env(cls, *, include_mock: bool = False) -> AgentRegistry:
-        """Auto-discover agents from environment variables."""
+        """Auto-discover agents from environment variables.
+
+        Checks for API keys (ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.) and
+        registers corresponding agent definitions. Used for zero-config setup.
+        """
         registry = cls()
 
         if os.getenv("ANTHROPIC_API_KEY") or include_mock:

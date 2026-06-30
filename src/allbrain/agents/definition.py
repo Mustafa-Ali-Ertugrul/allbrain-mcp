@@ -6,6 +6,8 @@ from typing import Any
 
 
 class AgentProvider(StrEnum):
+    """AI provider types supported by the agent registry."""
+
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
     GOOGLE = "google"
@@ -19,6 +21,12 @@ class AgentProvider(StrEnum):
 
 @dataclass(frozen=True)
 class AgentCapability:
+    """Defines an agent's capability in a specific domain with weighted skills.
+
+    Used by the orchestration layer to match agents to task requirements.
+    Immutable to ensure capability definitions remain stable across scheduling.
+    """
+
     domain: str
     skills: frozenset[str] = field(default_factory=frozenset)
     weight: float = 1.0
@@ -41,6 +49,12 @@ class AgentCapability:
 
 @dataclass(frozen=True)
 class AgentCost:
+    """Cost metrics for agent API calls.
+
+    Tracks average costs per call and per token (input/output) to enable
+    cost-aware orchestration and budget enforcement.
+    """
+
     avg_cost_per_call: float = 0.0
     avg_input_token_cost: float = 0.0
     avg_output_token_cost: float = 0.0
@@ -66,6 +80,11 @@ class AgentCost:
 
 @dataclass(frozen=True)
 class LatencyProfile:
+    """Agent response latency percentiles in milliseconds.
+
+    Used for latency-aware task assignment and SLA monitoring.
+    """
+
     p50_ms: int = 0
     p95_ms: int = 0
     p99_ms: int = 0
@@ -88,6 +107,12 @@ class LatencyProfile:
 
 @dataclass(frozen=True)
 class SafetyLimits:
+    """Safety constraints for agent execution.
+
+    Enforces cost ceilings, token limits, rate limits, and domain restrictions
+    to prevent runaway costs and ensure safe agent behavior.
+    """
+
     max_cost_per_call: float = 1.0
     max_cost_per_workflow: float = 10.0
     max_input_tokens: int = 100_000
@@ -119,6 +144,16 @@ class SafetyLimits:
 
 @dataclass(frozen=True)
 class AgentDefinition:
+    """Complete specification of an AI agent.
+
+    Defines agent identity, capabilities, cost/latency characteristics,
+    safety limits, and adapter configuration. Used by the orchestrator
+    to select and route tasks to appropriate agents.
+
+    Immutable to ensure agent definitions remain stable across the
+    lifecycle of orchestration decisions.
+    """
+
     id: str
     name: str
     version: str
@@ -163,6 +198,7 @@ class AgentDefinition:
         )
 
     def has_capability(self, domain: str) -> bool:
+        """Check if agent has any capability in the specified domain."""
         return any(c.domain == domain for c in self.capabilities)
 
     def capability_weight(self, domain: str) -> float:

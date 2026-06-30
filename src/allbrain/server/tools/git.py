@@ -93,15 +93,15 @@ def get_recent_changes_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def get_git_context() -> dict[str, Any]:
-        result = get_git_context_impl(context, project_path=context.project_path)
+        result = get_git_context_impl(context)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def get_git_status() -> dict[str, Any]:
-        result = get_git_status_impl(context, project_path=context.project_path)
+        result = get_git_status_impl(context)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def get_recent_changes(limit: int = 10) -> dict[str, Any]:
-        result = get_recent_changes_impl(context, project_path=context.project_path, limit=limit)
+        result = get_recent_changes_impl(context, limit=limit)
         return result.model_dump(mode="json")

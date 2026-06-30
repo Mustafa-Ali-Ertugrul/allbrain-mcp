@@ -19,7 +19,7 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +27,6 @@ from allbrain.security.rate_limit import reset_rate_limits
 from allbrain.server import BrainContext
 from allbrain.server.app import resume_project_impl, save_event_impl
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
-
 
 AGENT_NAMES = [f"agent-{i:02d}" for i in range(10)]
 EVENTS_PER_AGENT = 100
@@ -250,10 +249,10 @@ def _verdict(s: dict[str, Any]) -> str:
 
 
 def main() -> int:
-    import os
     if not os.environ.get("PYTHONUTF8"):
         os.environ["PYTHONUTF8"] = "1"
-    import tempfile, shutil
+    import shutil
+    import tempfile
     work_dir = Path(tempfile.mkdtemp(prefix="allbrain_stress_"))
     print(f"Work dir: {work_dir}")
 

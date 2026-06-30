@@ -30,10 +30,9 @@ import tempfile
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
-
 
 # ── Configuration ────────────────────────────────────────────────
 AGENT_COUNT = 10
@@ -376,7 +375,7 @@ def main() -> int:
     db_path = SHARED_DB
     print(f"DB: {db_path}")
     print(f"Processes: {AGENT_COUNT}  Events/agent: {EVENTS_PER_AGENT}  Total: {TOTAL_EVENTS}")
-    print(f"Config: pool_size=5, max_overflow=10, busy_timeout=5000ms, journal_mode=WAL")
+    print("Config: pool_size=5, max_overflow=10, busy_timeout=5000ms, journal_mode=WAL")
 
     # ── 1. Start all subprocesses & warm up ────────────────────
     print("\n--- 1. Warming up MCP servers ---")
