@@ -11,6 +11,10 @@ EVENT_WEIGHTS = {
     EventType.FAILURE.value: 8,
     EventType.TASK_BLOCKED.value: 8,
     EventType.TOOL_CALL.value: 0,
+    EventType.TOOL_CALL_OUTCOME.value: 0,
+    EventType.SESSION_STARTED.value: 0,
+    EventType.SESSION_SUMMARY.value: 10,
+    EventType.SNAPSHOT_CREATED.value: 0,
 }
 
 

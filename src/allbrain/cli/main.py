@@ -12,7 +12,9 @@ from rich.console import Console
 
 from allbrain.config import canonicalize_project_path, default_db_path
 from allbrain.server import BrainContext, create_mcp_server
+from allbrain.server.lifecycle import reconcile_stale_sessions
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
+from allbrain.storage.history_repair import HistoryRepairer, backup_sqlite
 
 app = typer.Typer(no_args_is_help=True)
 console = Console(stderr=True)
@@ -41,16 +43,50 @@ def run_mcp_server(project: Path, agent: str, db_path: Path | None) -> None:
     engine = create_engine_for_path(resolved_db_path)
     init_db(engine)
     repository = BrainRepository(engine)
-    active_session = repository.create_session(project_path=project_path, agent_name=agent)
     context = BrainContext(
         repository=repository,
         project_path=project_path,
-        active_session=active_session,
+        active_session=None,
+        agent_name=agent,
+        central_audit_enabled=True,
     )
+    reconciled = reconcile_stale_sessions(context)
+    if reconciled:
+        console.log(f"Reconciled {len(reconciled)} stale AllBrain session(s)")
     console.log(f"AllBrain MCP started for {project_path}")
     server = create_mcp_server(context)
     _patch_stdio_newlines_for_windows()
-    server.run(transport="stdio", show_banner=False)
+    try:
+        server.run(transport="stdio", show_banner=False)
+    finally:
+        repository.close()
+
+
+@app.command("repair-history")
+def repair_history(
+    project: Annotated[Path, typer.Option("--project", "-p", help="Project root to repair.")] = Path("."),
+    db_path: Annotated[Path | None, typer.Option("--db-path", help="Shared SQLite database.")] = None,
+    source_db: Annotated[
+        list[Path] | None,
+        typer.Option("--source-db", help="Agent database to merge; repeat for multiple files."),
+    ] = None,
+    apply: Annotated[bool, typer.Option("--apply", help="Apply changes; default is dry-run.")] = False,
+) -> None:
+    resolved_db = (db_path or default_db_path()).expanduser().resolve()
+    project_path = canonicalize_project_path(project)
+    sources = list(source_db or sorted(resolved_db.parent.glob(".allbrain-*.db")))
+    engine = create_engine_for_path(resolved_db)
+    init_db(engine)
+    repairer = HistoryRepairer(engine, project_path=project_path, target_path=resolved_db)
+    report = repairer.inspect(sources)
+    console.print_json(data={"mode": "apply" if apply else "dry-run", **report})
+    if not apply:
+        engine.dispose()
+        return
+    backup = backup_sqlite(resolved_db)
+    result = repairer.apply(sources)
+    console.print_json(data={"backup": str(backup), **result})
+    engine.dispose()
 
 
 def _patch_stdio_newlines_for_windows() -> None:

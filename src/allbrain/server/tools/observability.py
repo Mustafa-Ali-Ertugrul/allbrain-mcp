@@ -146,6 +146,38 @@ def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolRes
         bound_session_id = bind_session_id(context, None)
         events = context.repository.list_events(project_path=context.project_path, limit=limit)
         result = ReliabilityMetrics().build(events)
+        from allbrain.server.tools.sessions import build_session_report
+
+        result["sessions"] = build_session_report(
+            context,
+            limit=min(limit, 5000),
+            include_empty=True,
+            detail_limit=0,
+        )
+
+        semantic_events = [e for e in events if e.type not in {"tool_call", "tool_call_outcome", "session_started", "snapshot_created"}]
+        memory_event_count = len(semantic_events)
+        memory_items = 0
+        memory_categories: dict[str, int] = {}
+        if memory_event_count > 0:
+            try:
+                from allbrain.memory import MemoryBuilder
+
+                items = MemoryBuilder().build(events)
+                memory_items = len(items)
+                from collections import Counter
+
+                memory_categories = dict(sorted(Counter(item.tags.get("kind", "other") for item in items).items()))
+            except Exception:
+                memory_items = 0
+        result["memory_coverage"] = {
+            "total_events": len(events),
+            "semantic_event_count": memory_event_count,
+            "memory_item_count": memory_items,
+            "coverage_rate": round(memory_items / memory_event_count, 6) if memory_event_count else 0.0,
+            "categories": memory_categories,
+        }
+
         audit_tool_call(
             context,
             tool_name="get_reliability_status",

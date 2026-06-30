@@ -21,6 +21,7 @@ from allbrain.orchestrator.metrics import AgentPerformanceReducer
 from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
+from allbrain.server.queueing import QueueCoordinator
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
@@ -120,6 +121,8 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
             enable_uncertainty=data.enable_uncertainty,
             enable_information_seeking=data.enable_information_seeking,
         )
+        if data.execute_mode == "queued_runtime":
+            result["queue"] = QueueCoordinator(context).enqueue_pipeline_result(result)
         audit_tool_call(
             context,
             tool_name="run_decision_pipeline",

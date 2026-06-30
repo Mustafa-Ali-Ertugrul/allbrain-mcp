@@ -22,9 +22,14 @@ class Session(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     project_id: int = Field(foreign_key="project.id", index=True)
     agent_name: str
+    server_instance_id: str | None = Field(default=None, index=True)
+    client_name: str | None = None
+    client_version: str | None = None
     started_at: datetime = Field(default_factory=utc_now)
+    last_heartbeat_at: datetime | None = Field(default_factory=utc_now, index=True)
     ended_at: datetime | None = None
     status: str = Field(default="active", index=True)
+    close_reason: str | None = None
 
 
 class Event(SQLModel, table=True):

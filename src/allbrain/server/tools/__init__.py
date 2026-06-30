@@ -14,8 +14,10 @@ from allbrain.server.tools import (
     memory,
     observability,
     orchestrator,
+    queue,
     scenarios,
     snapshots,
+    sessions,
     tasks,
     ui,
     world,
@@ -34,8 +36,10 @@ def register_all_tools(mcp, context) -> None:
     memory.register_tools(mcp, context)
     observability.register_tools(mcp, context)
     orchestrator.register_tools(mcp, context)
+    queue.register_tools(mcp, context)
     scenarios.register_tools(mcp, context)
     snapshots.register_tools(mcp, context)
+    sessions.register_tools(mcp, context)
     tasks.register_tools(mcp, context)
     ui.register_tools(mcp, context)
     world.register_tools(mcp, context)

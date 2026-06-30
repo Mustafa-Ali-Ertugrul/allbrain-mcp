@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import os
 import re
 from pathlib import Path
@@ -98,6 +99,75 @@ class GitBrain:
                 )
         except (ValueError, GitCommandError):
             return []
+        return changes
+
+    def build_fingerprint(self) -> dict[str, Any]:
+        """Return a content-free Git fingerprint suitable for session attribution."""
+        if self.repo is None:
+            return {"is_repo": False, "head": None, "branch": None, "files": {}}
+        try:
+            head = self.repo.head.commit.hexsha
+        except (TypeError, ValueError):
+            head = None
+        fingerprints: dict[str, str] = {}
+        for relative in self._changed_files():
+            path = Path(self.project_path, relative)
+            marker = "missing"
+            if path.is_file():
+                digest = hashlib.sha256()
+                try:
+                    with path.open("rb") as handle:
+                        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                            digest.update(chunk)
+                    marker = digest.hexdigest()
+                except OSError:
+                    marker = "unreadable"
+            fingerprints[relative.replace("\\", "/")] = marker
+        return {
+            "is_repo": True,
+            "head": head,
+            "branch": self._sanitized_branch(),
+            "files": dict(sorted(fingerprints.items())),
+        }
+
+    def changed_paths_between(
+        self,
+        baseline: dict[str, Any] | None,
+        current: dict[str, Any] | None = None,
+    ) -> list[dict[str, str]]:
+        """Compare two fingerprints without storing file contents."""
+        before = baseline or {"files": {}, "head": None}
+        after = current or self.build_fingerprint()
+        before_files = dict(before.get("files") or {})
+        after_files = dict(after.get("files") or {})
+        paths = set(before_files) | set(after_files)
+        committed_paths: set[str] = set()
+        before_head = before.get("head")
+        after_head = after.get("head")
+        if self.repo is not None and before_head and after_head and before_head != after_head:
+            try:
+                with self._git_env():
+                    committed = self.repo.git.diff("--name-only", before_head, after_head).splitlines()
+                committed_paths = {path.strip().replace("\\", "/") for path in committed if path.strip()}
+                paths.update(committed_paths)
+            except GitCommandError:
+                pass
+        changes: list[dict[str, str]] = []
+        for path in sorted(paths):
+            old = before_files.get(path)
+            new = after_files.get(path)
+            if old == new and path not in committed_paths:
+                continue
+            if path in committed_paths and path not in before_files and path not in after_files:
+                kind = "modified"
+            elif path not in before_files:
+                kind = "added"
+            elif path not in after_files or new == "missing":
+                kind = "deleted"
+            else:
+                kind = "modified"
+            if old != new or before_head != after_head:
+                changes.append({"path": path, "change_kind": kind})
         return changes
 
     # ---- env sandbox ------------------------------------------------------

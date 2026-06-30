@@ -56,6 +56,8 @@ def audit_tool_call(
     session_id: int,
     _session: Any | None = None,
 ) -> None:
+    if getattr(context, "central_audit_enabled", False):
+        return
     context.repository.append_event(
         project_path=context.project_path,
         session_id=session_id,
@@ -71,9 +73,13 @@ def audit_tool_call(
     )
 
 
-def maybe_auto_snapshot(context: BrainContext, *, project_path: str | Path) -> None:
-    if not context.increment_and_check_event_count():
-        return
+def maybe_auto_snapshot(
+    context: BrainContext,
+    *,
+    project_path: str | Path,
+    force_baseline: bool = False,
+) -> None:
+    """Create snapshots from persistent event progress, not process-local counters."""
     project = context.repository.get_project_by_path(project_path)
     if project is None or project.id is None:
         return
@@ -85,7 +91,9 @@ def maybe_auto_snapshot(context: BrainContext, *, project_path: str | Path) -> N
     latest = snapshot_repo.get_latest(project.id)
     event_cursor = latest.event_cursor if latest is not None else None
     events = context.repository.list_events_after(project_path=context.project_path, event_cursor=event_cursor)
-    if snapshot_weight(events) < context.auto_snapshot_threshold:
+    semantic_events = [event for event in events if event.type not in {"tool_call", "tool_call_outcome", "session_started", "snapshot_created"}]
+    baseline_due = latest is None and force_baseline and bool(semantic_events)
+    if not baseline_due and snapshot_weight(events) < context.auto_snapshot_threshold:
         return
     all_events = context.repository.list_events(project_path=context.project_path, limit=50000)
     SnapshotEngine(SnapshotBuilder(include_derived=False), snapshot_repo).build_snapshot(

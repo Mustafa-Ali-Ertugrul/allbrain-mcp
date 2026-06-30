@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import col, select
 from uuid6 import uuid7
 
@@ -34,7 +35,19 @@ class SnapshotRepo:
         )
         with open_session(self.engine) as db:
             db.add(record)
-            db.commit()
+            try:
+                db.commit()
+            except IntegrityError:
+                db.rollback()
+                existing = db.exec(
+                    select(SnapshotRecord).where(
+                        SnapshotRecord.project_id == project_id,
+                        SnapshotRecord.event_cursor == event_cursor,
+                    )
+                ).first()
+                if existing is None:
+                    raise
+                return record_to_snapshot(existing)
             db.refresh(record)
             return record_to_snapshot(record)
 
