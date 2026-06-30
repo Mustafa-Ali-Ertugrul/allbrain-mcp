@@ -17,7 +17,6 @@ from allbrain.belief.updater import (
     update_state,
 )
 
-
 __all__ = [
     "BeliefManager",
     "BeliefQuery",

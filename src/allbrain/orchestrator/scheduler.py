@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.models.schemas import EventRead
 from allbrain.orchestrator.capabilities import CapabilityRegistry
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
 from allbrain.orchestrator.scoring import SchedulerV1
-from allbrain.models.schemas import EventRead
 
 
 class DeterministicScheduler:

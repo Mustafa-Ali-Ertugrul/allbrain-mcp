@@ -19,7 +19,9 @@ class ReliabilityMetrics:
             for event in events
             if event.type in {"worker_stopped", "worker_stale"} and event.payload.get("worker_id")
         }
-        active_leases = counts["lease_acquired"] + counts["lease_renewed"] - counts["lease_released"] - counts["lease_expired"]
+        active_leases = (
+            counts["lease_acquired"] + counts["lease_renewed"] - counts["lease_released"] - counts["lease_expired"]
+        )
         recoveries = counts["recovery_completed"] + counts["recovery_failed"]
         snapshots = counts["snapshot_restored"] + counts["snapshot_created"]
         return {

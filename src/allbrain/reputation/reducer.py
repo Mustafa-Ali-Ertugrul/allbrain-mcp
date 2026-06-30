@@ -96,9 +96,7 @@ class ReputationReducer:
                 "analysis_id": state.analysis_id,
                 "template_version": state.template_version,
             }
-            for agent_id, state in (
-                (k, self.snapshot(agent_id=k)) for k in self._agents
-            )
+            for agent_id, state in ((k, self.snapshot(agent_id=k)) for k in self._agents)
         }
 
     def known_agent_ids(self) -> set[str]:

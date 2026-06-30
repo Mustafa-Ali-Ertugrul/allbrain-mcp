@@ -61,9 +61,7 @@ class TransitionLearner:
 
     def __init__(self) -> None:
         # (state_sig, action) → {next_state_sig: count}
-        self._transitions: dict[tuple[str, str], dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        self._transitions: dict[tuple[str, str], dict[str, int]] = defaultdict(lambda: defaultdict(int))
         # action → total count
         self._action_counts: dict[str, int] = defaultdict(int)
         # state_sig → representative environment_state dict
@@ -139,9 +137,7 @@ class TransitionLearner:
     # Querying
     # ------------------------------------------------------------------
 
-    def predict_distribution(
-        self, state: WorldState, action: str
-    ) -> list[tuple[dict[str, str], float]]:
+    def predict_distribution(self, state: WorldState, action: str) -> list[tuple[dict[str, str], float]]:
         """Return the probability distribution over next environment_states.
 
         Each entry is (environment_state_dict, probability).

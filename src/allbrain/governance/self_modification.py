@@ -27,7 +27,9 @@ class SelfModificationAuthorityEngine:
         risk_level = _risk_level(proposals)
         confidence = min(float(trajectory["confidence"]), _proposal_confidence(proposals))
         has_architecture_mutation = any(proposal.get("change_type") == "architecture_change" for proposal in proposals)
-        weakens_auditability = any(proposal.get("removes_auditability") or proposal.get("reduces_interpretability") for proposal in proposals)
+        weakens_auditability = any(
+            proposal.get("removes_auditability") or proposal.get("reduces_interpretability") for proposal in proposals
+        )
 
         if (
             constitutional["has_explicit_violation"]
@@ -37,7 +39,9 @@ class SelfModificationAuthorityEngine:
         ):
             decision = "reject_expansion"
             reason = "alignment_or_constitutional_boundary_failed"
-        elif identity["identity_consistency_score"] < self.RESTRUCTURE_IDENTITY or (has_architecture_mutation and weakens_auditability):
+        elif identity["identity_consistency_score"] < self.RESTRUCTURE_IDENTITY or (
+            has_architecture_mutation and weakens_auditability
+        ):
             decision = "require_restructuring"
             reason = "identity_or_auditability_requires_restructure"
         elif confidence < self.DELAY_CONFIDENCE or trajectory["confidence"] < self.DELAY_CONFIDENCE:

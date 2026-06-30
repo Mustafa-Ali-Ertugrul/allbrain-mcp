@@ -6,7 +6,7 @@ from allbrain.models.schemas import (
     UserInputError,
 )
 from allbrain.server import BrainContext
-from allbrain.server.app import save_event_impl, create_task_impl
+from allbrain.server.app import create_task_impl, save_event_impl
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 
 
@@ -25,6 +25,7 @@ def make_context(tmp_path: Path, *, active: bool = True) -> BrainContext:
 
 
 # --- Validation errors are user-visible ---
+
 
 def test_validation_error_visible_to_user(tmp_path: Path) -> None:
     """Pydantic ValidationError should show field info to the user."""
@@ -60,6 +61,7 @@ def test_oversized_payload_rejected(tmp_path: Path) -> None:
 
 # --- UserInputError is user-visible ---
 
+
 def test_user_input_error_visible_to_user(tmp_path: Path) -> None:
     """UserInputError should show the message to the user."""
     context = make_context(tmp_path)
@@ -80,11 +82,10 @@ def test_user_input_error_visible_to_user(tmp_path: Path) -> None:
 
 # --- Internal error masking ---
 
+
 def test_internal_error_masked(tmp_path: Path, monkeypatch) -> None:
     """Internal (non-ValidationError, non-UserInputError) must be masked."""
     context = make_context(tmp_path)
-
-    original = context.repository.append_event
 
     def _broken(*args: object, **kwargs: object) -> object:
         raise RuntimeError("DB connection lost")
@@ -100,8 +101,6 @@ def test_internal_error_masked(tmp_path: Path, monkeypatch) -> None:
 def test_internal_error_path_not_leaked(tmp_path: Path, monkeypatch) -> None:
     """Internal error must NOT leak filesystem paths."""
     context = make_context(tmp_path)
-
-    original = context.repository.append_event
 
     def _broken(*args: object, **kwargs: object) -> object:
         raise RuntimeError("/home/user/secret_project/db.sqlite not found")

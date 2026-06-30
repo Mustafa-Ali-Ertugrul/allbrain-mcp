@@ -1,4 +1,5 @@
 """Domain module: counterfactual."""
+
 from __future__ import annotations
 
 import logging
@@ -6,23 +7,23 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.counterfactual import AlternativeRanker, CounterfactualEngine
+from allbrain.counterfactual.models import recommendation_severity
+from allbrain.events import EventType
+from allbrain.models.schemas import (
+    AlternativeRankingInput,
+    CounterfactualInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
     maybe_auto_snapshot,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    CounterfactualInput,
-    AlternativeRankingInput,
-)
-from allbrain.events import EventType
 from allbrain.world import WorldModel
-from allbrain.counterfactual import CounterfactualEngine, AlternativeRanker
-from allbrain.counterfactual.models import recommendation_severity
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,6 @@ def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolRe
     try:
         data = CounterfactualInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         world_model = WorldModel()
         engine = CounterfactualEngine()
         current_state = world_model.observe()

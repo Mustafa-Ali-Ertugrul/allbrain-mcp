@@ -1,4 +1,5 @@
 """Domain module: task management tools."""
+
 from __future__ import annotations
 
 import logging
@@ -6,16 +7,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from allbrain.server.context import BrainContext
-from allbrain.server.tools._shared import (
-    append_selection_decision,
-    audit_tool_call,
-    bind_session_id,
-    get_task_or_raise,
-    maybe_auto_snapshot,
-)
-from allbrain.security.rate_limit import check_tool_rate
-from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.events import EventType
 from allbrain.models.schemas import (
     AssignTaskInput,
     CreateTaskInput,
@@ -26,8 +18,6 @@ from allbrain.models.schemas import (
     ToolResult,
     UserInputError,
 )
-from allbrain.storage.repository import event_to_read
-from allbrain.events import EventType
 from allbrain.orchestrator import (
     AgentStateBuilder,
     DeterministicScheduler,
@@ -36,6 +26,17 @@ from allbrain.orchestrator import (
     TaskStateReducer,
 )
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
+from allbrain.security.rate_limit import check_tool_rate
+from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.server.context import BrainContext
+from allbrain.server.tools._shared import (
+    append_selection_decision,
+    audit_tool_call,
+    bind_session_id,
+    get_task_or_raise,
+    maybe_auto_snapshot,
+)
+from allbrain.storage.repository import event_to_read
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +84,6 @@ def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         check_tool_rate("assign_task")
         data = AssignTaskInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         task_state = TaskStateReducer().build(events)
         task = get_task_or_raise(task_state, data.task_id)
@@ -204,7 +204,6 @@ def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = HandoffTaskInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         task_state = TaskStateReducer().build(events)
         task = get_task_or_raise(task_state, data.task_id)
@@ -287,7 +286,6 @@ def get_task_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         limit = int(kwargs.get("limit", 5000) or 5000)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=limit)
         task_state = TaskStateReducer().build(events)
         metrics = AgentPerformanceReducer().reduce(events)
@@ -348,7 +346,9 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str,
         depends_on: str,
     ) -> dict[str, Any]:
-        result = add_task_dependency_impl(context, task_id=task_id, depends_on=depends_on, project_path=context.project_path)
+        result = add_task_dependency_impl(
+            context, task_id=task_id, depends_on=depends_on, project_path=context.project_path
+        )
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -357,7 +357,9 @@ def register_tools(mcp, context: BrainContext) -> None:
         new: int,
         old: int | None = None,
     ) -> dict[str, Any]:
-        result = change_task_priority_impl(context, task_id=task_id, old=old, new=new, project_path=context.project_path)
+        result = change_task_priority_impl(
+            context, task_id=task_id, old=old, new=new, project_path=context.project_path
+        )
         return result.model_dump(mode="json")
 
     @mcp.tool

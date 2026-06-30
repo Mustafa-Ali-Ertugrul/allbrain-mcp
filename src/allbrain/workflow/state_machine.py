@@ -45,12 +45,13 @@ class WorkflowStateMachine:
             preds = self.graph.predecessors(node_id)
             if preds and not all(p.status == WorkflowStatus.COMPLETED for p in preds):
                 return False, ["Dependencies not met"]
-        if target == WorkflowStatus.READY and current == WorkflowStatus.FAILED:
-            if node.retry_count >= node.max_retries:
-                return False, ["Retry budget exhausted"]
+        if target == WorkflowStatus.READY and current == WorkflowStatus.FAILED and node.retry_count >= node.max_retries:
+            return False, ["Retry budget exhausted"]
         return True, []
 
-    def transition(self, node_id: str, target: WorkflowStatus, reason: str = "", agent_id: str | None = None) -> TransitionResult:
+    def transition(
+        self, node_id: str, target: WorkflowStatus, reason: str = "", agent_id: str | None = None
+    ) -> TransitionResult:
         node = self.graph.nodes.get(node_id)
         if node is None:
             return TransitionResult(success=False, errors=[f"Node '{node_id}' not found"])

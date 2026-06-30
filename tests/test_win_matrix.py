@@ -52,10 +52,18 @@ class TestWinMatrix:
     def test_edge_case_single_policy(self):
         wm = WinMatrix()
         from allbrain.self_play.model import MatchResult
-        wm.record(MatchResult(
-            policy_a="solo", policy_b="solo", winner="solo",
-            score_a=0.5, score_b=0.5, confidence=0.0, fault_type="lonely",
-        ))
+
+        wm.record(
+            MatchResult(
+                policy_a="solo",
+                policy_b="solo",
+                winner="solo",
+                score_a=0.5,
+                score_b=0.5,
+                confidence=0.0,
+                fault_type="lonely",
+            )
+        )
         rank = wm.ranking("lonely")
         assert len(rank) <= 1
 
@@ -69,8 +77,13 @@ class TestWinMatrix:
 
 def _mr(fault_type, a, b, winner, sa, sb):
     from allbrain.self_play.model import MatchResult
+
     return MatchResult(
-        policy_a=a, policy_b=b, winner=winner,
-        score_a=sa, score_b=sb,
-        confidence=abs(sa - sb), fault_type=fault_type,
+        policy_a=a,
+        policy_b=b,
+        winner=winner,
+        score_a=sa,
+        score_b=sb,
+        confidence=abs(sa - sb),
+        fault_type=fault_type,
     )

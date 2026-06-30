@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-
 APP_DIR_NAME = ".allbrain"
 DB_FILE_NAME = "allbrain.db"
 
@@ -63,6 +62,5 @@ def canonicalize_project_path(project_path: str | Path | None) -> str:
             continue
 
     raise PathTraversalError(
-        f"Project path {canonical} is not inside any allowed root "
-        f"({'; '.join(str(r) for r in roots)})"
+        f"Project path {canonical} is not inside any allowed root ({'; '.join(str(r) for r in roots)})"
     )

@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
-
 DRIFT_THRESHOLD: float = 0.10
 """Minimum |belief_after - belief_before| to emit a BELIEF_DRIFT_DETECTED event.
 
@@ -41,9 +40,7 @@ class DriftSample:
 
     def __post_init__(self) -> None:
         if self.reason not in REASONS:
-            raise ValueError(
-                f"unknown drift reason: {self.reason!r} (expected one of {sorted(REASONS)})"
-            )
+            raise ValueError(f"unknown drift reason: {self.reason!r} (expected one of {sorted(REASONS)})")
         if not 0.0 <= float(self.belief_before) <= 1.0:
             raise ValueError(f"belief_before must be in [0, 1], got {self.belief_before}")
         if not 0.0 <= float(self.belief_after) <= 1.0:
@@ -63,9 +60,7 @@ def detect_drift(
     (pipeline, replay) can replay the full event log without filter.
     """
     if reason not in REASONS:
-        raise ValueError(
-            f"unknown drift reason: {reason!r} (expected one of {sorted(REASONS)})"
-        )
+        raise ValueError(f"unknown drift reason: {reason!r} (expected one of {sorted(REASONS)})")
     before = float(belief_before)
     after = float(belief_after)
     magnitude = abs(after - before)

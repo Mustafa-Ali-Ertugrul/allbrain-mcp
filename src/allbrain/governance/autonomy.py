@@ -8,7 +8,9 @@ from allbrain.governance.utils import autonomy_level
 class AutonomyBoundaryController:
     def assess(self, context: dict[str, Any], proposals: list[dict[str, Any]]) -> dict[str, Any]:
         current = autonomy_level(context.get("current_autonomy_level"), 2)
-        requested = max([current, *[autonomy_level(proposal.get("requested_autonomy_level"), current) for proposal in proposals]])
+        requested = max(
+            [current, *[autonomy_level(proposal.get("requested_autonomy_level"), current) for proposal in proposals]]
+        )
         allowed = min(5, current + 1)
         impact = max(0, requested - current)
         constraints: list[str] = []

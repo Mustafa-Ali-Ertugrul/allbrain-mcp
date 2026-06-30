@@ -2,16 +2,20 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
+from allbrain.attribution.allocator import allocate_credit
+from allbrain.attribution.counterfactual import estimate_signal_impact
+from allbrain.attribution.estimator import (
+    initial_signal_counts,
+    initial_signal_rewards,
+    update_signal_reward,
+)
+from allbrain.attribution.matrix import detect_importance_change
 from allbrain.attribution.model import (
     ATTRIBUTION_COUNTERFACTUAL_INTERVAL,
     AttributionResult,
     CreditAllocation,
 )
-from allbrain.attribution.allocator import allocate_credit
-from allbrain.attribution.counterfactual import estimate_signal_impact
-from allbrain.attribution.estimator import update_signal_reward, initial_signal_rewards, initial_signal_counts
-from allbrain.attribution.matrix import detect_importance_change
+from allbrain.foundations import canonical_event_sort
 
 
 class AttributionManager:
@@ -35,10 +39,7 @@ class AttributionManager:
         ordered = canonical_event_sort(events)
         event_ids = [str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")]
 
-        if signal_rewards is None:
-            signal_rewards = initial_signal_rewards()
-        else:
-            signal_rewards = dict(signal_rewards)
+        signal_rewards = initial_signal_rewards() if signal_rewards is None else dict(signal_rewards)
         if signal_counts is None:
             signal_counts = initial_signal_counts()
 
@@ -47,8 +48,12 @@ class AttributionManager:
         if self._counterfactual_count % ATTRIBUTION_COUNTERFACTUAL_INTERVAL == 0:
             for signal in ["capability", "learning", "dynamics", "causal"]:
                 cf_scores[signal] = estimate_signal_impact(
-                    signal=signal, agent_id=agent_id, task_type=task_type,
-                    actual_agent=agent_id, events=ordered, event_ids=event_ids,
+                    signal=signal,
+                    agent_id=agent_id,
+                    task_type=task_type,
+                    actual_agent=agent_id,
+                    events=ordered,
+                    event_ids=event_ids,
                 )
 
         allocations = allocate_credit(reward, contributors, cf_scores=cf_scores)
@@ -61,12 +66,13 @@ class AttributionManager:
             signal_counts[alloc.signal] = signal_counts.get(alloc.signal, 0) + 1
 
         importance_changes = detect_importance_change(
-            old_rewards, signal_rewards, self._importance_history,
+            old_rewards,
+            signal_rewards,
+            self._importance_history,
         )
 
         alloc_list = [
-            {"signal": a.signal, "contribution": a.contribution, "confidence": a.confidence}
-            for a in allocations
+            {"signal": a.signal, "contribution": a.contribution, "confidence": a.confidence} for a in allocations
         ]
 
         return {

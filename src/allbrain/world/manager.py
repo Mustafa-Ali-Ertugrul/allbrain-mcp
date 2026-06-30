@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events import EventType
+from allbrain.foundations import canonical_event_sort
 from allbrain.models.schemas import EventRead
 from allbrain.world.environment import EnvironmentTracker
 from allbrain.world.models import SimulationResult, WorldState
@@ -11,7 +12,6 @@ from allbrain.world.prediction_learner import BetaPredictor, LearnedPredictionBr
 from allbrain.world.simulation import SimulationBridge
 from allbrain.world.transition_learner import TransitionLearner
 from allbrain.world.transitions import LearnedTransitionBridge, StateTransitionBridge
-from allbrain.foundations import canonical_event_sort
 
 
 class WorldStateBuilder:

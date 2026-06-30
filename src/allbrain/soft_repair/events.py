@@ -4,10 +4,16 @@ from typing import Any
 
 from allbrain.soft_repair.model import SOFT_REPAIR_TEMPLATE_VERSION
 
-POLICY_BLENDED_KEYS: frozenset[str] = frozenset({
-    "old_policy_id", "new_policy_id", "fault_type",
-    "old_weight", "new_weight", "stability_score",
-})
+POLICY_BLENDED_KEYS: frozenset[str] = frozenset(
+    {
+        "old_policy_id",
+        "new_policy_id",
+        "fault_type",
+        "old_weight",
+        "new_weight",
+        "stability_score",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:

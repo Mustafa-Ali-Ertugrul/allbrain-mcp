@@ -4,12 +4,12 @@ import hashlib
 from typing import Any
 
 from allbrain.mitigation_learning.model import (
-    LearningRecord,
-    StrategyStats,
-    PolicyVersion,
+    DISABLE_SUCCESS_RATE_THRESHOLD,
     LEARNING_EMA_ALPHA,
     MIN_USES_FOR_DISABLE,
-    DISABLE_SUCCESS_RATE_THRESHOLD,
+    LearningRecord,
+    PolicyVersion,
+    StrategyStats,
 )
 
 
@@ -58,16 +58,12 @@ class LearningEngine:
             stats.failures += 1
 
         stats.avg_effectiveness = (
-            stats.avg_effectiveness * (1.0 - LEARNING_EMA_ALPHA)
-            + record.effectiveness_score * LEARNING_EMA_ALPHA
+            stats.avg_effectiveness * (1.0 - LEARNING_EMA_ALPHA) + record.effectiveness_score * LEARNING_EMA_ALPHA
         )
         stats.success_rate = stats.successes / stats.total_uses
         stats.last_used_at = record.occurred_at
 
-        if (
-            stats.total_uses >= MIN_USES_FOR_DISABLE
-            and stats.success_rate < DISABLE_SUCCESS_RATE_THRESHOLD
-        ):
+        if stats.total_uses >= MIN_USES_FOR_DISABLE and stats.success_rate < DISABLE_SUCCESS_RATE_THRESHOLD:
             stats.disabled = True
 
         return stats, None
@@ -93,9 +89,7 @@ class LearningEngine:
         policy_version: int = 0,
     ) -> LearningRecord:
         effectiveness = LearningEngine.compute_effectiveness(risk_delta, pre_risk)
-        learning_id = hashlib.sha256(
-            f"{fault_id}|{strategy}|{occurred_at:.6f}".encode()
-        ).hexdigest()[:16]
+        learning_id = hashlib.sha256(f"{fault_id}|{strategy}|{occurred_at:.6f}".encode()).hexdigest()[:16]
         return LearningRecord(
             learning_id=learning_id,
             fault_id=fault_id,

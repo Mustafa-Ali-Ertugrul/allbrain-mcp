@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from allbrain.meta_policy import (
-    compute_kl_divergence, detect_policy_drift, should_snapshot,
-    PolicyState, ModeStats, META_POLICY_SNAPSHOT_INTERVAL, META_POLICY_KL_THRESHOLD,
+    META_POLICY_KL_THRESHOLD,
+    META_POLICY_SNAPSHOT_INTERVAL,
+    ModeStats,
+    PolicyState,
+    compute_kl_divergence,
+    detect_policy_drift,
+    should_snapshot,
 )
 
 
@@ -24,14 +29,20 @@ class TestPolicyDrift:
                 "a": ModeStats(mode="a", count=10, avg_reward=0.5, ema_reward=0.5, variance=0),
                 "b": ModeStats(mode="b", count=10, avg_reward=0.5, ema_reward=0.5, variance=0),
             },
-            exploration_rate=0.05, temperature=1.0, last_updated="", decision_count=1,
+            exploration_rate=0.05,
+            temperature=1.0,
+            last_updated="",
+            decision_count=1,
         )
         new = PolicyState(
             mode_stats={
                 "a": ModeStats(mode="a", count=10, avg_reward=1.0, ema_reward=1.0, variance=0),
                 "b": ModeStats(mode="b", count=10, avg_reward=0.0, ema_reward=0.0, variance=0),
             },
-            exploration_rate=0.05, temperature=1.0, last_updated="", decision_count=2,
+            exploration_rate=0.05,
+            temperature=1.0,
+            last_updated="",
+            decision_count=2,
         )
         assert detect_policy_drift(old, new)
 
@@ -41,14 +52,23 @@ class TestPolicyDrift:
                 "a": ModeStats(mode="a", count=10, avg_reward=0.5, ema_reward=0.5, variance=0),
                 "b": ModeStats(mode="b", count=10, avg_reward=0.5, ema_reward=0.5, variance=0),
             },
-            exploration_rate=0.05, temperature=1.0, last_updated="", decision_count=1,
+            exploration_rate=0.05,
+            temperature=1.0,
+            last_updated="",
+            decision_count=1,
         )
         assert not detect_policy_drift(state, state)
 
     def test_snapshot_interval(self):
         s1 = PolicyState(mode_stats={}, exploration_rate=0, temperature=1, last_updated="", decision_count=1)
         assert not should_snapshot(s1)
-        s_at = PolicyState(mode_stats={}, exploration_rate=0, temperature=1, last_updated="", decision_count=META_POLICY_SNAPSHOT_INTERVAL)
+        s_at = PolicyState(
+            mode_stats={},
+            exploration_rate=0,
+            temperature=1,
+            last_updated="",
+            decision_count=META_POLICY_SNAPSHOT_INTERVAL,
+        )
         assert should_snapshot(s_at)
 
     def test_threshold_respected(self):

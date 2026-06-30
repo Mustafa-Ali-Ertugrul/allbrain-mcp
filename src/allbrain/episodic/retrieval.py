@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from allbrain.episodic.importance import jaccard_similarity
-from allbrain.episodic.model import Episode, DEFAULT_RETRIEVAL_LIMIT
+from allbrain.episodic.model import DEFAULT_RETRIEVAL_LIMIT, Episode
 
 
 def retrieve_similar(

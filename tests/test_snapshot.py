@@ -12,7 +12,9 @@ from allbrain.snapshot.versions import snapshot_versions
 from allbrain.storage import BrainRepository, SnapshotRepo, create_engine_for_path, init_db
 
 
-def make_context(repo: BrainRepository, project_root: Path, agent: str, threshold: int = 50, snapshot_check_interval: int = 100) -> BrainContext:
+def make_context(
+    repo: BrainRepository, project_root: Path, agent: str, threshold: int = 50, snapshot_check_interval: int = 100
+) -> BrainContext:
     session = repo.create_session(project_root, agent)
     return BrainContext(
         repository=repo,
@@ -113,9 +115,7 @@ def test_compression_safety_collapses_file_churn_and_groups_failure_metadata(tmp
     for key, value in snapshot_versions().items():
         assert snapshot_result.data["metadata"][key] == value
     assert len([event for event in compressed if event.type == "file_modified"]) == 1
-    assert snapshot_result.data["metadata"]["repeated_failures"] == [
-        {"payload": {"error": "same"}, "count": 3}
-    ]
+    assert snapshot_result.data["metadata"]["repeated_failures"] == [{"payload": {"error": "same"}, "count": 3}]
     assert snapshot_result.data["metadata"]["snapshot_profile"] == "core"
     assert snapshot_result.data["metadata"]["derived_layers_included"] is False
 
@@ -231,7 +231,17 @@ def test_v6_snapshot_adapter_adds_scheduler_defaults(tmp_path: Path) -> None:
     SnapshotRepo(repo.engine).save(
         project_id=project.id or 0,
         event_cursor=None,
-        state={"global_view": {}, "task_view": {"tasks": {}, "dependencies": [], "handoffs": [], "agent_queue": {}, "open_task_ids": [], "completed_task_ids": []}},
+        state={
+            "global_view": {},
+            "task_view": {
+                "tasks": {},
+                "dependencies": [],
+                "handoffs": [],
+                "agent_queue": {},
+                "open_task_ids": [],
+                "completed_task_ids": [],
+            },
+        },
         metadata={"snapshot_schema_version": "6.0", "reducer_version": "6.0", "compression_version": "1.1"},
     )
 

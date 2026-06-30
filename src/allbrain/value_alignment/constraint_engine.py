@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.value_alignment.model import Constraint, AlignmentScore, AlignmentResult
+from allbrain.value_alignment.model import AlignmentResult, AlignmentScore, Constraint
 
 
 class ConstraintEngine:
@@ -17,18 +17,14 @@ class ConstraintEngine:
             Constraint("stability_min", "stability", 0.30, is_hard=False),
         ]
 
-    def check(self, fault_type: str, metrics: dict[str, float],
-              safety_threshold: float = 0.50) -> AlignmentScore:
+    def check(self, fault_type: str, metrics: dict[str, float], safety_threshold: float = 0.50) -> AlignmentScore:
         constraint_results: dict[str, bool] = {}
         hard_violations: list[str] = []
         soft_penalties: list[str] = []
 
         for c in self._constraints:
             val = metrics.get(c.metric, 0.0)
-            if c.name == "safety_min":
-                threshold = safety_threshold
-            else:
-                threshold = c.threshold
+            threshold = safety_threshold if c.name == "safety_min" else c.threshold
             met = val >= threshold
             constraint_results[c.name] = met
             if not met:
@@ -40,10 +36,16 @@ class ConstraintEngine:
         passed = len(hard_violations) == 0
         score = 1.0 if passed else max(0.0, 1.0 - 0.3 * len(hard_violations) - 0.1 * len(soft_penalties))
 
-        return AlignmentScore(fault_type=fault_type, overall_score=score,
-            constraint_results=constraint_results, hard_violations=hard_violations,
-            soft_penalties=soft_penalties, passed=passed)
+        return AlignmentScore(
+            fault_type=fault_type,
+            overall_score=score,
+            constraint_results=constraint_results,
+            hard_violations=hard_violations,
+            soft_penalties=soft_penalties,
+            passed=passed,
+        )
 
     def align(self, score: AlignmentScore) -> AlignmentResult:
-        return AlignmentResult(score=score, blocked=not score.passed,
-            reason="hard_violation" if not score.passed else "")
+        return AlignmentResult(
+            score=score, blocked=not score.passed, reason="hard_violation" if not score.passed else ""
+        )

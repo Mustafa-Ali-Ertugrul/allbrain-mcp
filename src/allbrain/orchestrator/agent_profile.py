@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-
 DEFAULT_AGENT_VERSION = "1.0.0"
 UNHEALTHY_FAILURE_THRESHOLD = 5
 
@@ -21,7 +20,7 @@ class TaskRequirements:
     required_skills: set[str]
 
     @classmethod
-    def from_task(cls, task: dict[str, Any]) -> "TaskRequirements":
+    def from_task(cls, task: dict[str, Any]) -> TaskRequirements:
         domain = str(task.get("domain") or "software")
         required_skills = task.get("required_skills") or task.get("skills") or []
         if isinstance(required_skills, str):
@@ -42,7 +41,7 @@ class AgentHealth:
     healthy: bool = True
 
     @classmethod
-    def from_metrics(cls, metrics: dict[str, Any], *, in_probe_mode: bool = False) -> "AgentHealth":
+    def from_metrics(cls, metrics: dict[str, Any], *, in_probe_mode: bool = False) -> AgentHealth:
         consecutive_failures = int(metrics.get("consecutive_failures", 0) or 0)
         return cls(
             consecutive_failures=consecutive_failures,
@@ -77,7 +76,7 @@ class AgentProfile:
         agent_id: str,
         raw: Any,
         metrics: dict[str, Any] | None = None,
-    ) -> "AgentProfile":
+    ) -> AgentProfile:
         raw = raw if isinstance(raw, dict) else {"software": raw}
         cost_raw = raw.get("cost", {}) if isinstance(raw.get("cost"), dict) else {}
         return cls(
@@ -94,9 +93,7 @@ class AgentProfile:
 
     def capability_score(self, task: TaskRequirements) -> float:
         if self.legacy_skill_weights and task.domain == "software" and task.required_skills:
-            matched_weight = sum(
-                self.legacy_skill_weights.get(skill, 0.0) for skill in task.required_skills
-            )
+            matched_weight = sum(self.legacy_skill_weights.get(skill, 0.0) for skill in task.required_skills)
             return min(1.0, matched_weight / (10 * len(task.required_skills)))
         return max((_match_score(capability, task) for capability in self.capabilities), default=0.0)
 
@@ -127,9 +124,7 @@ def _normalize_capabilities(raw: Any) -> list[AgentCapability]:
     legacy_skills = {
         str(skill)
         for skill, weight in raw.items()
-        if skill not in {"version", "health", "cost"}
-        and isinstance(weight, int | float)
-        and weight > 0
+        if skill not in {"version", "health", "cost"} and isinstance(weight, int | float) and weight > 0
     }
     if legacy_skills:
         return [AgentCapability(domain="software", skills=legacy_skills)]
@@ -140,9 +135,7 @@ def _normalize_capabilities(raw: Any) -> list[AgentCapability]:
         if isinstance(skills, str):
             capabilities.append(AgentCapability(domain=str(domain), skills={skills}))
         elif isinstance(skills, list):
-            capabilities.append(
-                AgentCapability(domain=str(domain), skills={str(skill) for skill in skills})
-            )
+            capabilities.append(AgentCapability(domain=str(domain), skills={str(skill) for skill in skills}))
     return capabilities
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.policy_routing.family_selector import FamilySelector
-from allbrain.policy_routing.model import RoutingDecision, POLICY_ROUTING_TEMPLATE_VERSION
+from allbrain.policy_routing.model import POLICY_ROUTING_TEMPLATE_VERSION, RoutingDecision
 
 
 class MetaPolicyRouter:

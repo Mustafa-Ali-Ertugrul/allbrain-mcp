@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from allbrain.recovery_consensus.model import (
-    CandidateStrategy,
-    ScoredCandidate,
-    DEFAULT_SUCCESS_WEIGHT,
     DEFAULT_CONFIDENCE_WEIGHT,
     DEFAULT_RISK_WEIGHT,
+    DEFAULT_SUCCESS_WEIGHT,
+    CandidateStrategy,
+    ScoredCandidate,
 )
 
 if TYPE_CHECKING:
@@ -81,11 +81,7 @@ class Evaluator:
             confidence = max(0.0, min(1.0, c.confidence))
             risk = max(0.0, min(1.0, c.risk))
 
-            score = (
-                success * self._success_weight
-                + confidence * self._confidence_weight
-                - risk * self._risk_weight
-            )
+            score = success * self._success_weight + confidence * self._confidence_weight - risk * self._risk_weight
             score = max(0.0, min(1.0, score))
 
             # Blend historical bias if memory is available
@@ -95,11 +91,16 @@ class Evaluator:
                 score = score * (1.0 - bias_weight) + historical * bias_weight
                 score = max(0.0, min(1.0, score))
 
-            scored.append((idx, ScoredCandidate(
-                candidate=c,
-                score=score,
-                rank=0,
-            )))
+            scored.append(
+                (
+                    idx,
+                    ScoredCandidate(
+                        candidate=c,
+                        score=score,
+                        rank=0,
+                    ),
+                )
+            )
 
         # Sort by score descending, stable tiebreak by input order
         scored.sort(key=lambda pair: (-pair[1].score, pair[0]))
@@ -107,10 +108,12 @@ class Evaluator:
         # Assign ranks
         result: list[ScoredCandidate] = []
         for i, (_, s) in enumerate(scored):
-            result.append(ScoredCandidate(
-                candidate=s.candidate,
-                score=s.score,
-                rank=i + 1,
-            ))
+            result.append(
+                ScoredCandidate(
+                    candidate=s.candidate,
+                    score=s.score,
+                    rank=i + 1,
+                )
+            )
 
         return result

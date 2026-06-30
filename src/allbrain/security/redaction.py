@@ -17,7 +17,15 @@ SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"xox[baprs]-[a-zA-Z0-9-]+", re.IGNORECASE), "slack_token"),
     # Extended patterns
     (re.compile(r"\beyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\b"), "jwt"),
-    (re.compile(r"-----BEGIN (?:OPENSSH|RSA|EC|DSA|PGP) PRIVATE KEY-----[A-Za-z0-9+/=\s]*?-----END (?:OPENSSH|RSA|EC|DSA|PGP) ?PRIVATE KEY-----", re.IGNORECASE), "ssh_private_key"),
+    (
+        re.compile(
+            r"-----BEGIN (?:OPENSSH|RSA|EC|DSA|PGP) PRIVATE KEY-----"
+            r"[A-Za-z0-9+/=\s]*?"
+            r"-----END (?:OPENSSH|RSA|EC|DSA|PGP) ?PRIVATE KEY-----",
+            re.IGNORECASE,
+        ),
+        "ssh_private_key",
+    ),
     (re.compile(r"(?:sk|rk)_(?:live|test)_[a-zA-Z0-9]{20,}"), "stripe"),
     (re.compile(r"\bAC[a-fA-F0-9]{32}\b", re.IGNORECASE), "twilio"),
     (re.compile(r"AIza[0-9A-Za-z_-]{35}"), "google_api_key"),

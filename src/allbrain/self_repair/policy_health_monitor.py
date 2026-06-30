@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from allbrain.self_repair.model import (
-    StabilityReport,
     MIN_STABILITY_THRESHOLD,
     STABLE_BASELINE,
+    StabilityReport,
 )
 
 
@@ -31,9 +31,7 @@ class PolicyHealthMonitor:
     ) -> bool:
         """Returns True if anomaly detected (rollback needed)."""
         if stability_report.stability_score < self._anomaly_threshold:
-            self._anomaly_counts[fault_type] = (
-                self._anomaly_counts.get(fault_type, 0) + 1
-            )
+            self._anomaly_counts[fault_type] = self._anomaly_counts.get(fault_type, 0) + 1
             return True
         self._anomaly_counts[fault_type] = 0
         return False
@@ -45,9 +43,7 @@ class PolicyHealthMonitor:
         return self._anomaly_counts.get(fault_type, 0)
 
     def record_safety_violation(self, fault_type: str) -> None:
-        self._safety_violations[fault_type] = (
-            self._safety_violations.get(fault_type, 0) + 1
-        )
+        self._safety_violations[fault_type] = self._safety_violations.get(fault_type, 0) + 1
 
     def get_safety_violations(self, fault_type: str) -> int:
         return self._safety_violations.get(fault_type, 0)

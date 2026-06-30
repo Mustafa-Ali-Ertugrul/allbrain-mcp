@@ -10,7 +10,6 @@ from allbrain.uncertainty.models import (
     UncertaintyEstimate,
 )
 
-
 HISTORICAL_DEFAULT = 0.7
 
 

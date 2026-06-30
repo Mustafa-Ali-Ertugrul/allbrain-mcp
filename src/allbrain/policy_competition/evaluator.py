@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.mitigation_learning.model import StrategyStats
-from allbrain.policy_competition.model import PolicyCandidate, COMPETITION_CANDIDATE_COUNT
+from allbrain.policy_competition.model import COMPETITION_CANDIDATE_COUNT, PolicyCandidate
 from allbrain.policy_competition.scorer import PolicyScorer, ScoredPolicy
 
 
@@ -37,12 +37,14 @@ class PolicyEvaluator:
                 stability_estimate = 0.3
                 drift_estimate = 0.3
 
-            scored.append(self._scorer.score(
-                candidate=cand,
-                success_rate=success_rate,
-                risk_estimate=risk_estimate,
-                stability_estimate=stability_estimate,
-                drift_estimate=drift_estimate,
-            ))
+            scored.append(
+                self._scorer.score(
+                    candidate=cand,
+                    success_rate=success_rate,
+                    risk_estimate=risk_estimate,
+                    stability_estimate=stability_estimate,
+                    drift_estimate=drift_estimate,
+                )
+            )
 
         return scored

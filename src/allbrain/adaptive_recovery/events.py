@@ -7,24 +7,59 @@ from allbrain.adaptive_recovery.model import (
     PATTERN_MOVE_THRESHOLD,
 )
 
-CHAIN_CREATED_KEYS: frozenset[str] = frozenset({
-    "chain_id", "fault_id", "fault_type", "steps_count", "strategies",
-})
-STEP_STARTED_KEYS: frozenset[str] = frozenset({
-    "chain_id", "fault_id", "strategy", "order", "step_index",
-})
-STEP_FAILED_KEYS: frozenset[str] = frozenset({
-    "chain_id", "fault_id", "strategy", "order", "reason",
-})
-STEP_SUCCEEDED_KEYS: frozenset[str] = frozenset({
-    "chain_id", "fault_id", "strategy", "order", "confidence",
-})
-STRATEGY_SWITCHED_KEYS: frozenset[str] = frozenset({
-    "chain_id", "fault_id", "from_strategy", "to_strategy", "reason",
-})
-ADAPTIVE_RECOVERY_COMPLETED_KEYS: frozenset[str] = frozenset({
-    "chain_id", "fault_id", "outcome", "steps_taken",
-})
+CHAIN_CREATED_KEYS: frozenset[str] = frozenset(
+    {
+        "chain_id",
+        "fault_id",
+        "fault_type",
+        "steps_count",
+        "strategies",
+    }
+)
+STEP_STARTED_KEYS: frozenset[str] = frozenset(
+    {
+        "chain_id",
+        "fault_id",
+        "strategy",
+        "order",
+        "step_index",
+    }
+)
+STEP_FAILED_KEYS: frozenset[str] = frozenset(
+    {
+        "chain_id",
+        "fault_id",
+        "strategy",
+        "order",
+        "reason",
+    }
+)
+STEP_SUCCEEDED_KEYS: frozenset[str] = frozenset(
+    {
+        "chain_id",
+        "fault_id",
+        "strategy",
+        "order",
+        "confidence",
+    }
+)
+STRATEGY_SWITCHED_KEYS: frozenset[str] = frozenset(
+    {
+        "chain_id",
+        "fault_id",
+        "from_strategy",
+        "to_strategy",
+        "reason",
+    }
+)
+ADAPTIVE_RECOVERY_COMPLETED_KEYS: frozenset[str] = frozenset(
+    {
+        "chain_id",
+        "fault_id",
+        "outcome",
+        "steps_taken",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:
@@ -114,6 +149,7 @@ def validate_adaptive_recovery_completed(p: dict[str, Any]) -> None:
 
 
 # ── Payload makers ──────────────────────────────────────────────
+
 
 def make_chain_created_payload(
     *,

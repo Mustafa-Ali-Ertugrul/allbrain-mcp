@@ -53,7 +53,9 @@ class AgentSelectionPolicy:
         latency_score = max(0.0, min(1.0, 1 - float(adv.get("p95_latency_ms", 0) or 0) / 10_000))
         cost_score = max(0.0, min(1.0, 1 - float(adv.get("cost_per_success", 0.0) or 0.0)))
         memory_bonus = 0.1 if any(item.get("tags", {}).get("agent") == agent_id for item in similar) else 0.0
-        score = round(success_rate * 0.4 + confidence * 0.2 + latency_score * 0.15 + cost_score * 0.15 + memory_bonus, 6)
+        score = round(
+            success_rate * 0.4 + confidence * 0.2 + latency_score * 0.15 + cost_score * 0.15 + memory_bonus, 6
+        )
         return {
             "agent_id": agent_id,
             "score": score,

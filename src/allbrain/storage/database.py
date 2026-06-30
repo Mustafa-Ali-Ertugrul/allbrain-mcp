@@ -40,9 +40,7 @@ def ensure_event_payload_version_column(engine: Engine) -> None:
         rows = conn.exec_driver_sql("PRAGMA table_info(event)").fetchall()
         column_names = [row[1] for row in rows]
         if "payload_version" not in column_names:
-            conn.exec_driver_sql(
-                "ALTER TABLE event ADD COLUMN payload_version INTEGER NOT NULL DEFAULT 1"
-            )
+            conn.exec_driver_sql("ALTER TABLE event ADD COLUMN payload_version INTEGER NOT NULL DEFAULT 1")
 
 
 def open_session(engine: Engine) -> Session:

@@ -105,7 +105,8 @@ class Tracer:
                         kind="agent_execution",
                         start_time=start_event.created_at,
                         end_time=event.created_at,
-                        latency_ms=_duration_from_payload(event) or _latency_ms(start_event.created_at, event.created_at),
+                        latency_ms=_duration_from_payload(event)
+                        or _latency_ms(start_event.created_at, event.created_at),
                         cost_usd=float(event.payload.get("cost_usd", 0.0) or 0.0),
                         status=status,
                         parent_span_id=parent_span_id,

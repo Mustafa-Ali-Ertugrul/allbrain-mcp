@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.conflict.scoring import ConflictScorer
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
-from allbrain.conflict.scoring import ConflictScorer
-
 
 CONFLICT_EVENT_TYPES = {
     EventType.FILE_MODIFIED.value,
@@ -21,7 +20,9 @@ class ConflictDetector:
 
     def detect(self, events: list[EventRead], threshold: float = 0.7) -> list[dict[str, Any]]:
         candidates = [
-            event for event in events if event.type in CONFLICT_EVENT_TYPES and (event.agent_id or "unknown") != "allbrain"
+            event
+            for event in events
+            if event.type in CONFLICT_EVENT_TYPES and (event.agent_id or "unknown") != "allbrain"
         ]
         conflicts: list[dict[str, Any]] = []
         for index, a in enumerate(candidates):

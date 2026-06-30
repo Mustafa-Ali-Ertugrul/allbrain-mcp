@@ -1,4 +1,5 @@
 """Domain module: git."""
+
 from __future__ import annotations
 
 import logging
@@ -6,19 +7,19 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from allbrain.server.context import BrainContext
-from allbrain.server.tools._shared import (
-    audit_tool_call,
-    bind_session_id,
-)
-from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.gitbrain.parser import GitBrain
 from allbrain.models.schemas import (
     GitContextInput,
     RecentChangesInput,
     ToolResult,
     UserInputError,
 )
-from allbrain.gitbrain.parser import GitBrain
+from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.server.context import BrainContext
+from allbrain.server.tools._shared import (
+    audit_tool_call,
+    bind_session_id,
+)
 
 logger = logging.getLogger(__name__)
 

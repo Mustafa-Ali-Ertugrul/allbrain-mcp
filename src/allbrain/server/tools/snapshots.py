@@ -1,4 +1,5 @@
 """Domain module: snapshots."""
+
 from __future__ import annotations
 
 import logging
@@ -6,24 +7,25 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from allbrain.server.context import BrainContext
-from allbrain.server.tools._shared import (
-    audit_tool_call,
-    bind_session_id,
-    maybe_auto_snapshot,
-    semantic_event_count,
-    snapshot_to_dict,
-    append_selection_decision,
-    get_task_or_raise,
-)
-from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.models.schemas import (
-    ResumeProjectInput,
     CreateSnapshotInput,
     IntentInput,
+    ResumeProjectInput,
     ToolResult,
     UserInputError,
 )
+from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.server.context import BrainContext
+from allbrain.server.tools._shared import (
+    append_selection_decision,
+    audit_tool_call,
+    bind_session_id,
+    get_task_or_raise,
+    maybe_auto_snapshot,
+    semantic_event_count,
+    snapshot_to_dict,
+)
+
 # Imports from allbrain.snapshot, allbrain.resume, and allbrain.storage.snapshot_repo
 # are done locally inside functions to avoid circular import chains.
 
@@ -37,21 +39,26 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         project = context.repository.get_project_by_path(context.project_path)
         if project is None or project.id is None:
             raise ValueError("project does not exist")
-        from allbrain.snapshot.versions import is_compatible
         from allbrain.resume.incremental import IncrementalResumeEngine
         from allbrain.resume.multi_agent import MultiAgentResumeEngine
+        from allbrain.snapshot.versions import is_compatible
+
         events = None
         if not data.use_snapshot:
             events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         all_events = events
         if all_events is None:
             from allbrain.storage.snapshot_repo import SnapshotRepo
+
             snapshot = SnapshotRepo(context.repository.engine).get_latest(project.id)
             if snapshot is not None and is_compatible(snapshot.metadata):
-                all_events = context.repository.list_events_after(project_path=context.project_path, event_cursor=snapshot.event_cursor)
+                all_events = context.repository.list_events_after(
+                    project_path=context.project_path, event_cursor=snapshot.event_cursor
+                )
             else:
                 all_events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         from allbrain.storage.snapshot_repo import SnapshotRepo
+
         incremental = IncrementalResumeEngine(
             repository=context.repository,
             snapshot_repo=SnapshotRepo(context.repository.engine),
@@ -89,8 +96,9 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         if project is None or project.id is None:
             raise ValueError("project does not exist")
 
-        from allbrain.storage.snapshot_repo import SnapshotRepo
         from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
+        from allbrain.storage.snapshot_repo import SnapshotRepo
+
         snapshot_repo = SnapshotRepo(context.repository.engine)
         latest = snapshot_repo.get_latest(project.id)
         if latest is not None and not data.force:
@@ -137,10 +145,11 @@ def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         if project is None or project.id is None:
             raise ValueError("project does not exist")
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
-        from allbrain.storage.snapshot_repo import SnapshotRepo
         from allbrain.resume.incremental import IncrementalResumeEngine
-        from allbrain.resume.multi_agent import MultiAgentResumeEngine
         from allbrain.resume.intent_resume import IntentResumeEngine
+        from allbrain.resume.multi_agent import MultiAgentResumeEngine
+        from allbrain.storage.snapshot_repo import SnapshotRepo
+
         incremental = IncrementalResumeEngine(
             repository=context.repository,
             snapshot_repo=SnapshotRepo(context.repository.engine),

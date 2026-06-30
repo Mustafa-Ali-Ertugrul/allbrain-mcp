@@ -19,11 +19,24 @@ class SnapshotAdapter:
             state.setdefault("global_view", dict(snapshot.state.get("global_view", snapshot.state)))
             state.setdefault("agent_view", snapshot.state.get("agent_view", []))
             state.setdefault("conflict_view", snapshot.state.get("conflict_view", {"conflicts": [], "count": 0}))
-            state.setdefault("decision_view", snapshot.state.get("decision_view", {"next_step": "Start next task", "required_action": "continue"}))
+            state.setdefault(
+                "decision_view",
+                snapshot.state.get("decision_view", {"next_step": "Start next task", "required_action": "continue"}),
+            )
         state.setdefault("intent_view", {"intents": [], "active_intents": 0, "unique_agents": []})
         state.setdefault("intent_graph", {"nodes": {}, "edges": {}})
         state.setdefault("contradiction_view", {"contradictions": [], "count": 0})
-        state.setdefault("task_view", {"tasks": {}, "dependencies": [], "handoffs": [], "agent_queue": {}, "open_task_ids": [], "completed_task_ids": []})
+        state.setdefault(
+            "task_view",
+            {
+                "tasks": {},
+                "dependencies": [],
+                "handoffs": [],
+                "agent_queue": {},
+                "open_task_ids": [],
+                "completed_task_ids": [],
+            },
+        )
         state.setdefault("task_graph", {"nodes": [], "edges": []})
         state.setdefault("assignment_view", {"agent_queue": {}})
         state.setdefault("handoff_view", {"handoffs": [], "count": 0})
@@ -41,5 +54,7 @@ class SnapshotAdapter:
         state.setdefault("last_working_file", None)
         state.setdefault("event_count", 0)
         state.setdefault("git", {})
-        metadata = dict(snapshot.metadata) | snapshot_versions() | {"adapted_from_snapshot_schema_version": schema_version}
+        metadata = (
+            dict(snapshot.metadata) | snapshot_versions() | {"adapted_from_snapshot_schema_version": schema_version}
+        )
         return snapshot.model_copy(update={"state": state, "metadata": metadata})

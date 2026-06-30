@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from allbrain.agents.queue import QueueItem, TaskQueue
 from allbrain.workflow.models import SubtaskResult
-
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +44,7 @@ class WorkerPool:
         self._in_flight_lock = asyncio.Lock()
         self._idle_event = asyncio.Event()
         self._idle_event.set()
-        self._stats: list[WorkerStats] = [
-            WorkerStats(worker_id=i) for i in range(num_workers)
-        ]
+        self._stats: list[WorkerStats] = [WorkerStats(worker_id=i) for i in range(num_workers)]
 
     async def start(self) -> None:
         if self._tasks:
@@ -75,10 +74,8 @@ class WorkerPool:
                 in_flight = self._in_flight
             if in_flight == 0 and self.queue.empty():
                 return
-            try:
+            with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(self._idle_event.wait(), timeout=0.5)
-            except asyncio.TimeoutError:
-                pass
 
     def stats(self) -> list[WorkerStats]:
         return list(self._stats)

@@ -9,6 +9,8 @@ __pycache__/
 htmlcov/
 .tmp-test.db
 .allbrain-*.db*
+.allbrain.db*
+.allbrain.db.bak*
 
 # Benchmark results (generated; committed baselines use git add -f)
 benchmarks/results/

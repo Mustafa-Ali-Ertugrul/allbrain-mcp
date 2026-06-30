@@ -4,6 +4,7 @@ WAL + synchronous=NORMAL + busy_timeout=5000 enables
 concurrent reads and limited concurrent writes without
 "database is locked" errors.
 """
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -121,9 +122,7 @@ def test_no_duplicate_event_ids(tmp_path: Path) -> None:
     def _write(tid: int) -> list[str]:
         ids: list[str] = []
         for i in range(50):
-            result = save_event_impl(
-                context, type="file_modified", payload={"tid": tid, "seq": i}, source="dup_test"
-            )
+            result = save_event_impl(context, type="file_modified", payload={"tid": tid, "seq": i}, source="dup_test")
             if result.ok:
                 ids.append(result.data["id"])
         return ids
@@ -144,9 +143,7 @@ def test_timestamp_ordering(tmp_path: Path) -> None:
     def _write(tid: int) -> int:
         count = 0
         for i in range(50):
-            result = save_event_impl(
-                context, type="file_modified", payload={"tid": tid, "seq": i}, source="order_test"
-            )
+            result = save_event_impl(context, type="file_modified", payload={"tid": tid, "seq": i}, source="order_test")
             if result.ok:
                 count += 1
         return count

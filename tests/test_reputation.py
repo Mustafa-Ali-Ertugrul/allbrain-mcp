@@ -124,7 +124,9 @@ class TestMakePayload:
         assert payload["analysis_id"] == "abc"
 
     def test_validate_payload_ok(self):
-        validate_payload({"agent_id": "x", "task_id": "y", "success": True, "confidence": 0.5, "duration_ms": 0, "retry_count": 0})
+        validate_payload(
+            {"agent_id": "x", "task_id": "y", "success": True, "confidence": 0.5, "duration_ms": 0, "retry_count": 0}
+        )
 
     def test_validate_payload_missing_key(self):
         with pytest.raises(ValueError):
@@ -132,8 +134,19 @@ class TestMakePayload:
 
     def test_validate_payload_bad_confidence(self):
         with pytest.raises(ValueError):
-            validate_payload({"agent_id": "x", "task_id": "y", "success": True, "confidence": 1.5, "duration_ms": 0, "retry_count": 0})
+            validate_payload(
+                {
+                    "agent_id": "x",
+                    "task_id": "y",
+                    "success": True,
+                    "confidence": 1.5,
+                    "duration_ms": 0,
+                    "retry_count": 0,
+                }
+            )
 
     def test_validate_payload_bad_agent_id(self):
         with pytest.raises(ValueError):
-            validate_payload({"agent_id": "", "task_id": "y", "success": True, "confidence": 0.5, "duration_ms": 0, "retry_count": 0})
+            validate_payload(
+                {"agent_id": "", "task_id": "y", "success": True, "confidence": 0.5, "duration_ms": 0, "retry_count": 0}
+            )

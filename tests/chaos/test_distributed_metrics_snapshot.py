@@ -10,7 +10,9 @@ from tests.test_sprint12_memory_policy_ui import events, make_context
 def test_distributed_metrics_include_cluster_and_circuit_state(tmp_path) -> None:
     context = make_context(tmp_path)
     assert save_event_impl(context, type=EventType.CLUSTER_NODE_REGISTERED.value, payload={"node_id": "node-a"}).ok
-    assert save_event_impl(context, type=EventType.WORKER_REGISTERED.value, payload={"worker_id": "w1", "node_id": "node-a"}).ok
+    assert save_event_impl(
+        context, type=EventType.WORKER_REGISTERED.value, payload={"worker_id": "w1", "node_id": "node-a"}
+    ).ok
     assert save_event_impl(context, type=EventType.CIRCUIT_BREAKER_OPENED.value, payload={"name": "openai"}).ok
     assert save_event_impl(context, type=EventType.RETRY_ATTEMPTED.value, payload={"provider": "openai"}).ok
 

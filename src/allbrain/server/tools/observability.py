@@ -1,4 +1,5 @@
 """Domain module: observability."""
+
 from __future__ import annotations
 
 import logging
@@ -6,6 +7,16 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.api.observability_api import ObservabilityAPI
+from allbrain.models.schemas import (
+    OrchestratorInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.observability import ObservabilityBuilder
+from allbrain.reliability.metrics import ReliabilityMetrics
+from allbrain.security.rate_limit import check_tool_rate
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
@@ -15,16 +26,6 @@ from allbrain.server.tools._shared import (
     maybe_auto_snapshot,
     observability_project_and_limit,
 )
-from allbrain.security.rate_limit import check_tool_rate
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    OrchestratorInput,
-)
-from allbrain.observability import ObservabilityBuilder
-from allbrain.api.observability_api import ObservabilityAPI
-from allbrain.reliability.metrics import ReliabilityMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,6 @@ def get_observability_dashboard_impl(context: BrainContext, **kwargs: Any) -> To
     try:
         data = OrchestratorInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         audit_tool_call(
             context,
@@ -196,7 +196,6 @@ def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = OrchestratorInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         comparison = ObservabilityBuilder().agent_comparison(events)
         audit_tool_call(

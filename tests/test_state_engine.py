@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 from allbrain.core import StateEngine
 from allbrain.models.schemas import EventRead
@@ -21,7 +21,7 @@ def make_event(
         payload=payload,
         task_hint=None,
         importance=None,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 

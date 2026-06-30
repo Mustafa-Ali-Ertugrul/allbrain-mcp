@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-
 FUSION_TEMPLATE_VERSION = 1
 FUSION_DEFAULT_WEIGHT = 0.25
 FUSION_MIN_VARIANCE_EPSILON = 0.01

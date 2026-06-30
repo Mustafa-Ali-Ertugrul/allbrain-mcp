@@ -2,18 +2,11 @@ from __future__ import annotations
 
 from allbrain.attribution.model import ATTRIBUTION_TEMPLATE_VERSION
 
+CREDIT_KEYS: frozenset[str] = frozenset({"decision_id", "signal", "contribution", "confidence"})
 
-CREDIT_KEYS: frozenset[str] = frozenset(
-    {"decision_id", "signal", "contribution", "confidence"}
-)
+UPDATE_KEYS: frozenset[str] = frozenset({"signal", "ema_reward", "count"})
 
-UPDATE_KEYS: frozenset[str] = frozenset(
-    {"signal", "ema_reward", "count"}
-)
-
-IMPORTANCE_KEYS: frozenset[str] = frozenset(
-    {"signal", "delta_importance", "direction"}
-)
+IMPORTANCE_KEYS: frozenset[str] = frozenset({"signal", "delta_importance", "direction"})
 
 
 def validate_credit(p: dict) -> None:
@@ -48,12 +41,18 @@ def validate_importance(p: dict) -> None:
 
 
 def make_credit_payload(
-    *, decision_id: str, signal: str, contribution: float, confidence: float,
+    *,
+    decision_id: str,
+    signal: str,
+    contribution: float,
+    confidence: float,
     tv: int = ATTRIBUTION_TEMPLATE_VERSION,
 ) -> dict:
     p = {
-        "decision_id": decision_id, "signal": signal,
-        "contribution": float(contribution), "confidence": float(confidence),
+        "decision_id": decision_id,
+        "signal": signal,
+        "contribution": float(contribution),
+        "confidence": float(confidence),
         "template_version": tv,
     }
     validate_credit(p)
@@ -61,7 +60,10 @@ def make_credit_payload(
 
 
 def make_attribution_update_payload(
-    *, signal: str, ema_reward: float, count: int,
+    *,
+    signal: str,
+    ema_reward: float,
+    count: int,
     tv: int = ATTRIBUTION_TEMPLATE_VERSION,
 ) -> dict:
     p = {"signal": signal, "ema_reward": float(ema_reward), "count": int(count), "template_version": tv}
@@ -70,7 +72,10 @@ def make_attribution_update_payload(
 
 
 def make_importance_payload(
-    *, signal: str, delta_importance: float, direction: str,
+    *,
+    signal: str,
+    delta_importance: float,
+    direction: str,
     tv: int = ATTRIBUTION_TEMPLATE_VERSION,
 ) -> dict:
     p = {"signal": signal, "delta_importance": float(delta_importance), "direction": direction, "template_version": tv}

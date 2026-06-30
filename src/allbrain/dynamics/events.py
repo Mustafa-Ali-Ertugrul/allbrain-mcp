@@ -2,14 +2,9 @@ from __future__ import annotations
 
 from allbrain.dynamics.model import DYNAMICS_TEMPLATE_VERSION
 
+DRIFT_KEYS: frozenset[str] = frozenset({"agent_id", "task_type", "drift_score", "drift_level", "ema_short", "ema_long"})
 
-DRIFT_KEYS: frozenset[str] = frozenset(
-    {"agent_id", "task_type", "drift_score", "drift_level", "ema_short", "ema_long"}
-)
-
-TREND_KEYS: frozenset[str] = frozenset(
-    {"agent_id", "task_type", "slope", "label", "momentum", "consecutive_count"}
-)
+TREND_KEYS: frozenset[str] = frozenset({"agent_id", "task_type", "slope", "label", "momentum", "consecutive_count"})
 
 FORECAST_KEYS: frozenset[str] = frozenset(
     {"agent_id", "task_type", "horizon", "predicted_capability", "confidence", "current_capability", "delta"}
@@ -68,7 +63,7 @@ def validate_forecast(p: dict) -> None:
         try:
             v = int(v)
         except (TypeError, ValueError):
-            raise ValueError("horizon must be int")
+            raise ValueError("horizon must be int") from None
 
 
 def make_drift_payload(

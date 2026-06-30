@@ -8,18 +8,19 @@ from allbrain.causal.model import (
     CAUSAL_IMPACT_THRESHOLD,
     CAUSAL_MIN_SAMPLES,
     COUNTERFACTUAL_TOP_K,
-    ImpactDirection,
     CounterfactualResult,
+    ImpactDirection,
 )
 from allbrain.events.schemas import EventType
 
 
 def _stable_causal_id(key: str, event_ids: list[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{key}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{key}:{ek}".encode()).digest()
     return f"causal-{d.hex()[:12]}"
 
 
@@ -60,8 +61,10 @@ def _capability_cluster(agent_id: str, events: list[Any]) -> str:
                 capabilities.add(cap)
     if not capabilities:
         import hashlib
+
         return f"cluster-{hashlib.sha256(agent_id.encode()).hexdigest()[:4]}"
     import hashlib
+
     key = "|".join(sorted(capabilities))
     return f"cluster-{hashlib.sha256(key.encode()).hexdigest()[:6]}"
 
@@ -100,7 +103,7 @@ def _diverse_top_k(
     seen_clusters: set[str] = set()
     seen_clusters.add(actual_cluster)
 
-    for aid, mean, cluster in candidates:
+    for aid, _mean, cluster in candidates:
         if len(selected) >= COUNTERFACTUAL_TOP_K:
             break
         if len(seen_clusters) < CAUSAL_DIVERSITY_CLUSTERS:
@@ -143,12 +146,16 @@ def simulate_intervention(
 
     if min_n < CAUSAL_MIN_SAMPLES:
         return CounterfactualResult(
-            agent_id=agent_id, task_type=task_type,
-            actual_agent=actual_agent, alternative_agent=alternative_agent,
+            agent_id=agent_id,
+            task_type=task_type,
+            actual_agent=actual_agent,
+            alternative_agent=alternative_agent,
             actual_outcome=sum(actual_scores) / actual_n if actual_n > 0 else 0.0,
             alternative_outcome=sum(alt_scores) / alt_n if alt_n > 0 else 0.0,
-            impact_score=0.0, confidence=0.0,
-            sample_count=min_n, direction=ImpactDirection.NEUTRAL,
+            impact_score=0.0,
+            confidence=0.0,
+            sample_count=min_n,
+            direction=ImpactDirection.NEUTRAL,
             analysis_id=analysis_id,
         )
 
@@ -166,9 +173,12 @@ def simulate_intervention(
         direction = ImpactDirection.NEUTRAL
 
     return CounterfactualResult(
-        agent_id=agent_id, task_type=task_type,
-        actual_agent=actual_agent, alternative_agent=alternative_agent,
-        actual_outcome=actual_mean, alternative_outcome=alt_mean,
+        agent_id=agent_id,
+        task_type=task_type,
+        actual_agent=actual_agent,
+        alternative_agent=alternative_agent,
+        actual_outcome=actual_mean,
+        alternative_outcome=alt_mean,
         impact_score=max(-1.0, min(1.0, impact)),
         confidence=confidence,
         sample_count=min_n,
@@ -195,9 +205,12 @@ def top_alternatives(
     results: list[CounterfactualResult] = []
     for alt in alternatives:
         r = simulate_intervention(
-            agent_id=agent_id, task_type=task_type,
-            actual_agent=agent_id, alternative_agent=alt,
-            events=events, event_ids=event_ids,
+            agent_id=agent_id,
+            task_type=task_type,
+            actual_agent=agent_id,
+            alternative_agent=alt,
+            events=events,
+            event_ids=event_ids,
         )
         results.append(r)
     return results

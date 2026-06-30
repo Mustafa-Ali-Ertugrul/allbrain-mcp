@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-
 DYNAMICS_TEMPLATE_VERSION = 1
 
 DRIFT_EMA_SHORT_WINDOW = 5

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from typing import Callable
-
+from datetime import UTC, datetime, timedelta, timezone
 
 Clock = Callable[[], datetime]
 
 
 def utc_clock() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass

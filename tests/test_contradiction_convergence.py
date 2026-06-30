@@ -6,12 +6,12 @@ from pathlib import Path
 from allbrain.contradiction import (
     CONTRADICTION_TEMPLATE_VERSION,
     INCOMPATIBLE_LIFECYCLE,
-    ContradictionDetector,
-    ContradictionManager,
-    ContradictionReducer,
     SEVERITY_GOAL_DIVERGENCE,
     SEVERITY_LIFECYCLE_INCOMPATIBLE_SAME_GOAL,
     SEVERITY_LIFECYCLE_INCOMPATIBLE_SHARED,
+    ContradictionDetector,
+    ContradictionManager,
+    ContradictionReducer,
     dedup_contradictions,
 )
 from allbrain.contradiction.estimator import (
@@ -54,7 +54,7 @@ def test_contradiction_convergence_no_checkpoint():
     That divergence is now impossible because both views consume only
     the CONTRADICTION_DETECTED stream.
     """
-    conflicting_intents = [
+    [
         _make_intent("i1", "codex", "JWT refactor", "task_started", ["auth.py"]),
         _make_intent("i2", "claude", "Auth cleanup", "task_started", ["auth.py"]),
     ]
@@ -162,7 +162,17 @@ def test_contradiction_order_independence():
         id="10",
         payload={
             "context_key": "default",
-            "contradictions": [{"severity": "warning", "severity_score": 50, "agents": ["a", "b"], "related_files": [], "a_goal": "x", "b_goal": "y", "evidence_intent_ids": []}],
+            "contradictions": [
+                {
+                    "severity": "warning",
+                    "severity_score": 50,
+                    "agents": ["a", "b"],
+                    "related_files": [],
+                    "a_goal": "x",
+                    "b_goal": "y",
+                    "evidence_intent_ids": [],
+                }
+            ],
             "severity_summary": {"warning": 1},
             "evidence_event_ids": ["1", "2"],
             "template_version": 1,
@@ -222,7 +232,17 @@ def test_contradiction_reducer_idempotency():
         id="10",
         payload={
             "context_key": "default",
-            "contradictions": [{"severity": "warning", "severity_score": 50, "agents": [], "related_files": [], "a_goal": "", "b_goal": "", "evidence_intent_ids": []}],
+            "contradictions": [
+                {
+                    "severity": "warning",
+                    "severity_score": 50,
+                    "agents": [],
+                    "related_files": [],
+                    "a_goal": "",
+                    "b_goal": "",
+                    "evidence_intent_ids": [],
+                }
+            ],
             "severity_summary": {"warning": 1},
             "evidence_event_ids": [],
             "template_version": 1,
@@ -285,9 +305,33 @@ def test_contradiction_replay_round_trip_exact_equality():
 def test_contradiction_dedup():
     """dedup_contradictions collapses duplicates over the same intent pair,
     keeping the highest severity score."""
-    c_warning = {"severity": "warning", "severity_score": 50, "agents": [], "related_files": [], "a_goal": "", "b_goal": "", "evidence_intent_ids": ["i1", "i2"]}
-    c_critical = {"severity": "critical", "severity_score": 85, "agents": [], "related_files": [], "a_goal": "", "b_goal": "", "evidence_intent_ids": ["i1", "i2"]}
-    c_other = {"severity": "warning", "severity_score": 50, "agents": [], "related_files": [], "a_goal": "", "b_goal": "", "evidence_intent_ids": ["i3", "i4"]}
+    c_warning = {
+        "severity": "warning",
+        "severity_score": 50,
+        "agents": [],
+        "related_files": [],
+        "a_goal": "",
+        "b_goal": "",
+        "evidence_intent_ids": ["i1", "i2"],
+    }
+    c_critical = {
+        "severity": "critical",
+        "severity_score": 85,
+        "agents": [],
+        "related_files": [],
+        "a_goal": "",
+        "b_goal": "",
+        "evidence_intent_ids": ["i1", "i2"],
+    }
+    c_other = {
+        "severity": "warning",
+        "severity_score": 50,
+        "agents": [],
+        "related_files": [],
+        "a_goal": "",
+        "b_goal": "",
+        "evidence_intent_ids": ["i3", "i4"],
+    }
 
     result = dedup_contradictions([c_warning, c_critical, c_other])
     assert len(result) == 2

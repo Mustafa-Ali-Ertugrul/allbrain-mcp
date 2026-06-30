@@ -254,7 +254,7 @@ class TestBetaPredictorPosterior:
         assert result is not None
         alpha, beta = result
         assert alpha == pytest.approx(4.0)  # 1 + 3
-        assert beta == pytest.approx(3.0)   # 1 + 2
+        assert beta == pytest.approx(3.0)  # 1 + 2
 
     def test_posterior_none_for_unknown(self) -> None:
         predictor = BetaPredictor()
@@ -270,9 +270,7 @@ class TestFailureContextTracking:
     def test_failure_context_recorded(self) -> None:
         predictor = BetaPredictor()
         ctx = {"git_dirty": "True", "tests": "failed"}
-        predictor.update(
-            "deploy", success_weight=0.0, failure_weight=1.0, context=ctx
-        )
+        predictor.update("deploy", success_weight=0.0, failure_weight=1.0, context=ctx)
         contexts = predictor.failure_contexts("deploy")
         assert len(contexts) == 1
         import json
@@ -283,9 +281,7 @@ class TestFailureContextTracking:
     def test_success_context_not_recorded(self) -> None:
         predictor = BetaPredictor()
         ctx = {"git_dirty": "False"}
-        predictor.update(
-            "deploy", success_weight=1.0, failure_weight=0.0, context=ctx
-        )
+        predictor.update("deploy", success_weight=1.0, failure_weight=0.0, context=ctx)
         assert predictor.failure_contexts("deploy") == {}
 
     def test_failure_without_context_not_recorded(self) -> None:
@@ -312,9 +308,7 @@ class TestContextModulationTestPassRate:
 
         # With high test_pass_rate = 0.95 → multiplier = 0.5 + 0.95 = 1.45
         # min(1.0, mu * 1.45) will likely cap at 1.0
-        pred_tpr = bridge.evaluate(
-            _state(env={"test_pass_rate": "0.95"}), "deploy"
-        )
+        pred_tpr = bridge.evaluate(_state(env={"test_pass_rate": "0.95"}), "deploy")
 
         assert pred_tpr.success_probability >= pred_base.success_probability
         assert "test_pass_rate" in pred_tpr.explanation
@@ -329,9 +323,7 @@ class TestContextModulationTestPassRate:
         pred_base = bridge.evaluate(_state(), "deploy")
 
         # With low test_pass_rate = 0.3 → multiplier = 0.5 + 0.3 = 0.8
-        pred_tpr = bridge.evaluate(
-            _state(env={"test_pass_rate": "0.3"}), "deploy"
-        )
+        pred_tpr = bridge.evaluate(_state(env={"test_pass_rate": "0.3"}), "deploy")
 
         assert pred_tpr.success_probability < pred_base.success_probability
 
@@ -341,9 +333,7 @@ class TestContextModulationTestPassRate:
             predictor.update("run_tests", success_weight=1.0, failure_weight=0.0)
 
         bridge = LearnedPredictionBridge(predictor)
-        prediction = bridge.evaluate(
-            _state(env={"test_pass_rate": "0.3"}), "run_tests"
-        )
+        prediction = bridge.evaluate(_state(env={"test_pass_rate": "0.3"}), "run_tests")
 
         assert "test_pass_rate" not in prediction.explanation
 
@@ -354,14 +344,10 @@ class TestContextModulationTestPassRate:
 
         bridge = LearnedPredictionBridge(predictor)
         pred_base = bridge.evaluate(_state(), "deploy")
-        pred_invalid = bridge.evaluate(
-            _state(env={"test_pass_rate": "not_a_number"}), "deploy"
-        )
+        pred_invalid = bridge.evaluate(_state(env={"test_pass_rate": "not_a_number"}), "deploy")
 
         # Invalid string → no modulation → same result
-        assert pred_invalid.success_probability == pytest.approx(
-            pred_base.success_probability, abs=1e-6
-        )
+        assert pred_invalid.success_probability == pytest.approx(pred_base.success_probability, abs=1e-6)
 
 
 # ---------------------------------------------------------------------------

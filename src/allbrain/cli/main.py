@@ -4,6 +4,7 @@ import sys
 from contextlib import asynccontextmanager
 from io import TextIOWrapper
 from pathlib import Path
+from typing import Annotated
 
 import anyio
 import typer
@@ -12,7 +13,6 @@ from rich.console import Console
 from allbrain.config import canonicalize_project_path, default_db_path
 from allbrain.server import BrainContext, create_mcp_server
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
-
 
 app = typer.Typer(no_args_is_help=True)
 console = Console(stderr=True)
@@ -25,9 +25,12 @@ def main() -> None:
 
 @app.command()
 def start(
-    project: Path = typer.Option(Path("."), "--project", "-p", help="Project root to bind."),
-    agent: str = typer.Option("unknown", "--agent", "-a", help="Agent name for the session."),
-    db_path: Path | None = typer.Option(None, "--db-path", help="SQLite DB path. Defaults to ~/.allbrain/allbrain.db."),
+    project: Annotated[Path, typer.Option("--project", "-p", help="Project root to bind.")] = Path("."),
+    agent: Annotated[str, typer.Option("--agent", "-a", help="Agent name for the session.")] = "unknown",
+    db_path: Annotated[
+        Path | None,
+        typer.Option("--db-path", help="SQLite DB path. Defaults to ~/.allbrain/allbrain.db."),
+    ] = None,
 ) -> None:
     run_mcp_server(project=project, agent=agent, db_path=db_path)
 
@@ -77,9 +80,7 @@ def _patch_stdio_newlines_for_windows() -> None:
         stdout: anyio.AsyncFile[str] | None = None,
     ):
         if not stdin:
-            stdin = anyio.wrap_file(
-                TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace", newline="\n")
-            )
+            stdin = anyio.wrap_file(TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace", newline="\n"))
         if not stdout:
             stdout = anyio.wrap_file(TextIOWrapper(sys.stdout.buffer, encoding="utf-8", newline="\n"))
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.dynamics import classify_trend, TrendLabel
+from allbrain.dynamics import TrendLabel, classify_trend
 from allbrain.dynamics.model import TREND_HYSTERESIS_COUNT, TREND_OSCILLATION_VARIANCE
 
 
@@ -31,8 +31,8 @@ class TestTrendClassification:
         assert state.slope != 0.0
 
     def test_multi_agent_isolation(self):
-        state_a = classify_trend(agent_id="a", task_type="t", scores=[0.4]*10)
-        state_b = classify_trend(agent_id="b", task_type="u", scores=[0.9]*10)
+        state_a = classify_trend(agent_id="a", task_type="t", scores=[0.4] * 10)
+        state_b = classify_trend(agent_id="b", task_type="u", scores=[0.9] * 10)
         assert state_a.agent_id == "a"
         assert state_b.agent_id == "b"
 

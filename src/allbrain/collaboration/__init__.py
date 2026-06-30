@@ -9,7 +9,7 @@ from allbrain.collaboration.metrics import CollaborationMetrics
 from allbrain.collaboration.negotiation import NegotiationEngine
 from allbrain.collaboration.negotiation_state import NegotiationState
 from allbrain.collaboration.proposal import Proposal, ProposalFactory
-from allbrain.collaboration.supervisor import Supervisor, SupervisionPolicy
+from allbrain.collaboration.supervisor import SupervisionPolicy, Supervisor
 from allbrain.collaboration.team import AgentTeam, TeamMember
 from allbrain.collaboration.team_builder import TeamBuilder
 from allbrain.collaboration.team_registry import TeamRegistry

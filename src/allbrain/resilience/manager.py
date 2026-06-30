@@ -85,30 +85,34 @@ class ResilienceManager:
             # Plan
             plan = self._planner.plan(fault)
             self._active_plans[plan.plan_id] = plan
-            result["plans_created"].append({
-                "plan_id": plan.plan_id,
-                "fault_id": plan.fault_id,
-                "strategy": plan.strategy,
-                "priority": plan.priority,
-                "reason": plan.reason,
-            })
+            result["plans_created"].append(
+                {
+                    "plan_id": plan.plan_id,
+                    "fault_id": plan.fault_id,
+                    "strategy": plan.strategy,
+                    "priority": plan.priority,
+                    "reason": plan.reason,
+                }
+            )
 
             # Guard
             recent_faults = self._fault_history[-20:]
-            gscore = compute_guardrail_score(
-                plan, recent_faults, len(self._active_plans)
+            gscore = compute_guardrail_score(plan, recent_faults, len(self._active_plans))
+            result["guardrail_scores"].append(
+                {
+                    "plan_id": plan.plan_id,
+                    "guardrail_score": gscore,
+                }
             )
-            result["guardrail_scores"].append({
-                "plan_id": plan.plan_id,
-                "guardrail_score": gscore,
-            })
 
             if gscore >= self._guardrail_threshold:
-                result["executed"].append({
-                    "plan_id": plan.plan_id,
-                    "success": False,
-                    "message": f"guardrail_blocked (score={gscore:.2f})",
-                })
+                result["executed"].append(
+                    {
+                        "plan_id": plan.plan_id,
+                        "success": False,
+                        "message": f"guardrail_blocked (score={gscore:.2f})",
+                    }
+                )
                 continue
 
             # Execute
@@ -123,14 +127,16 @@ class ResilienceManager:
                 event_id=event_id,
                 pipeline_stage=pipeline_stage,
             )
-            result["executed"].append({
-                "plan_id": plan.plan_id,
-                "success": success,
-                "message": msg,
-                "guardrail_score": meta.get("guardrail_score"),
-                "snapshot_id": meta.get("snapshot_id"),
-                "rolled_back": meta.get("rolled_back", False),
-            })
+            result["executed"].append(
+                {
+                    "plan_id": plan.plan_id,
+                    "success": success,
+                    "message": msg,
+                    "guardrail_score": meta.get("guardrail_score"),
+                    "snapshot_id": meta.get("snapshot_id"),
+                    "rolled_back": meta.get("rolled_back", False),
+                }
+            )
             if meta.get("snapshot_id"):
                 result["snapshots_created"].append(meta["snapshot_id"])
             if success:

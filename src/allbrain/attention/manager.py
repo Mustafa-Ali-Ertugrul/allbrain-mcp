@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
+from allbrain.attention.allocator import allocate_budget
+from allbrain.attention.budget import compute_unused_budget, derive_adaptive_budget
+from allbrain.attention.estimator import estimate_signal_cost, estimate_signal_importance
 from allbrain.attention.model import (
     ATTENTION_REALLOCATION_THRESHOLD,
     AttentionWeight,
     ResourceBudget,
 )
-from allbrain.attention.estimator import estimate_signal_importance, estimate_signal_cost
-from allbrain.attention.budget import derive_adaptive_budget, compute_unused_budget
-from allbrain.attention.allocator import allocate_budget
 from allbrain.attention.scheduler import schedule_attention
+from allbrain.foundations import canonical_event_sort
 
 
 class AttentionManager:

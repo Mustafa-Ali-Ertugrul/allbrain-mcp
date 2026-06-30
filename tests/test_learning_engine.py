@@ -4,9 +4,9 @@ import pytest
 
 from allbrain.mitigation_learning.learning_engine import LearningEngine
 from allbrain.mitigation_learning.model import (
-    MIN_USES_FOR_DISABLE,
     DISABLE_SUCCESS_RATE_THRESHOLD,
     LEARNING_EMA_ALPHA,
+    MIN_USES_FOR_DISABLE,
 )
 
 
@@ -63,8 +63,10 @@ class TestLearningEngine:
     def test_disable_strategy_below_threshold(self) -> None:
         for i in range(MIN_USES_FOR_DISABLE):
             rec = _make_record(
-                risk_delta=-0.10, pre_risk=0.80,
-                success=False, occurred_at=float(i),
+                risk_delta=-0.10,
+                pre_risk=0.80,
+                success=False,
+                occurred_at=float(i),
             )
             self.engine.update(rec)
         key = ("timeout", "retry_spikes", "throttle_retry")
@@ -74,8 +76,10 @@ class TestLearningEngine:
     def test_dont_disable_below_min_uses(self) -> None:
         for i in range(MIN_USES_FOR_DISABLE - 1):
             rec = _make_record(
-                risk_delta=-0.10, pre_risk=0.80,
-                success=False, occurred_at=float(i),
+                risk_delta=-0.10,
+                pre_risk=0.80,
+                success=False,
+                occurred_at=float(i),
             )
             self.engine.update(rec)
         key = ("timeout", "retry_spikes", "throttle_retry")

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-
 MAX_EPISODES = 1000
 IMPORTANCE_THRESHOLD = 0.50
 DEFAULT_RETRIEVAL_LIMIT = 5

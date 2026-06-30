@@ -15,15 +15,15 @@ class SafetyError(Exception):
     """Raised when a safety check fails before/during/after execution."""
 
 
-class CostCeilingExceeded(SafetyError):
+class CostCeilingExceeded(SafetyError):  # noqa: N818
     """Raised when the cost ceiling is exceeded."""
 
 
-class RateLimitExceeded(SafetyError):
+class RateLimitExceeded(SafetyError):  # noqa: N818
     """Raised when rate limit is hit."""
 
 
-class InputRejected(SafetyError):
+class InputRejected(SafetyError):  # noqa: N818
     """Raised when input fails sanitization."""
 
 
@@ -90,9 +90,7 @@ class SafetyWrapper:
         goal = str(clean_task.get("goal") or "")
         input_tokens = estimate_input_tokens(goal)
         if input_tokens > self.limits.max_input_tokens:
-            raise InputRejected(
-                f"Input tokens ({input_tokens}) exceed limit ({self.limits.max_input_tokens})"
-            )
+            raise InputRejected(f"Input tokens ({input_tokens}) exceed limit ({self.limits.max_input_tokens})")
 
         # 3. Cost ceiling check (per call + per workflow)
         estimated = self.adapter.estimate_cost(clean_task)
@@ -113,10 +111,7 @@ class SafetyWrapper:
         result = self.adapter.execute(task=clean_task, context=context)
 
         # 6. Track cost
-        if result.metadata:
-            cost = result.metadata.get("cost_usd", estimated)
-        else:
-            cost = estimated
+        cost = result.metadata.get("cost_usd", estimated) if result.metadata else estimated
         self.state.workflow_cost += float(cost)
         self.state.call_timestamps.append(time.time())
 
@@ -133,6 +128,4 @@ class SafetyWrapper:
         while self.state.call_timestamps and now - self.state.call_timestamps[0] > window:
             self.state.call_timestamps.popleft()
         if len(self.state.call_timestamps) >= self.limits.max_calls_per_minute:
-            raise RateLimitExceeded(
-                f"Rate limit exceeded: {len(self.state.call_timestamps)} calls in last {window}s"
-            )
+            raise RateLimitExceeded(f"Rate limit exceeded: {len(self.state.call_timestamps)} calls in last {window}s")

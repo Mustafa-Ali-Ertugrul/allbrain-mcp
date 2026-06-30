@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
@@ -55,7 +55,7 @@ def test_generate_scenarios_default_templates() -> None:
 
 
 def test_best_case_has_highest_success() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     engine = ScenarioEngine()
     analysis = engine.analyze(state, "deploy")
 
@@ -66,7 +66,7 @@ def test_best_case_has_highest_success() -> None:
 
 
 def test_worst_case_has_lowest_success() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     engine = ScenarioEngine()
     analysis = engine.analyze(state, "deploy")
 
@@ -75,7 +75,7 @@ def test_worst_case_has_lowest_success() -> None:
 
 
 def test_safest_case_has_lowest_risk() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     engine = ScenarioEngine()
     analysis = engine.analyze(state, "deploy")
 
@@ -85,7 +85,7 @@ def test_safest_case_has_lowest_risk() -> None:
 
 
 def test_scenario_metrics() -> None:
-    state = WorldState(timestamp=datetime.now(timezone.utc))
+    state = WorldState(timestamp=datetime.now(UTC))
     engine = ScenarioEngine()
     analysis = engine.analyze(state, "deploy")
 
@@ -93,8 +93,14 @@ def test_scenario_metrics() -> None:
         analysis.best_case.prediction.success_probability - analysis.worst_case.prediction.success_probability, rel=1e-6
     )
     assert analysis.risk_volatility == pytest.approx(
-        max(s.prediction.risk for s in (analysis.best_case, analysis.expected_case, analysis.worst_case, analysis.safest_case))
-        - min(s.prediction.risk for s in (analysis.best_case, analysis.expected_case, analysis.worst_case, analysis.safest_case)),
+        max(
+            s.prediction.risk
+            for s in (analysis.best_case, analysis.expected_case, analysis.worst_case, analysis.safest_case)
+        )
+        - min(
+            s.prediction.risk
+            for s in (analysis.best_case, analysis.expected_case, analysis.worst_case, analysis.safest_case)
+        ),
         rel=1e-6,
     )
     assert 0.0 <= analysis.uncertainty <= 1.0
@@ -103,7 +109,7 @@ def test_scenario_metrics() -> None:
 
 def test_apply_overlay_remove_semantics() -> None:
     state = WorldState(
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         environment_state={"tests": "passed", "deployment": "ready"},
     )
     template = DEFAULT_TEMPLATES["worst_case"]

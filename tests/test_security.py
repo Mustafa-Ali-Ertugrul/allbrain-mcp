@@ -5,6 +5,7 @@ Covers:
 - Fuzz-like parametrized edge cases on save_event, list_events, create_task, assign_task
 - 4 critical tool surface area
 """
+
 import os
 from pathlib import Path
 
@@ -50,6 +51,7 @@ def make_context(tmp_path: Path, *, active: bool = True) -> BrainContext:
 # Non-regression: project_path / agent_id must be rejected
 # ============================================================
 
+
 def test_project_path_rejected(tmp_path: Path) -> None:
     """SaveEventInput MUST reject project_path as extra field.
 
@@ -87,6 +89,7 @@ def test_agent_id_accepted(tmp_path: Path) -> None:
 # save_event — edge cases
 # ============================================================
 
+
 def test_save_event_empty_type_rejected(tmp_path: Path) -> None:
     context = make_context(tmp_path)
     result = save_event_impl(context, type="", payload={})
@@ -121,6 +124,7 @@ def test_save_event_impact_score_above_1(tmp_path: Path) -> None:
 # list_events — edge cases
 # ============================================================
 
+
 def test_list_events_limit_zero(tmp_path: Path) -> None:
     context = make_context(tmp_path)
     result = list_events_impl(context, limit=0)
@@ -150,6 +154,7 @@ def test_list_events_invalid_type(tmp_path: Path) -> None:
 # ============================================================
 # create_task — edge cases
 # ============================================================
+
 
 def test_create_task_empty_goal(tmp_path: Path) -> None:
     context = make_context(tmp_path)
@@ -191,6 +196,7 @@ def test_create_task_priority_six(tmp_path: Path) -> None:
 # assign_task — edge cases
 # ============================================================
 
+
 def test_assign_task_empty_task_id(tmp_path: Path) -> None:
     context = make_context(tmp_path)
     result = assign_task_impl(context, task_id="")
@@ -206,6 +212,7 @@ def test_assign_task_limit_negative(tmp_path: Path) -> None:
 # ============================================================
 # Parametrized fuzz-like tests
 # ============================================================
+
 
 @pytest.mark.parametrize("type_val", ["", " ", "\t", "a" * 200, "valid_type"])
 def test_save_event_fuzz_type(tmp_path: Path, type_val: str) -> None:
@@ -234,9 +241,7 @@ def test_create_task_fuzz_priority(tmp_path: Path, priority: int) -> None:
 def test_save_event_fuzz_importance(tmp_path: Path, importance: int) -> None:
     """Only importance 1-5 are valid."""
     context = make_context(tmp_path)
-    result = save_event_impl(
-        context, type="file_modified", payload={}, importance=importance
-    )
+    result = save_event_impl(context, type="file_modified", payload={}, importance=importance)
     if 1 <= importance <= 5:
         assert result.ok
     else:
@@ -246,6 +251,7 @@ def test_save_event_fuzz_importance(tmp_path: Path, importance: int) -> None:
 # ============================================================
 # Path-traversal guard (Phase 3.1)
 # ============================================================
+
 
 def test_path_traversal_outside_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """canonicalize_project_path must reject paths outside ALLOWED_PROJECT_ROOTS."""

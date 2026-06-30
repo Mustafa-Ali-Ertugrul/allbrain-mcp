@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from allbrain.world.models import Prediction
 
-
 SCENARIO_TEMPLATE_VERSION = 1
 
 

@@ -68,8 +68,7 @@ class ObservabilityBuilder:
             timelines[task_id].append(item)
         return {
             "tasks": {
-                task_id: {"task_id": task_id, "timeline": timeline}
-                for task_id, timeline in sorted(timelines.items())
+                task_id: {"task_id": task_id, "timeline": timeline} for task_id, timeline in sorted(timelines.items())
             },
             "task_count": len(timelines),
         }

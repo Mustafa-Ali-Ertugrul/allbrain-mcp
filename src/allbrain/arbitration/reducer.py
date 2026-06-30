@@ -56,13 +56,15 @@ class ArbitrationReducer:
             if not isinstance(context_key, str) or not context_key:
                 context_key = "default"
             ctx = self._contexts.setdefault(context_key, {"votes": [], "consensus": None, "decision": None})
-            ctx["votes"].append(VoteRecord(
-                agent_id=payload["agent_id"],
-                candidate_id=payload["candidate_id"],
-                confidence=float(payload["confidence"]),
-                reputation=float(payload["reputation"]),
-                calibrated_trust=float(payload["calibrated_trust"]),
-            ))
+            ctx["votes"].append(
+                VoteRecord(
+                    agent_id=payload["agent_id"],
+                    candidate_id=payload["candidate_id"],
+                    confidence=float(payload["confidence"]),
+                    reputation=float(payload["reputation"]),
+                    calibrated_trust=float(payload["calibrated_trust"]),
+                )
+            )
             return
 
         if event_type == EventType.AGENT_CONSENSUS_REACHED.value:
@@ -147,9 +149,7 @@ class ArbitrationReducer:
                 "analysis_id": state.analysis_id,
                 "template_version": state.template_version,
             }
-            for context_key, state in (
-                (k, self.snapshot(context_key=k)) for k in self._contexts
-            )
+            for context_key, state in ((k, self.snapshot(context_key=k)) for k in self._contexts)
         }
 
     def known_context_keys(self) -> set[str]:

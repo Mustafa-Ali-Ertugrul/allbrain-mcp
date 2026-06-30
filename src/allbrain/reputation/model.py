@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 REPUTATION_TEMPLATE_VERSION = 1
 
 

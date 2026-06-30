@@ -2,19 +2,19 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.events.schemas import EventType
 from allbrain.foundations import canonical_event_sort
+from allbrain.meta_policy.estimator import estimate_mode_reward
+from allbrain.meta_policy.evaluator import detect_policy_drift, should_snapshot
+from allbrain.meta_policy.learner import _default_mode_stats, update_mode_stats
 from allbrain.meta_policy.model import (
+    META_POLICY_EXPLORATION_MAX,
     META_POLICY_SNAPSHOT_INTERVAL,
     META_POLICY_TEMPERATURE_INIT,
-    META_POLICY_EXPLORATION_MAX,
-    PolicyState,
     ModeStats,
+    PolicyState,
 )
 from allbrain.meta_policy.selector import select_mode
-from allbrain.meta_policy.estimator import estimate_mode_reward
-from allbrain.meta_policy.learner import update_mode_stats, _default_mode_stats
-from allbrain.meta_policy.evaluator import detect_policy_drift, should_snapshot
-from allbrain.events.schemas import EventType
 
 
 class MetaPolicyManager:
@@ -46,17 +46,16 @@ class MetaPolicyManager:
         )
 
         if enable_drift_detection and should_snapshot(self._policy_state):
-            if self._snapshot:
-                if detect_policy_drift(self._snapshot, self._policy_state):
-                    self._policy_state = PolicyState(
-                        mode_stats=self._snapshot.mode_stats,
-                        exploration_rate=self._snapshot.exploration_rate,
-                        temperature=self._snapshot.temperature,
-                        last_updated=self._policy_state.last_updated,
-                        decision_count=self._policy_state.decision_count,
-                        drift_detected=True,
-                        snapshot_id=str(self._snapshot.decision_count),
-                    )
+            if self._snapshot and detect_policy_drift(self._snapshot, self._policy_state):
+                self._policy_state = PolicyState(
+                    mode_stats=self._snapshot.mode_stats,
+                    exploration_rate=self._snapshot.exploration_rate,
+                    temperature=self._snapshot.temperature,
+                    last_updated=self._policy_state.last_updated,
+                    decision_count=self._policy_state.decision_count,
+                    drift_detected=True,
+                    snapshot_id=str(self._snapshot.decision_count),
+                )
             self._snapshot = self._policy_state
 
         return mode
@@ -72,8 +71,11 @@ class MetaPolicyManager:
     ) -> float | None:
         ordered = canonical_event_sort(events)
         reward_signal = estimate_mode_reward(
-            mode=mode, agent_id=agent_id, task_type=task_type,
-            decision_id=decision_id, events=ordered,
+            mode=mode,
+            agent_id=agent_id,
+            task_type=task_type,
+            decision_id=decision_id,
+            events=ordered,
         )
 
         if reward_signal is None:

@@ -123,20 +123,24 @@ class WorkflowEngine:
                 )
                 result.recovered.append(decision.__dict__)
                 result.failed.append(node_id)
-                result.events.append({
-                    "type": "subtask_failed",
-                    "node_id": node_id,
-                    "reason": fail_reason,
-                    "retry_count": decision.retry_count,
-                })
+                result.events.append(
+                    {
+                        "type": "subtask_failed",
+                        "node_id": node_id,
+                        "reason": fail_reason,
+                        "retry_count": decision.retry_count,
+                    }
+                )
                 if decision.action == "block":
                     for affected in decision.affected_nodes:
-                        result.events.append({
-                            "type": "workflow_state_changed",
-                            "node_id": affected,
-                            "new_status": WorkflowStatus.BLOCKED.value,
-                            "reason": f"cascade_from:{node_id}",
-                        })
+                        result.events.append(
+                            {
+                                "type": "workflow_state_changed",
+                                "node_id": affected,
+                                "new_status": WorkflowStatus.BLOCKED.value,
+                                "reason": f"cascade_from:{node_id}",
+                            }
+                        )
 
         for node_id, subtask_result in completions.items():
             if node_id in graph.nodes:
@@ -155,11 +159,13 @@ class WorkflowEngine:
         ready = self.dependency_engine.ready_set(graph)
         for node in ready:
             if node.status == WorkflowStatus.READY:
-                result.events.append({
-                    "type": "subtask_ready",
-                    "node_id": node.node_id,
-                    "task_id": node.task_id,
-                })
+                result.events.append(
+                    {
+                        "type": "subtask_ready",
+                        "node_id": node.node_id,
+                        "task_id": node.task_id,
+                    }
+                )
 
         skip_scheduling = set(result.failed)
         for r in result.recovered:
@@ -183,19 +189,26 @@ class WorkflowEngine:
                 agent_id=assignment.agent_id,
             )
             result.assignments.append(assignment.__dict__)
-            result.events.append({
-                "type": "subtask_started",
-                "node_id": assignment.node_id,
-                "agent_id": assignment.agent_id,
-                "score": assignment.score,
-                "reason": assignment.reason,
-            })
+            result.events.append(
+                {
+                    "type": "subtask_started",
+                    "node_id": assignment.node_id,
+                    "agent_id": assignment.agent_id,
+                    "score": assignment.score,
+                    "reason": assignment.reason,
+                }
+            )
 
-        active_nodes = [n for n in graph.nodes.values() if n.status not in {
-            WorkflowStatus.COMPLETED,
-            WorkflowStatus.BLOCKED,
-            WorkflowStatus.FAILED,
-        }]
+        active_nodes = [
+            n
+            for n in graph.nodes.values()
+            if n.status
+            not in {
+                WorkflowStatus.COMPLETED,
+                WorkflowStatus.BLOCKED,
+                WorkflowStatus.FAILED,
+            }
+        ]
         if not active_nodes and not ready:
             result.is_done = True
             completed_nodes = [n for n in graph.nodes.values() if n.status == WorkflowStatus.COMPLETED]
@@ -219,7 +232,7 @@ class WorkflowEngine:
         max_steps: int = 100,
     ) -> WorkflowResult:
         all_events: list[dict[str, Any]] = []
-        for step in range(max_steps):
+        for _step in range(max_steps):
             step_result = self.step(
                 graph,
                 candidate_agents=candidate_agents,
@@ -230,8 +243,7 @@ class WorkflowEngine:
             all_events.extend(step_result.events)
             if step_result.is_done:
                 all_failed_or_blocked = all(
-                    n.status in {WorkflowStatus.FAILED, WorkflowStatus.BLOCKED}
-                    for n in graph.nodes.values()
+                    n.status in {WorkflowStatus.FAILED, WorkflowStatus.BLOCKED} for n in graph.nodes.values()
                 )
                 return WorkflowResult(
                     success=not all_failed_or_blocked,

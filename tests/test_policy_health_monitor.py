@@ -2,16 +2,20 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.self_repair.model import MIN_STABILITY_THRESHOLD, StabilityReport
 from allbrain.self_repair.policy_health_monitor import PolicyHealthMonitor
-from allbrain.self_repair.model import StabilityReport, MIN_STABILITY_THRESHOLD
 
 
 def _report(stability):
     return StabilityReport(
-        fault_type="timeout", policy_version=1,
-        stability_score=stability, success_rate=0.8,
-        drift_consistency=1.0, outcome_variance=0.0,
-        safety_violations=0, is_stable=stability >= MIN_STABILITY_THRESHOLD,
+        fault_type="timeout",
+        policy_version=1,
+        stability_score=stability,
+        success_rate=0.8,
+        drift_consistency=1.0,
+        outcome_variance=0.0,
+        safety_violations=0,
+        is_stable=stability >= MIN_STABILITY_THRESHOLD,
     )
 
 

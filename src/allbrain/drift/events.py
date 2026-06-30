@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from allbrain.drift.detector import DRIFT_TEMPLATE_VERSION, DRIFT_THRESHOLD, REASONS
 
-
-REQUIRED_KEYS: frozenset[str] = frozenset(
-    {"context_key", "belief_before", "belief_after", "magnitude", "reason"}
-)
+REQUIRED_KEYS: frozenset[str] = frozenset({"context_key", "belief_before", "belief_after", "magnitude", "reason"})
 
 
 def validate_payload(payload: dict) -> None:
@@ -30,9 +27,7 @@ def validate_payload(payload: dict) -> None:
         raise ValueError(f"unknown drift reason: {reason!r} (expected one of {sorted(REASONS)})")
     expected_magnitude = abs(float(payload["belief_after"]) - float(payload["belief_before"]))
     if abs(float(magnitude) - expected_magnitude) > 1e-9:
-        raise ValueError(
-            f"magnitude {magnitude} does not match |after - before| = {expected_magnitude}"
-        )
+        raise ValueError(f"magnitude {magnitude} does not match |after - before| = {expected_magnitude}")
 
 
 def make_payload(

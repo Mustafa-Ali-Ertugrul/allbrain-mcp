@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
-from allbrain.server.context import BrainContext
 from allbrain.models.schemas import UserInputError
+from allbrain.server.context import BrainContext
 
 # NOTE: Circular-safe imports — SnapshotRepo, SnapshotBuilder etc. are
 # imported locally inside the functions that need them to avoid triggering
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 def datetime_now_iso() -> str:
     from datetime import datetime, timezone
 
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def snapshot_to_dict(snapshot) -> dict[str, Any]:
@@ -76,32 +77,25 @@ def maybe_auto_snapshot(context: BrainContext, *, project_path: str | Path) -> N
     project = context.repository.get_project_by_path(project_path)
     if project is None or project.id is None:
         return
-    from allbrain.storage.snapshot_repo import SnapshotRepo
     from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
     from allbrain.snapshot.trigger import snapshot_weight
+    from allbrain.storage.snapshot_repo import SnapshotRepo
 
     snapshot_repo = SnapshotRepo(context.repository.engine)
     latest = snapshot_repo.get_latest(project.id)
     event_cursor = latest.event_cursor if latest is not None else None
-    events = context.repository.list_events_after(
-        project_path=context.project_path, event_cursor=event_cursor
-    )
+    events = context.repository.list_events_after(project_path=context.project_path, event_cursor=event_cursor)
     if snapshot_weight(events) < context.auto_snapshot_threshold:
         return
-    all_events = context.repository.list_events(
-        project_path=context.project_path, limit=50000
+    all_events = context.repository.list_events(project_path=context.project_path, limit=50000)
+    SnapshotEngine(SnapshotBuilder(include_derived=False), snapshot_repo).build_snapshot(
+        project_id=project.id, events=all_events
     )
-    SnapshotEngine(
-        SnapshotBuilder(include_derived=False), snapshot_repo
-    ).build_snapshot(project_id=project.id, events=all_events)
 
 
 def get_task_or_raise(task_state: dict[str, Any], task_id: str) -> dict[str, Any]:
     tasks_dict = task_state.get("tasks") if isinstance(task_state, dict) else None
-    if isinstance(tasks_dict, dict):
-        task = tasks_dict.get(task_id)
-    else:
-        task = task_state.get(task_id)
+    task = tasks_dict.get(task_id) if isinstance(tasks_dict, dict) else task_state.get(task_id)
     if task is None:
         raise UserInputError(f"Task {task_id} not found")
     return task
@@ -142,9 +136,7 @@ def append_selection_decision(
     )
 
 
-def observability_project_and_limit(
-    context: BrainContext, kwargs: dict[str, Any]
-) -> tuple[str, int]:
+def observability_project_and_limit(context: BrainContext, kwargs: dict[str, Any]) -> tuple[str, int]:
     project_path = context.project_path
     limit = int(kwargs.get("limit", 5000) or 5000)
     if limit < 1 or limit > 50000:
@@ -173,20 +165,18 @@ def filter_observability_events(
     ]
 
 
-def merge_agent_metrics(
-    base: dict[str, dict[str, Any]], delta: dict[str, dict[str, Any]]
-) -> dict[str, dict[str, Any]]:
+def merge_agent_metrics(base: dict[str, dict[str, Any]], delta: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     if not base:
         return delta
-    merged: dict[str, dict[str, Any]] = {
-        agent_id: dict(metrics) for agent_id, metrics in base.items()
-    }
+    merged: dict[str, dict[str, Any]] = {agent_id: dict(metrics) for agent_id, metrics in base.items()}
     for agent_id, delta_metrics in delta.items():
         from allbrain.orchestrator.metrics import AgentPerformanceReducer
 
         metrics = merged.setdefault(
             agent_id,
-            AgentPerformanceReducer().reduce([]).get(
+            AgentPerformanceReducer()
+            .reduce([])
+            .get(
                 agent_id,
                 {
                     "agent_id": agent_id,

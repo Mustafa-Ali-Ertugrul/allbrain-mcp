@@ -16,7 +16,14 @@ class SnapshotRepo:
     def __init__(self, engine: Engine):
         self.engine = engine
 
-    def save(self, *, project_id: int, event_cursor: str | None, state: dict[str, Any], metadata: dict[str, Any] | None = None) -> Snapshot:
+    def save(
+        self,
+        *,
+        project_id: int,
+        event_cursor: str | None,
+        state: dict[str, Any],
+        metadata: dict[str, Any] | None = None,
+    ) -> Snapshot:
         record = SnapshotRecord(
             id=str(uuid7()),
             project_id=project_id,

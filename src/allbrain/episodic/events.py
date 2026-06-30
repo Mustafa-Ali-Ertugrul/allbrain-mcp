@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.episodic.model import EPISODIC_TEMPLATE_VERSION
 
-
 EPISODE_CREATED_KEYS: frozenset[str] = frozenset({"episode_id", "importance", "reward"})
 EPISODE_RETRIEVED_KEYS: frozenset[str] = frozenset({"retrieved", "best_similarity"})
 EPISODE_FORGOTTEN_KEYS: frozenset[str] = frozenset({"episode_id", "reason"})

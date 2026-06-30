@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.meta_policy import update_mode_stats, ModeStats, compute_reward
+from allbrain.meta_policy import ModeStats, compute_reward, update_mode_stats
 
 
 class TestPolicyLearning:
@@ -17,7 +17,7 @@ class TestPolicyLearning:
 
     def test_reward_weights(self):
         r = compute_reward(decision_score=0.8, outcome_quality=0.9, stability_penalty=0.1)
-        expected = 0.7*0.9 + 0.2*0.8 - 0.1*0.1
+        expected = 0.7 * 0.9 + 0.2 * 0.8 - 0.1 * 0.1
         assert abs(r - expected) < 1e-9
 
     def test_multi_update(self):
@@ -39,7 +39,7 @@ class TestPolicyLearning:
     def test_avg_update(self):
         s = ModeStats(mode="fusion", count=5, avg_reward=0.4, ema_reward=0.4, variance=0.0)
         updated = update_mode_stats(s, 0.6)
-        assert abs(updated.avg_reward - (0.4*5 + 0.6)/6) < 1e-9
+        assert abs(updated.avg_reward - (0.4 * 5 + 0.6) / 6) < 1e-9
 
     def test_stability_isolation(self):
         s1 = update_mode_stats(ModeStats(mode="a", count=0, avg_reward=0, ema_reward=0, variance=0), 0.8)

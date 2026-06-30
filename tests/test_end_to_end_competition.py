@@ -3,16 +3,24 @@ from __future__ import annotations
 import pytest
 
 from allbrain.events.schemas import EventType
+from allbrain.learning_safety import DriftGuard, EntropyCalculator, Explorer, OutcomeValidator
+from allbrain.mitigation_learning import (
+    LearningEngine,
+    OutcomeTracker,
+    PolicyStore,
+    StrategyOptimizer,
+)
+from allbrain.policy_competition import CompetitionEngine
+from allbrain.policy_routing import MetaPolicyRouter
 from allbrain.predictive_failure import PredictiveFailureManager
 from allbrain.predictive_failure.model import RiskSignal
-from allbrain.mitigation_learning import OutcomeTracker, LearningEngine, PolicyStore, StrategyOptimizer
-from allbrain.learning_safety import EntropyCalculator, Explorer, OutcomeValidator, DriftGuard
 from allbrain.self_repair import (
-    ValidationGate, PolicyHealthMonitor, RollbackEngine,
-    PolicySnapshotManager, RecoveryExecutor,
+    PolicyHealthMonitor,
+    PolicySnapshotManager,
+    RecoveryExecutor,
+    RollbackEngine,
+    ValidationGate,
 )
-from allbrain.policy_routing import MetaPolicyRouter
-from allbrain.policy_competition import CompetitionEngine
 from allbrain.soft_repair import PolicyBlender
 
 
@@ -123,8 +131,7 @@ class TestEndToEndCompetition:
         )
 
         # timeout + retry_spike reaches LEVEL_FAILURE → routing fires
-        r = mgr.run_cycle(fault_id="f1", fault_type="timeout",
-                          signals=[RiskSignal("retry_spike", 0.85, 5)])
+        r = mgr.run_cycle(fault_id="f1", fault_type="timeout", signals=[RiskSignal("retry_spike", 0.85, 5)])
         types = _event_types(r["events"])
         assert EventType.POLICY_FAMILY_SELECTED.value in types
 
@@ -165,10 +172,8 @@ class TestEndToEndCompetition:
             meta_router=MetaPolicyRouter(),
         )
 
-        r = mgr.run_cycle(fault_id="f1", fault_type="timeout",
-                          signals=[RiskSignal("retry_spike", 0.85, 5)])
-        sel_events = [e for e in r["events"]
-                      if e.get("event_type") == EventType.POLICY_FAMILY_SELECTED.value]
+        r = mgr.run_cycle(fault_id="f1", fault_type="timeout", signals=[RiskSignal("retry_spike", 0.85, 5)])
+        sel_events = [e for e in r["events"] if e.get("event_type") == EventType.POLICY_FAMILY_SELECTED.value]
         assert len(sel_events) > 0
         se = sel_events[0]
         assert "family" in se
@@ -179,13 +184,20 @@ class TestEndToEndCompetition:
         """Competition with only one candidate should still produce a result."""
         engine = CompetitionEngine()
         from allbrain.policy_competition import PolicyCandidate
+
         c = PolicyCandidate("only_one", "timeout", "rate_limit", {}, 1)
         from allbrain.mitigation_learning.model import StrategyStats
+
         stats = {
             ("timeout", "timeout", "rate_limit"): StrategyStats(
-                fault_type="timeout", signal_type="timeout",
-                strategy="rate_limit", total_uses=10, successes=8,
-                failures=2, avg_effectiveness=0.7, success_rate=0.8,
+                fault_type="timeout",
+                signal_type="timeout",
+                strategy="rate_limit",
+                total_uses=10,
+                successes=8,
+                failures=2,
+                avg_effectiveness=0.7,
+                success_rate=0.8,
                 disabled=False,
             ),
         }

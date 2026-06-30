@@ -9,7 +9,9 @@ from allbrain.models.schemas import EventRead
 class DelegationOptimizer:
     def optimize(self, events: list[EventRead]) -> list[dict[str, Any]]:
         created: dict[str, dict[str, Any]] = {}
-        outcomes: dict[tuple[str, str], dict[str, Any]] = defaultdict(lambda: {"total": 0, "success": 0, "evidence_event_ids": []})
+        outcomes: dict[tuple[str, str], dict[str, Any]] = defaultdict(
+            lambda: {"total": 0, "success": 0, "evidence_event_ids": []}
+        )
         for event in events:
             delegation_id = event.payload.get("delegation_id")
             if not isinstance(delegation_id, str):

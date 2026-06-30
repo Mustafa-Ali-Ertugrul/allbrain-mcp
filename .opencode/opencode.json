@@ -11,7 +11,9 @@
         "--project",
         ".",
         "--agent",
-        "opencode"
+        "opencode",
+        "--db-path",
+        "C:/ABMCP/.allbrain.db"
       ],
       "cwd": ".",
       "enabled": true,

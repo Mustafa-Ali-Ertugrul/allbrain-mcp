@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.recovery_consensus.manager import RecoveryConsensusManager
-from allbrain.recovery_consensus.strategy_generator import StrategyGenerator
-from allbrain.recovery_consensus.evaluator import Evaluator
 from allbrain.recovery_consensus.arbiter import Arbiter
+from allbrain.recovery_consensus.evaluator import Evaluator
+from allbrain.recovery_consensus.manager import RecoveryConsensusManager
 from allbrain.recovery_consensus.reducer import RecoveryConsensusReducer
+from allbrain.recovery_consensus.strategy_generator import StrategyGenerator
 
 
 def _sample_faults():
@@ -65,7 +65,6 @@ class TestRecoveryConsensusManager:
 
 class TestEndToEnd:
     def test_generate_evaluate_arbitrate(self):
-        faults = [{"fault_id": "f1", "component": "worker", "severity": "low", "fault_type": "failure"}]
 
         gen = StrategyGenerator()
         ev = Evaluator()

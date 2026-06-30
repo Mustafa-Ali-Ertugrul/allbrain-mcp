@@ -2,6 +2,12 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.telemetry.events import (
+    make_completed_payload,
+    make_runtime_updated_payload,
+    make_started_payload,
+    validate_completed_payload,
+)
 from allbrain.telemetry.metrics import (
     duration_component,
     mean_duration,
@@ -9,12 +15,6 @@ from allbrain.telemetry.metrics import (
     retry_component,
     runtime_score,
     success_rate,
-)
-from allbrain.telemetry.events import (
-    make_completed_payload,
-    make_runtime_updated_payload,
-    make_started_payload,
-    validate_completed_payload,
 )
 from allbrain.telemetry.model import MAX_DURATION_MS, MAX_RETRIES
 
@@ -97,7 +97,9 @@ class TestPayloads:
         assert p["tool_name"] == "x"
 
     def test_completed(self):
-        p = make_completed_payload(agent_id="a", task_id="t", tool_name="x", duration_ms=100, success=True, retry_count=0)
+        p = make_completed_payload(
+            agent_id="a", task_id="t", tool_name="x", duration_ms=100, success=True, retry_count=0
+        )
         assert p["duration_ms"] == 100
         assert p["success"] is True
 
@@ -107,4 +109,6 @@ class TestPayloads:
 
     def test_runtime_updated_validation(self):
         with pytest.raises(ValueError):
-            make_runtime_updated_payload(agent_id="", mean_duration_ms=0, success_rate=0.5, mean_retry_count=0, runtime_score_val=0.5)
+            make_runtime_updated_payload(
+                agent_id="", mean_duration_ms=0, success_rate=0.5, mean_retry_count=0, runtime_score_val=0.5
+            )

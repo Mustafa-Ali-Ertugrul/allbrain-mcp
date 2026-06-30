@@ -3,11 +3,11 @@ from __future__ import annotations
 import pytest
 
 from allbrain.adaptive_recovery import (
+    CHAIN_OUTCOME_ESCALATED,
+    CHAIN_OUTCOME_FAILED,
+    CHAIN_OUTCOME_SUCCESS,
     AdaptiveRecoveryManager,
     AdaptiveRecoveryReducer,
-    CHAIN_OUTCOME_SUCCESS,
-    CHAIN_OUTCOME_FAILED,
-    CHAIN_OUTCOME_ESCALATED,
 )
 from allbrain.recovery_consensus.model import CandidateStrategy
 
@@ -25,11 +25,15 @@ def _c(strategy: str = "retry", confidence: float = 0.8) -> CandidateStrategy:
 
 
 def _event(etype: str, payload: dict, eid: str = "e1") -> object:
-    return type("FakeEvent", (), {
-        "id": eid,
-        "type": etype,
-        "payload": payload,
-    })()
+    return type(
+        "FakeEvent",
+        (),
+        {
+            "id": eid,
+            "type": etype,
+            "payload": payload,
+        },
+    )()
 
 
 class TestAdaptiveRecoveryIntegration:
@@ -106,8 +110,12 @@ class TestAdaptiveRecoveryIntegration:
     def test_multiple_chains_replayed(self):
         manager = AdaptiveRecoveryManager()
         r1 = manager.run_chain(fault_id="f1", fault_type="timeout", candidates=[_c("retry")], attempt_outcomes=[True])
-        r2 = manager.run_chain(fault_id="f2", fault_type="corruption", candidates=[_c("rollback")], attempt_outcomes=[False])
-        r3 = manager.run_chain(fault_id="f3", fault_type="crash", candidates=[_c("repair"), _c("isolate")], attempt_outcomes=[False, False])
+        r2 = manager.run_chain(
+            fault_id="f2", fault_type="corruption", candidates=[_c("rollback")], attempt_outcomes=[False]
+        )
+        r3 = manager.run_chain(
+            fault_id="f3", fault_type="crash", candidates=[_c("repair"), _c("isolate")], attempt_outcomes=[False, False]
+        )
 
         reducer = AdaptiveRecoveryReducer()
         for i, ev in enumerate(r1["events"]):
@@ -147,7 +155,9 @@ class TestAdaptiveRecoveryIntegration:
 
     def test_reducer_idempotent_with_duplicate_events(self):
         manager = AdaptiveRecoveryManager()
-        result = manager.run_chain(fault_id="f1", fault_type="timeout", candidates=[_c("retry")], attempt_outcomes=[True])
+        result = manager.run_chain(
+            fault_id="f1", fault_type="timeout", candidates=[_c("retry")], attempt_outcomes=[True]
+        )
 
         reducer = AdaptiveRecoveryReducer()
         for i, ev in enumerate(result["events"]):

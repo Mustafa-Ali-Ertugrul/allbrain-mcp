@@ -1,5 +1,5 @@
+from datetime import UTC, datetime, timezone
 from pathlib import Path
-from datetime import datetime, timezone
 
 from allbrain.models.entities import Event
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
@@ -114,7 +114,7 @@ def test_quality_gate_uuidv7_ordering_uses_created_at_tie_break(tmp_path: Path) 
         file_path="second.py",
     )
 
-    same_timestamp = datetime(2026, 6, 17, 12, 0, tzinfo=timezone.utc)
+    same_timestamp = datetime(2026, 6, 17, 12, 0, tzinfo=UTC)
     with open_session(repo.engine) as db:
         first_row = db.get(Event, first.id)
         second_row = db.get(Event, second.id)
@@ -177,9 +177,7 @@ def test_payload_version_column_backfilled_on_old_schema(tmp_path: Path) -> None
             "CREATE TABLE session (id INTEGER PRIMARY KEY, project_id INTEGER, agent_name TEXT, "
             "started_at TIMESTAMP, ended_at TIMESTAMP, status TEXT)"
         )
-        conn.exec_driver_sql(
-            "INSERT INTO session (id, project_id, agent_name) VALUES (1, 1, 'legacy')"
-        )
+        conn.exec_driver_sql("INSERT INTO session (id, project_id, agent_name) VALUES (1, 1, 'legacy')")
         conn.exec_driver_sql(
             "INSERT INTO event (id, project_id, session_id, type, source, payload_json, created_at) "
             "VALUES ('legacy-evt-1', 1, 1, 'legacy_event', 'legacy', '{\"old\": true}', '2024-01-01 00:00:00')"

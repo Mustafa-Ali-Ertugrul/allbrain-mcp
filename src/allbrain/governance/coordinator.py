@@ -43,7 +43,9 @@ class AutonomousGovernanceCoordinator:
             autonomy_assessment=autonomy_action,
             constitutional=constitutional,
         )
-        policy = self.policy.synthesize(decision["decision"], alignment_report, trajectory, autonomy_action, constitutional)
+        policy = self.policy.synthesize(
+            decision["decision"], alignment_report, trajectory, autonomy_action, constitutional
+        )
         autonomy_action = {
             "decision_id": decision["decision_id"],
             "decision": decision["decision"],

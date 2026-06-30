@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import pytest
+
+from allbrain.events.schemas import EventType
+from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.objective_system import Objective, ObjectiveStore, ObjectiveWeights
 from allbrain.tradeoff_engine import (
-    UtilityFunction, UtilityResult, TradeoffResult,
-    validate_utility_computed, make_utility_computed_payload,
-    validate_tradeoff_analyzed, make_tradeoff_analyzed_payload,
     TradeoffReducer,
+    TradeoffResult,
+    UtilityFunction,
+    UtilityResult,
+    make_tradeoff_analyzed_payload,
+    make_utility_computed_payload,
+    validate_tradeoff_analyzed,
+    validate_utility_computed,
 )
-from allbrain.mitigation_learning.model import StrategyStats
-from allbrain.events.schemas import EventType
 
 
 class TestUtilityFunction:
@@ -25,7 +30,7 @@ class TestUtilityFunction:
     def test_safety_fail_gives_negative_inf(self):
         s = StrategyStats("memory_corruption", "rs", "rl", 10, 2, 8, 0.2, 0.2)
         result = Objective.compute("memory_corruption", "rl", s, 0.2, 3)
-        store = ObjectiveStore()
+        ObjectiveStore()
         w = ObjectiveWeights("memory_corruption")
         u = UtilityFunction.compute(result, w, "p1", "rl")
         assert not u.safety_pass
@@ -45,10 +50,19 @@ class TestUtilityEvents:
 class TestTradeoffReducer:
     def test_tracks_utilities(self):
         r = TradeoffReducer()
-        ev = _make_event(EventType.UTILITY_COMPUTED.value, {"policy_id":"p1","fault_type":"t","utility":0.5,"safety_pass":True})
+        ev = _make_event(
+            EventType.UTILITY_COMPUTED.value,
+            {"policy_id": "p1", "fault_type": "t", "utility": 0.5, "safety_pass": True},
+        )
         r.apply(ev)
         assert r.all_snapshots()["default"]["total_utilities"] == 1
 
 
 def _make_event(t, p):
-    import types; ev = types.SimpleNamespace(); ev.id = f"test_{t}"; ev.type = t; ev.payload = p; return ev
+    import types
+
+    ev = types.SimpleNamespace()
+    ev.id = f"test_{t}"
+    ev.type = t
+    ev.payload = p
+    return ev

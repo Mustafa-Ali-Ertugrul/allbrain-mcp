@@ -1,4 +1,5 @@
 """Domain module: decisions."""
+
 from __future__ import annotations
 
 import logging
@@ -6,17 +7,17 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.models.schemas import (
+    RunDecisionPipelineInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
     maybe_auto_snapshot,
-)
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    RunDecisionPipelineInput,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,6 @@ def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResu
     try:
         data = RunDecisionPipelineInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         from allbrain.runtime_core import SystemDecisionPipeline
 
         result = SystemDecisionPipeline().run(

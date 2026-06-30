@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.dynamics.drift import detect_drift
+from allbrain.dynamics.forecast import predict
+from allbrain.dynamics.trend import classify_trend
 from allbrain.events.schemas import EventType
 from allbrain.foundations import canonical_event_sort
-from allbrain.dynamics.drift import detect_drift
-from allbrain.dynamics.trend import classify_trend
-from allbrain.dynamics.forecast import predict
 
 
 class CapabilityDynamicsManager:
@@ -42,12 +42,7 @@ class CapabilityDynamicsManager:
 
             if et == EventType.AGENT_CAPABILITY_OBSERVED.value:
                 obs_count += 1
-            elif et == EventType.AGENT_CAPABILITY_LEARNED.value:
-                ns = payload.get("new_score")
-                if isinstance(ns, (int, float)):
-                    scores.append(float(ns))
-                obs_count = max(obs_count, 1)
-            elif et == EventType.AGENT_CAPABILITY_DECAYED.value:
+            elif et == EventType.AGENT_CAPABILITY_LEARNED.value or et == EventType.AGENT_CAPABILITY_DECAYED.value:
                 ns = payload.get("new_score")
                 if isinstance(ns, (int, float)):
                     scores.append(float(ns))
@@ -59,18 +54,24 @@ class CapabilityDynamicsManager:
                 last_trend_label = str(payload.get("label", last_trend_label))
 
         drift = detect_drift(
-            agent_id=agent_id, task_type=task_type,
-            scores=scores, observation_count=obs_count,
+            agent_id=agent_id,
+            task_type=task_type,
+            scores=scores,
+            observation_count=obs_count,
             event_ids=event_ids,
         )
         trend = classify_trend(
-            agent_id=agent_id, task_type=task_type,
-            scores=scores, last_label=last_trend_label,
+            agent_id=agent_id,
+            task_type=task_type,
+            scores=scores,
+            last_label=last_trend_label,
             event_ids=event_ids,
         )
         forecast = predict(
-            agent_id=agent_id, task_type=task_type,
-            scores=scores, horizon=horizon,
+            agent_id=agent_id,
+            task_type=task_type,
+            scores=scores,
+            horizon=horizon,
             event_ids=event_ids,
         )
 

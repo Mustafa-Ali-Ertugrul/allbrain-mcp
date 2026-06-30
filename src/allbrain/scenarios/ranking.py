@@ -31,7 +31,7 @@ class ScenarioRanker:
         pred_confs = [item.prediction.confidence for item in results]
         spread = round(max(successes) - min(successes), 6)
         volatility = round(max(risks) - min(risks), 6)
-        uncertainty = round(1.0 - sum(c * p for c, p in zip(confidences, pred_confs)), 6)
+        uncertainty = round(1.0 - sum(c * p for c, p in zip(confidences, pred_confs, strict=False)), 6)
         return {
             "prediction_spread": spread,
             "risk_volatility": volatility,

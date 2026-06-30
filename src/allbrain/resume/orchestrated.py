@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.models.schemas import EventRead
+from allbrain.orchestrator import DeterministicScheduler, TaskGraphBuilder, TaskStateReducer
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
 from allbrain.orchestrator.state import AgentStateBuilder
-from allbrain.orchestrator import DeterministicScheduler, TaskGraphBuilder, TaskStateReducer
 
 
 class OrchestratedResumeEngine:
@@ -57,9 +57,7 @@ class OrchestratedResumeEngine:
         events: list[EventRead],
         metrics: dict[str, dict[str, Any]],
     ) -> dict[str, Any]:
-        blocked = [
-            task for task in task_state.get("tasks", {}).values() if task.get("status") in {"blocked", "failed"}
-        ]
+        blocked = [task for task in task_state.get("tasks", {}).values() if task.get("status") in {"blocked", "failed"}]
         if blocked:
             blocked.sort(key=lambda task: (-int(task.get("priority") or 0), task["task_id"]))
             task = blocked[0]

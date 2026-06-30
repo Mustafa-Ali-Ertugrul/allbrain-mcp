@@ -25,9 +25,7 @@ class QueueItem:
             "agent_id": self.agent_id,
             "workflow_id": self.workflow_id,
             "enqueued_at": self.enqueued_at.isoformat(),
-            "parent_results": {
-                nid: r.to_dict() for nid, r in self.parent_results.items()
-            },
+            "parent_results": {nid: r.to_dict() for nid, r in self.parent_results.items()},
             "metadata": dict(self.metadata),
         }
 
@@ -55,20 +53,20 @@ class TaskQueue(ABC):
             "distributed_ready": False,
         }
 
-    async def ack(self, item: QueueItem) -> None:
+    async def ack(self, item: QueueItem) -> None:  # noqa: B027
         """Optional completion hook for persistent queues."""
 
-    async def nack(self, item: QueueItem, *, requeue: bool = True, reason: str | None = None) -> None:
+    async def nack(self, item: QueueItem, *, requeue: bool = True, reason: str | None = None) -> None:  # noqa: B027
         """Optional failure hook for persistent queues."""
 
-    async def renew_lease(self, item: QueueItem) -> None:
+    async def renew_lease(self, item: QueueItem) -> None:  # noqa: B027
         """Optional lease renewal hook for persistent queues."""
 
     async def recover_expired(self) -> int:
         """Optional expired in-flight recovery hook."""
         return 0
 
-    async def close(self) -> None:
+    async def close(self) -> None:  # noqa: B027
         """Optional cleanup hook."""
 
 
@@ -94,7 +92,7 @@ class InMemoryTaskQueue(TaskQueue):
                 await asyncio.wait_for(self._wait_for_item(), timeout=timeout)
             else:
                 await self._wait_for_item()
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return None
         if not self._queue:
             return None

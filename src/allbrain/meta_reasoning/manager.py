@@ -10,7 +10,6 @@ from allbrain.meta_reasoning.models import DecisionExplanation
 from allbrain.meta_reasoning.rejection import RejectionAnalyzer
 from allbrain.uncertainty.calibration import observed_success_rate
 
-
 HISTORICAL_SUCCESS_FALLBACK = 0.7
 
 
@@ -30,7 +29,9 @@ class MetaReasoningManager:
         *,
         historical_success: float | None = None,
     ) -> DecisionExplanation:
-        reasons = self.analyzer.analyze(selected_plan, candidates, foresight_result, historical_success=historical_success)
+        reasons = self.analyzer.analyze(
+            selected_plan, candidates, foresight_result, historical_success=historical_success
+        )
         rejected = self.rejection_analyzer.analyze(selected_plan, candidates)
         if historical_success is None:
             historical_success = (

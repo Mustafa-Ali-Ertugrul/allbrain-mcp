@@ -4,11 +4,17 @@ from typing import Any
 
 from allbrain.meta_scoring.model import META_SCORING_TEMPLATE_VERSION
 
-SCORING_PROFILE_UPDATED_KEYS: frozenset[str] = frozenset({
-    "fault_type", "success_weight", "risk_weight",
-    "stability_weight", "drift_weight", "exploration_bonus",
-    "version",
-})
+SCORING_PROFILE_UPDATED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "success_weight",
+        "risk_weight",
+        "stability_weight",
+        "drift_weight",
+        "exploration_bonus",
+        "version",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:

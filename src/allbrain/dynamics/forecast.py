@@ -14,10 +14,11 @@ from allbrain.dynamics.model import (
 
 def _stable_dynamics_id(key: str, event_ids: list[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{key}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{key}:{ek}".encode()).digest()
     return f"dyn-fcst-{d.hex()[:12]}"
 
 
@@ -48,15 +49,19 @@ def predict(
     n = len(scores)
     if n < 2:
         return ForecastState(
-            agent_id=agent_id, task_type=task_type,
-            horizon=horizon, predicted_capability=scores[-1] if scores else 0.0,
-            confidence=0.0, current_capability=scores[-1] if scores else 0.0,
-            delta=0.0, analysis_id=analysis_id,
+            agent_id=agent_id,
+            task_type=task_type,
+            horizon=horizon,
+            predicted_capability=scores[-1] if scores else 0.0,
+            confidence=0.0,
+            current_capability=scores[-1] if scores else 0.0,
+            delta=0.0,
+            analysis_id=analysis_id,
         )
 
     current = max(0.0, min(1.0, scores[-1]))
     delta = scores[-1] - scores[-2] if len(scores) >= 2 else 0.0
-    variance = _variance(scores[-min(10, n):])
+    variance = _variance(scores[-min(10, n) :])
 
     if abs(delta) > 0 and variance < FORECAST_VARIANCE_DAMPING_THRESHOLD:
         delta *= FORECAST_DAMPING_FACTOR
@@ -73,8 +78,12 @@ def predict(
         confidence = max(0.1, (n / FORECAST_LOW_CONFIDENCE_THRESHOLD) * 0.5)
 
     return ForecastState(
-        agent_id=agent_id, task_type=task_type,
-        horizon=h, predicted_capability=predicted,
-        confidence=confidence, current_capability=current,
-        delta=delta, analysis_id=analysis_id,
+        agent_id=agent_id,
+        task_type=task_type,
+        horizon=h,
+        predicted_capability=predicted,
+        confidence=confidence,
+        current_capability=current,
+        delta=delta,
+        analysis_id=analysis_id,
     )

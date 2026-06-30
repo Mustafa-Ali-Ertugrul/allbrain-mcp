@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
-from allbrain.decision.resolver import make_contract
-from allbrain.decision.model import DecisionContext
 from allbrain.decision.engine import DecisionEngine
+from allbrain.decision.model import DecisionContext
+from allbrain.decision.resolver import make_contract
 from allbrain.events.schemas import EventType
+from allbrain.foundations import canonical_event_sort
 
 
 class DecisionManager:
@@ -25,7 +25,9 @@ class DecisionManager:
         dynamics: bool = False,
         strict: bool = True,
     ):
-        ctx = self._build_context(events, agent_id=agent_id, task_type=task_type, debug=debug, fusion=fusion, causal=causal, dynamics=dynamics)
+        ctx = self._build_context(
+            events, agent_id=agent_id, task_type=task_type, debug=debug, fusion=fusion, causal=causal, dynamics=dynamics
+        )
         return self._engine.decide(ctx, strict=strict)
 
     def _build_context(

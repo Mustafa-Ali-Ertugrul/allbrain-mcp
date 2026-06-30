@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.failure_memory.model import (
-    DEFAULT_SUCCESS_DELTA,
     DEFAULT_FAILURE_DELTA,
+    DEFAULT_SUCCESS_DELTA,
     PATTERN_MIN_SAMPLES,
     PATTERN_SUCCESS_THRESHOLD,
-    FailureRecord,
     FailurePattern,
+    FailureRecord,
 )
 from allbrain.failure_memory.store import FailureMemoryStore
 

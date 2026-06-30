@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 LEARNING_TEMPLATE_VERSION = 1
 
 LEARNING_RETENTION = 0.9

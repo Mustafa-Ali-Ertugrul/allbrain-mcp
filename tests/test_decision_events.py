@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.events.schemas import EventType
 from allbrain.decision import make_decision_payload, validate_decision
+from allbrain.events.schemas import EventType
 from allbrain.replay import EventReplayEngine
 
 
@@ -26,8 +26,18 @@ class TestDecisionEvents:
 
     def test_round_trip_decision(self):
         evts = [
-            E(EventType.DECISION_COMPUTED.value, "e1",
-              make_decision_payload(agent_id="a", task_type="t", score=0.84, mode="fusion", contributors={"capability": 0.2, "learning": 0.2}, backend_trace=("fusion", "calibrated"))),
+            E(
+                EventType.DECISION_COMPUTED.value,
+                "e1",
+                make_decision_payload(
+                    agent_id="a",
+                    task_type="t",
+                    score=0.84,
+                    mode="fusion",
+                    contributors={"capability": 0.2, "learning": 0.2},
+                    backend_trace=("fusion", "calibrated"),
+                ),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert "a::t" in f["decision"]
@@ -35,8 +45,11 @@ class TestDecisionEvents:
 
     def test_determinism(self):
         evts = [
-            E(EventType.DECISION_COMPUTED.value, "e1",
-              make_decision_payload(agent_id="a", task_type="t", score=0.5, mode="legacy")),
+            E(
+                EventType.DECISION_COMPUTED.value,
+                "e1",
+                make_decision_payload(agent_id="a", task_type="t", score=0.5, mode="legacy"),
+            ),
         ]
         r1 = EventReplayEngine().replay(evts)["final_state"]["decision"]
         r2 = EventReplayEngine().replay(evts)["final_state"]["decision"]

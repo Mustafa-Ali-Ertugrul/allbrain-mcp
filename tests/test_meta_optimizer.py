@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.meta_scoring import ProfileStore, ScoringProfile
+from allbrain.events.schemas import EventType
 from allbrain.meta_optimizer import (
-    WeightOptimizer,
-    GradientEstimator,
-    StabilityController,
-    MetaOptimizerReducer,
     META_OPTIMIZER_LEARNING_RATE,
-    META_OPTIMIZER_WEIGHT_MIN,
-    META_OPTIMIZER_WEIGHT_MAX,
     META_OPTIMIZER_UPDATE_INTERVAL,
-    validate_weights_adapated,
+    META_OPTIMIZER_WEIGHT_MAX,
+    META_OPTIMIZER_WEIGHT_MIN,
+    GradientEstimator,
+    MetaOptimizerReducer,
+    StabilityController,
+    WeightOptimizer,
+    make_meta_optimizer_guarded_payload,
     make_weights_adapated_payload,
     validate_meta_optimizer_guarded,
-    make_meta_optimizer_guarded_payload,
+    validate_weights_adapated,
 )
-from allbrain.events.schemas import EventType
+from allbrain.meta_scoring import ProfileStore, ScoringProfile
 
 
 class TestGradientEstimator:
@@ -110,8 +110,10 @@ class TestMetaOptimizerEvents:
     def test_valid_weights_payload(self):
         p = make_weights_adapated_payload(
             fault_type="timeout",
-            success_weight=0.50, risk_weight=0.20,
-            stability_weight=0.20, drift_weight=0.10,
+            success_weight=0.50,
+            risk_weight=0.20,
+            stability_weight=0.20,
+            drift_weight=0.10,
             version=1,
         )
         validate_weights_adapated(p)
@@ -120,14 +122,18 @@ class TestMetaOptimizerEvents:
         with pytest.raises(ValueError):
             make_weights_adapated_payload(
                 fault_type="timeout",
-                success_weight=5.0, risk_weight=0.20,
-                stability_weight=0.20, drift_weight=0.10,
+                success_weight=5.0,
+                risk_weight=0.20,
+                stability_weight=0.20,
+                drift_weight=0.10,
                 version=1,
             )
 
     def test_valid_guarded_payload(self):
         p = make_meta_optimizer_guarded_payload(
-            fault_type="timeout", reason="low_stability", stability_score=0.30,
+            fault_type="timeout",
+            reason="low_stability",
+            stability_score=0.30,
         )
         validate_meta_optimizer_guarded(p)
 
@@ -139,20 +145,31 @@ class TestMetaOptimizerEvents:
 class TestMetaOptimizerReducer:
     def test_tracks_adaptations(self):
         reducer = MetaOptimizerReducer()
-        ev = _make_event(EventType.WEIGHTS_ADAPTED.value, {
-            "fault_type": "timeout", "success_weight": 0.55,
-            "risk_weight": 0.15, "stability_weight": 0.25,
-            "drift_weight": 0.05, "version": 2,
-        })
+        ev = _make_event(
+            EventType.WEIGHTS_ADAPTED.value,
+            {
+                "fault_type": "timeout",
+                "success_weight": 0.55,
+                "risk_weight": 0.15,
+                "stability_weight": 0.25,
+                "drift_weight": 0.05,
+                "version": 2,
+            },
+        )
         reducer.apply(ev)
         snap = reducer.all_snapshots()
         assert snap["default"]["total_adaptations"] == 1
 
     def test_counts_guards(self):
         reducer = MetaOptimizerReducer()
-        ev = _make_event(EventType.META_OPTIMIZER_GUARDED.value, {
-            "fault_type": "timeout", "reason": "test", "stability_score": 0.30,
-        })
+        ev = _make_event(
+            EventType.META_OPTIMIZER_GUARDED.value,
+            {
+                "fault_type": "timeout",
+                "reason": "test",
+                "stability_score": 0.30,
+            },
+        )
         reducer.apply(ev)
         assert reducer.all_snapshots()["default"]["total_guards"] == 1
 
@@ -164,6 +181,7 @@ class TestMetaOptimizerReducer:
 
 def _make_event(type_str: str, payload: dict):
     import types
+
     ev = types.SimpleNamespace()
     ev.id = f"test_{type_str}_{hash(str(payload))}"
     ev.type = type_str

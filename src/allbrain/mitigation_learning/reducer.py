@@ -6,8 +6,8 @@ from allbrain.events.schemas import EventType
 from allbrain.mitigation_learning.events import (
     validate_mitigation_evaluated,
     validate_outcome_measured,
-    validate_strategy_updated,
     validate_policy_improved,
+    validate_strategy_updated,
 )
 from allbrain.mitigation_learning.model import MITIGATION_LEARNING_TEMPLATE_VERSION
 

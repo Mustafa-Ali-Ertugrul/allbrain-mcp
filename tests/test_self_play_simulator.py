@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.events.schemas import EventType
 from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.self_play import (
-    MatchEngine,
-    WinMatrix,
-    Simulator,
-    MatchResult,
     SELF_PLAY_MIN_CANDIDATES,
+    MatchEngine,
+    MatchResult,
     SelfPlayReducer,
-    validate_match_played,
+    Simulator,
+    WinMatrix,
     make_match_played_payload,
+    validate_match_played,
 )
-from allbrain.events.schemas import EventType
 
 
 class TestSimulator:
@@ -41,7 +41,9 @@ class TestSimulator:
         sim = Simulator()
         stats = {
             ("timeout", "timeout", "enabled"): StrategyStats("timeout", "timeout", "enabled", 10, 8, 2, 0.7, 0.8),
-            ("timeout", "timeout", "disabled"): StrategyStats("timeout", "timeout", "disabled", 10, 8, 2, 0.7, 0.8, disabled=True),
+            ("timeout", "timeout", "disabled"): StrategyStats(
+                "timeout", "timeout", "disabled", 10, 8, 2, 0.7, 0.8, disabled=True
+            ),
         }
         r = sim.simulate("timeout", "enabled", "disabled", stats)
         assert r.winner == "enabled"
@@ -93,8 +95,13 @@ class TestMatchEngine:
 class TestMatchesEvents:
     def test_valid_payload(self):
         p = make_match_played_payload(
-            policy_a="a", policy_b="b", winner="a",
-            score_a=0.7, score_b=0.3, confidence=0.4, fault_type="timeout",
+            policy_a="a",
+            policy_b="b",
+            winner="a",
+            score_a=0.7,
+            score_b=0.3,
+            confidence=0.4,
+            fault_type="timeout",
         )
         validate_match_played(p)
 
@@ -105,19 +112,31 @@ class TestMatchesEvents:
     def test_invalid_score_range(self):
         with pytest.raises(ValueError):
             make_match_played_payload(
-                policy_a="a", policy_b="b", winner="a",
-                score_a=5.0, score_b=0.3, confidence=0.4, fault_type="timeout",
+                policy_a="a",
+                policy_b="b",
+                winner="a",
+                score_a=5.0,
+                score_b=0.3,
+                confidence=0.4,
+                fault_type="timeout",
             )
 
 
 class TestSelfPlayReducer:
     def test_tracks_matches(self):
         reducer = SelfPlayReducer()
-        ev = _make_event(EventType.MATCH_PLAYED.value, {
-            "policy_a": "a", "policy_b": "b", "winner": "a",
-            "score_a": 0.7, "score_b": 0.3, "confidence": 0.4,
-            "fault_type": "timeout",
-        })
+        ev = _make_event(
+            EventType.MATCH_PLAYED.value,
+            {
+                "policy_a": "a",
+                "policy_b": "b",
+                "winner": "a",
+                "score_a": 0.7,
+                "score_b": 0.3,
+                "confidence": 0.4,
+                "fault_type": "timeout",
+            },
+        )
         reducer.apply(ev)
         snap = reducer.all_snapshots()
         assert snap["default"]["total_matches"] == 1
@@ -125,6 +144,7 @@ class TestSelfPlayReducer:
 
 def _make_event(type_str: str, payload: dict):
     import types
+
     ev = types.SimpleNamespace()
     ev.id = f"test_{type_str}_{hash(str(payload))}"
     ev.type = type_str

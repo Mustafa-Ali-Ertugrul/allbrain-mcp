@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from allbrain.workspace import (
-    WorkspaceManager, make_ws_added_payload, make_ws_updated_payload, make_ws_removed_payload,
+    WorkspaceManager,
+    make_ws_added_payload,
+    make_ws_removed_payload,
+    make_ws_updated_payload,
 )
 
 
@@ -16,8 +19,7 @@ class TestManager:
         mgr = WorkspaceManager()
         mgr.set_capacity(2)
         for i in range(10):
-            mgr.update([], signal_rewards={"causal": 0.7}, attention_weight=0.9,
-                       item_id=f"item-{i}")
+            mgr.update([], signal_rewards={"causal": 0.7}, attention_weight=0.9, item_id=f"item-{i}")
         assert len(mgr.get_active_items()) <= 2
 
     def test_signal_rewards_activation(self):

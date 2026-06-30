@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.failure_memory.store import FailureMemoryStore
 from allbrain.failure_memory.model import (
+    FailurePattern,
     FailureRecord,
     RecoveryExperience,
-    FailurePattern,
 )
+from allbrain.failure_memory.store import FailureMemoryStore
 
 
 def _record(

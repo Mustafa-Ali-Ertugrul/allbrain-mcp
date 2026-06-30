@@ -44,7 +44,7 @@ def calibrate_weights(
     }
 
     penalized_channels: set[str] = set()
-    for (a, b) in overlap_violations:
+    for a, b in overlap_violations:
         count = overlap_history.get((a, b), 0) + 1
         overlap_history[(a, b)] = count
         if count >= hysteresis:

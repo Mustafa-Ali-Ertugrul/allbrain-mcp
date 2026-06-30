@@ -1,3 +1,12 @@
+from allbrain.routing.events import (
+    make_req_payload,
+    make_scored_payload,
+    make_selected_payload,
+    validate_req,
+    validate_scored,
+    validate_selected,
+)
+from allbrain.routing.manager import RoutingManager
 from allbrain.routing.model import (
     ROUTING_CONSENSUS_WEIGHT,
     ROUTING_REPUTATION_WEIGHT,
@@ -7,6 +16,7 @@ from allbrain.routing.model import (
     ROUTING_TRUST_WEIGHT,
     RoutingState,
 )
+from allbrain.routing.reducer import RoutingReducer
 from allbrain.routing.scorer import (
     _stable_routing_id,
     adaptive_selection_score,
@@ -19,16 +29,6 @@ from allbrain.routing.scorer import (
     selection_score,
     unified_decision_score,
 )
-from allbrain.routing.events import (
-    make_req_payload,
-    make_scored_payload,
-    make_selected_payload,
-    validate_req,
-    validate_scored,
-    validate_selected,
-)
-from allbrain.routing.manager import RoutingManager
-from allbrain.routing.reducer import RoutingReducer
 
 __all__ = [
     "ROUTING_CONSENSUS_WEIGHT",

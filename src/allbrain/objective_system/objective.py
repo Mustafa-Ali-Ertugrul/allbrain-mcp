@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.objective_system.model import (
-    ObjectiveResult, ObjectiveSnapshot,
-    FAULT_TYPE_SAFETY_THRESHOLDS,
-    EFFICIENCY_PREVENTION_WEIGHT,
     EFFICIENCY_CYCLE_WEIGHT,
+    EFFICIENCY_PREVENTION_WEIGHT,
+    FAULT_TYPE_SAFETY_THRESHOLDS,
+    ObjectiveResult,
+    ObjectiveSnapshot,
 )
 
 
@@ -43,19 +44,26 @@ class Objective:
         safety_pass = safety >= threshold
 
         return ObjectiveResult(
-            fault_type=fault_type, safety=safety, stability=stability_metric,
-            success=success_metric, efficiency=efficiency_metric,
+            fault_type=fault_type,
+            safety=safety,
+            stability=stability_metric,
+            success=success_metric,
+            efficiency=efficiency_metric,
             safety_pass=safety_pass,
             normalized={
-                "safety": safety, "stability": stability_metric,
-                "success": success_metric, "efficiency": efficiency_metric,
+                "safety": safety,
+                "stability": stability_metric,
+                "success": success_metric,
+                "efficiency": efficiency_metric,
             },
         )
 
     @staticmethod
     def snapshot(result: ObjectiveResult) -> ObjectiveSnapshot:
         return ObjectiveSnapshot(
-            fault_type=result.fault_type, safety=result.safety,
-            stability=result.stability, success=result.success,
+            fault_type=result.fault_type,
+            safety=result.safety,
+            stability=result.stability,
+            success=result.success,
             efficiency=result.efficiency,
         )

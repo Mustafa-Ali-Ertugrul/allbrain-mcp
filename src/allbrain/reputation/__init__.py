@@ -1,6 +1,6 @@
 from allbrain.reputation.estimator import (
-    REPUTATION_TEMPLATE_VERSION,
     REPUTATION_MAX_RETRY,
+    REPUTATION_TEMPLATE_VERSION,
     _stable_reputation_id,
     consistency,
     mean_confidence,

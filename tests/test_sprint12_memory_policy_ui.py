@@ -61,7 +61,14 @@ def seed_memory_events(context: BrainContext) -> None:
     assert save_event_impl(
         context,
         type=EventType.AGENT_EXECUTION_COMPLETED.value,
-        payload={"task_id": "task_auth", "workflow_id": "wf_auth", "node_id": "n1", "agent_id": "reviewer", "duration_ms": 120, "cost_usd": 0.02},
+        payload={
+            "task_id": "task_auth",
+            "workflow_id": "wf_auth",
+            "node_id": "n1",
+            "agent_id": "reviewer",
+            "duration_ms": 120,
+            "cost_usd": 0.02,
+        },
         agent_id="reviewer",
     ).ok
     assert save_event_impl(

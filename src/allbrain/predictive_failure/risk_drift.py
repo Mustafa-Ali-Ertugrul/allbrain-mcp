@@ -24,7 +24,10 @@ class RiskDriftDetector:
         self._history: dict[str, list[tuple[float, float]]] = {}
 
     def ingest(
-        self, fault_type: str, risk_score: float, timestamp: float | None = None,
+        self,
+        fault_type: str,
+        risk_score: float,
+        timestamp: float | None = None,
     ) -> None:
         """Record a risk score for a fault type at a given time.
 
@@ -34,7 +37,7 @@ class RiskDriftDetector:
             self._history[fault_type] = []
         self._history[fault_type].append((risk_score, timestamp or 0.0))
         if len(self._history[fault_type]) > self._window_size:
-            self._history[fault_type] = self._history[fault_type][-self._window_size:]
+            self._history[fault_type] = self._history[fault_type][-self._window_size :]
 
     def compute_drift(self, fault_type: str) -> float:
         """Compute the drift (slope) for a fault type.
@@ -53,7 +56,7 @@ class RiskDriftDetector:
         mean_x = sum(xs) / n
         mean_y = sum(scores) / n
 
-        numerator = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, scores))
+        numerator = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, scores, strict=False))
         denominator = sum((x - mean_x) ** 2 for x in xs)
 
         if denominator == 0:

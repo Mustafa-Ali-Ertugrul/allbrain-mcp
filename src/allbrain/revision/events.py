@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.revision.policies import REVISION_TEMPLATE_VERSION
 
-
 REVISION_REASON_CONTRADICTION = "contradiction"
 
 REQUIRED_KEYS: frozenset[str] = frozenset(

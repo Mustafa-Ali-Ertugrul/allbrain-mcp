@@ -2,19 +2,23 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.mitigation_learning.policy_store import PolicyStore
 from allbrain.mitigation_learning.model import (
-    StrategyStats,
     POLICY_UPDATE_MIN_RECORDS,
+    StrategyStats,
 )
+from allbrain.mitigation_learning.policy_store import PolicyStore
 
 
-def _make_stats(ft: str, sig: str, strat: str, uses: int = 3,
-                succ: int = 2, eff: float = 0.5,
-                disabled: bool = False) -> StrategyStats:
+def _make_stats(
+    ft: str, sig: str, strat: str, uses: int = 3, succ: int = 2, eff: float = 0.5, disabled: bool = False
+) -> StrategyStats:
     return StrategyStats(
-        fault_type=ft, signal_type=sig, strategy=strat,
-        total_uses=uses, successes=succ, failures=uses - succ,
+        fault_type=ft,
+        signal_type=sig,
+        strategy=strat,
+        total_uses=uses,
+        successes=succ,
+        failures=uses - succ,
         avg_effectiveness=eff,
         success_rate=succ / max(uses, 1),
         disabled=disabled,
@@ -31,12 +35,20 @@ class TestPolicyEvolution:
     def test_new_version_on_significant_change(self) -> None:
         stats = {
             ("timeout", "retry_spikes", "A"): _make_stats(
-                "timeout", "retry_spikes", "A",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=8, eff=0.8,
+                "timeout",
+                "retry_spikes",
+                "A",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=8,
+                eff=0.8,
             ),
             ("timeout", "retry_spikes", "B"): _make_stats(
-                "timeout", "retry_spikes", "B",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=2, eff=0.2,
+                "timeout",
+                "retry_spikes",
+                "B",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=2,
+                eff=0.2,
             ),
         }
         p1 = self.store.update_if_needed("timeout", stats)
@@ -46,12 +58,20 @@ class TestPolicyEvolution:
 
         stats2 = {
             ("timeout", "retry_spikes", "A"): _make_stats(
-                "timeout", "retry_spikes", "A",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=2, eff=0.2,
+                "timeout",
+                "retry_spikes",
+                "A",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=2,
+                eff=0.2,
             ),
             ("timeout", "retry_spikes", "B"): _make_stats(
-                "timeout", "retry_spikes", "B",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=8, eff=0.8,
+                "timeout",
+                "retry_spikes",
+                "B",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=8,
+                eff=0.8,
             ),
         }
         p2 = self.store.update_if_needed("timeout", stats2)
@@ -61,8 +81,12 @@ class TestPolicyEvolution:
     def test_no_new_version_below_min_records(self) -> None:
         stats = {
             ("timeout", "s", "A"): _make_stats(
-                "timeout", "s", "A",
-                uses=POLICY_UPDATE_MIN_RECORDS - 1, succ=5, eff=0.5,
+                "timeout",
+                "s",
+                "A",
+                uses=POLICY_UPDATE_MIN_RECORDS - 1,
+                succ=5,
+                eff=0.5,
             ),
         }
         p = self.store.update_if_needed("timeout", stats)
@@ -71,8 +95,12 @@ class TestPolicyEvolution:
     def test_policy_versions_attributes(self) -> None:
         stats = {
             ("timeout", "s", "A"): _make_stats(
-                "timeout", "s", "A",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=8, eff=0.8,
+                "timeout",
+                "s",
+                "A",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=8,
+                eff=0.8,
             ),
         }
         p = self.store.update_if_needed("timeout", stats)
@@ -86,13 +114,21 @@ class TestPolicyEvolution:
     def test_policy_includes_disabled_strategies(self) -> None:
         stats = {
             ("timeout", "s", "A"): _make_stats(
-                "timeout", "s", "A",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=1, eff=0.1,
+                "timeout",
+                "s",
+                "A",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=1,
+                eff=0.1,
                 disabled=True,
             ),
             ("timeout", "s", "B"): _make_stats(
-                "timeout", "s", "B",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=8, eff=0.8,
+                "timeout",
+                "s",
+                "B",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=8,
+                eff=0.8,
             ),
         }
         p = self.store.update_if_needed("timeout", stats)
@@ -102,8 +138,12 @@ class TestPolicyEvolution:
     def test_policy_includes_urgency_multipliers(self) -> None:
         stats = {
             ("timeout", "s", "A"): _make_stats(
-                "timeout", "s", "A",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=8, eff=0.5,
+                "timeout",
+                "s",
+                "A",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=8,
+                eff=0.5,
             ),
         }
         p = self.store.update_if_needed("timeout", stats)
@@ -114,15 +154,23 @@ class TestPolicyEvolution:
     def test_get_history(self) -> None:
         stats1 = {
             ("timeout", "s", "A"): _make_stats(
-                "timeout", "s", "A",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=8, eff=0.8,
+                "timeout",
+                "s",
+                "A",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=8,
+                eff=0.8,
             ),
         }
         self.store.update_if_needed("timeout", stats1)
         stats2 = {
             ("timeout", "s", "A"): _make_stats(
-                "timeout", "s", "A",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=2, eff=0.2,
+                "timeout",
+                "s",
+                "A",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=2,
+                eff=0.2,
             ),
         }
         self.store.update_if_needed("timeout", stats2)
@@ -134,15 +182,23 @@ class TestPolicyEvolution:
     def test_get_current_is_latest(self) -> None:
         stats1 = {
             ("timeout", "s", "A"): _make_stats(
-                "timeout", "s", "A",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=5, eff=0.5,
+                "timeout",
+                "s",
+                "A",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=5,
+                eff=0.5,
             ),
         }
         self.store.update_if_needed("timeout", stats1)
         stats2 = {
             ("timeout", "s", "B"): _make_stats(
-                "timeout", "s", "B",
-                uses=POLICY_UPDATE_MIN_RECORDS, succ=3, eff=0.3,
+                "timeout",
+                "s",
+                "B",
+                uses=POLICY_UPDATE_MIN_RECORDS,
+                succ=3,
+                eff=0.3,
             ),
         }
         self.store.update_if_needed("timeout", stats2)

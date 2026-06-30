@@ -1,4 +1,5 @@
 """Domain module: foresight."""
+
 from __future__ import annotations
 
 import logging
@@ -6,27 +7,27 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.events import EventType
+from allbrain.foresight import ForesightEngine
+from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis, FuturePlan
+from allbrain.meta_reasoning import ConfidenceEngine, MetaReasoningManager
+from allbrain.models.schemas import (
+    EstimateConfidenceInput,
+    EvaluatePlanInput,
+    ExplainDecisionInput,
+    GenerateFuturePlansInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
     maybe_auto_snapshot,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    GenerateFuturePlansInput,
-    EvaluatePlanInput,
-    ExplainDecisionInput,
-    EstimateConfidenceInput,
-)
-from allbrain.events import EventType
-from allbrain.world import WorldModel
-from allbrain.foresight import ForesightEngine
-from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis, FuturePlan
-from allbrain.meta_reasoning import ConfidenceEngine, MetaReasoningManager
 from allbrain.uncertainty import observed_success_rate
+from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +128,6 @@ def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = EvaluatePlanInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         world_model = WorldModel()
         engine = ForesightEngine(max_horizon=data.max_horizon)
         current_state = world_model.observe()
@@ -198,7 +198,9 @@ def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
-def _lookup_foresight_plan(context: BrainContext, plan_id: str, bound_session_id: int, project_path: str) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+def _lookup_foresight_plan(
+    context: BrainContext, plan_id: str, bound_session_id: int, project_path: str
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     events = context.repository.list_events(project_path=context.project_path, limit=5000)
     plan_payload: dict[str, Any] | None = None
     for event in events:
@@ -208,11 +210,14 @@ def _lookup_foresight_plan(context: BrainContext, plan_id: str, bound_session_id
     if plan_payload is None:
         return None, None
     analysis_id = event.payload.get("analysis_id")
-    foresight_payload: dict[str, Any] | None = None
     candidates: list[dict[str, Any]] = []
     if isinstance(analysis_id, str):
         for ev in events:
-            if ev.type == EventType.FORESIGHT_EVALUATED.value and ev.payload.get("analysis_id") == analysis_id and ev.payload.get("plan_id") != plan_id:
+            if (
+                ev.type == EventType.FORESIGHT_EVALUATED.value
+                and ev.payload.get("analysis_id") == analysis_id
+                and ev.payload.get("plan_id") != plan_id
+            ):
                 candidates.append({k: v for k, v in ev.payload.items() if k not in ("analysis_id", "plan_id")})
     return plan_payload, {"analysis_id": analysis_id, "candidates": candidates} if analysis_id else None
 
@@ -230,7 +235,9 @@ def explain_decision_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         selected_plan = FuturePlan.model_validate(plan_payload)
         candidates = [FuturePlan.model_validate(c) for c in lookup["candidates"]]
         manager = MetaReasoningManager()
-        explanation = manager.explain(selected_plan, candidates, _dummy_foresight_result(selected_plan, lookup["analysis_id"]))
+        explanation = manager.explain(
+            selected_plan, candidates, _dummy_foresight_result(selected_plan, lookup["analysis_id"])
+        )
         audit_tool_call(
             context,
             tool_name="explain_decision",
@@ -264,7 +271,9 @@ def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         except Exception:
             historical = 0.7
         engine = ConfidenceEngine()
-        estimate = engine.estimate(selected_plan, _dummy_foresight_result(selected_plan, lookup["analysis_id"]), historical)
+        estimate = engine.estimate(
+            selected_plan, _dummy_foresight_result(selected_plan, lookup["analysis_id"]), historical
+        )
         audit_tool_call(
             context,
             tool_name="estimate_confidence",
@@ -282,8 +291,10 @@ def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult
 
 
 def _dummy_foresight_result(selected_plan, analysis_id: str):
-    from allbrain.foresight.models import ForesightAnalysis
     from uuid6 import uuid7
+
+    from allbrain.foresight.models import ForesightAnalysis
+
     return ForesightAnalysis(
         analysis_id=uuid7(),
         action="lookup",

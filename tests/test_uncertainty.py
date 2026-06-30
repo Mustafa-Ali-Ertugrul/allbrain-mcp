@@ -149,11 +149,13 @@ def test_u9_manager_integration() -> None:
 
 
 def test_u10_pydantic_validation() -> None:
-    with pytest.raises(Exception):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
         ConfidenceComponent(name="x", score=1.5)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         KnowledgeGap(topic="x", severity=-0.1, description="x", recoverable=True)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         UncertaintyEstimate(
             confidence=1.5,
             uncertainty=0.0,
@@ -166,8 +168,10 @@ def test_observed_success_rate_empty_log() -> None:
 
 
 def test_observed_success_rate_with_events() -> None:
-    from allbrain.models.schemas import EventRead
     from uuid import uuid4
+
+    from allbrain.models.schemas import EventRead
+
     base_time = datetime(2026, 1, 1, 12, 0, 0)
     event_list = []
     for _ in range(8):

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from allbrain.episodic.model import (
-    IMPORTANCE_THRESHOLD,
     HIGH_REWARD_THRESHOLD,
+    IMPORTANCE_THRESHOLD,
     LOW_REWARD_THRESHOLD,
 )
 
@@ -26,6 +26,4 @@ def should_store_episode(
         return True
     if reward >= high_reward_threshold:
         return True
-    if reward <= low_reward_threshold:
-        return True
-    return False
+    return reward <= low_reward_threshold

@@ -42,13 +42,21 @@ class TestShouldStoreEpisode:
         assert should_store_episode(reward=0.21, importance=0.49) is False
 
     def test_custom_thresholds(self):
-        assert should_store_episode(
-            reward=0.6, importance=0.4,
-            importance_threshold=0.3,
-        ) is True
+        assert (
+            should_store_episode(
+                reward=0.6,
+                importance=0.4,
+                importance_threshold=0.3,
+            )
+            is True
+        )
 
     def test_custom_high_reward(self):
-        assert should_store_episode(
-            reward=0.5, importance=0.2,
-            high_reward_threshold=0.4,
-        ) is True
+        assert (
+            should_store_episode(
+                reward=0.5,
+                importance=0.2,
+                high_reward_threshold=0.4,
+            )
+            is True
+        )

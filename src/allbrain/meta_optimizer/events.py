@@ -4,14 +4,24 @@ from typing import Any
 
 from allbrain.meta_optimizer.model import META_OPTIMIZER_TEMPLATE_VERSION
 
-WEIGHTS_ADAPTED_KEYS: frozenset[str] = frozenset({
-    "fault_type", "success_weight", "risk_weight",
-    "stability_weight", "drift_weight", "version",
-})
+WEIGHTS_ADAPTED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "success_weight",
+        "risk_weight",
+        "stability_weight",
+        "drift_weight",
+        "version",
+    }
+)
 
-META_OPTIMIZER_GUARDED_KEYS: frozenset[str] = frozenset({
-    "fault_type", "reason", "stability_score",
-})
+META_OPTIMIZER_GUARDED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "reason",
+        "stability_score",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:

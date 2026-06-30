@@ -56,4 +56,3 @@ class DashboardDataBuilder:
             return 0
         index = min(len(values) - 1, int((len(values) - 1) * percentile))
         return values[index]
-

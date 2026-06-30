@@ -1,4 +1,5 @@
 """Domain module: ui."""
+
 from __future__ import annotations
 
 import logging
@@ -6,6 +7,12 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.models.schemas import (
+    ToolResult,
+    UserInputError,
+)
+from allbrain.security.rate_limit import check_tool_rate
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
@@ -14,12 +21,6 @@ from allbrain.server.tools._shared import (
     filter_observability_events,
     maybe_auto_snapshot,
     observability_project_and_limit,
-)
-from allbrain.security.rate_limit import check_tool_rate
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
 )
 from allbrain.ui import GraphExplorer, MetricsDashboard, ReplayViewer, TraceViewer
 
@@ -69,7 +70,13 @@ def get_ui_replay_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         audit_tool_call(
             context,
             tool_name="get_ui_replay_view",
-            tool_args={"workflow_id": kwargs.get("workflow_id"), "task_id": kwargs.get("task_id"), "cursor": kwargs.get("cursor", 0), "step_count": kwargs.get("step_count"), "limit": limit},
+            tool_args={
+                "workflow_id": kwargs.get("workflow_id"),
+                "task_id": kwargs.get("task_id"),
+                "cursor": kwargs.get("cursor", 0),
+                "step_count": kwargs.get("step_count"),
+                "limit": limit,
+            },
             session_id=bound_session_id,
         )
         return ToolResult(ok=True, data=view)
@@ -137,7 +144,9 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        result = get_ui_trace_view_impl(context, project_path=context.project_path, workflow_id=workflow_id, task_id=task_id, limit=limit)
+        result = get_ui_trace_view_impl(
+            context, project_path=context.project_path, workflow_id=workflow_id, task_id=task_id, limit=limit
+        )
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -164,7 +173,9 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        result = get_ui_graph_view_impl(context, project_path=context.project_path, workflow_id=workflow_id, task_id=task_id, limit=limit)
+        result = get_ui_graph_view_impl(
+            context, project_path=context.project_path, workflow_id=workflow_id, task_id=task_id, limit=limit
+        )
         return result.model_dump(mode="json")
 
     @mcp.tool

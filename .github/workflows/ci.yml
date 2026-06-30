@@ -23,8 +23,8 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --extra dev
-      - run: uv run ruff check --exit-zero src/ tests/
-      - run: uv run ruff format --check src/ tests/ || true
+      - run: uv run ruff check src/ tests/
+      - run: uv run ruff format --check src/ tests/
 
   security:
     name: Security (Bandit)

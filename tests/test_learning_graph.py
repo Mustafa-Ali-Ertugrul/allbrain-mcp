@@ -3,11 +3,11 @@ from __future__ import annotations
 import pytest
 
 from allbrain.learning_graph import (
+    LEARNING_GRAPH_REWRITE_INTERVAL,
+    GraphRewriter,
     LearningGraph,
     LearningNode,
-    GraphRewriter,
     NodeRegistry,
-    LEARNING_GRAPH_REWRITE_INTERVAL,
 )
 
 

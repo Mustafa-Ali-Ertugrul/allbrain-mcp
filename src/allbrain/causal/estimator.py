@@ -7,18 +7,19 @@ from allbrain.causal.model import (
     CAUSAL_CONFIDENCE_SHRINK,
     CAUSAL_IMPACT_THRESHOLD,
     CAUSAL_MIN_SAMPLES,
-    ImpactDirection,
     CausalImpact,
+    ImpactDirection,
 )
 from allbrain.events.schemas import EventType
 
 
 def _stable_causal_id(key: str, event_ids: list[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{key}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{key}:{ek}".encode()).digest()
     return f"causal-est-{d.hex()[:12]}"
 
 
@@ -52,10 +53,7 @@ def _normalized_outcomes(
             continue
 
         telemetry = payload.get("telemetry_score") or payload.get("runtime_score")
-        if isinstance(telemetry, (int, float)):
-            ctx_factor = max(0.3, min(1.0, float(telemetry) * 2.0))
-        else:
-            ctx_factor = 0.5
+        ctx_factor = max(0.3, min(1.0, float(telemetry) * 2.0)) if isinstance(telemetry, (int, float)) else 0.5
 
         raw_score = max(0.0, min(1.0, float(score)))
         scores.append(raw_score * ctx_factor)
@@ -91,10 +89,13 @@ def estimate_treatment_effect(
 
     if min_n < CAUSAL_MIN_SAMPLES:
         return CausalImpact(
-            agent_id=agent_a, task_type=task_type,
+            agent_id=agent_a,
+            task_type=task_type,
             alternative_agent=agent_b,
-            impact_score=0.0, confidence=0.0,
-            sample_count=min_n, analysis_id=analysis_id,
+            impact_score=0.0,
+            confidence=0.0,
+            sample_count=min_n,
+            analysis_id=analysis_id,
         )
 
     a_mean = sum(a_scores) / a_n
@@ -106,7 +107,8 @@ def estimate_treatment_effect(
     confidence = raw_confidence * (1.0 - CAUSAL_CONFIDENCE_SHRINK * min(1.0, abs(impact_score)))
 
     return CausalImpact(
-        agent_id=agent_a, task_type=task_type,
+        agent_id=agent_a,
+        task_type=task_type,
         alternative_agent=agent_b,
         impact_score=impact_score,
         confidence=confidence,

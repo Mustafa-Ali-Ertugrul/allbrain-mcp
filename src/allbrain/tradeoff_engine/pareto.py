@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.tradeoff_engine.model import UtilityResult, ParetoFrontier
+from allbrain.tradeoff_engine.model import ParetoFrontier, UtilityResult
 
 
 class ParetoAnalyzer:
@@ -37,13 +37,18 @@ class ParetoAnalyzer:
                 frontier.append(a)
 
         dominated.extend(unsafe)
-        return ParetoFrontier(fault_type=safe[0].fault_type if safe else "unknown",
-                              frontier=frontier, dominated=dominated)
+        return ParetoFrontier(
+            fault_type=safe[0].fault_type if safe else "unknown", frontier=frontier, dominated=dominated
+        )
 
     @staticmethod
     def _dominates(a: UtilityResult, b: UtilityResult) -> bool:
-        dims = [("safety", a.safety, b.safety), ("stability", a.stability, b.stability),
-                ("success", a.success, b.success), ("efficiency", a.efficiency, b.efficiency)]
+        dims = [
+            ("safety", a.safety, b.safety),
+            ("stability", a.stability, b.stability),
+            ("success", a.success, b.success),
+            ("efficiency", a.efficiency, b.efficiency),
+        ]
         all_ge = all(av >= bv for _, av, bv in dims)
         any_gt = any(av > bv for _, av, bv in dims)
         return all_ge and any_gt

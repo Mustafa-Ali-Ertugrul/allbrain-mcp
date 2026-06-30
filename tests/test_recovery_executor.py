@@ -2,21 +2,23 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.self_repair.recovery_executor import PolicySnapshotManager, RecoveryExecutor
 from allbrain.self_repair.model import (
-    StabilityReport,
-    RollbackPlan,
-    STABLE_BASELINE,
     MIN_STABILITY_THRESHOLD,
+    STABLE_BASELINE,
+    RollbackPlan,
+    StabilityReport,
 )
 from allbrain.self_repair.policy_health_monitor import PolicyHealthMonitor
+from allbrain.self_repair.recovery_executor import PolicySnapshotManager, RecoveryExecutor
 
 
 class TestSnapshotManager:
     def test_take_snapshot(self):
         mgr = PolicySnapshotManager()
         snap = mgr.take_snapshot(
-            fault_type="timeout", version=1, stability_score=0.80,
+            fault_type="timeout",
+            version=1,
+            stability_score=0.80,
             stats_snapshot={"rate": 0.9},
         )
         assert snap.fault_type == "timeout"
@@ -57,22 +59,33 @@ class TestRecoveryExecutor:
     def test_stabilize(self):
         executor = RecoveryExecutor()
         monitor = PolicyHealthMonitor()
-        monitor.check("timeout", StabilityReport(
-            fault_type="timeout", policy_version=2,
-            stability_score=0.30, success_rate=0.3,
-            drift_consistency=0.5, outcome_variance=0.2,
-            safety_violations=1,
-            is_stable=0.30 >= MIN_STABILITY_THRESHOLD,
-        ))
+        monitor.check(
+            "timeout",
+            StabilityReport(
+                fault_type="timeout",
+                policy_version=2,
+                stability_score=0.30,
+                success_rate=0.3,
+                drift_consistency=0.5,
+                outcome_variance=0.2,
+                safety_violations=1,
+                is_stable=0.30 >= MIN_STABILITY_THRESHOLD,
+            ),
+        )
         plan = RollbackPlan(
-            rollback_id="r1", fault_type="timeout",
-            from_version=2, to_version=1,
-            strategy="full", triggered_by="stability=0.30",
+            rollback_id="r1",
+            fault_type="timeout",
+            from_version=2,
+            to_version=1,
+            strategy="full",
+            triggered_by="stability=0.30",
             created_at=100.0,
         )
         report = executor.stabilize(
-            fault_type="timeout", plan=plan,
-            health_monitor=monitor, drift_guard=None,
+            fault_type="timeout",
+            plan=plan,
+            health_monitor=monitor,
+            drift_guard=None,
         )
         assert report.stabilized
         assert report.post_recovery_stability == STABLE_BASELINE

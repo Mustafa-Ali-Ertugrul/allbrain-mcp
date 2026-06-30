@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 from allbrain.events.schemas import EventType
 from allbrain.evidence import EvidenceManager, EvidenceReducer
@@ -9,6 +10,8 @@ from allbrain.revision import (
     RevisionManager,
     RevisionPolicy,
     RevisionReducer,
+)
+from allbrain.revision import (
     make_payload as make_revision_payload,
 )
 
@@ -43,9 +46,15 @@ def test_last_trust_updated_wins_in_reducer():
 def test_trust_default_when_no_trust_event():
     """Yol B: no TRUST_UPDATED in log -> trust_score = 1.0 (not 0.0)."""
     events = [
-        MockEvent(EventType.EVIDENCE_RECORDED.value, id="1", payload={
-            "context_key": "default", "weight": 0.8, "source": "task_completed",
-        }),
+        MockEvent(
+            EventType.EVIDENCE_RECORDED.value,
+            id="1",
+            payload={
+                "context_key": "default",
+                "weight": 0.8,
+                "source": "task_completed",
+            },
+        ),
     ]
     reducer = EvidenceReducer()
     for e in events:

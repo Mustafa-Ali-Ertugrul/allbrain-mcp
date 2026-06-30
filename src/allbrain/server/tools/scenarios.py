@@ -1,4 +1,5 @@
 """Domain module: scenarios."""
+
 from __future__ import annotations
 
 import logging
@@ -6,22 +7,22 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.events import EventType
+from allbrain.models.schemas import (
+    EvaluateScenariosInput,
+    GenerateScenariosInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.scenarios import ScenarioAnalysis, ScenarioEngine
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
     maybe_auto_snapshot,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    GenerateScenariosInput,
-    EvaluateScenariosInput,
-)
-from allbrain.events import EventType
 from allbrain.world import WorldModel
-from allbrain.scenarios import ScenarioEngine, ScenarioAnalysis
 
 logger = logging.getLogger(__name__)
 

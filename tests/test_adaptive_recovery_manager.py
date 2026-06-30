@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.adaptive_recovery import AdaptiveRecoveryManager, CHAIN_OUTCOME_SUCCESS, CHAIN_OUTCOME_FAILED, CHAIN_OUTCOME_ESCALATED
+from allbrain.adaptive_recovery import (
+    CHAIN_OUTCOME_ESCALATED,
+    CHAIN_OUTCOME_FAILED,
+    CHAIN_OUTCOME_SUCCESS,
+    AdaptiveRecoveryManager,
+)
 from allbrain.events.schemas import EventType
 from allbrain.recovery_consensus.model import CandidateStrategy
 
@@ -145,5 +150,7 @@ class TestAdaptiveRecoveryManager:
     def test_chain_id_different_for_different_faults(self):
         manager = AdaptiveRecoveryManager()
         r1 = manager.run_chain(fault_id="f1", fault_type="timeout", candidates=[_c("retry")], attempt_outcomes=[True])
-        r2 = manager.run_chain(fault_id="f2", fault_type="corruption", candidates=[_c("retry")], attempt_outcomes=[True])
+        r2 = manager.run_chain(
+            fault_id="f2", fault_type="corruption", candidates=[_c("retry")], attempt_outcomes=[True]
+        )
         assert r1["chain_id"] != r2["chain_id"]

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.predictive_failure.model import (
-    FailurePrediction,
-    LEVEL_FAILURE,
-    LEVEL_WARNING,
-    LEVEL_SAFE,
-)
 from allbrain.predictive_failure.mitigation_planner import MitigationPlanner
+from allbrain.predictive_failure.model import (
+    LEVEL_FAILURE,
+    LEVEL_SAFE,
+    LEVEL_WARNING,
+    FailurePrediction,
+)
 
 
 def _make_pred(

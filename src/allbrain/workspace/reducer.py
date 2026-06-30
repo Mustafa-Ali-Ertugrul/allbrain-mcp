@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events.schemas import EventType
-from allbrain.workspace.events import validate_ws_updated, validate_ws_added, validate_ws_removed
+from allbrain.workspace.events import validate_ws_added, validate_ws_removed, validate_ws_updated
 from allbrain.workspace.model import DEFAULT_CAPACITY
 
 
@@ -57,8 +57,12 @@ class WorkspaceReducer:
             self._evicted_count += 1
 
     def snapshot(self) -> dict[str, dict[str, Any]]:
-        return {"active": dict(self._active), "capacity": self._capacity,
-                "seen": self._seen_count, "evicted": self._evicted_count}
+        return {
+            "active": dict(self._active),
+            "capacity": self._capacity,
+            "seen": self._seen_count,
+            "evicted": self._evicted_count,
+        }
 
     def all_snapshots(self) -> dict[str, dict[str, dict[str, Any]]]:
         return {"default": self.snapshot()}

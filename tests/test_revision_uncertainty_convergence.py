@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 from allbrain.events.schemas import EventType
 from allbrain.replay import EventReplayEngine
@@ -9,6 +10,8 @@ from allbrain.revision import (
     RevisionManager,
     RevisionPolicy,
     RevisionReducer,
+)
+from allbrain.revision import (
     make_payload as make_revision_payload,
 )
 from allbrain.uncertainty import (
@@ -44,8 +47,9 @@ def test_manager_equals_reducer_with_uncertainty():
     events = [
         MockEvent(EventType.BELIEF_REVISED.value, id="1", payload=revised_payload),
         MockEvent(EventType.UNCERTAINTY_COMPUTED.value, id="2", payload=uncertainty_payload),
-        MockEvent(EventType.CONTRADICTION_DETECTED.value, id="3",
-                  payload={"context_key": "default", "contradictions": []}),
+        MockEvent(
+            EventType.CONTRADICTION_DETECTED.value, id="3", payload={"context_key": "default", "contradictions": []}
+        ),
     ]
 
     manager = RevisionManager()
@@ -74,8 +78,9 @@ def test_no_uncertainty_defaults_to_zero():
     )
     events = [
         MockEvent(EventType.BELIEF_REVISED.value, id="1", payload=revised_payload),
-        MockEvent(EventType.CONTRADICTION_DETECTED.value, id="2",
-                  payload={"context_key": "default", "contradictions": []}),
+        MockEvent(
+            EventType.CONTRADICTION_DETECTED.value, id="2", payload={"context_key": "default", "contradictions": []}
+        ),
         MockEvent(EventType.TASK_COMPLETED.value, id="3"),
     ]
 
@@ -115,8 +120,9 @@ def test_replay_round_trip_with_uncertainty():
         MockEvent(EventType.TASK_COMPLETED.value, id="1"),
         MockEvent(EventType.UNCERTAINTY_COMPUTED.value, id="2", payload=uncertainty_payload),
         MockEvent(EventType.BELIEF_REVISED.value, id="3", payload=revised_payload),
-        MockEvent(EventType.CONTRADICTION_DETECTED.value, id="4",
-                  payload={"context_key": "default", "contradictions": []}),
+        MockEvent(
+            EventType.CONTRADICTION_DETECTED.value, id="4", payload={"context_key": "default", "contradictions": []}
+        ),
     ]
 
     engine = EventReplayEngine()
@@ -140,10 +146,16 @@ def test_uncertainty_in_payload_changes_confidence():
         evidence_count=0,
     )
     u_high = make_uncertainty_payload(
-        context_key="default", uncertainty=0.50, confidence_interval=0.25, evidence_count=10,
+        context_key="default",
+        uncertainty=0.50,
+        confidence_interval=0.25,
+        evidence_count=10,
     )
     u_low = make_uncertainty_payload(
-        context_key="default", uncertainty=0.10, confidence_interval=0.05, evidence_count=10,
+        context_key="default",
+        uncertainty=0.10,
+        confidence_interval=0.05,
+        evidence_count=10,
     )
 
     events_high = [

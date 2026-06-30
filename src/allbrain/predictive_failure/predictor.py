@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from allbrain.predictive_failure.model import (
-    FailurePrediction,
+    LEVEL_FAILURE,
     LEVEL_SAFE,
     LEVEL_WARNING,
-    LEVEL_FAILURE,
-    RISK_THRESHOLD_WARNING,
     RISK_THRESHOLD_FAILURE,
+    RISK_THRESHOLD_WARNING,
+    FailurePrediction,
 )
 
 

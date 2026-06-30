@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 ROUTING_TEMPLATE_VERSION = 1
 
 ROUTING_REPUTATION_WEIGHT = 0.35

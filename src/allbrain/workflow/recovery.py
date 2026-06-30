@@ -45,7 +45,7 @@ class RecoveryManager:
         node.retry_count += 1
 
         if node.retry_count <= node.max_retries:
-            delay = min(self.backoff_base ** node.retry_count, self.max_delay)
+            delay = min(self.backoff_base**node.retry_count, self.max_delay)
             if state_machine is not None:
                 state_machine.transition(node_id, WorkflowStatus.FAILED, reason=f"failure: {error}")
                 state_machine.transition(node_id, WorkflowStatus.READY, reason=f"retry_scheduled: {error}")
@@ -123,11 +123,16 @@ class RecoveryManager:
         while queue:
             current = queue.pop(0)
             for succ in graph.successors(current):
-                if succ.node_id not in visited and succ.status not in {WorkflowStatus.COMPLETED, WorkflowStatus.BLOCKED}:
+                if succ.node_id not in visited and succ.status not in {
+                    WorkflowStatus.COMPLETED,
+                    WorkflowStatus.BLOCKED,
+                }:
                     visited.add(succ.node_id)
                     affected.append(succ.node_id)
                     if state_machine is not None:
-                        state_machine.transition(succ.node_id, WorkflowStatus.BLOCKED, reason=f"predecessor_blocked: {current}")
+                        state_machine.transition(
+                            succ.node_id, WorkflowStatus.BLOCKED, reason=f"predecessor_blocked: {current}"
+                        )
                     else:
                         succ.status = WorkflowStatus.BLOCKED
                     queue.append(succ.node_id)

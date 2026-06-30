@@ -5,12 +5,12 @@ import time
 
 from allbrain.mitigation_learning.policy_store import PolicyStore
 from allbrain.self_repair.model import (
+    MIN_CYCLES_BETWEEN_ROLLBACKS,
+    MIN_STABILITY_THRESHOLD,
+    STABLE_BASELINE,
+    PolicySnapshot,
     RollbackPlan,
     StabilityReport,
-    PolicySnapshot,
-    STABLE_BASELINE,
-    MIN_STABILITY_THRESHOLD,
-    MIN_CYCLES_BETWEEN_ROLLBACKS,
 )
 
 
@@ -40,9 +40,7 @@ class RollbackEngine:
         return dict(self._rollback_count)
 
     def can_rollback(self, fault_type: str) -> bool:
-        last = self._last_rollback_cycle.get(
-            fault_type, -self._min_cycles - 1
-        )
+        last = self._last_rollback_cycle.get(fault_type, -self._min_cycles - 1)
         return (self._total_cycle_count - last) >= self._min_cycles
 
     def plan_rollback(
@@ -64,16 +62,9 @@ class RollbackEngine:
         if not self.can_rollback(fault_type):
             return None
 
-        candidates = [
-            s for s in history
-            if s.stability_score >= STABLE_BASELINE
-            and s.fault_type == fault_type
-        ]
+        candidates = [s for s in history if s.stability_score >= STABLE_BASELINE and s.fault_type == fault_type]
         if not candidates:
-            candidates = [
-                s for s in history
-                if s.policy_version == 1 and s.fault_type == fault_type
-            ]
+            candidates = [s for s in history if s.policy_version == 1 and s.fault_type == fault_type]
         if not candidates or candidates[-1].policy_version >= current_version:
             return None
 
@@ -108,9 +99,7 @@ class RollbackEngine:
         consumers to use the target version.
         """
         self._last_rollback_cycle[plan.fault_type] = self._total_cycle_count
-        self._rollback_count[plan.fault_type] = (
-            self._rollback_count.get(plan.fault_type, 0) + 1
-        )
+        self._rollback_count[plan.fault_type] = self._rollback_count.get(plan.fault_type, 0) + 1
         return True
 
     def advance_cycle(self) -> None:

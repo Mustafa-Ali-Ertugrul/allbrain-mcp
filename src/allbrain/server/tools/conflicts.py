@@ -1,4 +1,5 @@
 """Domain module: conflicts."""
+
 from __future__ import annotations
 
 import logging
@@ -6,20 +7,20 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from allbrain.server.context import BrainContext
-from allbrain.server.tools._shared import (
-    audit_tool_call,
-    bind_session_id,
-)
-from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.conflict.detector import ConflictDetector
+from allbrain.conflict.resolver import ConflictResolver
+from allbrain.context.parallel_builder import ParallelContextBuilder
 from allbrain.models.schemas import (
     ConflictInput,
     ToolResult,
     UserInputError,
 )
-from allbrain.conflict.detector import ConflictDetector
-from allbrain.conflict.resolver import ConflictResolver
-from allbrain.context.parallel_builder import ParallelContextBuilder
+from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.server.context import BrainContext
+from allbrain.server.tools._shared import (
+    audit_tool_call,
+    bind_session_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,6 @@ def detect_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ConflictInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         conflicts = ConflictDetector().detect(events, threshold=data.threshold)
         audit_tool_call(
@@ -51,7 +51,6 @@ def resolve_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ConflictInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         conflicts = ConflictDetector().detect(events, threshold=data.threshold)
         agent_view = ParallelContextBuilder().build_agent_view(events)

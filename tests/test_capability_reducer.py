@@ -28,8 +28,16 @@ class TestReducer:
         r = CapabilityReducer()
         r.apply(E("other", "0", {"x": 1}))
         evts = [
-            E(EventType.CAPABILITY_MATCHED.value, "1", make_matched_payload(agent_id="a", task_type="x", match_score=0.8, match_kind="exact")),
-            E(EventType.CAPABILITY_MATCHED.value, "2", make_matched_payload(agent_id="a", task_type="x", match_score=0.3, match_kind="partial")),
+            E(
+                EventType.CAPABILITY_MATCHED.value,
+                "1",
+                make_matched_payload(agent_id="a", task_type="x", match_score=0.8, match_kind="exact"),
+            ),
+            E(
+                EventType.CAPABILITY_MATCHED.value,
+                "2",
+                make_matched_payload(agent_id="a", task_type="x", match_score=0.3, match_kind="partial"),
+            ),
         ]
         for e in evts:
             r.apply(e)
@@ -39,7 +47,11 @@ class TestReducer:
 
     def test_idempotency(self):
         r = CapabilityReducer()
-        e = E(EventType.CAPABILITY_MATCHED.value, "1", make_matched_payload(agent_id="a", task_type="x", match_score=0.5, match_kind="partial"))
+        e = E(
+            EventType.CAPABILITY_MATCHED.value,
+            "1",
+            make_matched_payload(agent_id="a", task_type="x", match_score=0.5, match_kind="partial"),
+        )
         r.apply(e)
         r.apply(e)
         assert r.snapshot(agent_id="a").capability_count == 1
@@ -53,8 +65,16 @@ class TestReducer:
 class TestManagerEqualsReducer:
     def test_convergence(self):
         evts = [
-            E(EventType.CAPABILITY_MATCHED.value, "1", make_matched_payload(agent_id="a", task_type="x", match_score=0.8, match_kind="exact")),
-            E(EventType.CAPABILITY_MATCHED.value, "2", make_matched_payload(agent_id="a", task_type="x", match_score=0.3, match_kind="partial")),
+            E(
+                EventType.CAPABILITY_MATCHED.value,
+                "1",
+                make_matched_payload(agent_id="a", task_type="x", match_score=0.8, match_kind="exact"),
+            ),
+            E(
+                EventType.CAPABILITY_MATCHED.value,
+                "2",
+                make_matched_payload(agent_id="a", task_type="x", match_score=0.3, match_kind="partial"),
+            ),
         ]
         mgr = CapabilityManager()
         rdr = CapabilityReducer()

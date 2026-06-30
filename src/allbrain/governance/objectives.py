@@ -10,11 +10,5 @@ class LongHorizonObjectiveSynthesizer:
             "preserve_auditability",
             "bound_autonomy_growth",
         ]
-        pressure = sorted(
-            {
-                str(proposal.get("target_layer"))
-                for proposal in proposals
-                if proposal.get("target_layer")
-            }
-        )
+        pressure = sorted({str(proposal.get("target_layer")) for proposal in proposals if proposal.get("target_layer")})
         return {"objectives": objectives, "pressured_layers": pressure}

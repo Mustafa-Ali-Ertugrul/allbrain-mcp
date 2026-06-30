@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import pytest
+
 from allbrain.objective_system import (
-    Objective, ObjectiveEvaluator, ObjectiveStore, ObjectiveWeights,
     OBJECTIVE_REBALANCE_INTERVAL,
+    Objective,
+    ObjectiveEvaluator,
+    ObjectiveStore,
+    ObjectiveWeights,
 )
 
 

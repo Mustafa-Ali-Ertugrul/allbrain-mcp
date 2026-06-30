@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 TELEMETRY_TEMPLATE_VERSION = 1
 
 MAX_DURATION_MS = 10000.0

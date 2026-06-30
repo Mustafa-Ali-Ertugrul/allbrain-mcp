@@ -5,9 +5,9 @@ import math
 import pytest
 
 from allbrain.policy_competition import (
-    PolicyScorer,
-    PolicyCandidate,
     COMPETITION_SCORE_WEIGHTS,
+    PolicyCandidate,
+    PolicyScorer,
 )
 
 
@@ -42,7 +42,7 @@ class TestPolicyScorer:
         c = PolicyCandidate("p1", "timeout", "retry")
         r = scorer.score(c, success_rate=0.8, risk_estimate=0.7, stability_estimate=0.6, drift_estimate=0.1)
         expected = (
-            + 0.8 * COMPETITION_SCORE_WEIGHTS["success_rate"]
+            +0.8 * COMPETITION_SCORE_WEIGHTS["success_rate"]
             - (1 - 0.7) * COMPETITION_SCORE_WEIGHTS["risk_penalty"]
             + 0.6 * COMPETITION_SCORE_WEIGHTS["stability_bonus"]
             - 0.1 * COMPETITION_SCORE_WEIGHTS["drift_penalty"]
@@ -54,7 +54,7 @@ class TestPolicyScorer:
         c = PolicyCandidate("p1", "timeout", "retry")
         r = scorer.score(c, success_rate=0.0, risk_estimate=0.0, stability_estimate=0.0, drift_estimate=0.0)
         result = (
-            + 0.0 * COMPETITION_SCORE_WEIGHTS["success_rate"]
+            +0.0 * COMPETITION_SCORE_WEIGHTS["success_rate"]
             - 1.0 * COMPETITION_SCORE_WEIGHTS["risk_penalty"]
             + 0.0 * COMPETITION_SCORE_WEIGHTS["stability_bonus"]
             - 0.0 * COMPETITION_SCORE_WEIGHTS["drift_penalty"]
@@ -66,7 +66,7 @@ class TestPolicyScorer:
         c = PolicyCandidate("p1", "timeout", "retry")
         r = scorer.score(c, success_rate=1.0, risk_estimate=1.0, stability_estimate=1.0, drift_estimate=0.0)
         expected = (
-            + 1.0 * COMPETITION_SCORE_WEIGHTS["success_rate"]
+            +1.0 * COMPETITION_SCORE_WEIGHTS["success_rate"]
             - 0.0 * COMPETITION_SCORE_WEIGHTS["risk_penalty"]
             + 1.0 * COMPETITION_SCORE_WEIGHTS["stability_bonus"]
             - 0.0 * COMPETITION_SCORE_WEIGHTS["drift_penalty"]

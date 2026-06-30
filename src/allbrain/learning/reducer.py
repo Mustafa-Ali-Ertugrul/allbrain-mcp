@@ -34,7 +34,8 @@ class CapabilityLearningReducer:
                 validate_observed(payload)
             except ValueError:
                 return
-            aid = str(payload["agent_id"]); tt = str(payload["task_type"])
+            aid = str(payload["agent_id"])
+            tt = str(payload["task_type"])
             k = self._key(aid, tt)
             obs = (
                 (1.0 if payload["success"] else 0.0) * 0.5
@@ -49,12 +50,15 @@ class CapabilityLearningReducer:
                 validate_learned(payload)
             except ValueError:
                 return
-            aid = str(payload["agent_id"]); tt = str(payload["task_type"])
+            aid = str(payload["agent_id"])
+            tt = str(payload["task_type"])
             k = self._key(aid, tt)
-            self._pairs[k] = [(
-                float(payload["new_score"]),
-                float(payload["delta"]),
-            )]
+            self._pairs[k] = [
+                (
+                    float(payload["new_score"]),
+                    float(payload["delta"]),
+                )
+            ]
             return
 
         if et == EventType.AGENT_CAPABILITY_DECAYED.value:
@@ -62,7 +66,8 @@ class CapabilityLearningReducer:
                 validate_decayed(payload)
             except ValueError:
                 return
-            aid = str(payload["agent_id"]); tt = str(payload["task_type"])
+            aid = str(payload["agent_id"])
+            tt = str(payload["task_type"])
             k = self._key(aid, tt)
             score = float(payload["new_score"])
             delta = float(payload["new_score"]) - float(payload["old_score"])
@@ -75,14 +80,17 @@ class CapabilityLearningReducer:
         evidence = sorted(self._seen_ids)
         if not rows:
             return LearnedCapabilityState(
-                agent_id=agent_id, task_type=task_type,
-                observation_count=0, capability_score=0.0,
+                agent_id=agent_id,
+                task_type=task_type,
+                observation_count=0,
+                capability_score=0.0,
                 last_delta=0.0,
                 analysis_id=_stable_learning_id(k, evidence),
             )
         last_score, last_delta = rows[-1]
         return LearnedCapabilityState(
-            agent_id=agent_id, task_type=task_type,
+            agent_id=agent_id,
+            task_type=task_type,
             observation_count=len(rows),
             capability_score=max(0.0, min(1.0, last_score)),
             last_delta=max(0.0, min(1.0, last_delta)),
@@ -92,15 +100,24 @@ class CapabilityLearningReducer:
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
         return {
             k: {
-                "agent_id": s.agent_id, "task_type": s.task_type,
+                "agent_id": s.agent_id,
+                "task_type": s.task_type,
                 "observation_count": s.observation_count,
                 "capability_score": s.capability_score,
-                "last_delta": s.last_delta, "analysis_id": s.analysis_id,
+                "last_delta": s.last_delta,
+                "analysis_id": s.analysis_id,
                 "template_version": s.template_version,
             }
-            for k, s in ((kk, self.snapshot(
-                agent_id=kk.split("::", 1)[0], task_type=kk.split("::", 1)[1],
-            )) for kk in self._pairs)
+            for k, s in (
+                (
+                    kk,
+                    self.snapshot(
+                        agent_id=kk.split("::", 1)[0],
+                        task_type=kk.split("::", 1)[1],
+                    ),
+                )
+                for kk in self._pairs
+            )
         }
 
     def known_keys(self) -> set[str]:

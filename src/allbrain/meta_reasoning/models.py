@@ -4,7 +4,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 META_REASONING_TEMPLATE_VERSION = 1
 
 

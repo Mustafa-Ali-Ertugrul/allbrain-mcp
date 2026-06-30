@@ -4,12 +4,26 @@ from typing import Any
 
 from allbrain.objective_system.model import OBJECTIVE_SYSTEM_TEMPLATE_VERSION
 
-OBJECTIVE_UPDATED_KEYS: frozenset[str] = frozenset({
-    "fault_type", "safety", "stability", "success", "efficiency", "safety_pass",
-})
-OBJECTIVE_REBALANCED_KEYS: frozenset[str] = frozenset({
-    "fault_type", "safety", "stability", "success", "efficiency", "version",
-})
+OBJECTIVE_UPDATED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "safety",
+        "stability",
+        "success",
+        "efficiency",
+        "safety_pass",
+    }
+)
+OBJECTIVE_REBALANCED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "safety",
+        "stability",
+        "success",
+        "efficiency",
+        "version",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:
@@ -49,6 +63,7 @@ def validate_objective_updated(p: dict[str, Any]) -> None:
     _check_float_in_range(p["success"], "success")
     _check_float_in_range(p["efficiency"], "efficiency")
 
+
 def validate_objective_rebalanced(p: dict[str, Any]) -> None:
     _check_keys(p, OBJECTIVE_REBALANCED_KEYS, "objective_rebalanced")
     _check_str(p["fault_type"], "fault_type")
@@ -56,22 +71,47 @@ def validate_objective_rebalanced(p: dict[str, Any]) -> None:
     _check_int_ge(p["version"], "version", 1)
 
 
-def make_objective_updated_payload(*, fault_type: str, safety: float, stability: float,
-    success: float, efficiency: float, safety_pass: bool,
+def make_objective_updated_payload(
+    *,
+    fault_type: str,
+    safety: float,
+    stability: float,
+    success: float,
+    efficiency: float,
+    safety_pass: bool,
     tv: int = OBJECTIVE_SYSTEM_TEMPLATE_VERSION,
 ) -> dict[str, Any]:
-    p = {"fault_type": fault_type, "safety": round(safety, 4), "stability": round(stability, 4),
-         "success": round(success, 4), "efficiency": round(efficiency, 4),
-         "safety_pass": safety_pass, "template_version": tv}
+    p = {
+        "fault_type": fault_type,
+        "safety": round(safety, 4),
+        "stability": round(stability, 4),
+        "success": round(success, 4),
+        "efficiency": round(efficiency, 4),
+        "safety_pass": safety_pass,
+        "template_version": tv,
+    }
     validate_objective_updated(p)
     return p
 
-def make_objective_rebalanced_payload(*, fault_type: str, safety: float, stability: float,
-    success: float, efficiency: float, version: int,
+
+def make_objective_rebalanced_payload(
+    *,
+    fault_type: str,
+    safety: float,
+    stability: float,
+    success: float,
+    efficiency: float,
+    version: int,
     tv: int = OBJECTIVE_SYSTEM_TEMPLATE_VERSION,
 ) -> dict[str, Any]:
-    p = {"fault_type": fault_type, "safety": round(safety, 4), "stability": round(stability, 4),
-         "success": round(success, 4), "efficiency": round(efficiency, 4),
-         "version": version, "template_version": tv}
+    p = {
+        "fault_type": fault_type,
+        "safety": round(safety, 4),
+        "stability": round(stability, 4),
+        "success": round(success, 4),
+        "efficiency": round(efficiency, 4),
+        "version": version,
+        "template_version": tv,
+    }
     validate_objective_rebalanced(p)
     return p

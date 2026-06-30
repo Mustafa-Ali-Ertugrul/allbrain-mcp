@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from allbrain.fusion import calibrate_weights, default_weights, FUSION_DEFAULT_WEIGHT, FUSION_HYSTERESIS, FUSION_MIN_WEIGHT
+from allbrain.fusion import (
+    FUSION_DEFAULT_WEIGHT,
+    FUSION_HYSTERESIS,
+    FUSION_MIN_WEIGHT,
+    calibrate_weights,
+    default_weights,
+)
 
 
 class TestSignalWeights:

@@ -9,6 +9,7 @@ from allbrain.revision import RevisionManager, RevisionPolicy, RevisionReducer, 
 def _make_event(event_id: str, event_type: str, payload: dict | None = None):
     class _E:
         pass
+
     e = _E()
     e.id = event_id
     e.type = event_type
@@ -68,6 +69,7 @@ def test_custom_policy_propagates_through_reducer():
 
 def test_policy_validated_on_construction():
     import pytest
+
     with pytest.raises(ValueError):
         RevisionPolicy(contradiction_penalty=-1.0)
     with pytest.raises(ValueError):
@@ -77,7 +79,10 @@ def test_policy_validated_on_construction():
 
 
 def test_policy_is_immutable():
+    from dataclasses import FrozenInstanceError
+
     import pytest
+
     p = RevisionPolicy()
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         p.contradiction_penalty = 0.99  # type: ignore[misc]

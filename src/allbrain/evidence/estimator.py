@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Iterable
-
+from collections.abc import Iterable
 
 EVIDENCE_TEMPLATE_VERSION = 1
 
@@ -16,7 +15,7 @@ def _stable_evidence_id(context_key: str, source_event_ids: Iterable[str] | None
     if source_event_ids is None:
         source_event_ids = []
     evidence_key = "|".join(sorted(str(eid) for eid in source_event_ids))
-    digest = hashlib.sha256(f"{context_key}:{evidence_key}".encode("utf-8")).digest()
+    digest = hashlib.sha256(f"{context_key}:{evidence_key}".encode()).digest()
     return f"evidence-{digest.hex()[:12]}"
 
 

@@ -47,7 +47,8 @@ class ProfileStore:
 
     @staticmethod
     def _clamp(profile: ScoringProfile) -> ScoringProfile:
-        from allbrain.meta_scoring.model import META_SCORING_WEIGHT_MIN, META_SCORING_WEIGHT_MAX
+        from allbrain.meta_scoring.model import META_SCORING_WEIGHT_MAX, META_SCORING_WEIGHT_MIN
+
         return ScoringProfile(
             fault_type=profile.fault_type,
             success_weight=max(META_SCORING_WEIGHT_MIN, min(META_SCORING_WEIGHT_MAX, profile.success_weight)),

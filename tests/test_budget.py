@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from allbrain.attention import derive_adaptive_budget, compute_unused_budget, ATTENTION_BUDGET_DEFAULT
+from allbrain.attention import (
+    ATTENTION_BUDGET_DEFAULT,
+    compute_unused_budget,
+    derive_adaptive_budget,
+)
 
 
 class TestBudget:

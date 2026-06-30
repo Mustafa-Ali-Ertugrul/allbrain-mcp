@@ -5,7 +5,6 @@ from typing import Any
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
 
-
 TERMINAL_EVENTS = {
     EventType.TASK_COMPLETED.value: "completed",
     EventType.TASK_FAILED.value: "failed",

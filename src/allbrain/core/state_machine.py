@@ -20,7 +20,7 @@ class ProjectState:
     last_working_file: str | None = None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ProjectState":
+    def from_dict(cls, data: dict[str, Any]) -> ProjectState:
         return cls(
             goal=data.get("goal"),
             working_files=list(data.get("working_files", [])),

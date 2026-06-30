@@ -10,8 +10,12 @@ from allbrain.mitigation_learning.model import StrategyStats
 
 def _make_stats(ft, sig, strat, uses=5, succ=3, eff=0.5, disabled=False):
     return StrategyStats(
-        fault_type=ft, signal_type=sig, strategy=strat,
-        total_uses=uses, successes=succ, failures=uses - succ,
+        fault_type=ft,
+        signal_type=sig,
+        strategy=strat,
+        total_uses=uses,
+        successes=succ,
+        failures=uses - succ,
         avg_effectiveness=eff,
         success_rate=succ / max(uses, 1),
         disabled=disabled,
@@ -23,8 +27,10 @@ class TestExplorer:
         calc = EntropyCalculator(base_epsilon=0.5, decay_rate=0.95)
         explorer = Explorer(calc, seed=42)
         decision = explorer.select(
-            fault_type="timeout", signal_type="retry_spike",
-            candidates=[], recommended="throttle_retry",
+            fault_type="timeout",
+            signal_type="retry_spike",
+            candidates=[],
+            recommended="throttle_retry",
             all_stats={},
         )
         assert decision.selected_strategy == "throttle_retry"
@@ -34,8 +40,10 @@ class TestExplorer:
         calc = EntropyCalculator(base_epsilon=0.0, decay_rate=0.95)
         explorer = Explorer(calc, seed=42)
         decision = explorer.select(
-            fault_type="timeout", signal_type="retry_spike",
-            candidates=["A", "B"], recommended="A",
+            fault_type="timeout",
+            signal_type="retry_spike",
+            candidates=["A", "B"],
+            recommended="A",
             all_stats={},
         )
         assert not decision.was_exploration
@@ -45,8 +53,10 @@ class TestExplorer:
         calc = EntropyCalculator(base_epsilon=1.0, decay_rate=0.95)
         explorer = Explorer(calc, seed=42)
         decision = explorer.select(
-            fault_type="timeout", signal_type="retry_spike",
-            candidates=["A", "B", "C"], recommended="A",
+            fault_type="timeout",
+            signal_type="retry_spike",
+            candidates=["A", "B", "C"],
+            recommended="A",
             all_stats={},
         )
         assert decision.was_exploration
@@ -58,12 +68,18 @@ class TestExplorer:
         e1 = Explorer(calc1, seed=100)
         e2 = Explorer(calc2, seed=100)
         d1 = e1.select(
-            fault_type="t", signal_type="s", candidates=["X", "Y", "Z"],
-            recommended="X", all_stats={},
+            fault_type="t",
+            signal_type="s",
+            candidates=["X", "Y", "Z"],
+            recommended="X",
+            all_stats={},
         )
         d2 = e2.select(
-            fault_type="t", signal_type="s", candidates=["X", "Y", "Z"],
-            recommended="X", all_stats={},
+            fault_type="t",
+            signal_type="s",
+            candidates=["X", "Y", "Z"],
+            recommended="X",
+            all_stats={},
         )
         assert d1.selected_strategy == d2.selected_strategy
         assert d1.was_exploration == d2.was_exploration
@@ -76,8 +92,10 @@ class TestExplorer:
             ("t", "s", "B"): _make_stats("t", "s", "B", uses=1, succ=1),
         }
         decision = explorer.select(
-            fault_type="t", signal_type="s",
-            candidates=["A", "B"], recommended="A",
+            fault_type="t",
+            signal_type="s",
+            candidates=["A", "B"],
+            recommended="A",
             all_stats=all_stats,
         )
         assert decision.entropy_at_decision > 0
@@ -94,8 +112,11 @@ class TestExplorer:
         calc = EntropyCalculator(base_epsilon=0.30, decay_rate=0.95)
         explorer = Explorer(calc)
         decision = explorer.select(
-            fault_type="t", signal_type="s", candidates=[],
-            recommended="X", all_stats={},
+            fault_type="t",
+            signal_type="s",
+            candidates=[],
+            recommended="X",
+            all_stats={},
         )
         assert decision.epsilon == pytest.approx(0.30)
 
@@ -108,14 +129,17 @@ class TestExplorer:
             ("connection", "other", "C"): _make_stats("connection", "other", "C", uses=10, succ=10),
         }
         decision = explorer.select(
-            fault_type="timeout", signal_type="retry_spike",
-            candidates=["A", "B"], recommended="A", all_stats=all_stats,
+            fault_type="timeout",
+            signal_type="retry_spike",
+            candidates=["A", "B"],
+            recommended="A",
+            all_stats=all_stats,
         )
         # Two strategies matched → entropy > 0
         assert decision.entropy_at_decision > 0
 
     def test_explorer_default_settings(self):
         calc = EntropyCalculator()
-        explorer = Explorer(calc)
+        Explorer(calc)
         assert calc.base_epsilon == DEFAULT_BASE_EPSILON
         assert calc.decay_rate == DEFAULT_DECAY_RATE

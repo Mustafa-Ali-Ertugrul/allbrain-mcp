@@ -2,12 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.routing.scorer import (
-    best_agent,
-    rank_agents,
-    score_bounds,
-    selection_score,
-)
 from allbrain.routing.events import (
     make_req_payload,
     make_scored_payload,
@@ -15,6 +9,12 @@ from allbrain.routing.events import (
     validate_req,
     validate_scored,
     validate_selected,
+)
+from allbrain.routing.scorer import (
+    best_agent,
+    rank_agents,
+    score_bounds,
+    selection_score,
 )
 
 
@@ -73,7 +73,9 @@ class TestPayloads:
         assert p["task_type"] == "x"
 
     def test_scored(self):
-        p = make_scored_payload(agent_id="a", task_type="x", selection_score=0.8, reputation=0.7, runtime_score=0.6, calibrated_trust=0.5)
+        p = make_scored_payload(
+            agent_id="a", task_type="x", selection_score=0.8, reputation=0.7, runtime_score=0.6, calibrated_trust=0.5
+        )
         assert p["agent_id"] == "a"
         assert p["runtime_score"] == 0.6
 

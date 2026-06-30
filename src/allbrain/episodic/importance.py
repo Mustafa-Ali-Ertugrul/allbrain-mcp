@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.episodic.model import Episode, NOVELTY_SAMPLE_WINDOW
+from allbrain.episodic.model import NOVELTY_SAMPLE_WINDOW, Episode
 
 
 def compute_importance(

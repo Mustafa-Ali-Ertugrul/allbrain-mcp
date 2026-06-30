@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -68,9 +68,7 @@ class ExecutionContext:
             "workflow_id": self.workflow_id,
             "node_id": self.node_id,
             "task_id": self.task_id,
-            "parent_results": {
-                nid: r.to_dict() for nid, r in self.parent_results.items()
-            },
+            "parent_results": {nid: r.to_dict() for nid, r in self.parent_results.items()},
             "snapshot_state": dict(self.snapshot_state),
             "timeout_seconds": self.timeout_seconds,
             "max_tokens": self.max_tokens,
@@ -103,10 +101,11 @@ class AgentAdapter(ABC):
 
     def _update_health(self, success: bool, error: str | None = None) -> None:
         from datetime import datetime, timezone
+
         if success:
             self._health = AgentHealth(
                 status=AgentStatus.HEALTHY,
-                last_check_at=datetime.now(timezone.utc),
+                last_check_at=datetime.now(UTC),
                 consecutive_failures=0,
             )
         else:
@@ -114,7 +113,7 @@ class AgentAdapter(ABC):
             status = AgentStatus.UNHEALTHY if failures >= 5 else AgentStatus.DEGRADED
             self._health = AgentHealth(
                 status=status,
-                last_check_at=datetime.now(timezone.utc),
+                last_check_at=datetime.now(UTC),
                 error_message=error,
                 consecutive_failures=failures,
             )

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from allbrain.attention import (
-    AttentionManager, allocate_budget, schedule_attention,
-    ATTENTION_MIN_ALLOCATION, ATTENTION_MAX_ALLOCATION,
+    ATTENTION_MAX_ALLOCATION,
+    ATTENTION_MIN_ALLOCATION,
+    AttentionManager,
+    allocate_budget,
+    schedule_attention,
 )
 
 
@@ -15,12 +18,12 @@ class TestAttention:
 
     def test_min_floor(self):
         w = allocate_budget(importances={"capability": 0.1, "learning": 0.9})
-        for s, v in w.items():
+        for _s, v in w.items():
             assert v.allocation >= ATTENTION_MIN_ALLOCATION
 
     def test_max_cap(self):
         w = allocate_budget(importances={"capability": 0.99, "learning": 0.01})
-        for s, v in w.items():
+        for _s, v in w.items():
             assert v.allocation <= ATTENTION_MAX_ALLOCATION
 
     def test_scheduler_order(self):

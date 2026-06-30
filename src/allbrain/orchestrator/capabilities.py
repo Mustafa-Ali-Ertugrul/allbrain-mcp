@@ -12,7 +12,7 @@ class CapabilityRegistry:
         self.capabilities = capabilities or self.load_default()
 
     @classmethod
-    def from_env(cls) -> "CapabilityRegistry":
+    def from_env(cls) -> CapabilityRegistry:
         override = os.getenv("ALLBRAIN_CAPABILITIES_PATH")
         if override:
             return cls(cls.load_path(Path(override)))

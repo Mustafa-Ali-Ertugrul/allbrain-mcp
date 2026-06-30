@@ -13,9 +13,6 @@ class ExecutionVisualizer:
             "tasks": replay["tasks"],
             "task_count": replay["task_count"],
             "decision_points": [
-                step
-                for task in replay["tasks"].values()
-                for step in task["timeline"]
-                if "selection_decision" in step
+                step for task in replay["tasks"].values() for step in task["timeline"] if "selection_decision" in step
             ],
         }

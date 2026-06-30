@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.workspace.model import WorkspaceItem, MIN_ACTIVATION
+from allbrain.workspace.model import MIN_ACTIVATION, WorkspaceItem
 
 
 def select_workspace_items(

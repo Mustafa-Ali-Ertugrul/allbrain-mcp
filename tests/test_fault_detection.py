@@ -127,9 +127,7 @@ class TestIgnoreResilienceEvents:
 class TestThresholdFiltering:
     def test_failure_lookback_respected(self) -> None:
         detector = FaultDetector(failure_lookback=2)
-        events = [
-            _mk_event("TASK_FAILED", f"ev-{i}") for i in range(10)
-        ]
+        events = [_mk_event("TASK_FAILED", f"ev-{i}") for i in range(10)]
         faults = detector.detect(events, time=1)
         # Lookback limits to last 2 events → 2 faults
         assert len(faults) == 2

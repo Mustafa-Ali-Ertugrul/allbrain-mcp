@@ -1,4 +1,5 @@
 """Unit tests for the sliding-window rate limiter."""
+
 import time
 
 import pytest
@@ -97,7 +98,7 @@ class TestCheckToolRate:
     def test_reset_clears_counters(self) -> None:
         reset_rate_limits()
         # Fill up the minute limiter for a specific tool
-        from allbrain.security.rate_limit import _MINUTE_LIMITER, _BURST_LIMITER
+        from allbrain.security.rate_limit import _BURST_LIMITER, _MINUTE_LIMITER
 
         _MINUTE_LIMITER.check_and_record("reset_tool")
         _BURST_LIMITER.check_and_record("reset_tool")

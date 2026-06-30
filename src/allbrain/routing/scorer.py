@@ -11,10 +11,11 @@ from allbrain.routing.model import (
 
 def _stable_routing_id(task_type: str, event_ids: list[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{task_type}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{task_type}:{ek}".encode()).digest()
     return f"routing-{d.hex()[:12]}"
 
 
@@ -140,10 +141,15 @@ def causal_selection_score(
     Does NOT depend on any intermediate state — pure function.
     """
     base = dynamics_selection_score(
-        reputation=reputation, runtime_score=runtime_score,
-        calibrated_trust=calibrated_trust, consensus_score=consensus_score,
-        capability_match=capability_match, learned_capability=learned_capability,
-        drift_score=drift_score, trend_label=trend_label, forecast_score=forecast_score,
+        reputation=reputation,
+        runtime_score=runtime_score,
+        calibrated_trust=calibrated_trust,
+        consensus_score=consensus_score,
+        capability_match=capability_match,
+        learned_capability=learned_capability,
+        drift_score=drift_score,
+        trend_label=trend_label,
+        forecast_score=forecast_score,
     )
     counterfactual_bonus = float(impact_score) * 0.10
     confidence_adjustment = float(causal_confidence) * 0.05

@@ -76,6 +76,8 @@ def test_policy_default_values():
 
 
 def test_policy_is_frozen():
+    from dataclasses import FrozenInstanceError
+
     p = RevisionPolicy()
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         p.contradiction_penalty = 0.99  # type: ignore[misc]

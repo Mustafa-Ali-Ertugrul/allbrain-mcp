@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import hashlib
 
+from allbrain.decision.backends import (
+    causal_backend,
+    dynamics_backend,
+    fusion_backend,
+    legacy_backend,
+)
 from allbrain.decision.model import DecisionContext, DecisionMode, DecisionResult
 from allbrain.decision.resolver import resolve_mode
-from allbrain.decision.backends import fusion_backend, causal_backend, dynamics_backend, legacy_backend
 
 
 class DecisionEngine:
@@ -65,7 +70,9 @@ class DecisionEngine:
             analysis_id=analysis_id,
         )
 
-    def _run_debug(self, ctx: DecisionContext, *, episodes: tuple | None = None, concepts: tuple | None = None) -> DecisionResult:
+    def _run_debug(
+        self, ctx: DecisionContext, *, episodes: tuple | None = None, concepts: tuple | None = None
+    ) -> DecisionResult:
         """DEBUG mode: full trace with all 4 backends compared.
 
         Refinement #3: read-only dry-run. No events emitted.
@@ -106,11 +113,10 @@ class DecisionEngine:
 
     @staticmethod
     def _validate_context(ctx: DecisionContext) -> None:
-        required = {"agent_id", "task_type"}
         if not ctx.agent_id or not ctx.task_type:
             raise ValueError("DecisionContext must have agent_id and task_type")
 
 
 def _stable_decision_id(agent_id: str, task_type: str, mode: str, score: float) -> str:
-    d = hashlib.sha256(f"{agent_id}:{task_type}:{mode}:{score:.6f}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{agent_id}:{task_type}:{mode}:{score:.6f}".encode()).digest()
     return f"dec-{d.hex()[:12]}"

@@ -3,12 +3,12 @@ from __future__ import annotations
 import hashlib
 
 from allbrain.predictive_failure.model import (
+    DEFAULT_MITIGATION,
+    LEVEL_FAILURE,
+    MITIGATION_STRATEGIES,
+    STRATEGY_URGENCY,
     FailurePrediction,
     MitigationPlan,
-    MITIGATION_STRATEGIES,
-    DEFAULT_MITIGATION,
-    STRATEGY_URGENCY,
-    LEVEL_FAILURE,
 )
 
 
@@ -34,9 +34,7 @@ class MitigationPlanner:
         urgency = STRATEGY_URGENCY.get(strategy, 0.30)
         expected_reduction = _clamp(urgency * prediction.probability)
 
-        plan_id = hashlib.sha256(
-            f"{prediction.fault_id}::{strategy}".encode()
-        ).hexdigest()[:16]
+        plan_id = hashlib.sha256(f"{prediction.fault_id}::{strategy}".encode()).hexdigest()[:16]
 
         return MitigationPlan(
             plan_id=plan_id,

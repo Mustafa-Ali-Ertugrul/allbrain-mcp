@@ -33,9 +33,17 @@ def _diff_highlights(diff: dict[str, Any] | None) -> list[dict[str, Any]]:
         return []
     highlights: list[dict[str, Any]] = []
     for task_id, delta in diff.get("status_delta", {}).items():
-        highlights.append({"kind": "status", "task_id": task_id, "left": delta.get("left"), "right": delta.get("right")})
+        highlights.append(
+            {"kind": "status", "task_id": task_id, "left": delta.get("left"), "right": delta.get("right")}
+        )
     for kind in ["decision_delta", "failure_delta"]:
         delta = diff.get(kind, {})
         if delta.get("changed"):
-            highlights.append({"kind": kind.replace("_delta", ""), "left_count": delta.get("left_count"), "right_count": delta.get("right_count")})
+            highlights.append(
+                {
+                    "kind": kind.replace("_delta", ""),
+                    "left_count": delta.get("left_count"),
+                    "right_count": delta.get("right_count"),
+                }
+            )
     return highlights

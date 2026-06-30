@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 from allbrain.events.schemas import EventType
 from allbrain.revision import (
     RevisionManager,
     RevisionReducer,
+)
+from allbrain.revision import (
     make_payload as make_revision_payload,
 )
 from allbrain.uncertainty import (
@@ -27,17 +30,24 @@ def test_uncertainty_between_checkpoint_and_contradiction():
     Both views: baseline=0.60, trailing_count=1, last_uncertainty=0.3.
     """
     revised = make_revision_payload(
-        context_key="default", old_confidence=0.90, new_confidence=0.60,
-        reason="contradiction", evidence_count=0,
+        context_key="default",
+        old_confidence=0.90,
+        new_confidence=0.60,
+        reason="contradiction",
+        evidence_count=0,
     )
     uncertainty = make_uncertainty_payload(
-        context_key="default", uncertainty=0.30, confidence_interval=0.15, evidence_count=10,
+        context_key="default",
+        uncertainty=0.30,
+        confidence_interval=0.15,
+        evidence_count=10,
     )
     events = [
         MockEvent(EventType.BELIEF_REVISED.value, id="1", payload=revised),
         MockEvent(EventType.UNCERTAINTY_COMPUTED.value, id="2", payload=uncertainty),
-        MockEvent(EventType.CONTRADICTION_DETECTED.value, id="3",
-                  payload={"context_key": "default", "contradictions": []}),
+        MockEvent(
+            EventType.CONTRADICTION_DETECTED.value, id="3", payload={"context_key": "default", "contradictions": []}
+        ),
     ]
     manager = RevisionManager()
     reducer = RevisionReducer()
@@ -58,16 +68,23 @@ def test_contradiction_between_checkpoint_and_uncertainty():
     Both views: baseline=0.60, trailing_count=1, last_uncertainty=0.4.
     """
     revised = make_revision_payload(
-        context_key="default", old_confidence=0.90, new_confidence=0.60,
-        reason="contradiction", evidence_count=0,
+        context_key="default",
+        old_confidence=0.90,
+        new_confidence=0.60,
+        reason="contradiction",
+        evidence_count=0,
     )
     uncertainty = make_uncertainty_payload(
-        context_key="default", uncertainty=0.40, confidence_interval=0.20, evidence_count=10,
+        context_key="default",
+        uncertainty=0.40,
+        confidence_interval=0.20,
+        evidence_count=10,
     )
     events = [
         MockEvent(EventType.BELIEF_REVISED.value, id="1", payload=revised),
-        MockEvent(EventType.CONTRADICTION_DETECTED.value, id="2",
-                  payload={"context_key": "default", "contradictions": []}),
+        MockEvent(
+            EventType.CONTRADICTION_DETECTED.value, id="2", payload={"context_key": "default", "contradictions": []}
+        ),
         MockEvent(EventType.UNCERTAINTY_COMPUTED.value, id="3", payload=uncertainty),
     ]
     manager = RevisionManager()
@@ -86,14 +103,23 @@ def test_contradiction_between_checkpoint_and_uncertainty():
 def test_multiple_uncertainty_events_last_wins():
     """Multiple UNCERTAINTY_COMPUTED events in trailing slice: last one wins."""
     revised = make_revision_payload(
-        context_key="default", old_confidence=0.90, new_confidence=0.60,
-        reason="contradiction", evidence_count=0,
+        context_key="default",
+        old_confidence=0.90,
+        new_confidence=0.60,
+        reason="contradiction",
+        evidence_count=0,
     )
     u_first = make_uncertainty_payload(
-        context_key="default", uncertainty=0.10, confidence_interval=0.05, evidence_count=10,
+        context_key="default",
+        uncertainty=0.10,
+        confidence_interval=0.05,
+        evidence_count=10,
     )
     u_second = make_uncertainty_payload(
-        context_key="default", uncertainty=0.50, confidence_interval=0.25, evidence_count=10,
+        context_key="default",
+        uncertainty=0.50,
+        confidence_interval=0.25,
+        evidence_count=10,
     )
     events = [
         MockEvent(EventType.BELIEF_REVISED.value, id="1", payload=revised),
@@ -119,22 +145,33 @@ def test_uncertainty_with_mixed_trailing_events():
     Both views converge on the same (count, last_uncertainty) pair.
     """
     revised = make_revision_payload(
-        context_key="default", old_confidence=0.90, new_confidence=0.70,
-        reason="contradiction", evidence_count=0,
+        context_key="default",
+        old_confidence=0.90,
+        new_confidence=0.70,
+        reason="contradiction",
+        evidence_count=0,
     )
     u1 = make_uncertainty_payload(
-        context_key="default", uncertainty=0.20, confidence_interval=0.10, evidence_count=10,
+        context_key="default",
+        uncertainty=0.20,
+        confidence_interval=0.10,
+        evidence_count=10,
     )
     u2 = make_uncertainty_payload(
-        context_key="default", uncertainty=0.30, confidence_interval=0.15, evidence_count=10,
+        context_key="default",
+        uncertainty=0.30,
+        confidence_interval=0.15,
+        evidence_count=10,
     )
     events = [
         MockEvent(EventType.BELIEF_REVISED.value, id="1", payload=revised),
-        MockEvent(EventType.CONTRADICTION_DETECTED.value, id="2",
-                  payload={"context_key": "default", "contradictions": []}),
+        MockEvent(
+            EventType.CONTRADICTION_DETECTED.value, id="2", payload={"context_key": "default", "contradictions": []}
+        ),
         MockEvent(EventType.UNCERTAINTY_COMPUTED.value, id="3", payload=u1),
-        MockEvent(EventType.CONTRADICTION_DETECTED.value, id="4",
-                  payload={"context_key": "default", "contradictions": []}),
+        MockEvent(
+            EventType.CONTRADICTION_DETECTED.value, id="4", payload={"context_key": "default", "contradictions": []}
+        ),
         MockEvent(EventType.UNCERTAINTY_COMPUTED.value, id="5", payload=u2),
     ]
     manager = RevisionManager()

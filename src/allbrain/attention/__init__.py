@@ -1,32 +1,36 @@
+from allbrain.attention.allocator import allocate_budget
+from allbrain.attention.budget import compute_unused_budget, derive_adaptive_budget
+from allbrain.attention.estimator import estimate_signal_cost, estimate_signal_importance
+from allbrain.attention.events import (
+    make_attention_payload,
+    make_budget_payload,
+    make_reallocation_payload,
+    validate_attention,
+    validate_budget,
+    validate_reallocation,
+)
+from allbrain.attention.manager import AttentionManager
 from allbrain.attention.model import (
-    ATTENTION_TEMPLATE_VERSION,
-    ATTENTION_MIN_ALLOCATION,
-    ATTENTION_MAX_ALLOCATION,
     ATTENTION_BUDGET_DEFAULT,
-    ATTENTION_IMPORTANCE_ALPHA,
     ATTENTION_COST_CAP,
-    ATTENTION_REALLOCATION_THRESHOLD,
     ATTENTION_DECAY,
+    ATTENTION_IMPORTANCE_ALPHA,
+    ATTENTION_MAX_ALLOCATION,
+    ATTENTION_MIN_ALLOCATION,
+    ATTENTION_REALLOCATION_THRESHOLD,
+    ATTENTION_TEMPLATE_VERSION,
     SIGNAL_COST_CAPABILITY,
-    SIGNAL_COST_LEARNING,
-    SIGNAL_COST_DYNAMICS,
     SIGNAL_COST_CAUSAL,
+    SIGNAL_COST_DYNAMICS,
+    SIGNAL_COST_LEARNING,
     SIGNAL_COSTS,
     AttentionSignal,
+    AttentionState,
     AttentionWeight,
     ResourceBudget,
-    AttentionState,
-)
-from allbrain.attention.estimator import estimate_signal_importance, estimate_signal_cost
-from allbrain.attention.budget import derive_adaptive_budget, compute_unused_budget
-from allbrain.attention.allocator import allocate_budget
-from allbrain.attention.scheduler import schedule_attention
-from allbrain.attention.events import (
-    make_attention_payload, make_budget_payload, make_reallocation_payload,
-    validate_attention, validate_budget, validate_reallocation,
 )
 from allbrain.attention.reducer import AttentionReducer
-from allbrain.attention.manager import AttentionManager
+from allbrain.attention.scheduler import schedule_attention
 
 __all__ = [
     "AttentionManager",

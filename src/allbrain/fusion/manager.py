@@ -2,13 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
-from allbrain.fusion.model import SignalWeights
-from allbrain.fusion.calibration import normalize_signal
-from allbrain.fusion.analyzer import compute_overlap_matrix, detect_overlap_violations, _shared_event_lineage
-from allbrain.fusion.weights import calibrate_weights, default_weights
-from allbrain.fusion.fusion import build_signal_vector, unified_decision_score
 from allbrain.events.schemas import EventType
+from allbrain.foundations import canonical_event_sort
+from allbrain.fusion.analyzer import (
+    _shared_event_lineage,
+    compute_overlap_matrix,
+    detect_overlap_violations,
+)
+from allbrain.fusion.calibration import normalize_signal
+from allbrain.fusion.fusion import build_signal_vector, unified_decision_score
+from allbrain.fusion.model import SignalWeights
+from allbrain.fusion.weights import calibrate_weights, default_weights
 
 
 class FusionManager:
@@ -23,7 +27,7 @@ class FusionManager:
         task_type: str = "default",
     ) -> dict[str, Any]:
         ordered = canonical_event_sort(events)
-        event_ids = [str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")]
+        [str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")]
 
         cap_vals: list[float] = []
         learn_vals: list[float] = []
@@ -63,7 +67,8 @@ class FusionManager:
         causal_norm, _ = normalize_signal(causal_vals)
 
         signal_vector = build_signal_vector(
-            agent_id=agent_id, task_type=task_type,
+            agent_id=agent_id,
+            task_type=task_type,
             capability_match=cap_norm,
             learned_capability=learn_norm,
             dynamics_score=dyn_norm,

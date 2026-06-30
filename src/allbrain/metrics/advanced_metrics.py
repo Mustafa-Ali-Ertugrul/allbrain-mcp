@@ -38,7 +38,8 @@ class AdvancedMetrics:
                 "execution_events": sum(
                     1
                     for event in events
-                    if event.type in {
+                    if event.type
+                    in {
                         EventType.AGENT_EXECUTION_COMPLETED.value,
                         EventType.AGENT_EXECUTION_FAILED.value,
                     }

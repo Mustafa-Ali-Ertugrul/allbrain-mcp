@@ -5,8 +5,8 @@ from typing import Any
 from allbrain.events.schemas import EventType
 from allbrain.learning_safety.events import (
     validate_exploration_triggered,
-    validate_simulation_weight_capped,
     validate_learning_drift_detected,
+    validate_simulation_weight_capped,
 )
 from allbrain.learning_safety.model import LEARNING_SAFETY_TEMPLATE_VERSION
 

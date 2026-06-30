@@ -60,11 +60,13 @@ class ResultAggregator:
                 outputs.append(r.output)
             for key, value in r.metadata.items():
                 if key in merged and merged[key] != value:
-                    conflicts.append({
-                        "key": key,
-                        "values": [merged[key], value],
-                        "agents": list({merged.get("__agent"), r.agent_id}),
-                    })
+                    conflicts.append(
+                        {
+                            "key": key,
+                            "values": [merged[key], value],
+                            "agents": list({merged.get("__agent"), r.agent_id}),
+                        }
+                    )
                 merged[key] = value
                 merged["__agent"] = r.agent_id
         merged.pop("__agent", None)

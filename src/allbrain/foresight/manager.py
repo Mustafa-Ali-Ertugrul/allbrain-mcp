@@ -9,7 +9,6 @@ from allbrain.foresight.ranking import PlanRanker
 from allbrain.foresight.simulator import MultiStepSimulator
 from allbrain.world import PredictionBridge, SimulationBridge, StateTransitionBridge, WorldState
 
-
 _PLAN_CONFIDENCE = (0.35, 0.35, 0.20, 0.10)
 _PLAN_ROLES = ("best", "expected", "safest", "fastest")
 

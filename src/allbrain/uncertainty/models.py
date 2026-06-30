@@ -4,7 +4,6 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 UNCERTAINTY_TEMPLATE_VERSION = 1
 
 

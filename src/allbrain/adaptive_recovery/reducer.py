@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.adaptive_recovery.events import (
+    validate_adaptive_recovery_completed,
     validate_chain_created,
-    validate_step_started,
     validate_step_failed,
+    validate_step_started,
     validate_step_succeeded,
     validate_strategy_switched,
-    validate_adaptive_recovery_completed,
 )
 from allbrain.adaptive_recovery.model import (
     ADAPTIVE_RECOVERY_TEMPLATE_VERSION,
-    RecoveryStep,
     RecoveryChain,
+    RecoveryStep,
 )
+from allbrain.events.schemas import EventType
 
 
 class AdaptiveRecoveryReducer:

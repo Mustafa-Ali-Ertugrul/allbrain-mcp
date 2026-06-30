@@ -27,6 +27,7 @@ def initial_signal_rewards() -> dict[str, float]:
         "causal": 0.0,
     }
 
+
 def initial_signal_counts() -> dict[str, int]:
     return {
         "capability": 0,

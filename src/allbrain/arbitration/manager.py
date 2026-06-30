@@ -25,11 +25,7 @@ class ArbitrationManager:
         analysis_id: str | None = None,
     ) -> ArbitrationState:
         ordered = canonical_event_sort(events)
-        all_event_ids = {
-            str(getattr(e, "id", ""))
-            for e in ordered
-            if getattr(e, "id", "")
-        }
+        all_event_ids = {str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")}
 
         votes: list[VoteRecord] = []
         consensus = None
@@ -58,13 +54,15 @@ class ArbitrationManager:
                     continue
                 if not all(isinstance(x, (int, float)) for x in (confidence, reputation, calibrated_trust)):
                     continue
-                votes.append(VoteRecord(
-                    agent_id=str(agent_id),
-                    candidate_id=str(candidate_id),
-                    confidence=float(confidence),
-                    reputation=float(reputation),
-                    calibrated_trust=float(calibrated_trust),
-                ))
+                votes.append(
+                    VoteRecord(
+                        agent_id=str(agent_id),
+                        candidate_id=str(candidate_id),
+                        confidence=float(confidence),
+                        reputation=float(reputation),
+                        calibrated_trust=float(calibrated_trust),
+                    )
+                )
             elif event_type == EventType.AGENT_CONSENSUS_REACHED.value:
                 winner = payload.get("winner_candidate")
                 score = payload.get("score")

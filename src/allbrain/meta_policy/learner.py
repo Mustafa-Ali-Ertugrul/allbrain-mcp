@@ -37,6 +37,7 @@ def update_temperature(
     decision_count: int,
 ) -> float:
     from allbrain.meta_policy.model import META_POLICY_TEMPERATURE_DECAY
+
     return max(0.1, old_temp * META_POLICY_TEMPERATURE_DECAY)
 
 
@@ -44,7 +45,8 @@ def update_exploration_rate(
     old_rate: float,
     decision_count: int,
 ) -> float:
-    from allbrain.meta_policy.model import META_POLICY_EXPLORATION_MIN, META_POLICY_EXPLORATION_MAX
+    from allbrain.meta_policy.model import META_POLICY_EXPLORATION_MAX, META_POLICY_EXPLORATION_MIN
+
     decay = max(META_POLICY_EXPLORATION_MIN, old_rate * 0.99)
     return min(META_POLICY_EXPLORATION_MAX, max(META_POLICY_EXPLORATION_MIN, decay))
 
@@ -52,13 +54,22 @@ def update_exploration_rate(
 def default_mode_stats() -> dict[str, ModeStats]:
     return {
         mode.value: ModeStats(mode=mode.value, count=0, avg_reward=0.0, ema_reward=0.0, variance=0.0)
-        for mode in [PolicyMode for PolicyMode in [__import__("allbrain.meta_policy.model").PolicyMode.FUSION, __import__("allbrain.meta_policy.model").PolicyMode.CAUSAL, __import__("allbrain.meta_policy.model").PolicyMode.DYNAMIC, __import__("allbrain.meta_policy.model").PolicyMode.LEGACY]]
+        for mode in [
+            PolicyMode
+            for PolicyMode in [
+                __import__("allbrain.meta_policy.model").PolicyMode.FUSION,
+                __import__("allbrain.meta_policy.model").PolicyMode.CAUSAL,
+                __import__("allbrain.meta_policy.model").PolicyMode.DYNAMIC,
+                __import__("allbrain.meta_policy.model").PolicyMode.LEGACY,
+            ]
+        ]
     }
 
 
 def _default_mode_stats() -> dict[str, ModeStats]:
-    from allbrain.meta_policy.model import PolicyMode as PM
+    from allbrain.meta_policy.model import PolicyMode
+
     return {
         m.value: ModeStats(mode=m.value, count=0, avg_reward=0.0, ema_reward=0.0, variance=0.0)
-        for m in [PM.FUSION, PM.CAUSAL, PM.DYNAMIC, PM.LEGACY]
+        for m in [PolicyMode.FUSION, PolicyMode.CAUSAL, PolicyMode.DYNAMIC, PolicyMode.LEGACY]
     }

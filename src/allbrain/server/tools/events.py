@@ -1,4 +1,5 @@
 """Domain module: events."""
+
 from __future__ import annotations
 
 import logging
@@ -6,19 +7,19 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.models.schemas import (
+    ListEventsInput,
+    SaveEventInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.security.rate_limit import check_tool_rate
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
     maybe_auto_snapshot,
-)
-from allbrain.security.rate_limit import check_tool_rate
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    SaveEventInput,
-    ListEventsInput,
-    ToolResult,
-    UserInputError,
 )
 from allbrain.storage.database import open_session
 from allbrain.storage.repository import event_to_read
@@ -74,7 +75,6 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         check_tool_rate("list_events")
         data = ListEventsInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         events = context.repository.list_events(
             project_path=context.project_path,
             session_id=data.session_id,

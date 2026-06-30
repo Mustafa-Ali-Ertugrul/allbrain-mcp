@@ -35,11 +35,7 @@ class CalibrationManager:
         analysis_id: str | None = None,
     ) -> CalibrationState:
         ordered = canonical_event_sort(events)
-        all_event_ids = {
-            str(getattr(e, "id", ""))
-            for e in ordered
-            if getattr(e, "id", "")
-        }
+        all_event_ids = {str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")}
 
         samples: list[tuple[float, bool]] = []
         for event in ordered:

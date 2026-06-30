@@ -1,6 +1,7 @@
 """Test that user-controlled input cannot inject fake log lines or
 ANSI escape sequences into the logging output.
 """
+
 from pathlib import Path
 
 import pytest
@@ -25,9 +26,7 @@ def test_newline_in_goal_does_not_inject_log(caplog: pytest.LogCaptureFixture, t
 
 def test_crlf_in_task_hint(caplog: pytest.LogCaptureFixture, tmp_path: Path) -> None:
     context = make_context(tmp_path)
-    result = save_event_impl(
-        context, type="file_modified", payload={}, task_hint="ok\r\nWARNING: fake alert"
-    )
+    result = save_event_impl(context, type="file_modified", payload={}, task_hint="ok\r\nWARNING: fake alert")
     assert result.ok
     for record in caplog.records:
         assert "WARNING: fake alert" not in record.getMessage()
@@ -67,7 +66,7 @@ def test_exception_context_not_logged_verbatim(caplog: pytest.LogCaptureFixture,
     """When a regular ValueError is raised, the error message should not
     contain user-controlled input verbatim in a way that injects log lines."""
     context = make_context(tmp_path)
-    result = create_task_impl(context, goal="x\nERROR: injected during exception")
+    create_task_impl(context, goal="x\nERROR: injected during exception")
     # This should pass (goal is valid) or fail with a clear error
     # The key assertion: log records should not contain the injected text
     for record in caplog.records:

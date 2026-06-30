@@ -3,8 +3,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from allbrain.fusion.model import FUSION_OVERLAP_THRESHOLD
 from allbrain.events.schemas import EventType
+from allbrain.fusion.model import FUSION_OVERLAP_THRESHOLD
 
 
 def _pearson_correlation(x: list[float], y: list[float]) -> float:
@@ -43,13 +43,13 @@ def _shared_event_lineage(
             continue
         eid = str(getattr(event, "id", ""))
 
-        if et in (EventType.AGENT_CAPABILITY_LEARNED.value, EventType.AGENT_CAPABILITY_DECAYED.value):
-            if payload.get("agent_id"):
-                eids_a.add(eid)
+        if et in (EventType.AGENT_CAPABILITY_LEARNED.value, EventType.AGENT_CAPABILITY_DECAYED.value) and payload.get(
+            "agent_id"
+        ):
+            eids_a.add(eid)
 
-        if et == EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value:
-            if payload.get("agent_id"):
-                eids_b.add(eid)
+        if et == EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value and payload.get("agent_id"):
+            eids_b.add(eid)
 
     if not eids_a or not eids_b:
         return 0.0
@@ -102,9 +102,8 @@ def detect_overlap_violations(
     violations: set[tuple[str, str]] = set()
     for (a, b), corr in matrix.items():
         abs_corr = abs(corr)
-        if abs_corr > threshold:
-            if semantic_proxy > 0.3 or abs_corr > threshold + 0.1:
-                violations.add((a, b))
+        if abs_corr > threshold and (semantic_proxy > 0.3 or abs_corr > threshold + 0.1):
+            violations.add((a, b))
     return violations
 
 

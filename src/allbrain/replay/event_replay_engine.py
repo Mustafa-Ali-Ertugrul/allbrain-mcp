@@ -2,58 +2,59 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.collaboration import CollaborationStateBuilder
-from allbrain.evolution import LearningStateBuilder
+from allbrain.adaptive_recovery import AdaptiveRecoveryReducer
+from allbrain.arbitration import ArbitrationReducer
+from allbrain.attention import AttentionReducer
+from allbrain.attribution import AttributionReducer
 from allbrain.belief import BeliefReducer
 from allbrain.calibration import CalibrationReducer
-from allbrain.contradiction import ContradictionReducer
-from allbrain.evidence import EvidenceReducer
-from allbrain.arbitration import ArbitrationReducer
-from allbrain.reputation import ReputationReducer
 from allbrain.capabilities import CapabilityReducer
-from allbrain.dynamics import CapabilityDynamicsReducer
 from allbrain.causal import CausalReducer
-from allbrain.fusion import FusionReducer
-from allbrain.decision import DecisionReducer
-from allbrain.meta_policy import MetaPolicyReducer
-from allbrain.attribution import AttributionReducer
-from allbrain.attention import AttentionReducer
-from allbrain.workspace import WorkspaceReducer
-from allbrain.episodic import EpisodicReducer
-from allbrain.semantic import SemanticReducer
-from allbrain.resilience import ResilienceReducer
-from allbrain.recovery_consensus import RecoveryConsensusReducer
-from allbrain.failure_memory import FailureMemoryReducer
-from allbrain.learning import CapabilityLearningReducer
-from allbrain.routing import RoutingReducer
-from allbrain.adaptive_recovery import AdaptiveRecoveryReducer
-from allbrain.predictive_failure import PredictiveFailureReducer
-from allbrain.mitigation_learning import MitigationLearningReducer
-from allbrain.learning_safety import LearningSafetyReducer
-from allbrain.self_repair import SelfRepairReducer
-from allbrain.policy_routing import PolicyRoutingReducer
-from allbrain.policy_competition import PolicyCompetitionReducer
-from allbrain.soft_repair import SoftRepairReducer
-from allbrain.meta_scoring import MetaScoringReducer
-from allbrain.self_play import SelfPlayReducer
-from allbrain.meta_optimizer import MetaOptimizerReducer
-from allbrain.meta_meta_scoring import MetaMetaScoringReducer
-from allbrain.objective_system import ObjectiveSystemReducer
-from allbrain.tradeoff_engine import TradeoffReducer
-from allbrain.value_alignment import ValueAlignmentReducer
-from allbrain.telemetry import TelemetryReducer
-from allbrain.revision import RevisionReducer
+from allbrain.collaboration import CollaborationStateBuilder
+from allbrain.contradiction import ContradictionReducer
 from allbrain.counterfactual import CounterfactualProjection
+from allbrain.decision import DecisionReducer
+from allbrain.dynamics import CapabilityDynamicsReducer
+from allbrain.episodic import EpisodicReducer
 from allbrain.events import EventType
+from allbrain.evidence import EvidenceReducer
+from allbrain.evolution import LearningStateBuilder
+from allbrain.failure_memory import FailureMemoryReducer
 from allbrain.foresight import ForesightProjection
-from allbrain.foundations import canonical_event_sort, is_known_event as _is_known_event
+from allbrain.foundations import canonical_event_sort
+from allbrain.foundations import is_known_event as _is_known_event
+from allbrain.fusion import FusionReducer
 from allbrain.governance import GovernanceStateBuilder
 from allbrain.information_seeking import InformationSeekingProjection
+from allbrain.learning import CapabilityLearningReducer
+from allbrain.learning_safety import LearningSafetyReducer
+from allbrain.meta_meta_scoring import MetaMetaScoringReducer
+from allbrain.meta_optimizer import MetaOptimizerReducer
+from allbrain.meta_policy import MetaPolicyReducer
 from allbrain.meta_reasoning import MetaReasoningProjection
+from allbrain.meta_scoring import MetaScoringReducer
+from allbrain.mitigation_learning import MitigationLearningReducer
 from allbrain.models.schemas import EventRead
+from allbrain.objective_system import ObjectiveSystemReducer
+from allbrain.policy_competition import PolicyCompetitionReducer
+from allbrain.policy_routing import PolicyRoutingReducer
+from allbrain.predictive_failure import PredictiveFailureReducer
+from allbrain.recovery_consensus import RecoveryConsensusReducer
+from allbrain.reputation import ReputationReducer
+from allbrain.resilience import ResilienceReducer
+from allbrain.revision import RevisionReducer
+from allbrain.routing import RoutingReducer
 from allbrain.runtime_core import RuntimeCoreStateBuilder
 from allbrain.scenarios import ScenarioProjection
+from allbrain.self_play import SelfPlayReducer
+from allbrain.self_repair import SelfRepairReducer
+from allbrain.semantic import SemanticReducer
+from allbrain.soft_repair import SoftRepairReducer
+from allbrain.telemetry import TelemetryReducer
+from allbrain.tradeoff_engine import TradeoffReducer
 from allbrain.uncertainty import UncertaintyProjection
+from allbrain.value_alignment import ValueAlignmentReducer
+from allbrain.workspace import WorkspaceReducer
 from allbrain.world import WorldStateBuilder
 
 
@@ -69,11 +70,24 @@ class EventReplayEngine:
         ordered = self._ordered(events, deterministic=deterministic)
         end = len(ordered) if step_count is None else min(len(ordered), cursor + step_count)
         state: dict[str, Any] = {
-            "tasks": {}, "decisions": [], "failures": [], "collaboration": {},
-            "organizational_learning": {}, "recommendations": {}, "policy_updates": {},
-            "governance": {}, "runtime_core": {}, "world": {}, "counterfactual": {},
-            "scenarios": {}, "foresight": {}, "reasoning": {}, "uncertainty": {},
-            "knowledge_gaps": {},             "information_seeking": {}, "unknown_events": [],
+            "tasks": {},
+            "decisions": [],
+            "failures": [],
+            "collaboration": {},
+            "organizational_learning": {},
+            "recommendations": {},
+            "policy_updates": {},
+            "governance": {},
+            "runtime_core": {},
+            "world": {},
+            "counterfactual": {},
+            "scenarios": {},
+            "foresight": {},
+            "reasoning": {},
+            "uncertainty": {},
+            "knowledge_gaps": {},
+            "information_seeking": {},
+            "unknown_events": [],
             "belief": {},
             "contradiction": {},
             "revision": {},
@@ -94,88 +108,146 @@ class EventReplayEngine:
             "attribution": {},
             "attention": {},
             "workspace": {
-                "active": {}, "capacity": 7, "seen": 0, "evicted": 0,
+                "active": {},
+                "capacity": 7,
+                "seen": 0,
+                "evicted": 0,
             },
             "episodic": {
-                "episodes": [], "total": 0, "retained": 0, "forgotten": 0,
+                "episodes": [],
+                "total": 0,
+                "retained": 0,
+                "forgotten": 0,
             },
             "semantic": {
-                "concepts": [], "total": 0, "retained": 0, "forgotten": 0,
+                "concepts": [],
+                "total": 0,
+                "retained": 0,
+                "forgotten": 0,
             },
             "recovery_consensus": {
-                "candidates": [], "decisions": [],
-                "total_decisions": 0, "consensus_reached": 0,
+                "candidates": [],
+                "decisions": [],
+                "total_decisions": 0,
+                "consensus_reached": 0,
             },
             "failure_memory": {
-                "records": [], "experiences": [], "patterns": [],
-                "total_stored": 0, "total_retrieved": 0,
-                "total_patterns": 0, "total_experiences": 0,
+                "records": [],
+                "experiences": [],
+                "patterns": [],
+                "total_stored": 0,
+                "total_retrieved": 0,
+                "total_patterns": 0,
+                "total_experiences": 0,
             },
             "adaptive_recovery": {
-                "active_chains": [], "completed_chains": [],
-                "failed_chains": [], "escalated_chains": [],
-                "total_created": 0, "total_completed": 0,
-                "total_failed": 0, "total_escalated": 0,
+                "active_chains": [],
+                "completed_chains": [],
+                "failed_chains": [],
+                "escalated_chains": [],
+                "total_created": 0,
+                "total_completed": 0,
+                "total_failed": 0,
+                "total_escalated": 0,
             },
             "predictive_failure": {
-                "signals": [], "risk_scores": [], "predictions": [],
-                "mitigations": [], "actions": [], "avoided_events": [],
-                "total_signals": 0, "total_high_risk": 0,
-                "total_predictions": 0, "total_mitigations": 0,
-                "total_avoided": 0, "total_failed_mitigations": 0,
+                "signals": [],
+                "risk_scores": [],
+                "predictions": [],
+                "mitigations": [],
+                "actions": [],
+                "avoided_events": [],
+                "total_signals": 0,
+                "total_high_risk": 0,
+                "total_predictions": 0,
+                "total_mitigations": 0,
+                "total_avoided": 0,
+                "total_failed_mitigations": 0,
             },
             "mitigation_learning": {
-                "outcomes": [], "evaluations": [],
-                "strategy_updates": [], "policy_versions": [],
-                "total_outcomes": 0, "total_evaluations": 0,
-                "total_strategy_updates": 0, "total_policy_versions": 0,
+                "outcomes": [],
+                "evaluations": [],
+                "strategy_updates": [],
+                "policy_versions": [],
+                "total_outcomes": 0,
+                "total_evaluations": 0,
+                "total_strategy_updates": 0,
+                "total_policy_versions": 0,
             },
             "learning_safety": {
-                "explorations": [], "caps": [], "drifts": [],
-                "total_explorations": 0, "total_exploration_triggered": 0,
-                "total_caps": 0, "total_drifts": 0,
+                "explorations": [],
+                "caps": [],
+                "drifts": [],
+                "total_explorations": 0,
+                "total_exploration_triggered": 0,
+                "total_caps": 0,
+                "total_drifts": 0,
             },
             "self_repair": {
-                "snapshots": [], "validation_failures": [],
-                "rollbacks": [], "recoveries": [],
-                "total_snapshots": 0, "total_validation_failures": 0,
-                "total_rollbacks": 0, "total_recoveries": 0,
+                "snapshots": [],
+                "validation_failures": [],
+                "rollbacks": [],
+                "recoveries": [],
+                "total_snapshots": 0,
+                "total_validation_failures": 0,
+                "total_rollbacks": 0,
+                "total_recoveries": 0,
             },
             "policy_routing": {
-                "family_selections": [], "candidate_evaluations": [],
-                "total_selections": 0, "total_evaluations": 0,
+                "family_selections": [],
+                "candidate_evaluations": [],
+                "total_selections": 0,
+                "total_evaluations": 0,
             },
             "policy_competition": {
-                "competitions": [], "total_competitions": 0,
+                "competitions": [],
+                "total_competitions": 0,
             },
             "soft_repair": {
-                "blends": [], "total_blends": 0,
+                "blends": [],
+                "total_blends": 0,
             },
             "meta_scoring": {
-                "profiles": {}, "total_updates": 0,
+                "profiles": {},
+                "total_updates": 0,
             },
             "self_play": {
-                "matches": [], "total_matches": 0,
+                "matches": [],
+                "total_matches": 0,
             },
             "meta_optimizer": {
-                "adaptations": [], "total_adaptations": 0, "total_guards": 0,
+                "adaptations": [],
+                "total_adaptations": 0,
+                "total_guards": 0,
             },
             "meta_meta_scoring": {
-                "profiles": {}, "total_updates": 0,
+                "profiles": {},
+                "total_updates": 0,
             },
             "objective_system": {
-                "objectives": [], "rebalances": [], "total_objectives": 0, "total_rebalances": 0,
+                "objectives": [],
+                "rebalances": [],
+                "total_objectives": 0,
+                "total_rebalances": 0,
             },
             "tradeoff": {
-                "tradeoffs": [], "utilities": [], "total_tradeoffs": 0, "total_utilities": 0,
+                "tradeoffs": [],
+                "utilities": [],
+                "total_tradeoffs": 0,
+                "total_utilities": 0,
             },
             "value_alignment": {
-                "failures": [], "total_failures": 0,
+                "failures": [],
+                "total_failures": 0,
             },
             "resilience": {
-                "faults": [], "plans": [], "snapshots": [],
-                "total_faults": 0, "recovered": 0,
-                "failed_recoveries": 0, "open_incidents": 0,
+                "faults": [],
+                "plans": [],
+                "snapshots": [],
+                "total_faults": 0,
+                "recovered": 0,
+                "failed_recoveries": 0,
+                "open_incidents": 0,
             },
             "foundations": {
                 "ordering": "uuid7",
@@ -346,9 +418,7 @@ class EventReplayEngine:
             event_buffers["information_seeking"].append(event)
             state["information_seeking"] = InformationSeekingProjection().build(event_buffers["information_seeking"])
         if not _is_known_event(event.type):
-            state.setdefault("unknown_events", []).append(
-                {"id": event.id, "type": event.type}
-            )
+            state.setdefault("unknown_events", []).append({"id": event.id, "type": event.type})
             foundations = state.setdefault(
                 "foundations",
                 {"ordering": "uuid7", "payload_version": 1, "unknown_event_count": 0},
@@ -375,7 +445,10 @@ def _is_collaboration_event(event: EventRead) -> bool:
 
 
 def _is_learning_event(event: EventRead) -> bool:
-    return event.type.startswith(("learning_cycle_", "recommendation_", "policy_update_")) or event.type == EventType.ORGANIZATIONAL_PATTERN_DISCOVERED.value
+    return (
+        event.type.startswith(("learning_cycle_", "recommendation_", "policy_update_"))
+        or event.type == EventType.ORGANIZATIONAL_PATTERN_DISCOVERED.value
+    )
 
 
 def _copy_state(state: dict[str, Any]) -> dict[str, Any]:

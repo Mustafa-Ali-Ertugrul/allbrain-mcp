@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from allbrain.orchestrator.scoring import SchedulerV1
 from allbrain.orchestrator.state import AgentStateBuilder
@@ -66,7 +66,7 @@ def metrics(
         "confidence": confidence,
         "user_feedback_score": None,
         "consecutive_failures": consecutive_failures,
-        "last_failure_at": datetime.now(timezone.utc).isoformat() if consecutive_failures else None,
+        "last_failure_at": datetime.now(UTC).isoformat() if consecutive_failures else None,
         "last_failure_reason": last_failure_reason,
     }
 
@@ -116,15 +116,12 @@ def test_retry_routing_does_not_select_attempted_agent() -> None:
 
 def test_unhealthy_agent_can_recover_after_circuit_breaker_window() -> None:
     scheduler = SchedulerV1(FakeRegistry(), epsilon=0.0)  # type: ignore[arg-type]
-    old_failure = (datetime.now(timezone.utc) - timedelta(minutes=16)).isoformat()
+    old_failure = (datetime.now(UTC) - timedelta(minutes=16)).isoformat()
 
     result = scheduler.assign_task(
         task={"domain": "software", "required_skills": ["security"]},
         candidate_agents=["reviewer", "architect"],
-        metrics={
-            "reviewer": metrics("reviewer", consecutive_failures=5)
-            | {"last_failure_at": old_failure}
-        },
+        metrics={"reviewer": metrics("reviewer", consecutive_failures=5) | {"last_failure_at": old_failure}},
     )
 
     assert result["agent_id"] == "reviewer"
@@ -234,9 +231,7 @@ def test_agent_state_exposes_version_capabilities_cost_health_and_feedback() -> 
     )
 
     assert state["build"]["version"] == "1.0.0"
-    assert state["build"]["capabilities"] == {
-        "software": ["coding", "implementation", "refactoring"]
-    }
+    assert state["build"]["capabilities"] == {"software": ["coding", "implementation", "refactoring"]}
     assert state["build"]["health"]["healthy"] is False
     assert state["build"]["health"]["last_failure_reason"] == "timeout"
     assert state["build"]["health"]["in_probe_mode"] is False

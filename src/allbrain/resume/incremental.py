@@ -6,10 +6,10 @@ from allbrain.context import ContextBuilder
 from allbrain.core import StateEngine
 from allbrain.models.schemas import EventRead
 from allbrain.resume.engine import ResumeEngine
-from allbrain.storage.repository import BrainRepository
-from allbrain.storage.snapshot_repo import SnapshotRepo
 from allbrain.snapshot.adapters import SnapshotAdapter
 from allbrain.snapshot.versions import is_compatible
+from allbrain.storage.repository import BrainRepository
+from allbrain.storage.snapshot_repo import SnapshotRepo
 
 
 class IncrementalResumeEngine:

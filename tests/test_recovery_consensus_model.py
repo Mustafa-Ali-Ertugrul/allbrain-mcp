@@ -3,18 +3,18 @@ from __future__ import annotations
 import pytest
 
 from allbrain.recovery_consensus.model import (
+    CONSENSUS_MIN_RATIO,
     CONSENSUS_TEMPLATE_VERSION,
-    MAX_CANDIDATES,
-    MIN_CANDIDATES,
-    DEFAULT_SUCCESS_WEIGHT,
     DEFAULT_CONFIDENCE_WEIGHT,
     DEFAULT_RISK_WEIGHT,
-    CONSENSUS_MIN_RATIO,
+    DEFAULT_SUCCESS_WEIGHT,
+    MAX_CANDIDATES,
+    MIN_CANDIDATES,
     STRATEGY_PROFILES,
     CandidateStrategy,
+    RecoveryConsensusState,
     RecoveryDecision,
     ScoredCandidate,
-    RecoveryConsensusState,
 )
 
 
@@ -41,7 +41,7 @@ class TestConstants:
             assert s in STRATEGY_PROFILES
 
     def test_strategy_profiles_have_tuples(self):
-        for name, profile in STRATEGY_PROFILES.items():
+        for _name, profile in STRATEGY_PROFILES.items():
             assert len(profile) == 3
             risk, success, confidence = profile
             assert 0.0 <= risk <= 1.0
@@ -80,17 +80,25 @@ class TestCandidateStrategy:
 
     def test_strategy_repair(self):
         cs = CandidateStrategy(
-            strategy="repair", confidence=0.3, risk=0.6,
-            estimated_success=0.4, explanation="repair corruption",
-            fault_id="f2", component="db",
+            strategy="repair",
+            confidence=0.3,
+            risk=0.6,
+            estimated_success=0.4,
+            explanation="repair corruption",
+            fault_id="f2",
+            component="db",
         )
         assert cs.strategy == "repair"
 
     def test_immutable(self):
         cs = CandidateStrategy(
-            strategy="rollback", confidence=0.9, risk=0.1,
-            estimated_success=0.95, explanation="safe",
-            fault_id="f1", component="worker",
+            strategy="rollback",
+            confidence=0.9,
+            risk=0.1,
+            estimated_success=0.95,
+            explanation="safe",
+            fault_id="f1",
+            component="worker",
         )
         with pytest.raises(AttributeError):
             cs.strategy = "retry"  # type: ignore[misc]
@@ -127,9 +135,13 @@ class TestRecoveryDecision:
 class TestScoredCandidate:
     def test_create(self):
         cs = CandidateStrategy(
-            strategy="retry", confidence=0.8, risk=0.2,
-            estimated_success=0.7, explanation="ok",
-            fault_id="f1", component="worker",
+            strategy="retry",
+            confidence=0.8,
+            risk=0.2,
+            estimated_success=0.7,
+            explanation="ok",
+            fault_id="f1",
+            component="worker",
         )
         sc = ScoredCandidate(candidate=cs, score=0.65, rank=1)
         assert sc.score == 0.65

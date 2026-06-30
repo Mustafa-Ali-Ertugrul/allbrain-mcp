@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from allbrain.objective_system.model import (
-    ObjectiveResult, ObjectiveWeights, ObjectivePriority,
-    OBJECTIVE_PRIORITY_DEFAULTS, OBJECTIVE_REBALANCE_INTERVAL,
-    OBJECTIVE_WEIGHT_MIN, OBJECTIVE_WEIGHT_MAX,
+    OBJECTIVE_PRIORITY_DEFAULTS,
+    OBJECTIVE_REBALANCE_INTERVAL,
+    OBJECTIVE_WEIGHT_MAX,
+    OBJECTIVE_WEIGHT_MIN,
+    ObjectivePriority,
+    ObjectiveResult,
+    ObjectiveWeights,
 )
 from allbrain.objective_system.objective_store import ObjectiveStore
 
@@ -46,9 +50,12 @@ class ObjectiveEvaluator:
         if abs(adjusted - current.safety) < 0.01:
             return None
         new_weights = ObjectiveWeights(
-            fault_type=fault_type, safety=round(adjusted, 4),
-            stability=current.stability, success=current.success,
-            efficiency=current.efficiency, version=current.version,
+            fault_type=fault_type,
+            safety=round(adjusted, 4),
+            stability=current.stability,
+            success=current.success,
+            efficiency=current.efficiency,
+            version=current.version,
         )
         self._store.set(new_weights)
         return self._store.get(fault_type)

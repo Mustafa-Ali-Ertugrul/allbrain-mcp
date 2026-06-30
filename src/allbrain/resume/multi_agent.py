@@ -61,7 +61,9 @@ class MultiAgentResumeEngine:
         }
         return global_state | {"next_step": decision_view["next_step"]} | layered
 
-    def _decision_view(self, *, global_state: dict[str, Any], conflicts: list[dict[str, Any]], resolved: list[dict[str, Any]]) -> dict[str, Any]:
+    def _decision_view(
+        self, *, global_state: dict[str, Any], conflicts: list[dict[str, Any]], resolved: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         if conflicts:
             first = conflicts[0]
             target = first.get("file") or first.get("task") or first["level"]

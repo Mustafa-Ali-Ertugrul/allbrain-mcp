@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -133,12 +133,18 @@ def test_tolerance_unknown_world_event_skipped(tmp_path) -> None:
 def test_tolerance_unknown_counterfactual_skipped(tmp_path) -> None:
     context = make_context(tmp_path)
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="counterfactual_generated", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="counterfactual_generated",
+        source="test",
+        payload={},
     )
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="brand_new_unknown_type", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="brand_new_unknown_type",
+        source="test",
+        payload={},
     )
     replay = EventReplayEngine().replay(context_events(context))["final_state"]
     assert replay["foundations"]["unknown_event_count"] >= 1
@@ -147,12 +153,18 @@ def test_tolerance_unknown_counterfactual_skipped(tmp_path) -> None:
 def test_tolerance_unknown_scenario_skipped(tmp_path) -> None:
     context = make_context(tmp_path)
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="scenario_generated", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="scenario_generated",
+        source="test",
+        payload={},
     )
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="strange_new_event_type", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="strange_new_event_type",
+        source="test",
+        payload={},
     )
     replay = EventReplayEngine().replay(context_events(context))["final_state"]
     assert replay["foundations"]["unknown_event_count"] >= 1
@@ -161,12 +173,18 @@ def test_tolerance_unknown_scenario_skipped(tmp_path) -> None:
 def test_tolerance_unknown_foresight_skipped(tmp_path) -> None:
     context = make_context(tmp_path)
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="foresight_generated", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="foresight_generated",
+        source="test",
+        payload={},
     )
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="brand_new_xyz", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="brand_new_xyz",
+        source="test",
+        payload={},
     )
     replay = EventReplayEngine().replay(context_events(context))["final_state"]
     assert replay["foundations"]["unknown_event_count"] >= 1
@@ -175,12 +193,18 @@ def test_tolerance_unknown_foresight_skipped(tmp_path) -> None:
 def test_tolerance_unknown_meta_reasoning_skipped(tmp_path) -> None:
     context = make_context(tmp_path)
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="meta_reasoning_started", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="meta_reasoning_started",
+        source="test",
+        payload={},
     )
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="brand_new_abc", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="brand_new_abc",
+        source="test",
+        payload={},
     )
     replay = EventReplayEngine().replay(context_events(context))["final_state"]
     assert replay["foundations"]["unknown_event_count"] >= 1
@@ -189,12 +213,18 @@ def test_tolerance_unknown_meta_reasoning_skipped(tmp_path) -> None:
 def test_tolerance_unknown_uncertainty_skipped(tmp_path) -> None:
     context = make_context(tmp_path)
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="uncertainty_estimated", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="uncertainty_estimated",
+        source="test",
+        payload={},
     )
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="brand_new_def", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="brand_new_def",
+        source="test",
+        payload={},
     )
     replay = EventReplayEngine().replay(context_events(context))["final_state"]
     assert replay["foundations"]["unknown_event_count"] >= 1
@@ -203,12 +233,18 @@ def test_tolerance_unknown_uncertainty_skipped(tmp_path) -> None:
 def test_tolerance_unknown_information_seeking_skipped(tmp_path) -> None:
     context = make_context(tmp_path)
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="information_need_detected", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="information_need_detected",
+        source="test",
+        payload={},
     )
     context.repository.append_event(
-        project_path=context.project_path, session_id=1,
-        type="brand_new_ghi", source="test", payload={},
+        project_path=context.project_path,
+        session_id=1,
+        type="brand_new_ghi",
+        source="test",
+        payload={},
     )
     replay = EventReplayEngine().replay(context_events(context))["final_state"]
     assert replay["foundations"]["unknown_event_count"] >= 1
@@ -245,7 +281,7 @@ def test_is_known_event_basic_check() -> None:
 
 
 def test_list_events_ordered_by_id_not_created_at(tmp_path) -> None:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from allbrain.models.entities import Event
     from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
@@ -258,20 +294,29 @@ def test_list_events_ordered_by_id_not_created_at(tmp_path) -> None:
     session = repo.create_session(project_root, "codex")
 
     e1 = repo.append_event(
-        project_path=project_root, session_id=session.id or 0,
-        type="x", source="test", payload={"i": 1},
+        project_path=project_root,
+        session_id=session.id or 0,
+        type="x",
+        source="test",
+        payload={"i": 1},
     )
     e2 = repo.append_event(
-        project_path=project_root, session_id=session.id or 0,
-        type="x", source="test", payload={"i": 2},
+        project_path=project_root,
+        session_id=session.id or 0,
+        type="x",
+        source="test",
+        payload={"i": 2},
     )
     e3 = repo.append_event(
-        project_path=project_root, session_id=session.id or 0,
-        type="x", source="test", payload={"i": 3},
+        project_path=project_root,
+        session_id=session.id or 0,
+        type="x",
+        source="test",
+        payload={"i": 3},
     )
 
-    earlier = datetime(2020, 1, 1, tzinfo=timezone.utc)
-    later = datetime(2030, 1, 1, tzinfo=timezone.utc)
+    earlier = datetime(2020, 1, 1, tzinfo=UTC)
+    later = datetime(2030, 1, 1, tzinfo=UTC)
     with open_session(repo.engine) as db:
         for row in (db.get(Event, e1.id), db.get(Event, e2.id), db.get(Event, e3.id)):
             assert row is not None
@@ -300,8 +345,11 @@ def test_payload_version_persisted_and_stamped(tmp_path) -> None:
     session = repo.create_session(project_root, "codex")
 
     event = repo.append_event(
-        project_path=project_root, session_id=session.id or 0,
-        type="x", source="test", payload={"k": "v"},
+        project_path=project_root,
+        session_id=session.id or 0,
+        type="x",
+        source="test",
+        payload={"k": "v"},
     )
 
     with open_session(repo.engine) as db:

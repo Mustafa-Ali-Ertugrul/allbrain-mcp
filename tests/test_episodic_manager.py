@@ -53,7 +53,9 @@ class TestStoreEpisode:
     def test_episode_id_generated(self):
         mgr = EpisodicManager()
         result = mgr.store_episode(
-            reward=0.8, workspace_items=["x"], decision_id="dec-1",
+            reward=0.8,
+            workspace_items=["x"],
+            decision_id="dec-1",
         )
         assert result["episode_id"].startswith("ep-")
 

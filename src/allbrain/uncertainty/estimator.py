@@ -7,7 +7,6 @@ from allbrain.uncertainty.models import (
     UncertaintyType,
 )
 
-
 WEIGHTS = {
     "historical": 0.35,
     "evidence": 0.25,

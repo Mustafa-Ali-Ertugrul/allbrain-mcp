@@ -11,7 +11,7 @@ ALIGNMENT_CHECK_INTERVAL = 25  # same as rebalance
 @dataclass
 class Constraint:
     name: str
-    metric: str   # e.g., "safety", "stability"
+    metric: str  # e.g., "safety", "stability"
     threshold: float
     is_hard: bool = True
 
@@ -29,9 +29,14 @@ class AlignmentScore:
     passed: bool
 
     def to_payload(self) -> dict[str, Any]:
-        return {"fault_type": self.fault_type, "overall_score": round(self.overall_score, 4),
-                "constraint_results": self.constraint_results, "hard_violations": self.hard_violations,
-                "soft_penalties": self.soft_penalties, "passed": self.passed}
+        return {
+            "fault_type": self.fault_type,
+            "overall_score": round(self.overall_score, 4),
+            "constraint_results": self.constraint_results,
+            "hard_violations": self.hard_violations,
+            "soft_penalties": self.soft_penalties,
+            "passed": self.passed,
+        }
 
 
 @dataclass(frozen=True)

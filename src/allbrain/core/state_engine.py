@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.core.merge import StateMerger
-from allbrain.core.state_machine import ProjectState
-from allbrain.core.state_machine import StateMachine
+from allbrain.core.state_machine import ProjectState, StateMachine
 from allbrain.models.schemas import EventRead
 
 
@@ -21,7 +20,9 @@ class StateEngine:
         state["git"] = context["git"]
         return state
 
-    def apply_events(self, base_state: dict[str, Any], events: list[EventRead], git: dict[str, Any] | None = None) -> dict[str, Any]:
+    def apply_events(
+        self, base_state: dict[str, Any], events: list[EventRead], git: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         if not events:
             state = dict(base_state)
             state["git"] = git or {}

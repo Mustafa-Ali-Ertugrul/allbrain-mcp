@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any
 
 from allbrain.agents.adapter import AgentAdapter, ExecutionContext, RetryPolicy
@@ -12,7 +12,6 @@ from allbrain.agents.registry import AgentRegistry
 from allbrain.agents.safety import SafetyWrapper
 from allbrain.workflow.models import SubtaskResult, TaskGraph
 from allbrain.workflow.scheduler import SubtaskAssignment
-
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +76,7 @@ class AgentRuntime:
         start: datetime,
         result: SubtaskResult,
     ) -> None:
-        completed = datetime.now(timezone.utc)
+        completed = datetime.now(UTC)
         duration_ms = int((completed - start).total_seconds() * 1000)
         metrics = ExecutionMetrics(
             agent_id=agent_id,
@@ -105,7 +104,7 @@ class AgentRuntime:
         error_type: str,
         error_message: str,
     ) -> None:
-        completed = datetime.now(timezone.utc)
+        completed = datetime.now(UTC)
         duration_ms = int((completed - start).total_seconds() * 1000)
         metrics = ExecutionMetrics(
             agent_id=agent_id,
@@ -144,36 +143,52 @@ class AgentRuntime:
             metadata=metadata,
         )
         wrapper = self.get_safety_wrapper(agent_id)
-        start = datetime.now(timezone.utc)
+        start = datetime.now(UTC)
 
         try:
             result = await self._run_with_timeout(wrapper, task, context, timeout_seconds)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._record_failure(
-                agent_id=agent_id, node_id=assignment.node_id,
-                workflow_id=context.workflow_id, task=task, start=start,
+                agent_id=agent_id,
+                node_id=assignment.node_id,
+                workflow_id=context.workflow_id,
+                task=task,
+                start=start,
                 error_type="timeout",
                 error_message=f"Execution exceeded {timeout_seconds}s",
             )
             return SubtaskResult(
-                node_id=assignment.node_id, agent_id=agent_id, output="",
-                artifacts=[], metadata={"error": "timeout", "timeout": True},
+                node_id=assignment.node_id,
+                agent_id=agent_id,
+                output="",
+                artifacts=[],
+                metadata={"error": "timeout", "timeout": True},
             )
         except Exception as exc:  # noqa: BLE001
             self._record_failure(
-                agent_id=agent_id, node_id=assignment.node_id,
-                workflow_id=context.workflow_id, task=task, start=start,
-                error_type=type(exc).__name__, error_message=str(exc),
+                agent_id=agent_id,
+                node_id=assignment.node_id,
+                workflow_id=context.workflow_id,
+                task=task,
+                start=start,
+                error_type=type(exc).__name__,
+                error_message=str(exc),
             )
             return SubtaskResult(
-                node_id=assignment.node_id, agent_id=agent_id, output="",
-                artifacts=[], metadata={"error": str(exc), "exception": type(exc).__name__},
+                node_id=assignment.node_id,
+                agent_id=agent_id,
+                output="",
+                artifacts=[],
+                metadata={"error": str(exc), "exception": type(exc).__name__},
             )
 
         self._record_success(
-            agent_id=agent_id, node_id=assignment.node_id,
-            workflow_id=context.workflow_id, task=task,
-            start=start, result=result,
+            agent_id=agent_id,
+            node_id=assignment.node_id,
+            workflow_id=context.workflow_id,
+            task=task,
+            start=start,
+            result=result,
         )
         return result
 

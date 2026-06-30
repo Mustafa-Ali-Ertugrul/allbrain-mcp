@@ -28,7 +28,12 @@ class IdempotencyKeyBuilder:
 
     def event_key(self, event: EventRead | dict[str, Any]) -> str:
         if isinstance(event, EventRead):
-            payload = {"type": event.type, "payload": event.payload, "agent_id": event.agent_id, "caused_by": event.caused_by}
+            payload = {
+                "type": event.type,
+                "payload": event.payload,
+                "agent_id": event.agent_id,
+                "caused_by": event.caused_by,
+            }
         else:
             payload = event
         return _key("event", payload)

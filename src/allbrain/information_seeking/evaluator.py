@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from allbrain.information_seeking.models import InformationAction, InformationNeed
 
-
 ACTION_VOI_TABLE: dict[str, dict[str, float]] = {
-    "request_feedback":    {"gain": 0.35, "cost": 0.05},
-    "collect_history":     {"gain": 0.40, "cost": 0.15},
-    "run_simulation":      {"gain": 0.30, "cost": 0.10},
-    "gather_samples":      {"gain": 0.25, "cost": 0.20},
+    "request_feedback": {"gain": 0.35, "cost": 0.05},
+    "collect_history": {"gain": 0.40, "cost": 0.15},
+    "run_simulation": {"gain": 0.30, "cost": 0.10},
+    "gather_samples": {"gain": 0.25, "cost": 0.20},
     "observe_environment": {"gain": 0.20, "cost": 0.05},
 }
 
 
 ACTION_TO_GAPS: dict[str, set[str]] = {
-    "request_feedback":    {"missing_feedback"},
-    "collect_history":     {"missing_history"},
-    "run_simulation":      {"insufficient_samples", "inconsistent_world_model"},
-    "gather_samples":      {"insufficient_samples"},
+    "request_feedback": {"missing_feedback"},
+    "collect_history": {"missing_history"},
+    "run_simulation": {"insufficient_samples", "inconsistent_world_model"},
+    "gather_samples": {"insufficient_samples"},
     "observe_environment": {"inconsistent_world_model", "unknown_environment"},
 }
 

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from allbrain.semantic.events import (
-    validate_concept_created,
-    validate_concept_updated,
-    validate_concept_forgotten,
     make_concept_created_payload,
-    make_concept_updated_payload,
     make_concept_forgotten_payload,
+    make_concept_updated_payload,
+    validate_concept_created,
+    validate_concept_forgotten,
+    validate_concept_updated,
 )
 
 
@@ -19,7 +19,7 @@ class TestValidateConceptCreated:
         p = {"concept_id": "sem-abc"}
         try:
             validate_concept_created(p)
-            assert False, "expected ValueError"
+            raise AssertionError("expected ValueError")
         except ValueError as e:
             assert "concept_created missing" in str(e)
 
@@ -27,7 +27,7 @@ class TestValidateConceptCreated:
         p = {"concept_id": 123, "pattern_signature": ["a"], "confidence": 0.5}
         try:
             validate_concept_created(p)
-            assert False, "expected ValueError"
+            raise AssertionError("expected ValueError")
         except ValueError as e:
             assert "concept_id must be str" in str(e)
 
@@ -41,7 +41,7 @@ class TestValidateConceptUpdated:
         p = {"concept_id": "sem-abc"}
         try:
             validate_concept_updated(p)
-            assert False, "expected ValueError"
+            raise AssertionError("expected ValueError")
         except ValueError as e:
             assert "concept_updated missing" in str(e)
 
@@ -49,7 +49,7 @@ class TestValidateConceptUpdated:
         p = {"concept_id": "sem-abc", "confidence": "high"}
         try:
             validate_concept_updated(p)
-            assert False, "expected ValueError"
+            raise AssertionError("expected ValueError")
         except ValueError as e:
             assert "confidence must be numeric" in str(e)
 
@@ -63,7 +63,7 @@ class TestValidateConceptForgotten:
         p = {"concept_id": "sem-abc"}
         try:
             validate_concept_forgotten(p)
-            assert False, "expected ValueError"
+            raise AssertionError("expected ValueError")
         except ValueError as e:
             assert "concept_forgotten missing" in str(e)
 

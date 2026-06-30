@@ -30,8 +30,13 @@ class TestLearningReplay:
 
     def test_observed_round_trip(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_OBSERVED.value, "e1",
-              make_observed_payload(agent_id="a", task_type="t", success=True, runtime_score=0.8, selection_score=0.7)),
+            E(
+                EventType.AGENT_CAPABILITY_OBSERVED.value,
+                "e1",
+                make_observed_payload(
+                    agent_id="a", task_type="t", success=True, runtime_score=0.8, selection_score=0.7
+                ),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert "learning" in f
@@ -41,28 +46,49 @@ class TestLearningReplay:
 
     def test_learned_round_trip(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_LEARNED.value, "e1",
-              make_learned_payload(agent_id="agent_x", task_type="bug_fix", old_score=0.3, new_score=0.85, delta=0.55)),
+            E(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                "e1",
+                make_learned_payload(
+                    agent_id="agent_x", task_type="bug_fix", old_score=0.3, new_score=0.85, delta=0.55
+                ),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert f["learning"]["agent_x::bug_fix"]["capability_score"] == 0.85
 
     def test_decayed_round_trip(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_DECAYED.value, "e1",
-              make_decayed_payload(agent_id="agent_y", task_type="refactor", old_score=0.7, new_score=0.35)),
+            E(
+                EventType.AGENT_CAPABILITY_DECAYED.value,
+                "e1",
+                make_decayed_payload(agent_id="agent_y", task_type="refactor", old_score=0.7, new_score=0.35),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert abs(f["learning"]["agent_y::refactor"]["capability_score"] - 0.35) < 1e-9
 
     def test_mixed_events_replay(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_OBSERVED.value, "e1",
-              make_observed_payload(agent_id="a", task_type="t", success=True, runtime_score=0.9, selection_score=0.8)),
-            E(EventType.AGENT_CAPABILITY_LEARNED.value, "e2",
-              make_learned_payload(agent_id="a", task_type="t", old_score=0.5, new_score=0.92, delta=0.42)),
-            E(EventType.AGENT_CAPABILITY_OBSERVED.value, "e3",
-              make_observed_payload(agent_id="b", task_type="u", success=False, runtime_score=0.2, selection_score=0.1)),
+            E(
+                EventType.AGENT_CAPABILITY_OBSERVED.value,
+                "e1",
+                make_observed_payload(
+                    agent_id="a", task_type="t", success=True, runtime_score=0.9, selection_score=0.8
+                ),
+            ),
+            E(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                "e2",
+                make_learned_payload(agent_id="a", task_type="t", old_score=0.5, new_score=0.92, delta=0.42),
+            ),
+            E(
+                EventType.AGENT_CAPABILITY_OBSERVED.value,
+                "e3",
+                make_observed_payload(
+                    agent_id="b", task_type="u", success=False, runtime_score=0.2, selection_score=0.1
+                ),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert f["learning"]["a::t"]["capability_score"] == 0.92
@@ -73,10 +99,16 @@ class TestLearningReplay:
 
     def test_deterministic_ordering(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_LEARNED.value, "e2",
-              make_learned_payload(agent_id="a", task_type="t", old_score=0.2, new_score=0.9, delta=0.7)),
-            E(EventType.AGENT_CAPABILITY_LEARNED.value, "e1",
-              make_learned_payload(agent_id="a", task_type="t", old_score=0.4, new_score=0.5, delta=0.1)),
+            E(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                "e2",
+                make_learned_payload(agent_id="a", task_type="t", old_score=0.2, new_score=0.9, delta=0.7),
+            ),
+            E(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                "e1",
+                make_learned_payload(agent_id="a", task_type="t", old_score=0.4, new_score=0.5, delta=0.1),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         # In deterministic mode, events are sorted by canonical_event_sort
@@ -85,8 +117,11 @@ class TestLearningReplay:
 
     def test_equality(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_LEARNED.value, "e1",
-              make_learned_payload(agent_id="x", task_type="tt", old_score=0.2, new_score=0.5, delta=0.3)),
+            E(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                "e1",
+                make_learned_payload(agent_id="x", task_type="tt", old_score=0.2, new_score=0.5, delta=0.3),
+            ),
         ]
         r1 = EventReplayEngine().replay(evts)["final_state"]["learning"]
         r2 = EventReplayEngine().replay(evts)["final_state"]["learning"]
@@ -95,11 +130,18 @@ class TestLearningReplay:
     def test_mixed_with_existing_reducers(self):
         """Learning events alongside capability events do not interfere."""
         from allbrain.capabilities.events import make_matched_payload
+
         evts = [
-            E(EventType.CAPABILITY_MATCHED.value, "e1",
-              make_matched_payload(agent_id="a", task_type="t", match_score=0.8, match_kind="exact")),
-            E(EventType.AGENT_CAPABILITY_LEARNED.value, "e2",
-              make_learned_payload(agent_id="a", task_type="t", old_score=0.3, new_score=0.7, delta=0.4)),
+            E(
+                EventType.CAPABILITY_MATCHED.value,
+                "e1",
+                make_matched_payload(agent_id="a", task_type="t", match_score=0.8, match_kind="exact"),
+            ),
+            E(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                "e2",
+                make_learned_payload(agent_id="a", task_type="t", old_score=0.3, new_score=0.7, delta=0.4),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert "capabilities" in f

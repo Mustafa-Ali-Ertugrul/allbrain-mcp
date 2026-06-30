@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass
@@ -35,7 +35,14 @@ class WorkerRegistration:
 class WorkerRegistry:
     workers: dict[str, WorkerRegistration] = field(default_factory=dict)
 
-    def register(self, worker_id: str, *, node_id: str, capabilities: dict[str, Any] | None = None, metadata: dict[str, Any] | None = None) -> WorkerRegistration:
+    def register(
+        self,
+        worker_id: str,
+        *,
+        node_id: str,
+        capabilities: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> WorkerRegistration:
         registration = WorkerRegistration(
             worker_id=worker_id,
             node_id=node_id,

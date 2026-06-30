@@ -1,4 +1,5 @@
 """Domain module: world."""
+
 from __future__ import annotations
 
 import logging
@@ -6,22 +7,22 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from allbrain.events import EventType
+from allbrain.models.schemas import (
+    ObserveWorldInput,
+    SimulateActionInput,
+    ToolResult,
+    UserInputError,
+)
+from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
     maybe_auto_snapshot,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
-from allbrain.models.schemas import (
-    ToolResult,
-    UserInputError,
-    ObserveWorldInput,
-    SimulateActionInput,
-)
-from allbrain.events import EventType
-from allbrain.world import WorldModel
 from allbrain.storage.repository import event_to_read
+from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,6 @@ def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ObserveWorldInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         world_model = WorldModel()
         state = world_model.observe()
         event = context.repository.append_event(
@@ -64,7 +64,6 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = SimulateActionInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
         world_model = WorldModel()
         state = world_model.observe()
         observation_event = context.repository.append_event(

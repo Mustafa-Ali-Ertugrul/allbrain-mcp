@@ -31,9 +31,25 @@ class GoalDecompositionBridge:
         ]
         edges: list[dict[str, str]] = []
         if economic["risk_level"] in {"high", "critical"}:
-            subtasks.append({"node_id": f"{task_id}:review", "task_id": task_id, "goal": f"Review {plan['goal']}", "kind": "review", "priority": 5})
+            subtasks.append(
+                {
+                    "node_id": f"{task_id}:review",
+                    "task_id": task_id,
+                    "goal": f"Review {plan['goal']}",
+                    "kind": "review",
+                    "priority": 5,
+                }
+            )
             edges.append({"from": f"{task_id}:main", "to": f"{task_id}:review", "edge_type": "depends_on"})
         if kind == "implementation":
-            subtasks.append({"node_id": f"{task_id}:tests", "task_id": task_id, "goal": f"Test {plan['goal']}", "kind": "testing", "priority": max(3, plan["priority"])})
+            subtasks.append(
+                {
+                    "node_id": f"{task_id}:tests",
+                    "task_id": task_id,
+                    "goal": f"Test {plan['goal']}",
+                    "kind": "testing",
+                    "priority": max(3, plan["priority"]),
+                }
+            )
             edges.append({"from": f"{task_id}:main", "to": f"{task_id}:tests", "edge_type": "depends_on"})
         return {"task_id": task_id, "subtasks": subtasks, "edges": edges}

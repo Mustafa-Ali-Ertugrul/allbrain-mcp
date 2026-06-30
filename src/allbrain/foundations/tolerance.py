@@ -4,7 +4,6 @@ from typing import Any
 
 from allbrain.models.schemas import EventRead
 
-
 UNKNOWN_TYPE_POLICY = "skip_and_log"
 
 

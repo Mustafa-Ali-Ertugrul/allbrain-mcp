@@ -28,8 +28,20 @@ class TestReducer:
         reducer = TelemetryReducer()
         reducer.apply(E("other", "0", {"x": 1}))
         events = [
-            E(EventType.TOOL_EXECUTION_COMPLETED.value, "1", make_completed_payload(agent_id="a1", task_id="t1", tool_name="x", duration_ms=100, success=True, retry_count=0)),
-            E(EventType.TOOL_EXECUTION_COMPLETED.value, "2", make_completed_payload(agent_id="a1", task_id="t2", tool_name="x", duration_ms=300, success=False, retry_count=1)),
+            E(
+                EventType.TOOL_EXECUTION_COMPLETED.value,
+                "1",
+                make_completed_payload(
+                    agent_id="a1", task_id="t1", tool_name="x", duration_ms=100, success=True, retry_count=0
+                ),
+            ),
+            E(
+                EventType.TOOL_EXECUTION_COMPLETED.value,
+                "2",
+                make_completed_payload(
+                    agent_id="a1", task_id="t2", tool_name="x", duration_ms=300, success=False, retry_count=1
+                ),
+            ),
         ]
         for e in events:
             reducer.apply(e)
@@ -41,7 +53,13 @@ class TestReducer:
 
     def test_idempotency(self):
         reducer = TelemetryReducer()
-        event = E(EventType.TOOL_EXECUTION_COMPLETED.value, "1", make_completed_payload(agent_id="a", task_id="t", tool_name="x", duration_ms=0, success=True, retry_count=0))
+        event = E(
+            EventType.TOOL_EXECUTION_COMPLETED.value,
+            "1",
+            make_completed_payload(
+                agent_id="a", task_id="t", tool_name="x", duration_ms=0, success=True, retry_count=0
+            ),
+        )
         reducer.apply(event)
         reducer.apply(event)
         assert reducer.snapshot(agent_id="a").execution_count == 1
@@ -55,8 +73,20 @@ class TestReducer:
 class TestManagerEqualsReducer:
     def test_convergence(self):
         events = [
-            E(EventType.TOOL_EXECUTION_COMPLETED.value, "1", make_completed_payload(agent_id="a", task_id="t1", tool_name="x", duration_ms=100, success=True, retry_count=0)),
-            E(EventType.TOOL_EXECUTION_COMPLETED.value, "2", make_completed_payload(agent_id="a", task_id="t2", tool_name="x", duration_ms=300, success=False, retry_count=2)),
+            E(
+                EventType.TOOL_EXECUTION_COMPLETED.value,
+                "1",
+                make_completed_payload(
+                    agent_id="a", task_id="t1", tool_name="x", duration_ms=100, success=True, retry_count=0
+                ),
+            ),
+            E(
+                EventType.TOOL_EXECUTION_COMPLETED.value,
+                "2",
+                make_completed_payload(
+                    agent_id="a", task_id="t2", tool_name="x", duration_ms=300, success=False, retry_count=2
+                ),
+            ),
         ]
         manager = TelemetryManager()
         reducer = TelemetryReducer()
@@ -70,14 +100,37 @@ class TestManagerEqualsReducer:
 
 class TestRuntimeScoreLastWins:
     def test_last_wins(self):
-        from allbrain.revision import RevisionManager, make_payload as make_revision_payload
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as make_revision_payload
 
         events = [
-            E(EventType.AGENT_RUNTIME_UPDATED.value, "1", make_runtime_updated_payload(agent_id="a", mean_duration_ms=0, success_rate=0.5, mean_retry_count=0, runtime_score_val=0.5)),
-            E(EventType.AGENT_RUNTIME_UPDATED.value, "2", make_runtime_updated_payload(agent_id="a", mean_duration_ms=0, success_rate=0.9, mean_retry_count=0, runtime_score_val=0.9)),
+            E(
+                EventType.AGENT_RUNTIME_UPDATED.value,
+                "1",
+                make_runtime_updated_payload(
+                    agent_id="a", mean_duration_ms=0, success_rate=0.5, mean_retry_count=0, runtime_score_val=0.5
+                ),
+            ),
+            E(
+                EventType.AGENT_RUNTIME_UPDATED.value,
+                "2",
+                make_runtime_updated_payload(
+                    agent_id="a", mean_duration_ms=0, success_rate=0.9, mean_retry_count=0, runtime_score_val=0.9
+                ),
+            ),
         ]
         rev_events = list(events) + [
-            E(EventType.BELIEF_REVISED.value, "rev1", make_revision_payload(context_key="default", old_confidence=0.9, new_confidence=0.6, reason="contradiction", evidence_count=0)),
+            E(
+                EventType.BELIEF_REVISED.value,
+                "rev1",
+                make_revision_payload(
+                    context_key="default",
+                    old_confidence=0.9,
+                    new_confidence=0.6,
+                    reason="contradiction",
+                    evidence_count=0,
+                ),
+            ),
         ]
         state = RevisionManager().query(rev_events)
         assert state.runtime_score == pytest.approx(0.9)
@@ -85,9 +138,27 @@ class TestRuntimeScoreLastWins:
 
 class TestOrderIndependence:
     def test_runtime_score_independent_of_event_order(self):
-        e1 = E(EventType.TOOL_EXECUTION_COMPLETED.value, "a", make_completed_payload(agent_id="x", task_id="t1", tool_name="tool", duration_ms=100, success=True, retry_count=0))
-        e2 = E(EventType.TOOL_EXECUTION_COMPLETED.value, "b", make_completed_payload(agent_id="x", task_id="t2", tool_name="tool", duration_ms=300, success=False, retry_count=2))
-        e3 = E(EventType.TOOL_EXECUTION_COMPLETED.value, "c", make_completed_payload(agent_id="x", task_id="t3", tool_name="tool", duration_ms=50, success=True, retry_count=0))
+        e1 = E(
+            EventType.TOOL_EXECUTION_COMPLETED.value,
+            "a",
+            make_completed_payload(
+                agent_id="x", task_id="t1", tool_name="tool", duration_ms=100, success=True, retry_count=0
+            ),
+        )
+        e2 = E(
+            EventType.TOOL_EXECUTION_COMPLETED.value,
+            "b",
+            make_completed_payload(
+                agent_id="x", task_id="t2", tool_name="tool", duration_ms=300, success=False, retry_count=2
+            ),
+        )
+        e3 = E(
+            EventType.TOOL_EXECUTION_COMPLETED.value,
+            "c",
+            make_completed_payload(
+                agent_id="x", task_id="t3", tool_name="tool", duration_ms=50, success=True, retry_count=0
+            ),
+        )
 
         r1 = TelemetryReducer()
         for e in [e1, e2, e3]:

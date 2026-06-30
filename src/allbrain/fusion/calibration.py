@@ -7,10 +7,11 @@ from allbrain.fusion.model import FUSION_MIN_VARIANCE_EPSILON, FUSION_SOFT_SCALI
 
 def _stable_fusion_id(key: str, event_ids: list[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
-    d = hashlib.sha256(f"{key}:{ek}".encode("utf-8")).digest()
+    d = hashlib.sha256(f"{key}:{ek}".encode()).digest()
     return f"fusion-cal-{d.hex()[:12]}"
 
 
@@ -62,10 +63,10 @@ def calibrate_signals(
     Returns (cap, learn, dyn, causal) normalized values.
     """
     c, _ = normalize_signal(capability_values)
-    l, _ = normalize_signal(learning_values)
+    learn, _ = normalize_signal(learning_values)
     d, _ = normalize_signal(dynamics_values)
     a, _ = normalize_signal(causal_values)
-    return [c], [l], [d], [a]
+    return [c], [learn], [d], [a]
 
 
 def signal_stats(values: list[float]) -> dict[str, float]:

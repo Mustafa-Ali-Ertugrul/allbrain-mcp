@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from allbrain.events.schemas import EventType
 from allbrain.mitigation_learning import (
-    OutcomeTracker,
     LearningEngine,
-    StrategyOptimizer,
+    OutcomeTracker,
     PolicyStore,
+    StrategyOptimizer,
 )
 from allbrain.mitigation_learning.model import MIN_USES_FOR_DISABLE, POLICY_UPDATE_MIN_RECORDS
-from allbrain.events.schemas import EventType
-from allbrain.predictive_failure.model import RiskSignal
 from allbrain.predictive_failure.manager import PredictiveFailureManager
+from allbrain.predictive_failure.model import RiskSignal
 
 
 def _event_types(events):
@@ -32,7 +32,9 @@ class TestFullFeedbackLoop:
         )
         signals = [RiskSignal("retry_spike", 0.85, 5)]
         result = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout", signals=signals,
+            fault_id="f1",
+            fault_type="timeout",
+            signals=signals,
         )
         ev_types = _event_types(result["events"])
         assert "predictive_signal_detected" in ev_types
@@ -54,7 +56,9 @@ class TestFullFeedbackLoop:
         for i in range(10):
             signals = [RiskSignal("retry_spike", 0.85, 5)]
             mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="timeout", signals=signals,
+                fault_id="f" + str(i),
+                fault_type="timeout",
+                signals=signals,
             )
         key = ("timeout", "retry_spike", "log_warning")
         assert key in engine.stats
@@ -70,7 +74,9 @@ class TestFullFeedbackLoop:
         for i in range(MIN_USES_FOR_DISABLE):
             signals = [RiskSignal("anomaly", 0.80, 5)]
             mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="anomaly", signals=signals,
+                fault_id="f" + str(i),
+                fault_type="anomaly",
+                signals=signals,
             )
         key = ("anomaly", "anomaly", "alternative_route")
         assert key in engine.stats
@@ -86,7 +92,9 @@ class TestFullFeedbackLoop:
         for i in range(POLICY_UPDATE_MIN_RECORDS + 1):
             signals = [RiskSignal("retry_spike", 0.85, 5)]
             r = mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="timeout", signals=signals,
+                fault_id="f" + str(i),
+                fault_type="timeout",
+                signals=signals,
             )
             for e in r["events"]:
                 if e.get("event_type") == EventType.POLICY_IMPROVED.value:
@@ -105,7 +113,9 @@ class TestFullFeedbackLoop:
         for i in range(POLICY_UPDATE_MIN_RECORDS + 2):
             signals = [RiskSignal("retry_spike", 0.85, 5)]
             mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="timeout", signals=signals,
+                fault_id="f" + str(i),
+                fault_type="timeout",
+                signals=signals,
             )
         current = mgr._policy_store.get_current("timeout")
         assert current is not None
@@ -124,13 +134,16 @@ class TestFullFeedbackLoop:
         for i in range(10):
             signals = [RiskSignal("retry_spike", 0.85, 5)]
             mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="timeout", signals=signals,
+                fault_id="f" + str(i),
+                fault_type="timeout",
+                signals=signals,
             )
         assert ("timeout", "retry_spike", "log_warning") in engine.stats
         assert engine.stats[("timeout", "retry_spike", "log_warning")].total_uses == 10
 
     def test_reducer_tracks_learning_events(self):
         from allbrain.mitigation_learning.reducer import MitigationLearningReducer
+
         reducer = MitigationLearningReducer()
 
         class FakeEvent:
@@ -208,7 +221,9 @@ class TestFullFeedbackLoop:
             learning_engine=LearningEngine(),
         )
         result = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout", signals=[],
+            fault_id="f1",
+            fault_type="timeout",
+            signals=[],
         )
         ev_types = _event_types(result["events"])
         assert "outcome_measured" not in ev_types

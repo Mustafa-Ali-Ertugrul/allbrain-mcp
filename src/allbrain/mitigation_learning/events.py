@@ -4,22 +4,53 @@ from typing import Any
 
 from allbrain.mitigation_learning.model import MITIGATION_LEARNING_TEMPLATE_VERSION
 
-EVALUATED_KEYS: frozenset[str] = frozenset({
-    "learning_id", "fault_id", "fault_type", "signal_type", "strategy",
-    "effectiveness_score", "success",
-})
-OUTCOME_MEASURED_KEYS: frozenset[str] = frozenset({
-    "outcome_id", "fault_id", "plan_id", "strategy", "pre_risk",
-    "post_risk", "risk_delta", "failure_prevented", "stability_delta",
-})
-STRATEGY_UPDATED_KEYS: frozenset[str] = frozenset({
-    "fault_type", "signal_type", "strategy", "total_uses", "successes",
-    "failures", "avg_effectiveness", "success_rate", "disabled",
-})
-POLICY_IMPROVED_KEYS: frozenset[str] = frozenset({
-    "fault_type", "version", "created_at", "disabled_strategies",
-    "strategy_preferences", "urgency_multipliers",
-})
+EVALUATED_KEYS: frozenset[str] = frozenset(
+    {
+        "learning_id",
+        "fault_id",
+        "fault_type",
+        "signal_type",
+        "strategy",
+        "effectiveness_score",
+        "success",
+    }
+)
+OUTCOME_MEASURED_KEYS: frozenset[str] = frozenset(
+    {
+        "outcome_id",
+        "fault_id",
+        "plan_id",
+        "strategy",
+        "pre_risk",
+        "post_risk",
+        "risk_delta",
+        "failure_prevented",
+        "stability_delta",
+    }
+)
+STRATEGY_UPDATED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "signal_type",
+        "strategy",
+        "total_uses",
+        "successes",
+        "failures",
+        "avg_effectiveness",
+        "success_rate",
+        "disabled",
+    }
+)
+POLICY_IMPROVED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "version",
+        "created_at",
+        "disabled_strategies",
+        "strategy_preferences",
+        "urgency_multipliers",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:
@@ -35,7 +66,10 @@ def _check_str(v: Any, label: str) -> str:
 
 
 def _check_float_in_range(
-    v: Any, label: str, lo: float = 0.0, hi: float = 1.0,
+    v: Any,
+    label: str,
+    lo: float = 0.0,
+    hi: float = 1.0,
 ) -> float:
     if not isinstance(v, (int, float)):
         raise ValueError(f"{label} must be numeric, got {type(v).__name__}")

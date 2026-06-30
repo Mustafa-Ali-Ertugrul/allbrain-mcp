@@ -5,8 +5,8 @@ from allbrain.runtime_core.execution import ExecutionPlanningBridge
 from allbrain.runtime_core.learning import ClosedLoopLearningEngine
 from allbrain.runtime_core.memory import GlobalExperienceMemoryBuilder
 from allbrain.runtime_core.pipeline import SystemDecisionPipeline
-from allbrain.runtime_core.projections import RuntimeCoreMetrics, RuntimeCoreStateBuilder
 from allbrain.runtime_core.planning import GoalDecompositionBridge, StrategicPlanningBridge
+from allbrain.runtime_core.projections import RuntimeCoreMetrics, RuntimeCoreStateBuilder
 from allbrain.runtime_core.state import RuntimeStateMachine, RuntimeStatus
 
 __all__ = [

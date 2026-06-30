@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from allbrain.events import EventType
-from allbrain.governance import AutonomousGovernanceCoordinator, GovernanceMetrics, GovernanceStateBuilder
+from allbrain.governance import (
+    AutonomousGovernanceCoordinator,
+    GovernanceMetrics,
+    GovernanceStateBuilder,
+)
 from allbrain.graph import WorkflowGraphBuilder
 from allbrain.memory import MemoryBuilder
 from allbrain.observability import DashboardDataBuilder
@@ -89,7 +93,12 @@ def test_governance_events_integrate_with_replay_graph_memory_and_dashboard(tmp_
     assert save_event_impl(
         context,
         type=EventType.GOVERNANCE_REVIEW_INITIATED.value,
-        payload={"review_id": "gr1", "trigger_source": "meta_optimization", "proposal_batch_id": "batch1", "system_area": "scheduler"},
+        payload={
+            "review_id": "gr1",
+            "trigger_source": "meta_optimization",
+            "proposal_batch_id": "batch1",
+            "system_area": "scheduler",
+        },
     ).ok
     assert save_event_impl(
         context,

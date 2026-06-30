@@ -4,7 +4,9 @@ from allbrain.collaboration.team import AgentTeam, TeamMember
 
 
 class TeamBuilder:
-    def build(self, *, name: str, purpose: str, members: list[dict[str, object]], supervisor: str | None = None) -> AgentTeam:
+    def build(
+        self, *, name: str, purpose: str, members: list[dict[str, object]], supervisor: str | None = None
+    ) -> AgentTeam:
         return AgentTeam(
             name=name,
             purpose=purpose,

@@ -1,8 +1,8 @@
 from allbrain.models.entities import Event, Project, Session, SnapshotRecord
 from allbrain.models.schemas import (
-    EventRead,
-    CreateSnapshotInput,
     ConflictInput,
+    CreateSnapshotInput,
+    EventRead,
     GitContextInput,
     IntentInput,
     ListEventsInput,

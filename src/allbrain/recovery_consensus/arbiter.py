@@ -4,10 +4,10 @@ import hashlib
 from typing import Any
 
 from allbrain.recovery_consensus.model import (
+    CONSENSUS_MIN_RATIO,
     CandidateStrategy,
     RecoveryDecision,
     ScoredCandidate,
-    CONSENSUS_MIN_RATIO,
 )
 
 
@@ -58,9 +58,7 @@ class Arbiter:
 
         consensus_reached = consensus_score >= self._min_consensus_ratio
 
-        rejected = tuple(
-            s.candidate.strategy for s in sorted_candidates[1:]
-        )
+        rejected = tuple(s.candidate.strategy for s in sorted_candidates[1:])
 
         if consensus_reached:
             reason = (

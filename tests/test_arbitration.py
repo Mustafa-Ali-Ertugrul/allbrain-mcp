@@ -2,6 +2,14 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.arbitration.events import (
+    make_arb_decision_payload,
+    make_consensus_payload,
+    make_vote_payload,
+    validate_arb_decision_payload,
+    validate_consensus_payload,
+    validate_vote_payload,
+)
 from allbrain.arbitration.model import VoteRecord
 from allbrain.arbitration.scorer import (
     agreement_ratio,
@@ -10,14 +18,6 @@ from allbrain.arbitration.scorer import (
     vote_score,
     weighted_resolve,
     winner,
-)
-from allbrain.arbitration.events import (
-    make_arb_decision_payload,
-    make_consensus_payload,
-    make_vote_payload,
-    validate_arb_decision_payload,
-    validate_consensus_payload,
-    validate_vote_payload,
 )
 
 
@@ -112,20 +112,32 @@ class TestMajorityResolve:
 
 class TestPayloads:
     def test_vote_payload_roundtrip(self):
-        p = make_vote_payload(agent_id="a", candidate_id="c", context_key="ctx", confidence=0.9, reputation=0.8, calibrated_trust=0.7)
+        p = make_vote_payload(
+            agent_id="a", candidate_id="c", context_key="ctx", confidence=0.9, reputation=0.8, calibrated_trust=0.7
+        )
         assert p["agent_id"] == "a"
         assert p["candidate_id"] == "c"
         assert p["confidence"] == 0.9
 
     def test_vote_validation_fails(self):
         with pytest.raises(ValueError):
-            make_vote_payload(agent_id="", candidate_id="c", context_key="ctx", confidence=0.5, reputation=0.5, calibrated_trust=0.5)
+            make_vote_payload(
+                agent_id="", candidate_id="c", context_key="ctx", confidence=0.5, reputation=0.5, calibrated_trust=0.5
+            )
 
     def test_consensus_payload(self):
-        p = make_consensus_payload(context_key="ctx", winner_candidate="c", score=0.9, agreement_ratio=0.75, method="weighted")
+        p = make_consensus_payload(
+            context_key="ctx", winner_candidate="c", score=0.9, agreement_ratio=0.75, method="weighted"
+        )
         assert p["winner_candidate"] == "c"
         assert p["score"] == 0.9
 
     def test_arb_decision_payload(self):
-        p = make_arb_decision_payload(context_key="ctx", winner_candidate="c", method="weighted", vote_count=3, candidate_scores={"c": 0.9, "other": 0.3})
+        p = make_arb_decision_payload(
+            context_key="ctx",
+            winner_candidate="c",
+            method="weighted",
+            vote_count=3,
+            candidate_scores={"c": 0.9, "other": 0.3},
+        )
         assert p["vote_count"] == 3

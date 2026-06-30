@@ -32,8 +32,34 @@ class TestReducer:
         reducer = ReputationReducer()
         reducer.apply(E("other_event", "0", {"x": 1}))
         events = [
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_payload(agent_id="a1", task_id="t1", success=True, confidence=0.9, duration_ms=100, retry_count=0, reputation_score=0.0, analysis_id="x")),
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "2", make_payload(agent_id="a1", task_id="t2", success=False, confidence=0.5, duration_ms=200, retry_count=1, reputation_score=0.0, analysis_id="y")),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "1",
+                make_payload(
+                    agent_id="a1",
+                    task_id="t1",
+                    success=True,
+                    confidence=0.9,
+                    duration_ms=100,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="x",
+                ),
+            ),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "2",
+                make_payload(
+                    agent_id="a1",
+                    task_id="t2",
+                    success=False,
+                    confidence=0.5,
+                    duration_ms=200,
+                    retry_count=1,
+                    reputation_score=0.0,
+                    analysis_id="y",
+                ),
+            ),
         ]
         for e in events:
             reducer.apply(e)
@@ -46,14 +72,57 @@ class TestReducer:
 
     def test_cross_agent_isolation(self):
         reducer = ReputationReducer()
-        reducer.apply(E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_payload(agent_id="a1", task_id="t1", success=True, confidence=1.0, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="x")))
-        reducer.apply(E(EventType.AGENT_REPUTATION_UPDATED.value, "2", make_payload(agent_id="a2", task_id="t2", success=False, confidence=0.0, duration_ms=0, retry_count=5, reputation_score=0.0, analysis_id="y")))
+        reducer.apply(
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "1",
+                make_payload(
+                    agent_id="a1",
+                    task_id="t1",
+                    success=True,
+                    confidence=1.0,
+                    duration_ms=0,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="x",
+                ),
+            )
+        )
+        reducer.apply(
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "2",
+                make_payload(
+                    agent_id="a2",
+                    task_id="t2",
+                    success=False,
+                    confidence=0.0,
+                    duration_ms=0,
+                    retry_count=5,
+                    reputation_score=0.0,
+                    analysis_id="y",
+                ),
+            )
+        )
         assert reducer.snapshot(agent_id="a1").reputation_score == pytest.approx(1.0)
         assert reducer.snapshot(agent_id="a2").reputation_score == pytest.approx(0.0)
 
     def test_idempotency(self):
         reducer = ReputationReducer()
-        event = E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_payload(agent_id="a1", task_id="t1", success=True, confidence=1.0, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="x"))
+        event = E(
+            EventType.AGENT_REPUTATION_UPDATED.value,
+            "1",
+            make_payload(
+                agent_id="a1",
+                task_id="t1",
+                success=True,
+                confidence=1.0,
+                duration_ms=0,
+                retry_count=0,
+                reputation_score=0.0,
+                analysis_id="x",
+            ),
+        )
         reducer.apply(event)
         reducer.apply(event)
         state = reducer.snapshot(agent_id="a1")
@@ -68,8 +137,38 @@ class TestReducer:
 
     def test_all_snapshots(self):
         reducer = ReputationReducer()
-        reducer.apply(E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_payload(agent_id="a", task_id="t", success=True, confidence=1.0, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="x")))
-        reducer.apply(E(EventType.AGENT_REPUTATION_UPDATED.value, "2", make_payload(agent_id="b", task_id="t", success=False, confidence=0.0, duration_ms=0, retry_count=5, reputation_score=0.0, analysis_id="y")))
+        reducer.apply(
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "1",
+                make_payload(
+                    agent_id="a",
+                    task_id="t",
+                    success=True,
+                    confidence=1.0,
+                    duration_ms=0,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="x",
+                ),
+            )
+        )
+        reducer.apply(
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "2",
+                make_payload(
+                    agent_id="b",
+                    task_id="t",
+                    success=False,
+                    confidence=0.0,
+                    duration_ms=0,
+                    retry_count=5,
+                    reputation_score=0.0,
+                    analysis_id="y",
+                ),
+            )
+        )
         snaps = reducer.all_snapshots()
         assert set(snaps.keys()) == {"a", "b"}
         assert snaps["a"]["reputation_score"] == pytest.approx(1.0)
@@ -79,9 +178,48 @@ class TestReducer:
 class TestManagerEqualsReducer:
     def test_convergence(self):
         events = [
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_payload(agent_id="a1", task_id="t1", success=True, confidence=1.0, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="x")),
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "2", make_payload(agent_id="a1", task_id="t2", success=False, confidence=0.5, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="y")),
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "3", make_payload(agent_id="a1", task_id="t3", success=True, confidence=0.7, duration_ms=0, retry_count=1, reputation_score=0.0, analysis_id="z")),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "1",
+                make_payload(
+                    agent_id="a1",
+                    task_id="t1",
+                    success=True,
+                    confidence=1.0,
+                    duration_ms=0,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="x",
+                ),
+            ),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "2",
+                make_payload(
+                    agent_id="a1",
+                    task_id="t2",
+                    success=False,
+                    confidence=0.5,
+                    duration_ms=0,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="y",
+                ),
+            ),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "3",
+                make_payload(
+                    agent_id="a1",
+                    task_id="t3",
+                    success=True,
+                    confidence=0.7,
+                    duration_ms=0,
+                    retry_count=1,
+                    reputation_score=0.0,
+                    analysis_id="z",
+                ),
+            ),
         ]
         manager = ReputationManager()
         reducer = ReputationReducer()
@@ -97,8 +235,34 @@ class TestManagerEqualsReducer:
     def test_convergence_with_unknown_events(self):
         events = [
             E("random_event", "0", {}),
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_payload(agent_id="a1", task_id="t", success=True, confidence=1.0, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="x")),
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "2", make_payload(agent_id="a2", task_id="t", success=False, confidence=0.0, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="y")),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "1",
+                make_payload(
+                    agent_id="a1",
+                    task_id="t",
+                    success=True,
+                    confidence=1.0,
+                    duration_ms=0,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="x",
+                ),
+            ),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "2",
+                make_payload(
+                    agent_id="a2",
+                    task_id="t",
+                    success=False,
+                    confidence=0.0,
+                    duration_ms=0,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="y",
+                ),
+            ),
             E("another_random", "3", {}),
         ]
         manager = ReputationManager()
@@ -106,7 +270,10 @@ class TestManagerEqualsReducer:
         for e in events:
             reducer.apply(e)
         for agent_id in ("a1", "a2"):
-            assert manager.query(events, agent_id=agent_id).reputation_score == reducer.snapshot(agent_id=agent_id).reputation_score
+            assert (
+                manager.query(events, agent_id=agent_id).reputation_score
+                == reducer.snapshot(agent_id=agent_id).reputation_score
+            )
 
 
 class TestLastWins:
@@ -124,14 +291,65 @@ class TestLastWins:
         score3 = compute_score([s1, s2, s3])
 
         events = [
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_reputation_payload(agent_id="a", task_id="t1", success=s1[0], confidence=s1[1], duration_ms=s1[2], retry_count=s1[3], reputation_score=score1, analysis_id="x")),
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "2", make_reputation_payload(agent_id="a", task_id="t2", success=s2[0], confidence=s2[1], duration_ms=s2[2], retry_count=s2[3], reputation_score=score2, analysis_id="y")),
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "3", make_reputation_payload(agent_id="a", task_id="t3", success=s3[0], confidence=s3[1], duration_ms=s3[2], retry_count=s3[3], reputation_score=score3, analysis_id="z")),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "1",
+                make_reputation_payload(
+                    agent_id="a",
+                    task_id="t1",
+                    success=s1[0],
+                    confidence=s1[1],
+                    duration_ms=s1[2],
+                    retry_count=s1[3],
+                    reputation_score=score1,
+                    analysis_id="x",
+                ),
+            ),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "2",
+                make_reputation_payload(
+                    agent_id="a",
+                    task_id="t2",
+                    success=s2[0],
+                    confidence=s2[1],
+                    duration_ms=s2[2],
+                    retry_count=s2[3],
+                    reputation_score=score2,
+                    analysis_id="y",
+                ),
+            ),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "3",
+                make_reputation_payload(
+                    agent_id="a",
+                    task_id="t3",
+                    success=s3[0],
+                    confidence=s3[1],
+                    duration_ms=s3[2],
+                    retry_count=s3[3],
+                    reputation_score=score3,
+                    analysis_id="z",
+                ),
+            ),
         ]
-        from allbrain.revision import RevisionManager, make_payload as make_revision_payload
+        from allbrain.revision import RevisionManager
+        from allbrain.revision import make_payload as make_revision_payload
+
         rev_manager = RevisionManager()
         base_events = list(events) + [
-            E(EventType.BELIEF_REVISED.value, "rev1", make_revision_payload(context_key="default", old_confidence=0.9, new_confidence=0.6, reason="contradiction", evidence_count=0)),
+            E(
+                EventType.BELIEF_REVISED.value,
+                "rev1",
+                make_revision_payload(
+                    context_key="default",
+                    old_confidence=0.9,
+                    new_confidence=0.6,
+                    reason="contradiction",
+                    evidence_count=0,
+                ),
+            ),
         ]
         state = rev_manager.query(base_events)
         assert state.agent_reputation == pytest.approx(score3)

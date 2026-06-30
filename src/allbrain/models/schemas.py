@@ -57,7 +57,7 @@ class BaseInputModel(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def _check_dict_sizes(self) -> "BaseInputModel":
+    def _check_dict_sizes(self) -> BaseInputModel:
         """Enforce size limits on all dict-typed fields."""
         import json
 
@@ -68,8 +68,7 @@ class BaseInputModel(BaseModel):
             max_bytes = _MAX_PAYLOAD_BYTES if "payload" in field_name else _MAX_DICT_BYTES
             if len(raw) > max_bytes:
                 raise ValueError(
-                    f"field '{field_name}' exceeds maximum size of {max_bytes // 1000}KB "
-                    f"(got {len(raw)} bytes)"
+                    f"field '{field_name}' exceeds maximum size of {max_bytes // 1000}KB (got {len(raw)} bytes)"
                 )
         return self
 
@@ -94,6 +93,7 @@ class SaveEventInput(BaseInputModel):
     def validate_payload_size(cls, value: dict[str, Any]) -> dict[str, Any]:
         value = sanitize_payload(value)
         import json
+
         raw = json.dumps(value)
         if len(raw) > 250000:
             raise ValueError("payload exceeds maximum size of 250KB")
@@ -110,7 +110,7 @@ class SaveEventInput(BaseInputModel):
         return value
 
     @model_validator(mode="after")
-    def validate_task_payload(self) -> "SaveEventInput":
+    def validate_task_payload(self) -> SaveEventInput:
         task_events_requiring_id = {
             EventType.TASK_ASSIGNED.value,
             EventType.SELECTION_DECISION.value,
@@ -166,7 +166,6 @@ class CreateSnapshotInput(BaseInputModel):
 
 class GitContextInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-
 
 
 class RecentChangesInput(BaseInputModel):

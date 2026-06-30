@@ -34,12 +34,24 @@ def test_manager_equals_reducer_no_events():
 
 def test_manager_equals_reducer_with_evidence_only():
     events = [
-        MockEvent(EventType.EVIDENCE_RECORDED.value, id="1", payload={
-            "context_key": "default", "weight": 0.8, "source": "task_completed",
-        }),
-        MockEvent(EventType.EVIDENCE_RECORDED.value, id="2", payload={
-            "context_key": "default", "weight": 0.6, "source": "task_completed",
-        }),
+        MockEvent(
+            EventType.EVIDENCE_RECORDED.value,
+            id="1",
+            payload={
+                "context_key": "default",
+                "weight": 0.8,
+                "source": "task_completed",
+            },
+        ),
+        MockEvent(
+            EventType.EVIDENCE_RECORDED.value,
+            id="2",
+            payload={
+                "context_key": "default",
+                "weight": 0.6,
+                "source": "task_completed",
+            },
+        ),
     ]
     manager = EvidenceManager()
     reducer = EvidenceReducer()
@@ -58,15 +70,31 @@ def test_manager_equals_reducer_with_evidence_only():
 def test_manager_equals_reducer_with_trust_last_wins():
     """Last TRUST_UPDATED wins. Previous trust is overridden."""
     events = [
-        MockEvent(EventType.EVIDENCE_RECORDED.value, id="1", payload={
-            "context_key": "default", "weight": 0.8, "source": "task_completed",
-        }),
-        MockEvent(EventType.TRUST_UPDATED.value, id="2", payload={
-            "context_key": "default", "trust_score": 0.5,
-        }),
-        MockEvent(EventType.TRUST_UPDATED.value, id="3", payload={
-            "context_key": "default", "trust_score": 0.76,
-        }),
+        MockEvent(
+            EventType.EVIDENCE_RECORDED.value,
+            id="1",
+            payload={
+                "context_key": "default",
+                "weight": 0.8,
+                "source": "task_completed",
+            },
+        ),
+        MockEvent(
+            EventType.TRUST_UPDATED.value,
+            id="2",
+            payload={
+                "context_key": "default",
+                "trust_score": 0.5,
+            },
+        ),
+        MockEvent(
+            EventType.TRUST_UPDATED.value,
+            id="3",
+            payload={
+                "context_key": "default",
+                "trust_score": 0.76,
+            },
+        ),
     ]
     manager = EvidenceManager()
     reducer = EvidenceReducer()
@@ -84,15 +112,32 @@ def test_manager_equals_reducer_with_trust_last_wins():
 def test_manager_equals_reducer_other_context_ignored():
     """An EVIDENCE_RECORDED or TRUST_UPDATED for a different context_key is ignored."""
     events = [
-        MockEvent(EventType.EVIDENCE_RECORDED.value, id="1", payload={
-            "context_key": "ctx_a", "weight": 0.9, "source": "task_completed",
-        }),
-        MockEvent(EventType.TRUST_UPDATED.value, id="2", payload={
-            "context_key": "ctx_a", "trust_score": 0.3,
-        }),
-        MockEvent(EventType.EVIDENCE_RECORDED.value, id="3", payload={
-            "context_key": "default", "weight": 0.8, "source": "task_completed",
-        }),
+        MockEvent(
+            EventType.EVIDENCE_RECORDED.value,
+            id="1",
+            payload={
+                "context_key": "ctx_a",
+                "weight": 0.9,
+                "source": "task_completed",
+            },
+        ),
+        MockEvent(
+            EventType.TRUST_UPDATED.value,
+            id="2",
+            payload={
+                "context_key": "ctx_a",
+                "trust_score": 0.3,
+            },
+        ),
+        MockEvent(
+            EventType.EVIDENCE_RECORDED.value,
+            id="3",
+            payload={
+                "context_key": "default",
+                "weight": 0.8,
+                "source": "task_completed",
+            },
+        ),
     ]
     manager = EvidenceManager()
     reducer = EvidenceReducer()
@@ -113,15 +158,32 @@ def test_replay_round_trip_exact_equality():
     from allbrain.replay import EventReplayEngine
 
     events = [
-        MockEvent(EventType.EVIDENCE_RECORDED.value, id="1", payload={
-            "context_key": "default", "weight": 0.8, "source": "task_completed",
-        }),
-        MockEvent(EventType.EVIDENCE_RECORDED.value, id="2", payload={
-            "context_key": "default", "weight": 0.6, "source": "task_completed",
-        }),
-        MockEvent(EventType.TRUST_UPDATED.value, id="3", payload={
-            "context_key": "default", "trust_score": 0.76,
-        }),
+        MockEvent(
+            EventType.EVIDENCE_RECORDED.value,
+            id="1",
+            payload={
+                "context_key": "default",
+                "weight": 0.8,
+                "source": "task_completed",
+            },
+        ),
+        MockEvent(
+            EventType.EVIDENCE_RECORDED.value,
+            id="2",
+            payload={
+                "context_key": "default",
+                "weight": 0.6,
+                "source": "task_completed",
+            },
+        ),
+        MockEvent(
+            EventType.TRUST_UPDATED.value,
+            id="3",
+            payload={
+                "context_key": "default",
+                "trust_score": 0.76,
+            },
+        ),
     ]
     final_state = EventReplayEngine().replay(events)["final_state"]
     reducer = EvidenceReducer()

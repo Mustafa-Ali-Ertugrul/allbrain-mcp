@@ -1,16 +1,24 @@
 from __future__ import annotations
 
 import pytest
-from allbrain.objective_system import (
-    Objective, ObjectiveStore, ObjectiveEvaluator, ObjectiveWeights,
-    ObjectivePriority, OBJECTIVE_DEFAULTS_GLOBAL,
-    FAULT_TYPE_SAFETY_THRESHOLDS, FAULT_TYPE_WEIGHTS,
-    ObjectiveSystemReducer,
-    validate_objective_updated, make_objective_updated_payload,
-    validate_objective_rebalanced, make_objective_rebalanced_payload,
-)
-from allbrain.mitigation_learning.model import StrategyStats
+
 from allbrain.events.schemas import EventType
+from allbrain.mitigation_learning.model import StrategyStats
+from allbrain.objective_system import (
+    FAULT_TYPE_SAFETY_THRESHOLDS,
+    FAULT_TYPE_WEIGHTS,
+    OBJECTIVE_DEFAULTS_GLOBAL,
+    Objective,
+    ObjectiveEvaluator,
+    ObjectivePriority,
+    ObjectiveStore,
+    ObjectiveSystemReducer,
+    ObjectiveWeights,
+    make_objective_rebalanced_payload,
+    make_objective_updated_payload,
+    validate_objective_rebalanced,
+    validate_objective_updated,
+)
 
 
 class TestObjective:
@@ -69,7 +77,9 @@ class TestObjectiveStore:
 
 class TestObjectiveEvents:
     def test_valid_payload(self):
-        p = make_objective_updated_payload(fault_type="t", safety=0.5, stability=0.5, success=0.5, efficiency=0.5, safety_pass=True)
+        p = make_objective_updated_payload(
+            fault_type="t", safety=0.5, stability=0.5, success=0.5, efficiency=0.5, safety_pass=True
+        )
         validate_objective_updated(p)
 
     def test_invalid(self):
@@ -80,10 +90,26 @@ class TestObjectiveEvents:
 class TestObjectiveReducer:
     def test_tracks(self):
         r = ObjectiveSystemReducer()
-        ev = _make_event(EventType.OBJECTIVE_UPDATED.value, {"fault_type":"t","safety":0.5,"stability":0.5,"success":0.5,"efficiency":0.5,"safety_pass":True})
+        ev = _make_event(
+            EventType.OBJECTIVE_UPDATED.value,
+            {
+                "fault_type": "t",
+                "safety": 0.5,
+                "stability": 0.5,
+                "success": 0.5,
+                "efficiency": 0.5,
+                "safety_pass": True,
+            },
+        )
         r.apply(ev)
         assert r.all_snapshots()["default"]["total_objectives"] == 1
 
 
 def _make_event(t, p):
-    import types; ev = types.SimpleNamespace(); ev.id = f"test_{t}"; ev.type = t; ev.payload = p; return ev
+    import types
+
+    ev = types.SimpleNamespace()
+    ev.id = f"test_{t}"
+    ev.type = t
+    ev.payload = p
+    return ev

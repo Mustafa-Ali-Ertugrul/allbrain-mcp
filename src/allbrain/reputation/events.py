@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.reputation.estimator import REPUTATION_TEMPLATE_VERSION
 
-
 REQUIRED_KEYS: frozenset[str] = frozenset(
     {"agent_id", "task_id", "success", "confidence", "duration_ms", "retry_count"}
 )

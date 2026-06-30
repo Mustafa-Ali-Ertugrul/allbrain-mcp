@@ -10,12 +10,16 @@ from allbrain.calibration import (
     CalibrationReducer,
     CalibrationState,
     calibrated_trust,
+)
+from allbrain.calibration import (
     make_payload as make_calibration_payload,
 )
 from allbrain.events.schemas import EventType
 from allbrain.revision import (
     RevisionManager,
     RevisionReducer,
+)
+from allbrain.revision import (
     make_payload as make_revision_payload,
 )
 from allbrain.revision.policies import RevisionPolicy
@@ -56,15 +60,17 @@ def test_manager_equals_reducer_with_samples():
     ]
     events = []
     for idx, (conf, outcome) in enumerate(samples, start=1):
-        events.append(MockEvent(
-            EventType.CALIBRATION_UPDATED.value,
-            id=str(idx),
-            payload=make_calibration_payload(
-                context_key="default",
-                predicted_confidence=conf,
-                actual_outcome=outcome,
-            ),
-        ))
+        events.append(
+            MockEvent(
+                EventType.CALIBRATION_UPDATED.value,
+                id=str(idx),
+                payload=make_calibration_payload(
+                    context_key="default",
+                    predicted_confidence=conf,
+                    actual_outcome=outcome,
+                ),
+            )
+        )
 
     manager = CalibrationManager()
     reducer = CalibrationReducer()
@@ -135,15 +141,17 @@ def test_calibration_applied_after_trust_in_revision():
         ),
     ]
     for idx in range(4):
-        events.append(MockEvent(
-            EventType.CALIBRATION_UPDATED.value,
-            id=str(100 + idx),
-            payload=make_calibration_payload(
-                context_key="default",
-                predicted_confidence=0.5,
-                actual_outcome=True,
-            ),
-        ))
+        events.append(
+            MockEvent(
+                EventType.CALIBRATION_UPDATED.value,
+                id=str(100 + idx),
+                payload=make_calibration_payload(
+                    context_key="default",
+                    predicted_confidence=0.5,
+                    actual_outcome=True,
+                ),
+            )
+        )
 
     manager = RevisionManager()
     state = manager.query(events)

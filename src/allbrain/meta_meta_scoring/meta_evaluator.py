@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from collections import deque
 
+from allbrain.meta_meta_scoring.evaluator_store import EvaluatorStore
 from allbrain.meta_meta_scoring.model import (
-    META_EVALUATOR_WINDOW_SIZE,
     META_EVALUATOR_ACCURACY_THRESHOLD,
     META_EVALUATOR_BIAS_THRESHOLD,
+    META_EVALUATOR_WINDOW_SIZE,
     MetaEvaluatorResult,
 )
-from allbrain.meta_meta_scoring.evaluator_store import EvaluatorStore
 
 
 class MetaEvaluator:
@@ -42,8 +42,12 @@ class MetaEvaluator:
 
         if len(self._score_buffer[key]) < 4:
             return MetaEvaluatorResult(
-                evaluator_id=evaluator_id, fault_type=fault_type,
-                accuracy=0.5, bias=0.0, needs_retraining=False, version=0,
+                evaluator_id=evaluator_id,
+                fault_type=fault_type,
+                accuracy=0.5,
+                bias=0.0,
+                needs_retraining=False,
+                version=0,
             )
 
         scores = list(self._score_buffer[key])
@@ -52,18 +56,17 @@ class MetaEvaluator:
 
         mean_s = sum(scores) / n
         mean_d = sum(deltas) / n
-        cov = sum((s - mean_s) * (d - mean_d) for s, d in zip(scores, deltas)) / n
+        cov = sum((s - mean_s) * (d - mean_d) for s, d in zip(scores, deltas, strict=False)) / n
         var_s = sum((s - mean_s) ** 2 for s in scores) / n
         var_d = sum((d - mean_d) ** 2 for d in deltas) / n
 
-        if var_s < 1e-6 or var_d < 1e-6:
-            accuracy = 0.5
-        else:
-            accuracy = max(-1.0, min(1.0, cov / ((var_s * var_d) ** 0.5)))
+        accuracy = 0.5 if var_s < 1e-06 or var_d < 1e-06 else max(-1.0, min(1.0, cov / (var_s * var_d) ** 0.5))
 
         bias = mean_s - mean_d if mean_s > 0 else 0.0
 
-        needs_retraining = abs(accuracy) < META_EVALUATOR_ACCURACY_THRESHOLD or abs(bias) > META_EVALUATOR_BIAS_THRESHOLD
+        needs_retraining = (
+            abs(accuracy) < META_EVALUATOR_ACCURACY_THRESHOLD or abs(bias) > META_EVALUATOR_BIAS_THRESHOLD
+        )
 
         profile = self._store.get(evaluator_id, fault_type)
         profile.accuracy = profile.accuracy * 0.8 + accuracy * 0.2
@@ -71,8 +74,10 @@ class MetaEvaluator:
         self._store.set(profile)
 
         return MetaEvaluatorResult(
-            evaluator_id=evaluator_id, fault_type=fault_type,
-            accuracy=accuracy, bias=bias,
+            evaluator_id=evaluator_id,
+            fault_type=fault_type,
+            accuracy=accuracy,
+            bias=bias,
             needs_retraining=needs_retraining,
             version=profile.version,
         )

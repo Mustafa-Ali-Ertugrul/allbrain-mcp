@@ -12,10 +12,10 @@ DEFAULT_RISK_WEIGHT = 0.20
 CONSENSUS_MIN_RATIO = 0.60
 
 STRATEGY_PROFILES: dict[str, tuple[float, float, float]] = {
-    "retry":    (0.20, 0.75, 0.65),
+    "retry": (0.20, 0.75, 0.65),
     "rollback": (0.10, 0.90, 0.85),
-    "isolate":  (0.40, 0.60, 0.55),
-    "repair":   (0.25, 0.70, 0.60),
+    "isolate": (0.40, 0.60, 0.55),
+    "repair": (0.25, 0.70, 0.60),
 }
 
 VALID_RECOVERY_STRATEGIES = frozenset(STRATEGY_PROFILES.keys())
