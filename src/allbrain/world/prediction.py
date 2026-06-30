@@ -12,6 +12,7 @@ class PredictionBridge:
                     risk=0.8,
                     cost=0.4,
                     confidence=0.9,
+                    uncertainty=0.0,
                     explanation="Tests missing.",
                 )
             return Prediction(
@@ -19,6 +20,7 @@ class PredictionBridge:
                 risk=0.1,
                 cost=0.2,
                 confidence=0.95,
+                uncertainty=0.0,
                 explanation="Tests passed; low risk.",
             )
         if action == "run_tests":
@@ -27,6 +29,7 @@ class PredictionBridge:
                 risk=0.05,
                 cost=0.15,
                 confidence=0.95,
+                uncertainty=0.0,
                 explanation="Test execution has well-understood cost.",
             )
         return Prediction(
@@ -34,5 +37,6 @@ class PredictionBridge:
             risk=0.15,
             cost=0.25,
             confidence=0.7,
+            uncertainty=0.0,
             explanation="Default moderate confidence for unknown action.",
         )

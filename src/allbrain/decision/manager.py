@@ -6,6 +6,7 @@ from allbrain.foundations import canonical_event_sort
 from allbrain.decision.resolver import make_contract
 from allbrain.decision.model import DecisionContext
 from allbrain.decision.engine import DecisionEngine
+from allbrain.events.schemas import EventType
 
 
 class DecisionManager:

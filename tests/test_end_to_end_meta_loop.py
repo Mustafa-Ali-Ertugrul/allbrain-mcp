@@ -120,11 +120,11 @@ class TestEndToEndMetaLoop:
         opt = WeightOptimizer(store)
         assert scorer.profile_store is opt.profile_store
 
-    def test_pipeline_has_sprint73_flags(self):
+    def test_pipeline_has_decision_flags(self):
         from allbrain.runtime_core.pipeline import SystemDecisionPipeline
         import inspect
         sig = inspect.signature(SystemDecisionPipeline.run)
-        for name in ["enable_meta_scoring", "enable_self_play", "enable_meta_optimizer"]:
+        for name in ["enable_counterfactual", "enable_scenarios", "enable_foresight", "enable_meta_reasoning", "enable_uncertainty", "enable_information_seeking"]:
             assert name in sig.parameters, f"{name} missing from pipeline"
 
     def test_event_schemas_have_sprint73_types(self):

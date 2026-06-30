@@ -23,6 +23,7 @@ class Prediction(BaseModel):
     risk: float = Field(ge=0.0, le=1.0)
     cost: float = Field(ge=0.0, le=1.0)
     confidence: float = Field(ge=0.0, le=1.0)
+    uncertainty: float = Field(ge=0.0, le=1.0, default=0.0)
     explanation: str
 
 

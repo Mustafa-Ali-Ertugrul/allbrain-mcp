@@ -30,7 +30,7 @@ class MetaReasoningManager:
         *,
         historical_success: float | None = None,
     ) -> DecisionExplanation:
-        reasons = self.analyzer.analyze(selected_plan, candidates, foresight_result)
+        reasons = self.analyzer.analyze(selected_plan, candidates, foresight_result, historical_success=historical_success)
         rejected = self.rejection_analyzer.analyze(selected_plan, candidates)
         if historical_success is None:
             historical_success = (

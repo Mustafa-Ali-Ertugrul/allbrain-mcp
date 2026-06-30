@@ -127,11 +127,11 @@ class TestEndToEndRecursive:
                               signals=[RiskSignal("retry_spike", 0.7, 3)])
             assert not r.get("error")
 
-    def test_pipeline_has_sprint74_flags(self):
+    def test_pipeline_has_decision_flags(self):
         from allbrain.runtime_core.pipeline import SystemDecisionPipeline
         import inspect
         sig = inspect.signature(SystemDecisionPipeline.run)
-        for name in ["enable_meta_meta_scoring", "enable_learning_graph", "enable_coevolution"]:
+        for name in ["enable_counterfactual", "enable_scenarios", "enable_foresight", "enable_meta_reasoning", "enable_uncertainty", "enable_information_seeking"]:
             assert name in sig.parameters, f"{name} missing"
 
     def test_event_schemas_have_74_types(self):

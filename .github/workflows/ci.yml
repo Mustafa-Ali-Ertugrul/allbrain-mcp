@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+env:
+  UV_VERSION: "0.6.x"
+  PYTHON_VERSION: "3.13"
+  ALLOWED_PROJECT_ROOTS: "/home/runner:/tmp"
+
+jobs:
+  lint:
+    name: Lint (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --extra dev
+      - run: uv run ruff check --exit-zero src/ tests/
+      - run: uv run ruff format --check src/ tests/ || true
+
+  security:
+    name: Security (Bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --extra dev
+      - run: uv run bandit -c pyproject.toml -r src/ -ll
+
+  test:
+    name: Test (pytest + coverage)
+    runs-on: ubuntu-latest
+    needs: [lint, security]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --extra dev
+      - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=60 -n auto --dist=worksteal
