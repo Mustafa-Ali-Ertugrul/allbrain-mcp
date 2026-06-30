@@ -114,7 +114,6 @@ def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult
 
 
 @handle_tool_errors
-@handle_tool_errors
 def run_decision_pipeline_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     """Run decision pipeline with optional reasoning stages.
 
