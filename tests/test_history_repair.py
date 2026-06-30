@@ -6,7 +6,15 @@ from pathlib import Path
 from allbrain.events import EventType
 from allbrain.models.entities import Session, utc_now
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
-from allbrain.storage.history_repair import HistoryRepairer
+from allbrain.storage.history_repair import HistoryRepairer, _remap_payload_session_id
+
+
+def test_history_payload_session_id_is_remapped_without_losing_legacy_id() -> None:
+    payload = _remap_payload_session_id(
+        '{"session_id": 5, "tool_name": "list_events"}', source_session_id=5, target_session_id=107
+    )
+    assert '"session_id": 107' in payload
+    assert '"legacy_session_id": 5' in payload
 
 
 def test_history_repair_merges_deduplicates_and_classifies(tmp_path: Path) -> None:

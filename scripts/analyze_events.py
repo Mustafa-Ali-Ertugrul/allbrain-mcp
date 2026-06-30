@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import sqlite3
 import sys
 from pathlib import Path
@@ -9,13 +10,18 @@ from pathlib import Path
 # Make the local package importable.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from allbrain.config import default_db_path  # noqa: E402
 from allbrain.snapshot.constants import EVENT_WEIGHTS, NON_SEMANTIC_EVENT_TYPES  # noqa: E402
 
-DB_PATH = r"C:\ABMCP\.allbrain.db"
 
-
-def main() -> None:
-    conn = sqlite3.connect(DB_PATH)
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--db-path", type=Path, default=default_db_path())
+    args = parser.parse_args()
+    if not args.db_path.exists():
+        print(f"ERROR: database does not exist: {args.db_path}")
+        return 2
+    conn = sqlite3.connect(f"file:{args.db_path.resolve().as_posix()}?mode=ro", uri=True)
     cur = conn.cursor()
 
     print("=== Tables ===")
@@ -32,7 +38,7 @@ def main() -> None:
 
     print()
     print("=== Per-Project Snapshot Weight Totals ===")
-    project_rows = cur.execute("SELECT id, project_path FROM project").fetchall()
+    project_rows = cur.execute("SELECT id, canonical_project_path FROM project").fetchall()
     for project_id, project_path in project_rows:
         events = cur.execute("SELECT type FROM event WHERE project_id=?", (project_id,)).fetchall()
         total_weight = sum(EVENT_WEIGHTS.get(t[0], 0) for t in events)
@@ -47,11 +53,11 @@ def main() -> None:
 
     print()
     print("=== Snapshot Table ===")
-    snap_count = cur.execute("SELECT COUNT(*) FROM snapshot").fetchone()[0]
+    snap_count = cur.execute("SELECT COUNT(*) FROM snapshotrecord").fetchone()[0]
     print(f"  total snapshots: {snap_count}")
     if snap_count > 0:
         for row in cur.execute(
-            "SELECT id, project_id, created_at, event_cursor FROM snapshot ORDER BY id DESC LIMIT 5"
+            "SELECT id, project_id, created_at, event_cursor FROM snapshotrecord ORDER BY created_at DESC LIMIT 5"
         ).fetchall():
             print(f"  {row}")
 
@@ -63,7 +69,8 @@ def main() -> None:
         print(f"  {row}")
 
     conn.close()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

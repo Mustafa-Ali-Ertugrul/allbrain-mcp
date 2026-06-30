@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -125,6 +126,11 @@ class HistoryRepairer:
                     for row in source.execute("SELECT * FROM event ORDER BY id"):
                         if row["id"] in known_event_ids:
                             continue
+                        payload = _remap_payload_session_id(
+                            row["payload_json"],
+                            source_session_id=int(row["session_id"]),
+                            target_session_id=session_map[int(row["session_id"])],
+                        )
                         target.add(
                             Event(
                                 id=row["id"],
@@ -134,7 +140,7 @@ class HistoryRepairer:
                                 type=row["type"],
                                 source=row["source"],
                                 file_path=row["file_path"],
-                                payload_json=row["payload_json"],
+                                payload_json=payload,
                                 payload_version=row["payload_version"] if "payload_version" in event_columns else 1,
                                 task_hint=row["task_hint"],
                                 importance=row["importance"],
@@ -183,6 +189,7 @@ class HistoryRepairer:
                     status="stale",
                     reason="legacy_repair",
                     git={},
+                    ended_at=max(event.created_at for event in events),
                 )
                 project = self._project_path_for_id(session.project_id)
                 self.repository.append_event(
@@ -255,3 +262,21 @@ def backup_sqlite(path: Path) -> Path:
 
 def _datetime(value: str | datetime) -> datetime:
     return value if isinstance(value, datetime) else datetime.fromisoformat(value)
+
+
+def _remap_payload_session_id(payload_json: str, *, source_session_id: int, target_session_id: int) -> str:
+    """Keep imported payload session references aligned with their target row."""
+    try:
+        payload = json.loads(payload_json or "{}")
+    except (TypeError, json.JSONDecodeError):
+        return payload_json
+    if not isinstance(payload, dict):
+        return payload_json
+    existing = payload.get("session_id")
+    if existing is not None and existing != target_session_id:
+        payload["legacy_session_id"] = existing
+    elif source_session_id != target_session_id:
+        payload["legacy_session_id"] = source_session_id
+    if "session_id" in payload:
+        payload["session_id"] = target_session_id
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True)

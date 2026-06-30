@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
-from datetime import timedelta
+from datetime import datetime, timedelta
 from time import perf_counter
 from typing import Any
 
@@ -14,13 +14,11 @@ from allbrain.events import EventType, SemanticEventType
 from allbrain.gitbrain.parser import GitBrain
 from allbrain.models.entities import Session, utc_now
 from allbrain.security.redaction import sanitize_text
+from allbrain.server.constants import HEARTBEAT_INTERVAL_SECONDS, STALE_AFTER_SECONDS
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import maybe_auto_snapshot
 
 logger = logging.getLogger(__name__)
-
-HEARTBEAT_INTERVAL_SECONDS = 30
-STALE_AFTER_SECONDS = 120
 
 
 class AllBrainMiddleware(Middleware):
@@ -77,6 +75,7 @@ class AllBrainMiddleware(Middleware):
             error_type=None if ok else "tool_error",
             error=error,
         )
+        record_git_changes(self.brain, session, confidence="medium")
         self.brain.repository.touch_session(session.id or 0)
         try:
             maybe_auto_snapshot(self.brain, project_path=self.brain.project_path)
@@ -120,32 +119,24 @@ def finalize_active_session(
         session = context.active_session
         if session is None or session.id is None:
             return None
-        stored_events = context.repository.list_session_events(session.id)
         if session.status != "active":
             return session
-        git = GitBrain(context.project_path)
-        final_fingerprint = git.build_fingerprint()
-        changes = git.changed_paths_between(context.git_baseline, final_fingerprint)
-        explicit_files = {event.file_path for event in stored_events if event.file_path}
-        for change in changes:
-            if change["path"] in explicit_files:
-                continue
-            context.repository.append_event(
-                project_path=context.project_path,
-                session_id=session.id,
-                type=EventType.FILE_MODIFIED.value,
-                source="git_observer",
-                payload={
-                    "change_kind": change["change_kind"],
-                    "attribution": "observed",
-                    "confidence": "low" if status == "stale" else "medium",
-                },
-                file_path=change["path"],
-                agent_id=context.agent_name,
-                branch=context.agent_name,
-            )
+        final_fingerprint = record_git_changes(
+            context,
+            session,
+            confidence="low" if status == "stale" else "medium",
+        )
         events = context.repository.list_session_events(session.id)
-        summary = build_session_summary(context, session, events, status=status, reason=reason, git=final_fingerprint)
+        ended_at = utc_now()
+        summary = build_session_summary(
+            context,
+            session,
+            events,
+            status=status,
+            reason=reason,
+            git=final_fingerprint,
+            ended_at=ended_at,
+        )
         context.repository.append_event(
             project_path=context.project_path,
             session_id=session.id,
@@ -156,7 +147,7 @@ def finalize_active_session(
             branch=context.agent_name,
             importance=3,
         )
-        closed = context.repository.close_session(session.id, status=status, reason=reason)
+        closed = context.repository.close_session(session.id, status=status, reason=reason, ended_at=ended_at)
         if closed is not None:
             context.active_session = closed
         try:
@@ -174,6 +165,7 @@ def build_session_summary(
     status: str,
     reason: str,
     git: dict[str, Any] | None = None,
+    ended_at: datetime | None = None,
 ) -> dict[str, Any]:
     lifecycle_types = {
         EventType.TOOL_CALL.value,
@@ -216,7 +208,7 @@ def build_session_summary(
         "status": status,
         "close_reason": reason,
         "started_at": session.started_at.isoformat(),
-        "ended_at": utc_now().isoformat(),
+        "ended_at": (ended_at or session.ended_at or utc_now()).isoformat(),
         "semantic_event_count": len(semantic),
         "event_count": len(events),
         "goals": list(dict.fromkeys(goals)),
@@ -244,6 +236,7 @@ def reconcile_stale_sessions(context: BrainContext, *, stale_after_seconds: int 
             status="stale",
             reason="heartbeat_expired",
             git={},
+            ended_at=session.ended_at,
         )
         project_path = _project_path_for_session(context, session)
         context.repository.append_event(
@@ -289,9 +282,61 @@ async def _heartbeat_loop(context: BrainContext) -> None:
         session_id = context.active_session_id
         if session_id is not None:
             try:
+                session = context.active_session
+                if session is not None:
+                    await anyio.to_thread.run_sync(record_git_changes, context, session)
                 await anyio.to_thread.run_sync(context.repository.touch_session, session_id)
             except Exception:
                 logger.exception("Session heartbeat failed")
+
+
+def record_git_changes(
+    context: BrainContext,
+    session: Session,
+    *,
+    confidence: str = "low",
+) -> dict[str, Any]:
+    """Persist Git deltas observed since the previous session checkpoint."""
+    with context._session_lock:
+        git = GitBrain(context.project_path)
+        final_fingerprint = git.build_fingerprint()
+        baseline = context.git_baseline
+        if baseline is None:
+            context.git_baseline = final_fingerprint
+            return final_fingerprint
+        changes = git.changed_paths_between(baseline, final_fingerprint)
+        events = context.repository.list_session_events(session.id or 0)
+        recorded = {
+            (event.file_path, event.payload.get("fingerprint"), event.payload.get("change_kind"))
+            for event in events
+            if event.type == EventType.FILE_MODIFIED.value
+        }
+        branch = final_fingerprint.get("branch") or context.agent_name
+        fingerprints = dict(final_fingerprint.get("files") or {})
+        for change in changes:
+            path = change["path"]
+            fingerprint = fingerprints.get(path, "missing")
+            key = (path, fingerprint, change["change_kind"])
+            if key in recorded:
+                continue
+            context.repository.append_event(
+                project_path=context.project_path,
+                session_id=session.id or 0,
+                type=EventType.FILE_MODIFIED.value,
+                source="git_observer",
+                payload={
+                    "change_kind": change["change_kind"],
+                    "attribution": "observed",
+                    "confidence": confidence,
+                    "fingerprint": fingerprint,
+                    "observed_by_session": session.id,
+                },
+                file_path=path,
+                agent_id=context.agent_name,
+                branch=str(branch),
+            )
+        context.git_baseline = final_fingerprint
+        return final_fingerprint
 
 
 def _record_outcome(
