@@ -8,6 +8,7 @@ from allbrain.capabilities.model import EXACT_MATCH, NO_MATCH, PARTIAL_MATCH
 
 def _stable_capability_id(agent_id: str, event_ids: Iterable[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))

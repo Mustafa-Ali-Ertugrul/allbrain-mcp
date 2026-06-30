@@ -51,8 +51,12 @@ class AttributionManager:
         if self._counterfactual_count % ATTRIBUTION_COUNTERFACTUAL_INTERVAL == 0:
             for signal in ["capability", "learning", "dynamics", "causal"]:
                 cf_scores[signal] = estimate_signal_impact(
-                    signal=signal, agent_id=agent_id, task_type=task_type,
-                    actual_agent=agent_id, events=ordered, event_ids=event_ids,
+                    signal=signal,
+                    agent_id=agent_id,
+                    task_type=task_type,
+                    actual_agent=agent_id,
+                    events=ordered,
+                    event_ids=event_ids,
                 )
 
         allocations = allocate_credit(reward, contributors, cf_scores=cf_scores)
@@ -65,12 +69,13 @@ class AttributionManager:
             signal_counts[alloc.signal] = signal_counts.get(alloc.signal, 0) + 1
 
         importance_changes = detect_importance_change(
-            old_rewards, signal_rewards, self._importance_history,
+            old_rewards,
+            signal_rewards,
+            self._importance_history,
         )
 
         alloc_list = [
-            {"signal": a.signal, "contribution": a.contribution, "confidence": a.confidence}
-            for a in allocations
+            {"signal": a.signal, "contribution": a.contribution, "confidence": a.confidence} for a in allocations
         ]
 
         return {

@@ -29,20 +29,28 @@ class ObjectiveSystemReducer:
         if not isinstance(payload, dict):
             return
         if et == EventType.OBJECTIVE_UPDATED.value:
-            try: validate_objective_updated(payload)
-            except ValueError: return
+            try:
+                validate_objective_updated(payload)
+            except ValueError:
+                return
             self._objectives.append(payload)
             self._total_objectives += 1
         elif et == EventType.OBJECTIVE_REBALANCED.value:
-            try: validate_objective_rebalanced(payload)
-            except ValueError: return
+            try:
+                validate_objective_rebalanced(payload)
+            except ValueError:
+                return
             self._rebalances.append(payload)
             self._total_rebalances += 1
 
     def snapshot(self) -> dict[str, Any]:
-        return {"objectives": list(self._objectives), "rebalances": list(self._rebalances),
-                "total_objectives": self._total_objectives, "total_rebalances": self._total_rebalances,
-                "version": OBJECTIVE_SYSTEM_TEMPLATE_VERSION}
+        return {
+            "objectives": list(self._objectives),
+            "rebalances": list(self._rebalances),
+            "total_objectives": self._total_objectives,
+            "total_rebalances": self._total_rebalances,
+            "version": OBJECTIVE_SYSTEM_TEMPLATE_VERSION,
+        }
 
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
         return {"default": self.snapshot()}

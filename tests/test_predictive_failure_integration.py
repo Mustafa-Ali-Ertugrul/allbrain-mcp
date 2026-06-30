@@ -92,12 +92,14 @@ class TestPredictiveFailureIntegration:
 
         # Failure path
         r1 = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout",
+            fault_id="f1",
+            fault_type="timeout",
             signals=[RiskSignal("retry_spike", 0.85, 5)],
         )
         # Safe path
         r2 = mgr.run_cycle(
-            fault_id="f2", fault_type="connection",
+            fault_id="f2",
+            fault_type="connection",
             signals=[RiskSignal("circuit_breaker_open", 0.2, 1)],
         )
 
@@ -114,7 +116,8 @@ class TestPredictiveFailureIntegration:
         # Three calls with increasing risk — drift will build up
         for risk in [0.50, 0.55, 0.60]:
             mgr.run_cycle(
-                fault_id="f1", fault_type="timeout",
+                fault_id="f1",
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", risk, 3)],
             )
 
@@ -130,7 +133,8 @@ class TestPredictiveFailureIntegration:
         # Build drift with increasing risk scores starting at 0.40
         for risk in [0.40, 0.45, 0.50, 0.55, 0.60]:
             mgr.run_cycle(
-                fault_id="f1", fault_type="timeout",
+                fault_id="f1",
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", risk, 3)],
             )
 
@@ -138,7 +142,8 @@ class TestPredictiveFailureIntegration:
         # Depending on drift slope, the boost may push effective_risk to ≥0.70
         # At minimum, drift_boost should be non-zero
         events = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout",
+            fault_id="f1",
+            fault_type="timeout",
             signals=[RiskSignal("retry_spike", 0.50, 3)],
         )["events"]
         risk_events = [e for e in events if e["event_type"] == EventType.FAILURE_RISK_COMPUTED.value]
@@ -152,14 +157,16 @@ class TestPredictiveFailureIntegration:
         # Build up some drift
         for risk in [0.50, 0.55, 0.60]:
             mgr.run_cycle(
-                fault_id="f1", fault_type="timeout",
+                fault_id="f1",
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", risk, 3)],
             )
         assert detector.compute_drift("timeout") > 0.0
 
         # Trigger failure avoidance
         mgr.run_cycle(
-            fault_id="f1", fault_type="timeout",
+            fault_id="f1",
+            fault_type="timeout",
             signals=[RiskSignal("retry_spike", 0.85, 5)],
         )
         # Drift should be cleared
@@ -171,7 +178,8 @@ class TestPredictiveFailureReducer:
         """Events from Manager → Reducer → snapshot matches expected counts."""
         mgr = PredictiveFailureManager()
         result = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout",
+            fault_id="f1",
+            fault_type="timeout",
             signals=[RiskSignal("retry_spike", 0.85, 5)],
         )
 
@@ -195,7 +203,8 @@ class TestPredictiveFailureReducer:
         """Applying the same event twice should not double-count."""
         mgr = PredictiveFailureManager()
         result = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout",
+            fault_id="f1",
+            fault_type="timeout",
             signals=[RiskSignal("retry_spike", 0.85, 5)],
         )
 

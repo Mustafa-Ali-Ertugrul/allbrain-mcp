@@ -13,7 +13,9 @@ class ConstitutionalReasoner:
         "maintain_auditability",
     ]
 
-    def reason(self, context: dict[str, Any], proposals: list[dict[str, Any]], alignment_report: dict[str, Any]) -> dict[str, Any]:
+    def reason(
+        self, context: dict[str, Any], proposals: list[dict[str, Any]], alignment_report: dict[str, Any]
+    ) -> dict[str, Any]:
         violations: list[str] = list(context.get("constitutional_violations", []))
         for proposal in proposals:
             if proposal.get("short_term_gain_bias") and alignment_report["long_term_drift_score"] > 0.4:

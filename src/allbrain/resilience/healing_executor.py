@@ -55,9 +55,7 @@ class HealingExecutor:
         """
         # Step 1: Guardrail check
         faults = recent_faults or []
-        ok, gscore = should_execute(
-            plan, faults, active_recoveries, threshold=guardrail_threshold
-        )
+        ok, gscore = should_execute(plan, faults, active_recoveries, threshold=guardrail_threshold)
         if not ok:
             return (
                 False,

@@ -47,7 +47,13 @@ def seed_trace_events(context: BrainContext) -> None:
     assert save_event_impl(
         context,
         type=EventType.SELECTION_DECISION.value,
-        payload={"task_id": "wf1", "workflow_id": "wf1", "agent_id": "builder", "total_score": 0.8, "breakdown": {"capability": 1.0}},
+        payload={
+            "task_id": "wf1",
+            "workflow_id": "wf1",
+            "agent_id": "builder",
+            "total_score": 0.8,
+            "breakdown": {"capability": 1.0},
+        },
         agent_id="builder",
     ).ok
     assert save_event_impl(
@@ -59,7 +65,15 @@ def seed_trace_events(context: BrainContext) -> None:
     assert save_event_impl(
         context,
         type=EventType.AGENT_EXECUTION_FAILED.value,
-        payload={"task_id": "wf1", "workflow_id": "wf1", "node_id": "n1", "agent_id": "builder", "duration_ms": 250, "cost_usd": 0.03, "error": "timeout"},
+        payload={
+            "task_id": "wf1",
+            "workflow_id": "wf1",
+            "node_id": "n1",
+            "agent_id": "builder",
+            "duration_ms": 250,
+            "cost_usd": 0.03,
+            "error": "timeout",
+        },
         agent_id="builder",
     ).ok
     assert save_event_impl(

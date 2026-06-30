@@ -24,7 +24,12 @@ class MemoryBuilder:
                 semantic.make_item(
                     id=f"workflow:{task_id}",
                     content=summary,
-                    tags={"kind": "workflow", "task_id": task_id, "status": self._status(task_events), "agent": self._last_agent(task_events) or "unknown"},
+                    tags={
+                        "kind": "workflow",
+                        "task_id": task_id,
+                        "status": self._status(task_events),
+                        "agent": self._last_agent(task_events) or "unknown",
+                    },
                     timestamp=task_events[-1].created_at,
                     importance_score=self._importance(task_events),
                     source_event_ids=[event.id for event in task_events],
@@ -36,7 +41,12 @@ class MemoryBuilder:
                     semantic.make_item(
                         id=f"failure:{task_id}",
                         content=failure,
-                        tags={"kind": "failure_pattern", "task_id": task_id, "agent": self._failed_agent(task_events) or "unknown", "reason": self._failure_reason(task_events) or "unknown"},
+                        tags={
+                            "kind": "failure_pattern",
+                            "task_id": task_id,
+                            "agent": self._failed_agent(task_events) or "unknown",
+                            "reason": self._failure_reason(task_events) or "unknown",
+                        },
                         timestamp=task_events[-1].created_at,
                         importance_score=0.9,
                         source_event_ids=[event.id for event in task_events],
@@ -114,7 +124,9 @@ class MemoryBuilder:
         return f"failure pattern task={task_id} agent={agent or 'unknown'} reason={reason}"
 
     def _fallback_pattern(self, task_id: str, events: list[EventRead]) -> str | None:
-        assignments = [_agent(event) for event in events if event.type == EventType.TASK_ASSIGNED.value and _agent(event)]
+        assignments = [
+            _agent(event) for event in events if event.type == EventType.TASK_ASSIGNED.value and _agent(event)
+        ]
         if len(assignments) < 2:
             return None
         return f"fallback pattern task={task_id}: {assignments[0]} -> {assignments[-1]} status={self._status(events)}"
@@ -127,10 +139,20 @@ class MemoryBuilder:
                 grouped[collaboration_id].append(event)
         items: list[MemoryItem] = []
         for collaboration_id, collab_events in sorted(grouped.items()):
-            status = "success" if any(event.type == EventType.COLLABORATION_COMPLETED.value for event in collab_events) else "failed" if any(event.type == EventType.COLLABORATION_FAILED.value for event in collab_events) else "active"
+            status = (
+                "success"
+                if any(event.type == EventType.COLLABORATION_COMPLETED.value for event in collab_events)
+                else "failed"
+                if any(event.type == EventType.COLLABORATION_FAILED.value for event in collab_events)
+                else "active"
+            )
             agents = sorted({agent for event in collab_events if (agent := _agent(event))})
-            objective = next((event.payload.get("objective") for event in collab_events if event.payload.get("objective")), collaboration_id)
-            content = f"collaboration {collaboration_id}: {objective}; status={status}; agents={','.join(agents) or 'unknown'}"
+            objective = next(
+                (event.payload.get("objective") for event in collab_events if event.payload.get("objective")),
+                collaboration_id,
+            )
+            agents_str = ",".join(agents) or "unknown"
+            content = f"collaboration {collaboration_id}: {objective}; status={status}; agents={agents_str}"
             items.append(
                 semantic.make_item(
                     id=f"collaboration:{collaboration_id}",
@@ -150,7 +172,9 @@ class MemoryBuilder:
                 pattern_id = event.payload.get("pattern_id")
                 kind = str(event.payload.get("kind") or "organizational_pattern")
                 if isinstance(pattern_id, str):
-                    content = f"organizational pattern {kind}: {event.payload.get('summary') or pattern_id}; confidence={event.payload.get('confidence', 0.0)}"
+                    summary = event.payload.get("summary") or pattern_id
+                    confidence = event.payload.get("confidence", 0.0)
+                    content = f"organizational pattern {kind}: {summary}; confidence={confidence}"
                     items.append(
                         semantic.make_item(
                             id=f"organizational_pattern:{pattern_id}",
@@ -168,8 +192,15 @@ class MemoryBuilder:
                     items.append(
                         semantic.make_item(
                             id=f"recommendation:{recommendation_id}",
-                            content=f"recommendation {kind}: {event.payload.get('subject')}; confidence={event.payload.get('confidence', 0.0)}",
-                            tags={"kind": "recommendation", "recommendation_kind": kind, "recommendation_id": recommendation_id},
+                            content=(
+                                f"recommendation {kind}: {event.payload.get('subject')}; "
+                                f"confidence={event.payload.get('confidence', 0.0)}"
+                            ),
+                            tags={
+                                "kind": "recommendation",
+                                "recommendation_kind": kind,
+                                "recommendation_id": recommendation_id,
+                            },
                             timestamp=event.created_at,
                             importance_score=float(event.payload.get("confidence", 0.6) or 0.6),
                             source_event_ids=[event.id],
@@ -185,12 +216,22 @@ class MemoryBuilder:
                 if isinstance(decision_id, str):
                     decision = event.payload.get("decision")
                     review_id = event.payload.get("review_id")
-                    content = f"governance decision {decision}: review={review_id}; alignment={event.payload.get('alignment_score')}; trajectory={event.payload.get('trajectory_score')}"
+                    alignment = event.payload.get("alignment_score")
+                    trajectory = event.payload.get("trajectory_score")
+                    content = (
+                        f"governance decision {decision}: review={review_id}; "
+                        f"alignment={alignment}; trajectory={trajectory}"
+                    )
                     items.append(
                         semantic.make_item(
                             id=f"governance_decision:{decision_id}",
                             content=content,
-                            tags={"kind": "governance_decision", "decision_id": decision_id, "review_id": str(review_id or ""), "decision": str(decision or "unknown")},
+                            tags={
+                                "kind": "governance_decision",
+                                "decision_id": decision_id,
+                                "review_id": str(review_id or ""),
+                                "decision": str(decision or "unknown"),
+                            },
                             timestamp=event.created_at,
                             importance_score=float(event.payload.get("confidence", 0.7) or 0.7),
                             source_event_ids=[event.id],
@@ -202,8 +243,16 @@ class MemoryBuilder:
                     items.append(
                         semantic.make_item(
                             id=f"alignment_report:{report_id}",
-                            content=f"alignment report score={event.payload.get('alignment_score')}; drift={event.payload.get('long_term_drift_score')}; safety={event.payload.get('safety_alignment_score')}",
-                            tags={"kind": "alignment_report", "report_id": report_id, "review_id": str(event.payload.get("review_id") or "")},
+                            content=(
+                                f"alignment report score={event.payload.get('alignment_score')}; "
+                                f"drift={event.payload.get('long_term_drift_score')}; "
+                                f"safety={event.payload.get('safety_alignment_score')}"
+                            ),
+                            tags={
+                                "kind": "alignment_report",
+                                "report_id": report_id,
+                                "review_id": str(event.payload.get("review_id") or ""),
+                            },
                             timestamp=event.created_at,
                             importance_score=1.0 - float(event.payload.get("alignment_score", 0.7) or 0.7),
                             source_event_ids=[event.id],
@@ -221,8 +270,15 @@ class MemoryBuilder:
                 items.append(
                     semantic.make_item(
                         id=f"runtime_final_decision:{run_id}",
-                        content=f"runtime final decision action={event.payload.get('action')}; reason={event.payload.get('reason')}; confidence={event.payload.get('confidence')}",
-                        tags={"kind": "runtime_final_decision", "run_id": run_id, "action": str(event.payload.get("action") or "unknown")},
+                        content=(
+                            f"runtime final decision action={event.payload.get('action')}; "
+                            f"reason={event.payload.get('reason')}; confidence={event.payload.get('confidence')}"
+                        ),
+                        tags={
+                            "kind": "runtime_final_decision",
+                            "run_id": run_id,
+                            "action": str(event.payload.get("action") or "unknown"),
+                        },
                         timestamp=event.created_at,
                         importance_score=float(event.payload.get("confidence", 0.7) or 0.7),
                         source_event_ids=[event.id],
@@ -232,8 +288,15 @@ class MemoryBuilder:
                 items.append(
                     semantic.make_item(
                         id=f"runtime_feedback:{run_id}",
-                        content=f"runtime feedback status={event.payload.get('status')}; mode={event.payload.get('execute_mode')}",
-                        tags={"kind": "runtime_feedback", "run_id": run_id, "status": str(event.payload.get("status") or "unknown")},
+                        content=(
+                            f"runtime feedback status={event.payload.get('status')}; "
+                            f"mode={event.payload.get('execute_mode')}"
+                        ),
+                        tags={
+                            "kind": "runtime_feedback",
+                            "run_id": run_id,
+                            "status": str(event.payload.get("status") or "unknown"),
+                        },
                         timestamp=event.created_at,
                         importance_score=0.7,
                         source_event_ids=[event.id],
@@ -254,5 +317,10 @@ class MemoryBuilder:
 
 
 def _agent(event: EventRead) -> str | None:
-    value = event.payload.get("agent_id") or event.payload.get("from_agent") or event.payload.get("to_agent") or event.agent_id
+    value = (
+        event.payload.get("agent_id")
+        or event.payload.get("from_agent")
+        or event.payload.get("to_agent")
+        or event.agent_id
+    )
     return value if isinstance(value, str) and value else None

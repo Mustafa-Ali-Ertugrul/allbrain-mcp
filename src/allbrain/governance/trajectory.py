@@ -34,7 +34,9 @@ class SystemTrajectoryForecaster:
             "autonomy_growth_curve": [round(autonomy_growth * factor, 6) for factor in (0.5, 0.75, 1.0)],
             "alignment_decay_risk": alignment_decay,
             "governance_pressure_index": round(max(alignment_decay, risk_growth, autonomy_growth), 6),
-            "scenario_type": "high_pressure" if max(alignment_decay, risk_growth, autonomy_growth) >= 0.75 else "baseline",
+            "scenario_type": "high_pressure"
+            if max(alignment_decay, risk_growth, autonomy_growth) >= 0.75
+            else "baseline",
             "trajectory_score": trajectory_score,
             "confidence": confidence,
         }

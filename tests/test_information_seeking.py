@@ -53,7 +53,9 @@ def _need(topic: str, expected_gain: float = 0.5, cost: float = 0.1) -> Informat
 
 def test_evaluate_request_feedback_high_gain_low_cost() -> None:
     evaluator = InformationSeekingEvaluator()
-    gain, cost, voi = evaluator.evaluate(InformationAction.REQUEST_FEEDBACK, [_need("missing_feedback", expected_gain=0.9)])
+    gain, cost, voi = evaluator.evaluate(
+        InformationAction.REQUEST_FEEDBACK, [_need("missing_feedback", expected_gain=0.9)]
+    )
     assert gain > 0.3
     assert cost == pytest.approx(0.05, rel=1e-6)
     assert voi > 0.0
@@ -61,7 +63,9 @@ def test_evaluate_request_feedback_high_gain_low_cost() -> None:
 
 def test_evaluate_collect_history_moderate_gain_high_cost() -> None:
     evaluator = InformationSeekingEvaluator()
-    gain, cost, voi = evaluator.evaluate(InformationAction.COLLECT_HISTORY, [_need("missing_history", expected_gain=0.9)])
+    gain, cost, voi = evaluator.evaluate(
+        InformationAction.COLLECT_HISTORY, [_need("missing_history", expected_gain=0.9)]
+    )
     assert gain > 0.3
     assert cost == pytest.approx(0.15, rel=1e-6)
     assert 0.0 <= voi <= 1.0
@@ -95,7 +99,8 @@ def test_evaluate_observe_environment_moderate_gain_low_cost() -> None:
 def test_evaluate_voi_clamped_to_unit_interval() -> None:
     evaluator = InformationSeekingEvaluator()
     gain, cost, voi = evaluator.evaluate(
-        InformationAction.REQUEST_FEEDBACK, [_need("missing_feedback", expected_gain=0.9), _need("missing_history", expected_gain=0.9)]
+        InformationAction.REQUEST_FEEDBACK,
+        [_need("missing_feedback", expected_gain=0.9), _need("missing_history", expected_gain=0.9)],
     )
     assert 0.0 <= voi <= 1.0
     assert 0.0 <= gain <= 1.0

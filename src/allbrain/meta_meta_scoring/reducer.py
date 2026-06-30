@@ -32,7 +32,7 @@ class MetaMetaScoringReducer:
                 validate_evaluator_profile_updated(payload)
             except ValueError:
                 return
-            key = f"{payload.get('evaluator_id','')}::{payload.get('fault_type','')}"
+            key = f"{payload.get('evaluator_id', '')}::{payload.get('fault_type', '')}"
             self._profiles[key] = dict(payload)
             self._total_updates += 1
 

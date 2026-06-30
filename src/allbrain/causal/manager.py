@@ -22,8 +22,10 @@ class CausalManager:
         event_ids = [str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")]
 
         counterfactuals = top_alternatives(
-            agent_id=agent_id, task_type=task_type,
-            events=ordered, event_ids=event_ids,
+            agent_id=agent_id,
+            task_type=task_type,
+            events=ordered,
+            event_ids=event_ids,
         )
 
         cf_data: dict[str, dict[str, Any]] = {}
@@ -41,8 +43,11 @@ class CausalManager:
             }
 
             impact = estimate_treatment_effect(
-                agent_a=agent_id, agent_b=alt, task_type=task_type,
-                events=ordered, event_ids=event_ids,
+                agent_a=agent_id,
+                agent_b=alt,
+                task_type=task_type,
+                events=ordered,
+                event_ids=event_ids,
             )
             if abs(impact.impact_score) > 0:
                 impacts[alt] = {

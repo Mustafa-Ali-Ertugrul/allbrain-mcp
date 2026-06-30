@@ -11,6 +11,7 @@ where pytest happens to put its temp files -- not a real test failure.
 We set this once, before any test imports ``allbrain.config``, so the
 module-level cache in ``allowed_project_roots()`` picks it up correctly.
 """
+
 from __future__ import annotations
 
 import os

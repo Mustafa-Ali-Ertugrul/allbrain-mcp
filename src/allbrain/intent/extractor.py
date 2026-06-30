@@ -22,17 +22,57 @@ class IntentExtractor:
         if event.type == EventType.TASK_STARTED.value:
             task = self._task(event)
             supporting_files = self._supporting_files(event, events)
-            return self._intent(event, agent_id, task or "task started", "task_started", self._status(event, events, "active"), self._merge_files(related_files, supporting_files), self._confidence(event, events, 0.7))
+            return self._intent(
+                event,
+                agent_id,
+                task or "task started",
+                "task_started",
+                self._status(event, events, "active"),
+                self._merge_files(related_files, supporting_files),
+                self._confidence(event, events, 0.7),
+            )
         if event.type == EventType.TASK_COMPLETED.value:
             task = self._task(event)
-            return self._intent(event, agent_id, task or "task completed", "task_completed", "completed", related_files, self._confidence(event, events, 0.8))
+            return self._intent(
+                event,
+                agent_id,
+                task or "task completed",
+                "task_completed",
+                "completed",
+                related_files,
+                self._confidence(event, events, 0.8),
+            )
         if event.type == EventType.TASK_BLOCKED.value:
             task = self._task(event)
-            return self._intent(event, agent_id, task or "task blocked", "task_blocked", "blocked", related_files, self._confidence(event, events, 0.85))
+            return self._intent(
+                event,
+                agent_id,
+                task or "task blocked",
+                "task_blocked",
+                "blocked",
+                related_files,
+                self._confidence(event, events, 0.85),
+            )
         if event.type == EventType.FAILURE.value:
-            return self._intent(event, agent_id, "debug failure", "failure", "active", related_files, self._confidence(event, events, 0.75))
+            return self._intent(
+                event,
+                agent_id,
+                "debug failure",
+                "failure",
+                "active",
+                related_files,
+                self._confidence(event, events, 0.75),
+            )
         if event.type == EventType.FILE_MODIFIED.value and event.file_path:
-            return self._intent(event, agent_id, "file modification", "file_modified", "active", related_files, self._confidence(event, events, 0.5))
+            return self._intent(
+                event,
+                agent_id,
+                "file modification",
+                "file_modified",
+                "active",
+                related_files,
+                self._confidence(event, events, 0.5),
+            )
         return None
 
     def _intent(
@@ -88,7 +128,12 @@ class IntentExtractor:
                 completion_evidence += 1
             if candidate.type in {EventType.TASK_BLOCKED.value, EventType.FAILURE.value} and (same_task or same_file):
                 blocker_or_failure_evidence += 1
-        multiplier = 1.0 + min(file_evidence, 5) * 0.05 + min(completion_evidence, 2) * 0.12 + min(blocker_or_failure_evidence, 2) * 0.04
+        multiplier = (
+            1.0
+            + min(file_evidence, 5) * 0.05
+            + min(completion_evidence, 2) * 0.12
+            + min(blocker_or_failure_evidence, 2) * 0.04
+        )
         return round(min(1.0, base_confidence * multiplier), 4)
 
     def _status(self, event: EventRead, events: list[EventRead], default: str) -> str:
@@ -96,10 +141,20 @@ class IntentExtractor:
         if not task:
             return default
         agent_id = event.agent_id or "unknown"
-        later_events = [candidate for candidate in events if candidate.id > event.id and (candidate.agent_id or "unknown") == agent_id]
-        if any(candidate.type == EventType.TASK_COMPLETED.value and self._task(candidate) == task for candidate in later_events):
+        later_events = [
+            candidate
+            for candidate in events
+            if candidate.id > event.id and (candidate.agent_id or "unknown") == agent_id
+        ]
+        if any(
+            candidate.type == EventType.TASK_COMPLETED.value and self._task(candidate) == task
+            for candidate in later_events
+        ):
             return "completed"
-        if any(candidate.type == EventType.TASK_BLOCKED.value and self._task(candidate) == task for candidate in later_events):
+        if any(
+            candidate.type == EventType.TASK_BLOCKED.value and self._task(candidate) == task
+            for candidate in later_events
+        ):
             return "blocked"
         return default
 
@@ -115,7 +170,10 @@ class IntentExtractor:
                 continue
             if candidate.type == EventType.TASK_STARTED.value:
                 active_task = self._task(candidate)
-            elif candidate.type in {EventType.TASK_COMPLETED.value, EventType.TASK_BLOCKED.value} and self._task(candidate) == active_task:
+            elif (
+                candidate.type in {EventType.TASK_COMPLETED.value, EventType.TASK_BLOCKED.value}
+                and self._task(candidate) == active_task
+            ):
                 active_task = None
         return active_task is not None
 
@@ -127,7 +185,9 @@ class IntentExtractor:
                 continue
             if (candidate.agent_id or "unknown") != agent_id:
                 continue
-            if candidate.type in {EventType.TASK_COMPLETED.value, EventType.TASK_BLOCKED.value} and self._task(candidate) == self._task(event):
+            if candidate.type in {EventType.TASK_COMPLETED.value, EventType.TASK_BLOCKED.value} and self._task(
+                candidate
+            ) == self._task(event):
                 break
             if candidate.type == EventType.FILE_MODIFIED.value:
                 files = self._merge_files(files, self._related_files(candidate))

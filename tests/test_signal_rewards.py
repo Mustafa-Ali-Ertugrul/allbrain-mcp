@@ -11,16 +11,37 @@ class TestSignalRewards:
 
     def test_additive_meta_policy(self):
         mgr = AttributionManager()
-        r = mgr.attribute([], decision_id="d1", mode="fusion", reward=0.8,
-                          contributors={"capability": 0.4, "learning": 0.6}, agent_id="a", task_type="t")
+        r = mgr.attribute(
+            [],
+            decision_id="d1",
+            mode="fusion",
+            reward=0.8,
+            contributors={"capability": 0.4, "learning": 0.6},
+            agent_id="a",
+            task_type="t",
+        )
         assert r["signal_rewards"]["capability"] != 0.0
 
     def test_isolation_per_decision(self):
         mgr = AttributionManager()
-        r1 = mgr.attribute([], decision_id="d1", mode="fusion", reward=0.8,
-                           contributors={"capability": 1.0}, agent_id="a", task_type="t")
-        r2 = mgr.attribute([], decision_id="d2", mode="legacy", reward=0.3,
-                           contributors={"capability": 1.0}, agent_id="a", task_type="t")
+        r1 = mgr.attribute(
+            [],
+            decision_id="d1",
+            mode="fusion",
+            reward=0.8,
+            contributors={"capability": 1.0},
+            agent_id="a",
+            task_type="t",
+        )
+        r2 = mgr.attribute(
+            [],
+            decision_id="d2",
+            mode="legacy",
+            reward=0.3,
+            contributors={"capability": 1.0},
+            agent_id="a",
+            task_type="t",
+        )
         assert r1["signal_rewards"]["capability"] != r2["signal_rewards"]["capability"]
 
     def test_initial_rewards_zero(self):
@@ -32,17 +53,32 @@ class TestSignalRewards:
         mgr = AttributionManager()
         for i in range(11):
             mgr._counterfactual_count = i
-        r = mgr.attribute([], decision_id="d99", mode="fusion", reward=0.5,
-                          contributors={"capability": 1.0}, agent_id="x", task_type="y")
+        r = mgr.attribute(
+            [],
+            decision_id="d99",
+            mode="fusion",
+            reward=0.5,
+            contributors={"capability": 1.0},
+            agent_id="x",
+            task_type="y",
+        )
         assert isinstance(r.get("cf_active"), bool)
 
     def test_signal_counts_tracked(self):
         mgr = AttributionManager()
-        r = mgr.attribute([], decision_id="d1", mode="fusion", reward=0.5,
-                          contributors={"capability": 1.0}, agent_id="a", task_type="t")
+        r = mgr.attribute(
+            [],
+            decision_id="d1",
+            mode="fusion",
+            reward=0.5,
+            contributors={"capability": 1.0},
+            agent_id="a",
+            task_type="t",
+        )
         assert r["signal_counts"]["capability"] > 0
 
     def test_counterfactual_call_doesnt_crash(self):
         from allbrain.attribution.counterfactual import estimate_signal_impact
+
         impact = estimate_signal_impact(signal="capability", agent_id="x", task_type="y", actual_agent="x", events=[])
         assert impact == 0.0

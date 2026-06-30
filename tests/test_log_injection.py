@@ -1,6 +1,7 @@
 """Test that user-controlled input cannot inject fake log lines or
 ANSI escape sequences into the logging output.
 """
+
 from pathlib import Path
 
 import pytest
@@ -25,9 +26,7 @@ def test_newline_in_goal_does_not_inject_log(caplog: pytest.LogCaptureFixture, t
 
 def test_crlf_in_task_hint(caplog: pytest.LogCaptureFixture, tmp_path: Path) -> None:
     context = make_context(tmp_path)
-    result = save_event_impl(
-        context, type="file_modified", payload={}, task_hint="ok\r\nWARNING: fake alert"
-    )
+    result = save_event_impl(context, type="file_modified", payload={}, task_hint="ok\r\nWARNING: fake alert")
     assert result.ok
     for record in caplog.records:
         assert "WARNING: fake alert" not in record.getMessage()

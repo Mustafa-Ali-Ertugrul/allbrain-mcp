@@ -88,6 +88,11 @@ def _filter_events(
     return [
         event
         for event in events
-        if (workflow_id is None or event.payload.get("workflow_id") == workflow_id or event.payload.get("root_task_id") == workflow_id or event.payload.get("task_id") == workflow_id)
+        if (
+            workflow_id is None
+            or event.payload.get("workflow_id") == workflow_id
+            or event.payload.get("root_task_id") == workflow_id
+            or event.payload.get("task_id") == workflow_id
+        )
         and (task_id is None or event.payload.get("task_id") == task_id)
     ]

@@ -60,8 +60,10 @@ class CapabilityLearningManager:
         evidence = sorted(all_eids)
         k = agent_id + "::" + task_type
         return LearnedCapabilityState(
-            agent_id=agent_id, task_type=task_type,
-            observation_count=count, capability_score=score,
+            agent_id=agent_id,
+            task_type=task_type,
+            observation_count=count,
+            capability_score=score,
             last_delta=delta,
             analysis_id=analysis_id or _stable_learning_id(k, evidence),
         )

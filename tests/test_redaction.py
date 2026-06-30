@@ -60,9 +60,7 @@ def test_nested_dict_secrets_masked() -> None:
 
 
 def test_list_of_secrets_all_masked() -> None:
-    result = sanitize_payload(
-        {"tokens": ["sk-" + "a" * 40, "ghp_" + "b" * 36]}
-    )
+    result = sanitize_payload({"tokens": ["sk-" + "a" * 40, "ghp_" + "b" * 36]})
     assert result["tokens"] == ["********", "********"]
 
 

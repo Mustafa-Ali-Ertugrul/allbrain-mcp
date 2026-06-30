@@ -12,7 +12,12 @@ class TeamMember:
     weight: float = 1.0
 
     def to_dict(self) -> dict[str, Any]:
-        return {"agent_id": self.agent_id, "role": self.role, "capabilities": sorted(self.capabilities), "weight": self.weight}
+        return {
+            "agent_id": self.agent_id,
+            "role": self.role,
+            "capabilities": sorted(self.capabilities),
+            "weight": self.weight,
+        }
 
 
 @dataclass(frozen=True)

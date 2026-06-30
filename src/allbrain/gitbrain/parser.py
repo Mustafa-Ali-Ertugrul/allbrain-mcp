@@ -14,20 +14,22 @@ from allbrain.security.redaction import sanitize_text
 
 # Environment variables that carry credentials and must be
 # stripped before spawning any git subprocess.
-_CREDENTIAL_ENV_VARS: frozenset[str] = frozenset({
-    "GIT_TOKEN",
-    "GIT_ASKPASS",
-    "SSH_AUTH_SOCK",
-    "SSH_AGENT_PID",
-    "AWS_ACCESS_KEY_ID",
-    "AWS_SECRET_ACCESS_KEY",
-    "AWS_SESSION_TOKEN",
-    "AZURE_CLIENT_SECRET",
-    "AZURE_CLIENT_ID",
-    "GITHUB_TOKEN",
-    "GITHUB_PAT",
-    "GIT_TERMINAL_PROMPT",
-})
+_CREDENTIAL_ENV_VARS: frozenset[str] = frozenset(
+    {
+        "GIT_TOKEN",
+        "GIT_ASKPASS",
+        "SSH_AUTH_SOCK",
+        "SSH_AGENT_PID",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_SESSION_TOKEN",
+        "AZURE_CLIENT_SECRET",
+        "AZURE_CLIENT_ID",
+        "GITHUB_TOKEN",
+        "GITHUB_PAT",
+        "GIT_TERMINAL_PROMPT",
+    }
+)
 
 _CREDENTIAL_RE = re.compile(
     r"(?:_|^)(?:API_KEY|TOKENS?|SECRET|PASSWORD|CREDENTIALS?)(?:_|$)",
@@ -48,11 +50,7 @@ def safe_git_env() -> dict[str, str]:
     Credential-carrying env vars are removed, and
     ``GIT_TERMINAL_PROMPT=0`` is forced to prevent interactive auth.
     """
-    env = {
-        k: v
-        for k, v in os.environ.items()
-        if not _is_credential_var(k)
-    }
+    env = {k: v for k, v in os.environ.items() if not _is_credential_var(k)}
     env["GIT_TERMINAL_PROMPT"] = "0"
     return env
 

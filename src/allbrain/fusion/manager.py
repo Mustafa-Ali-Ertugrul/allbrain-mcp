@@ -67,7 +67,8 @@ class FusionManager:
         causal_norm, _ = normalize_signal(causal_vals)
 
         signal_vector = build_signal_vector(
-            agent_id=agent_id, task_type=task_type,
+            agent_id=agent_id,
+            task_type=task_type,
             capability_match=cap_norm,
             learned_capability=learn_norm,
             dynamics_score=dyn_norm,

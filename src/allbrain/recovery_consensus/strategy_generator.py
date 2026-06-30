@@ -20,9 +20,9 @@ class StrategyGenerator:
     def __init__(self, max_candidates: int = MAX_CANDIDATES) -> None:
         self._max = max_candidates
         self._severity_adjustments: dict[str, dict[str, float]] = {
-            "low":      {"risk_mult": 0.8, "success_mult": 1.0},
-            "medium":   {"risk_mult": 1.0, "success_mult": 1.0},
-            "high":     {"risk_mult": 1.2, "success_mult": 0.9},
+            "low": {"risk_mult": 0.8, "success_mult": 1.0},
+            "medium": {"risk_mult": 1.0, "success_mult": 1.0},
+            "high": {"risk_mult": 1.2, "success_mult": 0.9},
             "critical": {"risk_mult": 1.5, "success_mult": 0.85},
         }
 
@@ -64,18 +64,25 @@ class StrategyGenerator:
             confidence = base_confidence
 
             explanation = self._build_explanation(
-                strategy_name, fault_type, component, severity, estimated_success, risk,
+                strategy_name,
+                fault_type,
+                component,
+                severity,
+                estimated_success,
+                risk,
             )
 
-            candidates.append(CandidateStrategy(
-                strategy=strategy_name,
-                confidence=confidence,
-                risk=risk,
-                estimated_success=estimated_success,
-                explanation=explanation,
-                fault_id=fault_id,
-                component=component,
-            ))
+            candidates.append(
+                CandidateStrategy(
+                    strategy=strategy_name,
+                    confidence=confidence,
+                    risk=risk,
+                    estimated_success=estimated_success,
+                    explanation=explanation,
+                    fault_id=fault_id,
+                    component=component,
+                )
+            )
 
         return candidates
 
@@ -106,8 +113,7 @@ class StrategyGenerator:
         risk: float,
     ) -> str:
         return (
-            f"{strategy} for {fault_type} in {component} "
-            f"(severity={severity}, success={success:.2f}, risk={risk:.2f})"
+            f"{strategy} for {fault_type} in {component} (severity={severity}, success={success:.2f}, risk={risk:.2f})"
         )
 
     @staticmethod

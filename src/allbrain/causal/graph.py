@@ -5,6 +5,7 @@ from typing import Any
 
 def _stable_causal_id(key: str, event_ids: list[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))

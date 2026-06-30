@@ -18,6 +18,7 @@ class TestEvaluatorEvaluation:
         store = EvaluatorStore()
         evaluator = MetaEvaluator(store)
         import random
+
         for _ in range(50):
             evaluator.evaluate("random", "load", random.uniform(0.1, 0.9), random.uniform(0.1, 0.9))
         result = evaluator.evaluate("random", "load", 0.5, 0.5)
@@ -35,6 +36,7 @@ class TestEvaluatorEvaluation:
     def test_store_clamps_values(self):
         store = EvaluatorStore()
         from allbrain.meta_meta_scoring.model import EvaluatorProfile
+
         store.set(EvaluatorProfile("s1", "timeout", accuracy=5.0, bias=-5.0))
         p = store.get("s1", "timeout")
         assert 0.0 <= p.accuracy <= 1.0
@@ -43,6 +45,7 @@ class TestEvaluatorEvaluation:
     def test_all_profiles_serializable(self):
         store = EvaluatorStore()
         from allbrain.meta_meta_scoring.model import EvaluatorProfile
+
         store.set(EvaluatorProfile("s1", "timeout", accuracy=0.7))
         all_p = store.all_profiles()
         assert "s1" in all_p

@@ -13,10 +13,14 @@ class WorkflowMemoryStore:
         self.items.extend(item for item in items if item.id not in existing)
 
     def successful_workflows(self) -> list[MemoryItem]:
-        return [item for item in self.items if item.tags.get("kind") == "workflow" and item.tags.get("status") == "success"]
+        return [
+            item for item in self.items if item.tags.get("kind") == "workflow" and item.tags.get("status") == "success"
+        ]
 
     def failed_workflows(self) -> list[MemoryItem]:
-        return [item for item in self.items if item.tags.get("kind") == "workflow" and item.tags.get("status") == "failed"]
+        return [
+            item for item in self.items if item.tags.get("kind") == "workflow" and item.tags.get("status") == "failed"
+        ]
 
     def patterns(self) -> list[MemoryItem]:
         return [item for item in self.items if item.tags.get("kind") in {"failure_pattern", "fallback_pattern"}]

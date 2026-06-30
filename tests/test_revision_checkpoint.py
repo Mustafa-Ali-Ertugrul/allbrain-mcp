@@ -14,6 +14,7 @@ from allbrain.revision import (
 def _make_event(event_id: str, event_type: str, payload: dict | None = None):
     class _E:
         pass
+
     e = _E()
     e.id = event_id
     e.type = event_type
@@ -25,6 +26,7 @@ def _make_event(event_id: str, event_type: str, payload: dict | None = None):
 def test_baseline_is_last_belief_revised_payload():
     """When 2 BELIEF_REVISED events exist, the SECOND wins (last checkpoint)."""
     import pytest
+
     payload_first = make_payload(
         context_key="default",
         old_confidence=0.90,
@@ -149,6 +151,7 @@ def test_baseline_uses_payload_new_confidence_not_old_confidence():
     """The manager's old_confidence input to revise() is the LAST checkpoint's
     new_confidence, not its old_confidence. (No recursion into prior revisions.)"""
     import pytest
+
     revised_payload = make_payload(
         context_key="default",
         old_confidence=0.50,

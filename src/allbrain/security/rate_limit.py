@@ -76,7 +76,6 @@ class SlidingWindowCounter:
             self._buckets.pop(key, None)
 
 
-
 # Rate limit defaults (generous — catch runaway loops, not normal usage).
 # Override via env vars:
 #   ALLBRAIN_RATE_LIMIT_RPM   — requests per minute  (default 100000)
@@ -107,15 +106,9 @@ def check_tool_rate(tool_name: str) -> None:
     """
     burst_ok, burst_count = _BURST_LIMITER.check_and_record(tool_name)
     if not burst_ok:
-        raise RateLimitError(
-            f"Rate limit exceeded for '{tool_name}': "
-            f"{burst_count}/{_TOOL_BURST_RPS} per second"
-        )
+        raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {burst_count}/{_TOOL_BURST_RPS} per second")
 
     minute_ok, minute_count = _MINUTE_LIMITER.check_and_record(tool_name)
     if not minute_ok:
         _BURST_LIMITER.reset(tool_name)
-        raise RateLimitError(
-            f"Rate limit exceeded for '{tool_name}': "
-            f"{minute_count}/{_TOOL_MINUTE_RPS} per minute"
-        )
+        raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {minute_count}/{_TOOL_MINUTE_RPS} per minute")

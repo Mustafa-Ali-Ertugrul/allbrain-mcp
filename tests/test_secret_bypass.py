@@ -4,6 +4,7 @@ With re.IGNORECASE applied to all patterns (since the fix), uppercase
 prefixes like SK- / GHP_ / AKIA are now caught.  Whitespace and newline
 variants are (correctly) not caught — they are not real secrets.
 """
+
 from pathlib import Path
 
 import pytest

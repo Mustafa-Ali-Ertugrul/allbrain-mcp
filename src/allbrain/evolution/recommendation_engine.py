@@ -6,7 +6,9 @@ from uuid6 import uuid7
 
 
 class RecommendationEngine:
-    def generate(self, *, kind: str, subject: str, confidence: float, evidence: list[str], source_metrics: dict[str, Any]) -> dict[str, Any]:
+    def generate(
+        self, *, kind: str, subject: str, confidence: float, evidence: list[str], source_metrics: dict[str, Any]
+    ) -> dict[str, Any]:
         return {
             "recommendation_id": str(uuid7()),
             "kind": kind,

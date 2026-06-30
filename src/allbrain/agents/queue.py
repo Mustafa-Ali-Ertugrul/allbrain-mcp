@@ -25,9 +25,7 @@ class QueueItem:
             "agent_id": self.agent_id,
             "workflow_id": self.workflow_id,
             "enqueued_at": self.enqueued_at.isoformat(),
-            "parent_results": {
-                nid: r.to_dict() for nid, r in self.parent_results.items()
-            },
+            "parent_results": {nid: r.to_dict() for nid, r in self.parent_results.items()},
             "metadata": dict(self.metadata),
         }
 

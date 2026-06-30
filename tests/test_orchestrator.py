@@ -165,7 +165,12 @@ def test_audit_replay_determinism_full_replay_equals_snapshot_delta(tmp_path: Pa
             session_id=session_id,
             type=EventType.TASK_ASSIGNED.value,
             source="test",
-            payload={"task_id": task_id, "agent_id": agent_id, "score": 80, "breakdown": {"capability": 60, "availability": 20, "priority_bonus": 0}},
+            payload={
+                "task_id": task_id,
+                "agent_id": agent_id,
+                "score": 80,
+                "breakdown": {"capability": 60, "availability": 20, "priority_bonus": 0},
+            },
             agent_id=agent_id,
         )
         context.repository.append_event(
@@ -213,7 +218,12 @@ def test_audit_replay_determinism_full_replay_equals_snapshot_delta(tmp_path: Pa
             session_id=session_id,
             type=EventType.TASK_ASSIGNED.value,
             source="test",
-            payload={"task_id": task_id, "agent_id": to_agent, "score": 90, "breakdown": {"capability": 60, "availability": 20, "priority_bonus": 10}},
+            payload={
+                "task_id": task_id,
+                "agent_id": to_agent,
+                "score": 90,
+                "breakdown": {"capability": 60, "availability": 20, "priority_bonus": 10},
+            },
             agent_id=to_agent,
         )
         context.repository.append_event(

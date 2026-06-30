@@ -13,6 +13,7 @@ from allbrain.telemetry.model import (
 
 def _stable_telemetry_id(agent_id: str, event_ids: Iterable[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     event_key = "|".join(sorted(str(eid) for eid in event_ids))

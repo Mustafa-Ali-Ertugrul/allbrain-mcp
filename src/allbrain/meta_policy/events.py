@@ -2,17 +2,11 @@ from __future__ import annotations
 
 from allbrain.meta_policy.model import META_POLICY_TEMPLATE_VERSION
 
-POLICY_EVAL_KEYS: frozenset[str] = frozenset(
-    {"agent_id", "task_type", "mode", "exploration_rate"}
-)
+POLICY_EVAL_KEYS: frozenset[str] = frozenset({"agent_id", "task_type", "mode", "exploration_rate"})
 
-POLICY_UPDATE_KEYS: frozenset[str] = frozenset(
-    {"agent_id", "mode", "reward", "ema_reward", "count"}
-)
+POLICY_UPDATE_KEYS: frozenset[str] = frozenset({"agent_id", "mode", "reward", "ema_reward", "count"})
 
-POLICY_DRIFT_KEYS: frozenset[str] = frozenset(
-    {"agent_id", "kl_divergence", "threshold", "snapshot_id"}
-)
+POLICY_DRIFT_KEYS: frozenset[str] = frozenset({"agent_id", "kl_divergence", "threshold", "snapshot_id"})
 
 
 def validate_policy_eval(p: dict) -> None:
@@ -45,36 +39,58 @@ def validate_policy_drift(p: dict) -> None:
 
 
 def make_policy_eval_payload(
-    *, agent_id: str, task_type: str, mode: str, exploration_rate: float,
+    *,
+    agent_id: str,
+    task_type: str,
+    mode: str,
+    exploration_rate: float,
     tv: int = META_POLICY_TEMPLATE_VERSION,
 ) -> dict:
     p = {
-        "agent_id": agent_id, "task_type": task_type, "mode": mode,
-        "exploration_rate": float(exploration_rate), "template_version": tv,
+        "agent_id": agent_id,
+        "task_type": task_type,
+        "mode": mode,
+        "exploration_rate": float(exploration_rate),
+        "template_version": tv,
     }
     validate_policy_eval(p)
     return p
 
 
 def make_policy_update_payload(
-    *, agent_id: str, mode: str, reward: float, ema_reward: float, count: int,
+    *,
+    agent_id: str,
+    mode: str,
+    reward: float,
+    ema_reward: float,
+    count: int,
     tv: int = META_POLICY_TEMPLATE_VERSION,
 ) -> dict:
     p = {
-        "agent_id": agent_id, "mode": mode, "reward": float(reward),
-        "ema_reward": float(ema_reward), "count": int(count), "template_version": tv,
+        "agent_id": agent_id,
+        "mode": mode,
+        "reward": float(reward),
+        "ema_reward": float(ema_reward),
+        "count": int(count),
+        "template_version": tv,
     }
     validate_policy_update(p)
     return p
 
 
 def make_policy_drift_payload(
-    *, agent_id: str, kl_divergence: float, threshold: float, snapshot_id: str,
+    *,
+    agent_id: str,
+    kl_divergence: float,
+    threshold: float,
+    snapshot_id: str,
     tv: int = META_POLICY_TEMPLATE_VERSION,
 ) -> dict:
     p = {
-        "agent_id": agent_id, "kl_divergence": float(kl_divergence),
-        "threshold": float(threshold), "snapshot_id": str(snapshot_id),
+        "agent_id": agent_id,
+        "kl_divergence": float(kl_divergence),
+        "threshold": float(threshold),
+        "snapshot_id": str(snapshot_id),
         "template_version": tv,
     }
     validate_policy_drift(p)

@@ -23,7 +23,9 @@ class FailureAnalyzer:
                     "task_id": task_id,
                     "node_id": event.payload.get("node_id"),
                     "agent_id": event.payload.get("agent_id") or event.agent_id,
-                    "reason": event.payload.get("reason") or event.payload.get("error") or event.payload.get("error_type"),
+                    "reason": event.payload.get("reason")
+                    or event.payload.get("error")
+                    or event.payload.get("error_type"),
                     "preceding_decision": decision,
                     "root_cause_event_id": event.caused_by or event.id,
                 }

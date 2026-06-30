@@ -39,7 +39,9 @@ class TestFullSafetyLoop:
         )
         signals = [RiskSignal("retry_spike", 0.85, 5)]
         result = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout", signals=signals,
+            fault_id="f1",
+            fault_type="timeout",
+            signals=signals,
         )
         ev_types = _event_types(result["events"])
         assert EventType.EXPLORATION_TRIGGERED.value in ev_types
@@ -52,7 +54,9 @@ class TestFullSafetyLoop:
         )
         signals = [RiskSignal("retry_spike", 0.85, 5)]
         result = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout", signals=signals,
+            fault_id="f1",
+            fault_type="timeout",
+            signals=signals,
         )
         ev_types = _event_types(result["events"])
         assert EventType.EXPLORATION_TRIGGERED.value not in ev_types
@@ -66,7 +70,9 @@ class TestFullSafetyLoop:
         )
         signals = [RiskSignal("retry_spike", 0.85, 5)]
         result = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout", signals=signals,
+            fault_id="f1",
+            fault_type="timeout",
+            signals=signals,
         )
         ev_types = _event_types(result["events"])
         assert EventType.SIMULATION_WEIGHT_CAPPED.value in ev_types
@@ -83,7 +89,9 @@ class TestFullSafetyLoop:
         )
         signals = [RiskSignal("retry_spike", 0.85, 5)]
         result = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout", signals=signals,
+            fault_id="f1",
+            fault_type="timeout",
+            signals=signals,
         )
         ev_types = _event_types(result["events"])
         assert "predictive_signal_detected" in ev_types
@@ -110,7 +118,8 @@ class TestFullSafetyLoop:
         eps_values = []
         for i in range(3):
             mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="timeout",
+                fault_id="f" + str(i),
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", 0.85, 5)],
             )
             eps_values.append(calc.current_epsilon())
@@ -131,17 +140,20 @@ class TestFullSafetyLoop:
         # Last 2 calls: bad outcome (post = 90% of pre) → low effectiveness
         # Window splits 2/2 → drop = 0.9 - 0.1 = 0.8 > 0.10 threshold
         call_count = [0]
+
         def declining_provider(strategy, pre_risk, urgency):
             call_count[0] += 1
             if call_count[0] <= 2:
                 return (pre_risk * 0.10, True, 0.90)
             return (pre_risk * 0.90, False, 0.10)
+
         mgr._outcome_tracker.set_provider(declining_provider)
         result = None
         for i in range(4):
             signals = [RiskSignal("retry_spike", 0.85, 5)]
             result = mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="timeout",
+                fault_id="f" + str(i),
+                fault_type="timeout",
                 signals=signals,
             )
         ev_types = _event_types(result["events"])
@@ -150,6 +162,7 @@ class TestFullSafetyLoop:
     def test_validator_with_real_provider_no_capped_event(self):
         def real_provider(strategy, pre_risk, urgency):
             return (pre_risk * 0.3, True, 0.7)
+
         validator = OutcomeValidator(real_provider=real_provider)
         mgr = PredictiveFailureManager(
             outcome_tracker=OutcomeTracker(),
@@ -158,7 +171,9 @@ class TestFullSafetyLoop:
         )
         signals = [RiskSignal("retry_spike", 0.85, 5)]
         result = mgr.run_cycle(
-            fault_id="f1", fault_type="timeout", signals=signals,
+            fault_id="f1",
+            fault_type="timeout",
+            signals=signals,
         )
         ev_types = _event_types(result["events"])
         assert EventType.SIMULATION_WEIGHT_CAPPED.value not in ev_types
@@ -174,8 +189,11 @@ class TestFullSafetyLoop:
         ev.id = "e1"
         ev.type = EventType.EXPLORATION_TRIGGERED.value
         ev.payload = {
-            "fault_type": "timeout", "signal_type": "retry_spike",
-            "epsilon": 0.10, "selected_strategy": "A", "was_exploration": True,
+            "fault_type": "timeout",
+            "signal_type": "retry_spike",
+            "epsilon": 0.10,
+            "selected_strategy": "A",
+            "was_exploration": True,
         }
         reducer.apply(ev)
         snap = reducer.snapshot()

@@ -4,11 +4,13 @@ import hashlib
 
 from allbrain.predictive_failure.model import MitigationPlan, ProactiveAction
 
-ROLLBACK_STRATEGIES = frozenset({
-    "pre_rollback_snapshot",
-    "circuit_warmup",
-    "rate_limit",
-})
+ROLLBACK_STRATEGIES = frozenset(
+    {
+        "pre_rollback_snapshot",
+        "circuit_warmup",
+        "rate_limit",
+    }
+)
 
 
 class ProactiveExecutor:
@@ -21,19 +23,12 @@ class ProactiveExecutor:
     @staticmethod
     def execute(plan: MitigationPlan) -> ProactiveAction:
         """Execute a mitigation plan and return the action result."""
-        snapshot_id = hashlib.sha256(
-            f"{plan.plan_id}::{plan.strategy}::{plan.urgency}".encode()
-        ).hexdigest()[:16]
+        snapshot_id = hashlib.sha256(f"{plan.plan_id}::{plan.strategy}::{plan.urgency}".encode()).hexdigest()[:16]
 
-        action_id = hashlib.sha256(
-            f"{plan.plan_id}::{snapshot_id}".encode()
-        ).hexdigest()[:16]
+        action_id = hashlib.sha256(f"{plan.plan_id}::{snapshot_id}".encode()).hexdigest()[:16]
 
         success = True
-        message = (
-            f"Executed {plan.strategy} for {plan.fault_type} "
-            f"(urgency={plan.urgency})"
-        )
+        message = f"Executed {plan.strategy} for {plan.fault_type} (urgency={plan.urgency})"
         rollback_possible = plan.strategy in ROLLBACK_STRATEGIES
 
         return ProactiveAction(

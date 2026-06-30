@@ -19,8 +19,7 @@ class TestManager:
         mgr = WorkspaceManager()
         mgr.set_capacity(2)
         for i in range(10):
-            mgr.update([], signal_rewards={"causal": 0.7}, attention_weight=0.9,
-                       item_id=f"item-{i}")
+            mgr.update([], signal_rewards={"causal": 0.7}, attention_weight=0.9, item_id=f"item-{i}")
         assert len(mgr.get_active_items()) <= 2
 
     def test_signal_rewards_activation(self):

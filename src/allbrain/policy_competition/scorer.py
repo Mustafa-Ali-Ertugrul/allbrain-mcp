@@ -29,7 +29,7 @@ class PolicyScorer:
         drift_penalty = drift_estimate
 
         raw = (
-            + success_rate * COMPETITION_SCORE_WEIGHTS["success_rate"]
+            +success_rate * COMPETITION_SCORE_WEIGHTS["success_rate"]
             - risk_penalty * COMPETITION_SCORE_WEIGHTS["risk_penalty"]
             + stability_bonus * COMPETITION_SCORE_WEIGHTS["stability_bonus"]
             - drift_penalty * COMPETITION_SCORE_WEIGHTS["drift_penalty"]

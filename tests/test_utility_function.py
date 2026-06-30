@@ -50,10 +50,19 @@ class TestUtilityEvents:
 class TestTradeoffReducer:
     def test_tracks_utilities(self):
         r = TradeoffReducer()
-        ev = _make_event(EventType.UTILITY_COMPUTED.value, {"policy_id":"p1","fault_type":"t","utility":0.5,"safety_pass":True})
+        ev = _make_event(
+            EventType.UTILITY_COMPUTED.value,
+            {"policy_id": "p1", "fault_type": "t", "utility": 0.5, "safety_pass": True},
+        )
         r.apply(ev)
         assert r.all_snapshots()["default"]["total_utilities"] == 1
 
 
 def _make_event(t, p):
-    import types; ev = types.SimpleNamespace(); ev.id = f"test_{t}"; ev.type = t; ev.payload = p; return ev
+    import types
+
+    ev = types.SimpleNamespace()
+    ev.id = f"test_{t}"
+    ev.type = t
+    ev.payload = p
+    return ev

@@ -9,7 +9,9 @@ from allbrain.workflow.models import TaskNode
 
 
 def make_item(node_id: str = "n1") -> QueueItem:
-    return QueueItem(node=TaskNode(node_id=node_id, task_id="t1", goal="Do thing"), agent_id="builder", workflow_id="wf1")
+    return QueueItem(
+        node=TaskNode(node_id=node_id, task_id="t1", goal="Do thing"), agent_id="builder", workflow_id="wf1"
+    )
 
 
 async def test_sqlite_queue_persists_across_instances_and_acks(tmp_path) -> None:
@@ -68,4 +70,3 @@ async def test_distributed_adapters_are_lease_aware_and_ack_items() -> None:
         assert item is not None
         await queue.ack(item)
         assert queue.empty()
-

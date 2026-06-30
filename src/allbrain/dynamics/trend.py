@@ -15,6 +15,7 @@ from allbrain.dynamics.model import (
 
 def _stable_dynamics_id(key: str, event_ids: list[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
@@ -106,9 +107,12 @@ def classify_trend(
     label = _compute_label(slope, var, consecutive, last_label)
 
     return TrendState(
-        agent_id=agent_id, task_type=task_type,
-        slope=slope, label=label,
-        momentum=mom, consecutive_count=consecutive,
+        agent_id=agent_id,
+        task_type=task_type,
+        slope=slope,
+        label=label,
+        momentum=mom,
+        consecutive_count=consecutive,
         momentum_samples=len(scores),
         analysis_id=analysis_id,
     )

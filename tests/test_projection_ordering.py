@@ -24,7 +24,7 @@ def test_runtime_projection_uses_canonical_order():
         "source": "test_source",
         "file_path": "/dev/null",
         "task_hint": "test_hint",
-        "importance": 1
+        "importance": 1,
     }
 
     # e1: older ID, newer created_at
@@ -34,7 +34,7 @@ def test_runtime_projection_uses_canonical_order():
         payload={"run_id": "run-1", "step": "first"},
         created_at=newer_time,
         payload_version=1,
-        **common_fields
+        **common_fields,
     )
 
     # e2: newer ID, older created_at
@@ -44,7 +44,7 @@ def test_runtime_projection_uses_canonical_order():
         payload={"run_id": "run-1", "step": "second"},
         created_at=older_time,
         payload_version=1,
-        **common_fields
+        **common_fields,
     )
 
     # Pass them in reverse order to ensure sorting happens
@@ -69,14 +69,15 @@ def test_quality_gate_no_implicit_created_at_sort():
         if "foundations" in py_file.parts:
             continue
 
-        with open(py_file, encoding='utf-8') as f:
+        with open(py_file, encoding="utf-8") as f:
             content = f.read()
 
         if "key=lambda" in content and "created_at" in content and "id" in content:
-            lines = content.split('\n')
+            lines = content.split("\n")
             for i, line in enumerate(lines):
                 if "key=lambda" in line and "created_at" in line and "id" in line:
-                    violations.append(f"{py_file}:{i+1}: {line.strip()}")
+                    violations.append(f"{py_file}:{i + 1}: {line.strip()}")
 
-    assert not violations, "Found implicit created_at sorting violating the canonical order contract:\n" + "\n".join(violations)
-
+    assert not violations, "Found implicit created_at sorting violating the canonical order contract:\n" + "\n".join(
+        violations
+    )

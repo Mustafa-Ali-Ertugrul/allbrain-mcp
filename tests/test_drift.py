@@ -56,12 +56,14 @@ def test_threshold_filtering():
 def test_reasons_set_is_final_and_closed():
     """REASONS is a Final frozenset with the four Sprint 47 reasons."""
     assert isinstance(REASONS, frozenset)
-    assert REASONS == frozenset({
-        "new_evidence",
-        "trust_shift",
-        "contradiction_resolution",
-        "uncertainty_change",
-    })
+    assert REASONS == frozenset(
+        {
+            "new_evidence",
+            "trust_shift",
+            "contradiction_resolution",
+            "uncertainty_change",
+        }
+    )
 
 
 def test_unknown_reason_raises():

@@ -30,8 +30,30 @@ class TestReducer:
         reducer = ArbitrationReducer()
         reducer.apply(E("other_event", "0", {"x": 1}))
         events = [
-            E(EventType.AGENT_VOTE_CAST.value, "1", make_vote_payload(agent_id="a1", candidate_id="c1", context_key="ctx", confidence=1.0, reputation=1.0, calibrated_trust=1.0)),
-            E(EventType.AGENT_VOTE_CAST.value, "2", make_vote_payload(agent_id="a2", candidate_id="c2", context_key="ctx", confidence=0.5, reputation=0.5, calibrated_trust=0.5)),
+            E(
+                EventType.AGENT_VOTE_CAST.value,
+                "1",
+                make_vote_payload(
+                    agent_id="a1",
+                    candidate_id="c1",
+                    context_key="ctx",
+                    confidence=1.0,
+                    reputation=1.0,
+                    calibrated_trust=1.0,
+                ),
+            ),
+            E(
+                EventType.AGENT_VOTE_CAST.value,
+                "2",
+                make_vote_payload(
+                    agent_id="a2",
+                    candidate_id="c2",
+                    context_key="ctx",
+                    confidence=0.5,
+                    reputation=0.5,
+                    calibrated_trust=0.5,
+                ),
+            ),
         ]
         for e in events:
             reducer.apply(e)
@@ -42,7 +64,15 @@ class TestReducer:
 
     def test_consensus_reached(self):
         reducer = ArbitrationReducer()
-        reducer.apply(E(EventType.AGENT_CONSENSUS_REACHED.value, "1", make_consensus_payload(context_key="ctx", winner_candidate="c1", score=0.9, agreement_ratio=1.0, method="weighted")))
+        reducer.apply(
+            E(
+                EventType.AGENT_CONSENSUS_REACHED.value,
+                "1",
+                make_consensus_payload(
+                    context_key="ctx", winner_candidate="c1", score=0.9, agreement_ratio=1.0, method="weighted"
+                ),
+            )
+        )
         state = reducer.snapshot(context_key="ctx")
         assert state.winner_candidate == "c1"
         assert state.arbitration_score == 0.9
@@ -50,7 +80,13 @@ class TestReducer:
 
     def test_idempotency(self):
         reducer = ArbitrationReducer()
-        event = E(EventType.AGENT_VOTE_CAST.value, "1", make_vote_payload(agent_id="a", candidate_id="c", context_key="ctx", confidence=1.0, reputation=1.0, calibrated_trust=1.0))
+        event = E(
+            EventType.AGENT_VOTE_CAST.value,
+            "1",
+            make_vote_payload(
+                agent_id="a", candidate_id="c", context_key="ctx", confidence=1.0, reputation=1.0, calibrated_trust=1.0
+            ),
+        )
         reducer.apply(event)
         reducer.apply(event)
         state = reducer.snapshot(context_key="ctx")
@@ -66,8 +102,30 @@ class TestReducer:
 class TestManagerEqualsReducer:
     def test_convergence(self):
         events = [
-            E(EventType.AGENT_VOTE_CAST.value, "1", make_vote_payload(agent_id="a1", candidate_id="c1", context_key="ctx", confidence=1.0, reputation=1.0, calibrated_trust=1.0)),
-            E(EventType.AGENT_VOTE_CAST.value, "2", make_vote_payload(agent_id="a2", candidate_id="c2", context_key="ctx", confidence=0.5, reputation=0.5, calibrated_trust=0.5)),
+            E(
+                EventType.AGENT_VOTE_CAST.value,
+                "1",
+                make_vote_payload(
+                    agent_id="a1",
+                    candidate_id="c1",
+                    context_key="ctx",
+                    confidence=1.0,
+                    reputation=1.0,
+                    calibrated_trust=1.0,
+                ),
+            ),
+            E(
+                EventType.AGENT_VOTE_CAST.value,
+                "2",
+                make_vote_payload(
+                    agent_id="a2",
+                    candidate_id="c2",
+                    context_key="ctx",
+                    confidence=0.5,
+                    reputation=0.5,
+                    calibrated_trust=0.5,
+                ),
+            ),
         ]
         manager = ArbitrationManager()
         reducer = ArbitrationReducer()
@@ -82,9 +140,42 @@ class TestManagerEqualsReducer:
 
 class TestVoteOrderIndependence:
     def test_order_independence(self):
-        v1 = E(EventType.AGENT_VOTE_CAST.value, "a", make_vote_payload(agent_id="a1", candidate_id="c1", context_key="ctx", confidence=1.0, reputation=1.0, calibrated_trust=1.0))
-        v2 = E(EventType.AGENT_VOTE_CAST.value, "b", make_vote_payload(agent_id="a2", candidate_id="c2", context_key="ctx", confidence=0.5, reputation=0.5, calibrated_trust=0.5))
-        v3 = E(EventType.AGENT_VOTE_CAST.value, "c", make_vote_payload(agent_id="a3", candidate_id="c1", context_key="ctx", confidence=1.0, reputation=1.0, calibrated_trust=1.0))
+        v1 = E(
+            EventType.AGENT_VOTE_CAST.value,
+            "a",
+            make_vote_payload(
+                agent_id="a1",
+                candidate_id="c1",
+                context_key="ctx",
+                confidence=1.0,
+                reputation=1.0,
+                calibrated_trust=1.0,
+            ),
+        )
+        v2 = E(
+            EventType.AGENT_VOTE_CAST.value,
+            "b",
+            make_vote_payload(
+                agent_id="a2",
+                candidate_id="c2",
+                context_key="ctx",
+                confidence=0.5,
+                reputation=0.5,
+                calibrated_trust=0.5,
+            ),
+        )
+        v3 = E(
+            EventType.AGENT_VOTE_CAST.value,
+            "c",
+            make_vote_payload(
+                agent_id="a3",
+                candidate_id="c1",
+                context_key="ctx",
+                confidence=1.0,
+                reputation=1.0,
+                calibrated_trust=1.0,
+            ),
+        )
 
         r1 = ArbitrationReducer()
         for e in [v1, v2, v3]:
@@ -106,11 +197,33 @@ class TestConsensusLastWins:
         from allbrain.revision import make_payload as make_revision_payload
 
         events = [
-            E(EventType.AGENT_CONSENSUS_REACHED.value, "1", make_consensus_payload(context_key="default", winner_candidate="c1", score=0.5, agreement_ratio=0.5, method="weighted")),
-            E(EventType.AGENT_CONSENSUS_REACHED.value, "2", make_consensus_payload(context_key="default", winner_candidate="c2", score=0.9, agreement_ratio=1.0, method="weighted")),
+            E(
+                EventType.AGENT_CONSENSUS_REACHED.value,
+                "1",
+                make_consensus_payload(
+                    context_key="default", winner_candidate="c1", score=0.5, agreement_ratio=0.5, method="weighted"
+                ),
+            ),
+            E(
+                EventType.AGENT_CONSENSUS_REACHED.value,
+                "2",
+                make_consensus_payload(
+                    context_key="default", winner_candidate="c2", score=0.9, agreement_ratio=1.0, method="weighted"
+                ),
+            ),
         ]
         rev_events = list(events) + [
-            E(EventType.BELIEF_REVISED.value, "rev1", make_revision_payload(context_key="default", old_confidence=0.9, new_confidence=0.6, reason="contradiction", evidence_count=0)),
+            E(
+                EventType.BELIEF_REVISED.value,
+                "rev1",
+                make_revision_payload(
+                    context_key="default",
+                    old_confidence=0.9,
+                    new_confidence=0.6,
+                    reason="contradiction",
+                    evidence_count=0,
+                ),
+            ),
         ]
         state = RevisionManager().query(rev_events)
         assert state.consensus_score == pytest.approx(0.9)

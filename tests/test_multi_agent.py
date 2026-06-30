@@ -100,7 +100,11 @@ def test_conflict_scoring_detects_close_file_conflict_but_not_far_or_same_agent(
     same_agent_context = make_context(repo, project_root, "codex")
     save_event_impl(same_agent_context, type="file_modified", payload={}, file_path="same.py")
     save_event_impl(same_agent_context, type="file_modified", payload={}, file_path="same.py")
-    same_agent_events = [event for event in repo.list_events(project_path=project_root, type="file_modified") if event.file_path == "same.py"]
+    same_agent_events = [
+        event
+        for event in repo.list_events(project_path=project_root, type="file_modified")
+        if event.file_path == "same.py"
+    ]
     assert ConflictDetector().detect(same_agent_events) == []
 
 
@@ -165,7 +169,19 @@ def test_v3_snapshot_adapter_maps_legacy_state(tmp_path: Path) -> None:
     SnapshotRepo(repo.engine).save(
         project_id=project.id or 0,
         event_cursor=None,
-        state={"goal": None, "working_files": [], "open_tasks": ["JWT"], "completed_tasks": [], "blocked": [], "failures": [], "tool_usage": [], "last_event_id": None, "last_working_file": None, "event_count": 0, "git": {}},
+        state={
+            "goal": None,
+            "working_files": [],
+            "open_tasks": ["JWT"],
+            "completed_tasks": [],
+            "blocked": [],
+            "failures": [],
+            "tool_usage": [],
+            "last_event_id": None,
+            "last_working_file": None,
+            "event_count": 0,
+            "git": {},
+        },
         metadata={"snapshot_schema_version": "3.1", "reducer_version": "3.1", "compression_version": "1.1"},
     )
 
@@ -178,8 +194,20 @@ def test_v3_snapshot_adapter_maps_legacy_state(tmp_path: Path) -> None:
 
 def test_resolver_does_not_pretend_to_resolve_low_margin_conflict(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    save_event_impl(make_context(repo, project_root, "codex"), type="file_modified", payload={}, file_path="auth.py", impact_score=0.5)
-    save_event_impl(make_context(repo, project_root, "claude"), type="file_modified", payload={}, file_path="auth.py", impact_score=0.5)
+    save_event_impl(
+        make_context(repo, project_root, "codex"),
+        type="file_modified",
+        payload={},
+        file_path="auth.py",
+        impact_score=0.5,
+    )
+    save_event_impl(
+        make_context(repo, project_root, "claude"),
+        type="file_modified",
+        payload={},
+        file_path="auth.py",
+        impact_score=0.5,
+    )
 
     result = resume_project_impl(make_context(repo, project_root, "opencode"), include_git=False, use_snapshot=False)
 
@@ -217,7 +245,9 @@ def test_agent_switch_keeps_agent_views_and_global_context_aligned(tmp_path: Pat
     save_event_impl(claude, type="task_started", payload={"task": "middleware fix"}, impact_score=0.6)
     save_event_impl(claude, type="file_modified", payload={}, file_path="middleware.py", impact_score=0.6)
 
-    opencode_resume = resume_project_impl(make_context(repo, project_root, "opencode"), include_git=False, use_snapshot=False)
+    opencode_resume = resume_project_impl(
+        make_context(repo, project_root, "opencode"), include_git=False, use_snapshot=False
+    )
 
     assert opencode_resume.ok
     data = opencode_resume.data

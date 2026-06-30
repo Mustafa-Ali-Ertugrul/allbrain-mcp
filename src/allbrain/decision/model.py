@@ -24,6 +24,7 @@ class DecisionContract:
     None checks. This ensures replay determinism — mode selection
     depends only on contract version + explicit signal keys.
     """
+
     version: int
     active_signals: frozenset[str]  # e.g., frozenset({"fusion", "causal", "dynamics"})
     debug: bool = False

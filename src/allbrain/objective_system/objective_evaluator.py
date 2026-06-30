@@ -50,9 +50,12 @@ class ObjectiveEvaluator:
         if abs(adjusted - current.safety) < 0.01:
             return None
         new_weights = ObjectiveWeights(
-            fault_type=fault_type, safety=round(adjusted, 4),
-            stability=current.stability, success=current.success,
-            efficiency=current.efficiency, version=current.version,
+            fault_type=fault_type,
+            safety=round(adjusted, 4),
+            stability=current.stability,
+            success=current.success,
+            efficiency=current.efficiency,
+            version=current.version,
         )
         self._store.set(new_weights)
         return self._store.get(fault_type)

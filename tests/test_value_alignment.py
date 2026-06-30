@@ -26,6 +26,7 @@ class TestValueAlignment:
     def test_tracker_isolation(self):
         tracker = AlignmentScoreTracker()
         from allbrain.value_alignment.model import AlignmentResult, AlignmentScore
+
         s1 = AlignmentScore("t1", 1.0, {}, [], [], True)
         s2 = AlignmentScore("t2", 0.1, {}, [], [], False)
         for _ in range(6):
@@ -36,7 +37,9 @@ class TestValueAlignment:
         assert not tracker.is_aligned("t2")
 
     def test_events_valid(self):
-        p = make_alignment_failed_payload(fault_type="t", overall_score=0.3, hard_violations=["safety_min"], soft_penalties=[])
+        p = make_alignment_failed_payload(
+            fault_type="t", overall_score=0.3, hard_violations=["safety_min"], soft_penalties=[]
+        )
         validate_alignment_failed(p)
 
     def test_events_invalid(self):
@@ -47,10 +50,19 @@ class TestValueAlignment:
 class TestValueAlignmentReducer:
     def test_tracks_failures(self):
         r = ValueAlignmentReducer()
-        ev = _make_event(EventType.ALIGNMENT_FAILED.value, {"fault_type":"t","overall_score":0.3,"hard_violations":["safety_min"],"soft_penalties":[]})
+        ev = _make_event(
+            EventType.ALIGNMENT_FAILED.value,
+            {"fault_type": "t", "overall_score": 0.3, "hard_violations": ["safety_min"], "soft_penalties": []},
+        )
         r.apply(ev)
         assert r.all_snapshots()["default"]["total_failures"] == 1
 
 
 def _make_event(t, p):
-    import types; ev = types.SimpleNamespace(); ev.id = f"test_{t}"; ev.type = t; ev.payload = p; return ev
+    import types
+
+    ev = types.SimpleNamespace()
+    ev.id = f"test_{t}"
+    ev.type = t
+    ev.payload = p
+    return ev

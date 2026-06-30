@@ -47,7 +47,10 @@ def causal_backend(ctx: DecisionContext) -> tuple[float, dict[str, float]]:
         impact_score=float(caus.get("impact_score", 0.0)),
         causal_confidence=float(caus.get("confidence", 0.0)),
     )
-    contribs = {"impact_score": float(caus.get("impact_score", 0.0)), "causal_confidence": float(caus.get("confidence", 0.0))}
+    contribs = {
+        "impact_score": float(caus.get("impact_score", 0.0)),
+        "causal_confidence": float(caus.get("confidence", 0.0)),
+    }
     return score, contribs
 
 

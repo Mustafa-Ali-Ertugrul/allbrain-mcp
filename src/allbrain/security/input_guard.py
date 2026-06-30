@@ -39,8 +39,10 @@ def sanitize_payload_fields(payload: dict[str, Any]) -> dict[str, Any]:
             out[key] = sanitize_payload_fields(value)
         elif isinstance(value, list):
             out[key] = [
-                sanitize_payload_fields(v) if isinstance(v, dict)
-                else sanitize_user_text(v) if isinstance(v, str)
+                sanitize_payload_fields(v)
+                if isinstance(v, dict)
+                else sanitize_user_text(v)
+                if isinstance(v, str)
                 else v
                 for v in value
             ]

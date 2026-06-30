@@ -62,6 +62,5 @@ def canonicalize_project_path(project_path: str | Path | None) -> str:
             continue
 
     raise PathTraversalError(
-        f"Project path {canonical} is not inside any allowed root "
-        f"({'; '.join(str(r) for r in roots)})"
+        f"Project path {canonical} is not inside any allowed root ({'; '.join(str(r) for r in roots)})"
     )

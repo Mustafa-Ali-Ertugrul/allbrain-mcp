@@ -149,30 +149,46 @@ class AgentRuntime:
             result = await self._run_with_timeout(wrapper, task, context, timeout_seconds)
         except TimeoutError:
             self._record_failure(
-                agent_id=agent_id, node_id=assignment.node_id,
-                workflow_id=context.workflow_id, task=task, start=start,
+                agent_id=agent_id,
+                node_id=assignment.node_id,
+                workflow_id=context.workflow_id,
+                task=task,
+                start=start,
                 error_type="timeout",
                 error_message=f"Execution exceeded {timeout_seconds}s",
             )
             return SubtaskResult(
-                node_id=assignment.node_id, agent_id=agent_id, output="",
-                artifacts=[], metadata={"error": "timeout", "timeout": True},
+                node_id=assignment.node_id,
+                agent_id=agent_id,
+                output="",
+                artifacts=[],
+                metadata={"error": "timeout", "timeout": True},
             )
         except Exception as exc:  # noqa: BLE001
             self._record_failure(
-                agent_id=agent_id, node_id=assignment.node_id,
-                workflow_id=context.workflow_id, task=task, start=start,
-                error_type=type(exc).__name__, error_message=str(exc),
+                agent_id=agent_id,
+                node_id=assignment.node_id,
+                workflow_id=context.workflow_id,
+                task=task,
+                start=start,
+                error_type=type(exc).__name__,
+                error_message=str(exc),
             )
             return SubtaskResult(
-                node_id=assignment.node_id, agent_id=agent_id, output="",
-                artifacts=[], metadata={"error": str(exc), "exception": type(exc).__name__},
+                node_id=assignment.node_id,
+                agent_id=agent_id,
+                output="",
+                artifacts=[],
+                metadata={"error": str(exc), "exception": type(exc).__name__},
             )
 
         self._record_success(
-            agent_id=agent_id, node_id=assignment.node_id,
-            workflow_id=context.workflow_id, task=task,
-            start=start, result=result,
+            agent_id=agent_id,
+            node_id=assignment.node_id,
+            workflow_id=context.workflow_id,
+            task=task,
+            start=start,
+            result=result,
         )
         return result
 

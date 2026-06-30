@@ -24,14 +24,19 @@ class ValueAlignmentReducer:
         if not isinstance(payload, dict):
             return
         if et == EventType.ALIGNMENT_FAILED.value:
-            try: validate_alignment_failed(payload)
-            except ValueError: return
+            try:
+                validate_alignment_failed(payload)
+            except ValueError:
+                return
             self._failures.append(payload)
             self._total_failures += 1
 
     def snapshot(self) -> dict[str, Any]:
-        return {"failures": list(self._failures), "total_failures": self._total_failures,
-                "version": VALUE_ALIGNMENT_TEMPLATE_VERSION}
+        return {
+            "failures": list(self._failures),
+            "total_failures": self._total_failures,
+            "version": VALUE_ALIGNMENT_TEMPLATE_VERSION,
+        }
 
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
         return {"default": self.snapshot()}

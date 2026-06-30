@@ -24,7 +24,9 @@ class AgentStateBuilder:
                     "metric_key": f"{agent_id}@{self._profile(agent_id).version}",
                     "success_rate": metrics.get(agent_id, self._empty_metrics(agent_id))["success_rate"],
                     "total_tasks": metrics.get(agent_id, self._empty_metrics(agent_id))["total_tasks"],
-                    "user_feedback_score": metrics.get(agent_id, self._empty_metrics(agent_id)).get("user_feedback_score"),
+                    "user_feedback_score": metrics.get(agent_id, self._empty_metrics(agent_id)).get(
+                        "user_feedback_score"
+                    ),
                 },
                 "metrics": metrics.get(agent_id, self._empty_metrics(agent_id)),
                 "current_load": len(queues.get(agent_id, [])),

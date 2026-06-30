@@ -83,7 +83,9 @@ class DerivedLayersBuilder:
             "agent_view": agent_view,
             "conflict_view": {"conflicts": conflicts, "count": len(conflicts)},
             "decision_view": {
-                "next_step": f"resolve conflict in {conflicts[0].get('file') or conflicts[0].get('task')}" if conflicts else "continue",
+                "next_step": f"resolve conflict in {conflicts[0].get('file') or conflicts[0].get('task')}"
+                if conflicts
+                else "continue",
                 "required_action": "resolve_conflict" if conflicts else "continue",
                 "resolved_conflicts": resolved_conflicts,
                 "confidence": 0.7 if conflicts else 1.0,
@@ -123,17 +125,26 @@ class SnapshotBuilder:
         state.update(self.orchestrator_builder.build(buffer, state["global_view"]))
         if self.include_derived:
             state.update(self.derived_builder.build(buffer))
-        metadata = self.compressor.metadata(events, compressed_events) | snapshot_versions() | {
-            "snapshot_profile": "full" if self.include_derived else "core",
-            "derived_layers_included": self.include_derived,
-        }
+        metadata = (
+            self.compressor.metadata(events, compressed_events)
+            | snapshot_versions()
+            | {
+                "snapshot_profile": "full" if self.include_derived else "core",
+                "derived_layers_included": self.include_derived,
+            }
+        )
         return state, metadata
 
     def _default_derived_layers(self) -> dict[str, Any]:
         return {
             "agent_view": [],
             "conflict_view": {"conflicts": [], "count": 0},
-            "decision_view": {"next_step": "continue", "required_action": "continue", "resolved_conflicts": [], "confidence": 1.0},
+            "decision_view": {
+                "next_step": "continue",
+                "required_action": "continue",
+                "resolved_conflicts": [],
+                "confidence": 1.0,
+            },
             "merged_state": {},
             "resolved_conflicts": [],
             "intent_view": {"intents": [], "active_intents": 0, "unique_agents": []},

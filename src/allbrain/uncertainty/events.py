@@ -2,9 +2,7 @@ from __future__ import annotations
 
 UNCERTAINTY_COMPUTED_TEMPLATE_VERSION = 1
 
-REQUIRED_KEYS: frozenset[str] = frozenset(
-    {"context_key", "uncertainty", "confidence_interval", "evidence_count"}
-)
+REQUIRED_KEYS: frozenset[str] = frozenset({"context_key", "uncertainty", "confidence_interval", "evidence_count"})
 
 
 def validate_payload(payload: dict) -> None:

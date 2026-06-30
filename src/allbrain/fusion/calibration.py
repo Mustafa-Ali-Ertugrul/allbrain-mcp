@@ -7,6 +7,7 @@ from allbrain.fusion.model import FUSION_MIN_VARIANCE_EPSILON, FUSION_SOFT_SCALI
 
 def _stable_fusion_id(key: str, event_ids: list[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))

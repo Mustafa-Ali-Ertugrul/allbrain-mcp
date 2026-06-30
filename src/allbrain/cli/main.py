@@ -76,9 +76,7 @@ def _patch_stdio_newlines_for_windows() -> None:
         stdout: anyio.AsyncFile[str] | None = None,
     ):
         if not stdin:
-            stdin = anyio.wrap_file(
-                TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace", newline="\n")
-            )
+            stdin = anyio.wrap_file(TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace", newline="\n"))
         if not stdout:
             stdout = anyio.wrap_file(TextIOWrapper(sys.stdout.buffer, encoding="utf-8", newline="\n"))
 

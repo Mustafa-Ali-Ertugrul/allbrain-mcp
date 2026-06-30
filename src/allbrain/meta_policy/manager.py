@@ -72,8 +72,11 @@ class MetaPolicyManager:
     ) -> float | None:
         ordered = canonical_event_sort(events)
         reward_signal = estimate_mode_reward(
-            mode=mode, agent_id=agent_id, task_type=task_type,
-            decision_id=decision_id, events=ordered,
+            mode=mode,
+            agent_id=agent_id,
+            task_type=task_type,
+            decision_id=decision_id,
+            events=ordered,
         )
 
         if reward_signal is None:

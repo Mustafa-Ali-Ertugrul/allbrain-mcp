@@ -26,7 +26,7 @@ class OscillationDetector:
             return False
         mean = sum(buf) / len(buf)
         variance = sum((d - mean) ** 2 for d in buf) / len(buf)
-        return (variance ** 0.5) > COEVOLUTION_OSCILLATION_THRESHOLD
+        return (variance**0.5) > COEVOLUTION_OSCILLATION_THRESHOLD
 
     def oscillation_index(self, fault_type: str) -> float:
         buf = self._deltas.get(fault_type, [])
@@ -34,7 +34,7 @@ class OscillationDetector:
             return 0.0
         mean = sum(buf) / len(buf)
         variance = sum((d - mean) ** 2 for d in buf) / len(buf)
-        return min(1.0, (variance ** 0.5) / COEVOLUTION_OSCILLATION_THRESHOLD)
+        return min(1.0, (variance**0.5) / COEVOLUTION_OSCILLATION_THRESHOLD)
 
     def clear(self) -> None:
         self._deltas.clear()

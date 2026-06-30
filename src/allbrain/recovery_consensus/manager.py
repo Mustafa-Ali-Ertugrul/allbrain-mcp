@@ -83,7 +83,7 @@ class RecoveryConsensusManager:
             if not candidates:
                 continue
 
-# 2. Evaluate
+            # 2. Evaluate
             scored = self._evaluator.evaluate(
                 candidates,
                 recent_failures=recent_failures,
@@ -98,15 +98,17 @@ class RecoveryConsensusManager:
                 fault_id=fault_id,
             )
 
-            decisions.append({
-                "decision_id": decision.decision_id,
-                "fault_id": decision.fault_id,
-                "selected_strategy": decision.selected_strategy,
-                "consensus_score": decision.consensus_score,
-                "rejected_strategies": list(decision.rejected_strategies),
-                "reason": decision.reason,
-                "candidate_count": decision.candidate_count,
-            })
+            decisions.append(
+                {
+                    "decision_id": decision.decision_id,
+                    "fault_id": decision.fault_id,
+                    "selected_strategy": decision.selected_strategy,
+                    "consensus_score": decision.consensus_score,
+                    "rejected_strategies": list(decision.rejected_strategies),
+                    "reason": decision.reason,
+                    "candidate_count": decision.candidate_count,
+                }
+            )
 
         consensus_reached_count = sum(
             1 for d in decisions if d["consensus_score"] >= self._arbiter._min_consensus_ratio
@@ -114,9 +116,7 @@ class RecoveryConsensusManager:
 
         state = RecoveryConsensusState(
             candidates=tuple(all_candidates),
-            decisions=tuple(
-                self._decision_to_frozen(d) for d in decisions
-            ),
+            decisions=tuple(self._decision_to_frozen(d) for d in decisions),
             total_decisions=len(decisions),
             consensus_reached=consensus_reached_count,
             rejected_count=sum(len(d.get("rejected_strategies", [])) for d in decisions),
@@ -137,7 +137,7 @@ class RecoveryConsensusManager:
             "scored": [
                 {
                     "strategy": c.strategy,
-                    "score": sc.score if hasattr(sc := None, 'score') else None,
+                    "score": sc.score if hasattr(sc := None, "score") else None,
                 }
                 for c in all_candidates
             ],
@@ -154,6 +154,7 @@ class RecoveryConsensusManager:
 
     def _decision_to_frozen(self, d: dict[str, Any]) -> Any:
         from allbrain.recovery_consensus.model import RecoveryDecision
+
         return RecoveryDecision(
             selected_strategy=d["selected_strategy"],
             consensus_score=d["consensus_score"],

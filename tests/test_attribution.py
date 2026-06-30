@@ -26,7 +26,9 @@ class TestAttribution:
 
     def test_cf_confidence_bias(self):
         allocs_no_cf = allocate_credit(0.8, {"capability": 0.5, "learning": 0.5})
-        allocs_cf = allocate_credit(0.8, {"capability": 0.5, "learning": 0.5}, cf_scores={"capability": 0.5, "learning": 0.5})
+        allocs_cf = allocate_credit(
+            0.8, {"capability": 0.5, "learning": 0.5}, cf_scores={"capability": 0.5, "learning": 0.5}
+        )
         assert len(allocs_cf) >= 1
 
     def test_negative_reward_handled(self):
@@ -41,20 +43,39 @@ class TestAttribution:
     def test_manager_attribute(self):
         mgr = AttributionManager()
         result = mgr.attribute(
-            [], decision_id="d1", mode="fusion", reward=0.8,
+            [],
+            decision_id="d1",
+            mode="fusion",
+            reward=0.8,
             contributors={"capability": 0.4, "learning": 0.2, "dynamics": 0.3, "causal": 0.1},
-            agent_id="a", task_type="t",
+            agent_id="a",
+            task_type="t",
         )
         assert "allocations" in result
         assert "signal_rewards" in result
 
     def test_signal_rewards_ema(self):
         mgr = AttributionManager()
-        r1 = mgr.attribute([], decision_id="d1", mode="fusion", reward=0.8,
-                           contributors={"capability": 0.5, "learning": 0.5}, agent_id="a", task_type="t")
-        r2 = mgr.attribute([], decision_id="d2", mode="fusion", reward=0.2,
-                           contributors={"capability": 0.9, "learning": 0.1}, agent_id="a", task_type="t",
-                           signal_rewards=r1["signal_rewards"], signal_counts=r1["signal_counts"])
+        r1 = mgr.attribute(
+            [],
+            decision_id="d1",
+            mode="fusion",
+            reward=0.8,
+            contributors={"capability": 0.5, "learning": 0.5},
+            agent_id="a",
+            task_type="t",
+        )
+        r2 = mgr.attribute(
+            [],
+            decision_id="d2",
+            mode="fusion",
+            reward=0.2,
+            contributors={"capability": 0.9, "learning": 0.1},
+            agent_id="a",
+            task_type="t",
+            signal_rewards=r1["signal_rewards"],
+            signal_counts=r1["signal_counts"],
+        )
         assert r2["signal_rewards"]["capability"] != r1["signal_rewards"]["capability"]
 
     def test_cf_interval(self):

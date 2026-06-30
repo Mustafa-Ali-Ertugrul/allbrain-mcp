@@ -25,7 +25,9 @@ class DecisionManager:
         dynamics: bool = False,
         strict: bool = True,
     ):
-        ctx = self._build_context(events, agent_id=agent_id, task_type=task_type, debug=debug, fusion=fusion, causal=causal, dynamics=dynamics)
+        ctx = self._build_context(
+            events, agent_id=agent_id, task_type=task_type, debug=debug, fusion=fusion, causal=causal, dynamics=dynamics
+        )
         return self._engine.decide(ctx, strict=strict)
 
     def _build_context(

@@ -41,8 +41,7 @@ class TestEndToEndMetaLoop:
         )
 
         all_evs = []
-        signal_types = ["retry_spike", "latency_rise", "circuit_breaker_open",
-                        "failure_pattern", "anomaly"]
+        signal_types = ["retry_spike", "latency_rise", "circuit_breaker_open", "failure_pattern", "anomaly"]
         for i in range(30):
             sig = signal_types[i % len(signal_types)]
             signals = [RiskSignal(sig, 0.85, 5)]
@@ -70,8 +69,7 @@ class TestEndToEndMetaLoop:
         )
         all_evs = []
         for i in range(15):
-            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout",
-                              signals=[RiskSignal("retry_spike", 0.85, 5)])
+            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout", signals=[RiskSignal("retry_spike", 0.85, 5)])
             all_evs.extend(r["events"])
         all_types = _event_types(all_evs)
         assert EventType.COMPETITION_HELD.value in all_types
@@ -91,8 +89,7 @@ class TestEndToEndMetaLoop:
         )
         all_evs = []
         for i in range(30):
-            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout",
-                              signals=[RiskSignal("retry_spike", 0.85, 5)])
+            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout", signals=[RiskSignal("retry_spike", 0.85, 5)])
             all_evs.extend(r["events"])
         all_types = _event_types(all_evs)
         # After 30 cycles with weight_optimizer, WEIGHTS_ADAPTED should fire
@@ -101,8 +98,11 @@ class TestEndToEndMetaLoop:
     def test_meta_optimizer_guarded_when_no_stability(self):
         from allbrain.meta_optimizer import StabilityController
         from allbrain.meta_optimizer.events import make_meta_optimizer_guarded_payload
+
         evt = make_meta_optimizer_guarded_payload(
-            fault_type="timeout", reason="low_stability", stability_score=0.20,
+            fault_type="timeout",
+            reason="low_stability",
+            stability_score=0.20,
         )
         assert evt["reason"] == "low_stability"
         assert evt["stability_score"] == 0.20
@@ -129,8 +129,16 @@ class TestEndToEndMetaLoop:
         import inspect
 
         from allbrain.runtime_core.pipeline import SystemDecisionPipeline
+
         sig = inspect.signature(SystemDecisionPipeline.run)
-        for name in ["enable_counterfactual", "enable_scenarios", "enable_foresight", "enable_meta_reasoning", "enable_uncertainty", "enable_information_seeking"]:
+        for name in [
+            "enable_counterfactual",
+            "enable_scenarios",
+            "enable_foresight",
+            "enable_meta_reasoning",
+            "enable_uncertainty",
+            "enable_information_seeking",
+        ]:
             assert name in sig.parameters, f"{name} missing from pipeline"
 
     def test_event_schemas_have_sprint73_types(self):

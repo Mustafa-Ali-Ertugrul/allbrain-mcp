@@ -87,8 +87,11 @@ class TestQualityGates:
     def test_reducer_idempotent_duplicate_ids(self):
         """CapabilityLearningReducer must handle duplicate event IDs."""
         r = CapabilityLearningReducer()
-        ev = E(EventType.AGENT_CAPABILITY_LEARNED.value, "dup1",
-               make_learned_payload(agent_id="a", task_type="t", old_score=0.1, new_score=0.8, delta=0.7))
+        ev = E(
+            EventType.AGENT_CAPABILITY_LEARNED.value,
+            "dup1",
+            make_learned_payload(agent_id="a", task_type="t", old_score=0.1, new_score=0.8, delta=0.7),
+        )
         r.apply(ev)
         r.apply(ev)  # same id again
         snap = r.snapshot(agent_id="a", task_type="t")
@@ -105,10 +108,16 @@ class TestQualityGates:
     def test_manager_known_keys(self):
         """CapabilityLearningManager.known_keys() must extract keys from payloads."""
         evts = [
-            E(EventType.AGENT_CAPABILITY_LEARNED.value, "e1",
-              make_learned_payload(agent_id="a1", task_type="t1", old_score=0.2, new_score=0.5, delta=0.3)),
-            E(EventType.AGENT_CAPABILITY_DECAYED.value, "e2",
-              make_decayed_payload(agent_id="a2", task_type="t2", old_score=0.8, new_score=0.4)),
+            E(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                "e1",
+                make_learned_payload(agent_id="a1", task_type="t1", old_score=0.2, new_score=0.5, delta=0.3),
+            ),
+            E(
+                EventType.AGENT_CAPABILITY_DECAYED.value,
+                "e2",
+                make_decayed_payload(agent_id="a2", task_type="t2", old_score=0.8, new_score=0.4),
+            ),
         ]
         mgr = CapabilityLearningManager()
         keys = mgr.known_keys(evts)
@@ -119,10 +128,20 @@ class TestQualityGates:
     def test_no_cross_agent_contamination(self):
         """Events from different agents must not affect each other's scores."""
         r = CapabilityLearningReducer()
-        r.apply(E(EventType.AGENT_CAPABILITY_LEARNED.value, "e1",
-                  make_learned_payload(agent_id="a", task_type="t", old_score=0.2, new_score=0.9, delta=0.7)))
-        r.apply(E(EventType.AGENT_CAPABILITY_DECAYED.value, "e2",
-                  make_decayed_payload(agent_id="b", task_type="t", old_score=0.8, new_score=0.1)))
+        r.apply(
+            E(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                "e1",
+                make_learned_payload(agent_id="a", task_type="t", old_score=0.2, new_score=0.9, delta=0.7),
+            )
+        )
+        r.apply(
+            E(
+                EventType.AGENT_CAPABILITY_DECAYED.value,
+                "e2",
+                make_decayed_payload(agent_id="b", task_type="t", old_score=0.8, new_score=0.1),
+            )
+        )
         snap_a = r.snapshot(agent_id="a", task_type="t")
         snap_b = r.snapshot(agent_id="b", task_type="t")
         assert snap_a.capability_score == 0.9
@@ -132,10 +151,15 @@ class TestQualityGates:
         """learned_capability field exists in RevisionState."""
         from allbrain.revision import RevisionState
         from allbrain.revision.state import RevisionPolicy
+
         s = RevisionState(
-            context_key="a::t", confidence=0.5, revision_count=0,
-            contradiction_count=0, policy=RevisionPolicy(),
-            old_confidence=None, analysis_id="id",
+            context_key="a::t",
+            confidence=0.5,
+            revision_count=0,
+            contradiction_count=0,
+            policy=RevisionPolicy(),
+            old_confidence=None,
+            analysis_id="id",
         )
         assert hasattr(s, "learned_capability")
         assert s.learned_capability == 1.0  # default
@@ -143,9 +167,14 @@ class TestQualityGates:
     def test_adaptive_selection_score_registered(self):
         """adaptive_selection_score must be importable and callable."""
         from allbrain.routing import adaptive_selection_score
+
         score = adaptive_selection_score(
-            reputation=0.5, runtime_score=0.5, calibrated_trust=0.5,
-            consensus_score=0.5, capability_match=0.5, learned_capability=0.5,
+            reputation=0.5,
+            runtime_score=0.5,
+            calibrated_trust=0.5,
+            consensus_score=0.5,
+            capability_match=0.5,
+            learned_capability=0.5,
         )
         assert isinstance(score, float)
 

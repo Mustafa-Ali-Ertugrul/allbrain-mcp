@@ -4,13 +4,27 @@ from typing import Any
 
 from allbrain.policy_routing.model import POLICY_ROUTING_TEMPLATE_VERSION
 
-FAMILY_SELECTED_KEYS: frozenset[str] = frozenset({
-    "family", "strategies", "fault_type", "signal_type", "confidence",
-})
-CANDIDATE_EVALUATED_KEYS: frozenset[str] = frozenset({
-    "candidate_id", "fault_type", "strategy", "score",
-    "success_rate", "risk_penalty", "stability_bonus", "drift_penalty",
-})
+FAMILY_SELECTED_KEYS: frozenset[str] = frozenset(
+    {
+        "family",
+        "strategies",
+        "fault_type",
+        "signal_type",
+        "confidence",
+    }
+)
+CANDIDATE_EVALUATED_KEYS: frozenset[str] = frozenset(
+    {
+        "candidate_id",
+        "fault_type",
+        "strategy",
+        "score",
+        "success_rate",
+        "risk_penalty",
+        "stability_bonus",
+        "drift_penalty",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:

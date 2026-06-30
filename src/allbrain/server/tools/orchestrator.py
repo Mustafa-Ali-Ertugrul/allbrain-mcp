@@ -1,4 +1,5 @@
 """Domain module: orchestrator and decision pipeline tools."""
+
 from __future__ import annotations
 
 import logging
@@ -57,6 +58,7 @@ def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         task_state = None
         if data.use_snapshot:
             from allbrain.storage.snapshot_repo import SnapshotRepo
+
             snapshot = SnapshotRepo(context.repository.engine).get_latest(project.id)
             if snapshot is not None:
                 snapshot = SnapshotAdapter().adapt(snapshot)

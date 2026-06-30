@@ -7,18 +7,14 @@ from allbrain.recovery_consensus.model import (
     VALID_RECOVERY_STRATEGIES,
 )
 
-STRATEGIES_GENERATED_KEYS: frozenset[str] = frozenset(
-    {"fault_id", "candidate_count", "strategies"}
-)
+STRATEGIES_GENERATED_KEYS: frozenset[str] = frozenset({"fault_id", "candidate_count", "strategies"})
 STRATEGY_EVALUATED_KEYS: frozenset[str] = frozenset(
     {"fault_id", "strategy", "score", "risk", "estimated_success", "confidence"}
 )
 CONSENSUS_REACHED_KEYS: frozenset[str] = frozenset(
     {"decision_id", "fault_id", "selected_strategy", "consensus_score", "candidate_count"}
 )
-STRATEGY_REJECTED_KEYS: frozenset[str] = frozenset(
-    {"decision_id", "fault_id", "strategy", "score", "reason"}
-)
+STRATEGY_REJECTED_KEYS: frozenset[str] = frozenset({"decision_id", "fault_id", "strategy", "score", "reason"})
 STRATEGY_SELECTED_KEYS: frozenset[str] = frozenset(
     {"decision_id", "fault_id", "selected_strategy", "consensus_score", "reason"}
 )

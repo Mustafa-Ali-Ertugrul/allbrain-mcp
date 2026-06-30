@@ -37,6 +37,6 @@ class TestForecast:
         assert state.confidence < 0.5
 
     def test_frozen(self):
-        state = predict(agent_id="a", task_type="t", scores=[0.5]*5, horizon=5)
+        state = predict(agent_id="a", task_type="t", scores=[0.5] * 5, horizon=5)
         assert state.agent_id == "a"
         assert state.horizon == 5

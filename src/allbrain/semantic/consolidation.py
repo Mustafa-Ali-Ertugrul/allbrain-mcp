@@ -90,14 +90,16 @@ def apply_decay_to_all(
             continue
         decay = min((current_time - c.last_activated) * decay_rate, 0.50)
         new_conf = max(0.0, c.confidence - decay)
-        result.append(SemanticConcept(
-            concept_id=c.concept_id,
-            pattern_signature=c.pattern_signature,
-            episodes=c.episodes,
-            confidence=new_conf,
-            retrieval_count=c.retrieval_count,
-            last_activated=c.last_activated,
-        ))
+        result.append(
+            SemanticConcept(
+                concept_id=c.concept_id,
+                pattern_signature=c.pattern_signature,
+                episodes=c.episodes,
+                confidence=new_conf,
+                retrieval_count=c.retrieval_count,
+                last_activated=c.last_activated,
+            )
+        )
     return result
 
 
@@ -112,7 +114,7 @@ def trim_to_capacity(
     if len(concepts) <= max_concepts:
         return concepts, []
     sorted_c = sorted(concepts, key=lambda c: c.confidence)
-    forgotten = sorted_c[:len(sorted_c) - max_concepts]
+    forgotten = sorted_c[: len(sorted_c) - max_concepts]
     forgotten_ids = [c.concept_id for c in forgotten]
-    remaining = sorted_c[len(sorted_c) - max_concepts:]
+    remaining = sorted_c[len(sorted_c) - max_concepts :]
     return remaining, forgotten_ids

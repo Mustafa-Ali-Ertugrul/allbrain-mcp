@@ -23,6 +23,7 @@ from allbrain.world.manager import WorldModel
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_obs(env: dict[str, str], *, obs_id: str = "obs-1") -> Any:
     """Create a mock WORLD_STATE_OBSERVED event."""
     from allbrain.models.schemas import EventRead
@@ -109,6 +110,7 @@ def _model() -> WorldModel:
 # WorldModel.learn() — cold-start / edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestLearnEmptyEvents:
     def test_empty_events_keeps_hardcoded_bridges(self) -> None:
         model = _model()
@@ -140,8 +142,10 @@ class TestLearnFewEvents:
         for i in range(2):
             obs = _make_obs({"tests": "passed"}, obs_id=f"obs-{i}")
             sim = _make_sim(
-                f"obs-{i}", {"deployment": "running"},
-                sim_id=f"sim-{i}", action="deploy",
+                f"obs-{i}",
+                {"deployment": "running"},
+                sim_id=f"sim-{i}",
+                action="deploy",
             )
             events.extend([obs, sim])
 
@@ -158,8 +162,10 @@ class TestLearnFewEvents:
         for i in range(2):
             obs = _make_obs({"tests": "passed"}, obs_id=f"obs-{i}")
             sim = _make_sim(
-                f"obs-{i}", {"deployment": "running"},
-                sim_id=f"sim-{i}", action="deploy",
+                f"obs-{i}",
+                {"deployment": "running"},
+                sim_id=f"sim-{i}",
+                action="deploy",
             )
             events.extend([obs, sim])
 
@@ -180,6 +186,7 @@ class TestLearnFewEvents:
 # WorldModel.learn() — sufficient data
 # ---------------------------------------------------------------------------
 
+
 class TestLearnEnoughEvents:
     def test_learned_prediction_overrides_hardcoded(self) -> None:
         """≥3 events with stored action → learned prediction used."""
@@ -188,8 +195,12 @@ class TestLearnEnoughEvents:
         for i in range(3):
             obs = _make_obs({"tests": "passed"}, obs_id=f"obs-{i}")
             sim = _make_sim(
-                f"obs-{i}", {"deployment": "running"},
-                sim_id=f"sim-{i}", action="deploy", success=0.8, risk=0.2,
+                f"obs-{i}",
+                {"deployment": "running"},
+                sim_id=f"sim-{i}",
+                action="deploy",
+                success=0.8,
+                risk=0.2,
             )
             events.extend([obs, sim])
 
@@ -214,8 +225,10 @@ class TestLearnEnoughEvents:
         for i in range(3):
             obs = _make_obs({"tests": "passed"}, obs_id=f"obs-{i}")
             sim = _make_sim(
-                f"obs-{i}", {"deployment": "running"},
-                sim_id=f"sim-{i}", action="deploy",
+                f"obs-{i}",
+                {"deployment": "running"},
+                sim_id=f"sim-{i}",
+                action="deploy",
             )
             events.extend([obs, sim])
 
@@ -231,6 +244,7 @@ class TestLearnEnoughEvents:
 # WorldModel.learn() — idempotent not, but observe still works
 # ---------------------------------------------------------------------------
 
+
 class TestLearnMultipleCalls:
     def test_second_learn_creates_new_learner(self) -> None:
         model = _model()
@@ -238,8 +252,10 @@ class TestLearnMultipleCalls:
         for i in range(3):
             obs = _make_obs({"tests": "passed"}, obs_id=f"obs-{i}")
             sim = _make_sim(
-                f"obs-{i}", {"deployment": "running"},
-                sim_id=f"sim-{i}", action="deploy",
+                f"obs-{i}",
+                {"deployment": "running"},
+                sim_id=f"sim-{i}",
+                action="deploy",
             )
             events.extend([obs, sim])
 
@@ -263,8 +279,10 @@ class TestLearnMultipleCalls:
         for i in range(3):
             obs = _make_obs({"tests": "passed"}, obs_id=f"obs-{i}")
             sim = _make_sim(
-                f"obs-{i}", {"deployment": "running"},
-                sim_id=f"sim-{i}", action="deploy",
+                f"obs-{i}",
+                {"deployment": "running"},
+                sim_id=f"sim-{i}",
+                action="deploy",
             )
             events.extend([obs, sim])
 
@@ -278,6 +296,7 @@ class TestLearnMultipleCalls:
 # ---------------------------------------------------------------------------
 # Stored action in sim payload — learner consumption
 # ---------------------------------------------------------------------------
+
 
 class TestTransitionLearnerStoredAction:
     def test_stored_action_used(self) -> None:
@@ -366,6 +385,7 @@ class TestBetaPredictorStoredAction:
 # Pipeline integration — learned simulation
 # ---------------------------------------------------------------------------
 
+
 class TestPipelineLearnedSimulation:
     """These tests use the full pipeline with a real BrainContext."""
 
@@ -385,9 +405,7 @@ class TestPipelineLearnedSimulation:
             risk_threshold=0.5,
         )
 
-        all_events = context.repository.list_events(
-            project_path=context.project_path, limit=100
-        )
+        all_events = context.repository.list_events(project_path=context.project_path, limit=100)
         sim_events = [e for e in all_events if e.type == EventType.WORLD_SIMULATION_RUN.value]
         assert len(sim_events) >= 1
         for sim_ev in sim_events:
@@ -418,6 +436,7 @@ class TestPipelineLearnedSimulation:
 # ---------------------------------------------------------------------------
 # Helpers for pipeline tests
 # ---------------------------------------------------------------------------
+
 
 def _objective(**overrides: Any) -> dict[str, Any]:
     data = {

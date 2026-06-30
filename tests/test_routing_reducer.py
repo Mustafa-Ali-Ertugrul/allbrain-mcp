@@ -28,8 +28,30 @@ class TestReducer:
         r = RoutingReducer()
         r.apply(E("other", "0", {"x": 1}))
         evts = [
-            E(EventType.AGENT_SELECTION_SCORED.value, "1", make_scored_payload(agent_id="a", task_type="x", selection_score=0.9, reputation=0.8, runtime_score=0.7, calibrated_trust=0.6)),
-            E(EventType.AGENT_SELECTION_SCORED.value, "2", make_scored_payload(agent_id="b", task_type="x", selection_score=0.5, reputation=0.4, runtime_score=0.3, calibrated_trust=0.2)),
+            E(
+                EventType.AGENT_SELECTION_SCORED.value,
+                "1",
+                make_scored_payload(
+                    agent_id="a",
+                    task_type="x",
+                    selection_score=0.9,
+                    reputation=0.8,
+                    runtime_score=0.7,
+                    calibrated_trust=0.6,
+                ),
+            ),
+            E(
+                EventType.AGENT_SELECTION_SCORED.value,
+                "2",
+                make_scored_payload(
+                    agent_id="b",
+                    task_type="x",
+                    selection_score=0.5,
+                    reputation=0.4,
+                    runtime_score=0.3,
+                    calibrated_trust=0.2,
+                ),
+            ),
         ]
         for e in evts:
             r.apply(e)
@@ -38,7 +60,18 @@ class TestReducer:
 
     def test_idempotency(self):
         r = RoutingReducer()
-        e = E(EventType.AGENT_SELECTION_SCORED.value, "1", make_scored_payload(agent_id="a", task_type="x", selection_score=0.5, reputation=0.5, runtime_score=0.5, calibrated_trust=0.5))
+        e = E(
+            EventType.AGENT_SELECTION_SCORED.value,
+            "1",
+            make_scored_payload(
+                agent_id="a",
+                task_type="x",
+                selection_score=0.5,
+                reputation=0.5,
+                runtime_score=0.5,
+                calibrated_trust=0.5,
+            ),
+        )
         r.apply(e)
         r.apply(e)
         assert r.snapshot(task_type="x").candidate_count == 1
@@ -52,9 +85,35 @@ class TestReducer:
 class TestManagerEqualsReducer:
     def test_convergence(self):
         evts = [
-            E(EventType.AGENT_SELECTION_SCORED.value, "1", make_scored_payload(agent_id="a", task_type="x", selection_score=0.9, reputation=0.8, runtime_score=0.7, calibrated_trust=0.6)),
-            E(EventType.AGENT_SELECTION_SCORED.value, "2", make_scored_payload(agent_id="b", task_type="x", selection_score=0.5, reputation=0.4, runtime_score=0.3, calibrated_trust=0.2)),
-            E(EventType.AGENT_SELECTED.value, "3", make_selected_payload(task_id="t", task_type="x", agent_id="a", selection_score=0.9)),
+            E(
+                EventType.AGENT_SELECTION_SCORED.value,
+                "1",
+                make_scored_payload(
+                    agent_id="a",
+                    task_type="x",
+                    selection_score=0.9,
+                    reputation=0.8,
+                    runtime_score=0.7,
+                    calibrated_trust=0.6,
+                ),
+            ),
+            E(
+                EventType.AGENT_SELECTION_SCORED.value,
+                "2",
+                make_scored_payload(
+                    agent_id="b",
+                    task_type="x",
+                    selection_score=0.5,
+                    reputation=0.4,
+                    runtime_score=0.3,
+                    calibrated_trust=0.2,
+                ),
+            ),
+            E(
+                EventType.AGENT_SELECTED.value,
+                "3",
+                make_selected_payload(task_id="t", task_type="x", agent_id="a", selection_score=0.9),
+            ),
         ]
         mgr = RoutingManager()
         rdr = RoutingReducer()
@@ -70,12 +129,31 @@ class TestSelectedLastWins:
     def test_last_wins(self):
         from allbrain.revision import RevisionManager
         from allbrain.revision import make_payload as make_rev
+
         evts = [
-            E(EventType.AGENT_SELECTED.value, "1", make_selected_payload(task_id="t", task_type="x", agent_id="a", selection_score=0.5)),
-            E(EventType.AGENT_SELECTED.value, "2", make_selected_payload(task_id="t", task_type="x", agent_id="b", selection_score=0.9)),
+            E(
+                EventType.AGENT_SELECTED.value,
+                "1",
+                make_selected_payload(task_id="t", task_type="x", agent_id="a", selection_score=0.5),
+            ),
+            E(
+                EventType.AGENT_SELECTED.value,
+                "2",
+                make_selected_payload(task_id="t", task_type="x", agent_id="b", selection_score=0.9),
+            ),
         ]
         rev_evts = list(evts) + [
-            E(EventType.BELIEF_REVISED.value, "r1", make_rev(context_key="default", old_confidence=0.9, new_confidence=0.6, reason="contradiction", evidence_count=0)),
+            E(
+                EventType.BELIEF_REVISED.value,
+                "r1",
+                make_rev(
+                    context_key="default",
+                    old_confidence=0.9,
+                    new_confidence=0.6,
+                    reason="contradiction",
+                    evidence_count=0,
+                ),
+            ),
         ]
         st = RevisionManager().query(rev_evts)
         assert st.selected_agent_score == pytest.approx(0.9)

@@ -41,7 +41,7 @@ class MetaScorer:
         drift_penalty = drift_estimate
 
         meta_score = (
-            + success_rate * profile.success_weight
+            +success_rate * profile.success_weight
             - risk_penalty * profile.risk_weight
             + stability_bonus * profile.stability_weight
             - drift_penalty * profile.drift_weight

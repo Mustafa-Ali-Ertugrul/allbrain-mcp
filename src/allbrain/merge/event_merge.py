@@ -8,9 +8,7 @@ class EventMergeEngine:
     def merge(self, events: list[EventRead], resolved_conflicts: list[dict]) -> list[EventRead]:
         winner_ids = {item["winner_event_id"] for item in resolved_conflicts}
         conflicted_ids = {
-            event_id
-            for item in resolved_conflicts
-            for event_id in item["conflict"]["evidence_event_ids"]
+            event_id for item in resolved_conflicts for event_id in item["conflict"]["evidence_event_ids"]
         }
         by_file: dict[str, EventRead] = {}
         merged: list[EventRead] = []

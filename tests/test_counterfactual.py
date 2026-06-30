@@ -122,9 +122,7 @@ def test_unknown_action_metric(tmp_path) -> None:
     assert event_types.count(EventType.COUNTERFACTUAL_GENERATED.value) == 1
     assert event_types.count(EventType.COUNTERFACTUAL_EVALUATED.value) == 0
 
-    generated_event = next(
-        event for event in all_events if event.type == EventType.COUNTERFACTUAL_GENERATED.value
-    )
+    generated_event = next(event for event in all_events if event.type == EventType.COUNTERFACTUAL_GENERATED.value)
     assert generated_event.payload.get("reason") == "unknown_action"
     assert generated_event.payload.get("alternatives") == []
     assert result.data["unknown_action"] is True

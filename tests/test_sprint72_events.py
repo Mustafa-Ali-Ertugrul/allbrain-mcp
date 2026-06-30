@@ -110,33 +110,50 @@ class TestSprint72EventValidation:
 class TestSprint72Reducers:
     def test_policy_routing_reducer_tracks_selections(self):
         reducer = PolicyRoutingReducer()
-        event = _make_event("policy_family_selected", {
-            "family": "throttle", "strategies": ["retry"],
-            "fault_type": "timeout", "signal_type": "retry",
-            "confidence": 0.85,
-        })
+        event = _make_event(
+            "policy_family_selected",
+            {
+                "family": "throttle",
+                "strategies": ["retry"],
+                "fault_type": "timeout",
+                "signal_type": "retry",
+                "confidence": 0.85,
+            },
+        )
         reducer.apply(event)
         snap = reducer.all_snapshots()
         assert snap["default"]["total_selections"] == 1
 
     def test_policy_competition_reducer_tracks_competitions(self):
         reducer = PolicyCompetitionReducer()
-        event = _make_event("competition_held", {
-            "fault_type": "timeout", "winner_policy_id": "p1",
-            "winner_strategy": "retry", "winner_score": 0.7,
-            "confidence": 0.3, "candidate_count": 2,
-        })
+        event = _make_event(
+            "competition_held",
+            {
+                "fault_type": "timeout",
+                "winner_policy_id": "p1",
+                "winner_strategy": "retry",
+                "winner_score": 0.7,
+                "confidence": 0.3,
+                "candidate_count": 2,
+            },
+        )
         reducer.apply(event)
         snap = reducer.all_snapshots()
         assert snap["default"]["total_competitions"] == 1
 
     def test_soft_repair_reducer_tracks_blends(self):
         reducer = SoftRepairReducer()
-        event = _make_event("policy_blended", {
-            "old_policy_id": "v1", "new_policy_id": "v2",
-            "fault_type": "timeout", "old_weight": 0.6,
-            "new_weight": 0.4, "stability_score": 0.55,
-        })
+        event = _make_event(
+            "policy_blended",
+            {
+                "old_policy_id": "v1",
+                "new_policy_id": "v2",
+                "fault_type": "timeout",
+                "old_weight": 0.6,
+                "new_weight": 0.4,
+                "stability_score": 0.55,
+            },
+        )
         reducer.apply(event)
         snap = reducer.all_snapshots()
         assert snap["default"]["total_blends"] == 1
@@ -157,6 +174,7 @@ class TestSprint72Reducers:
 def _make_event(type_str: str, payload: dict):
     """Minimal event stub for reducer tests."""
     import types
+
     ev = types.SimpleNamespace()
     ev.id = f"test_{type_str}_{hash(str(payload))}"
     ev.type = type_str

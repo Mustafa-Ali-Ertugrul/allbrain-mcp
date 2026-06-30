@@ -37,12 +37,14 @@ class PolicyEvaluator:
                 stability_estimate = 0.3
                 drift_estimate = 0.3
 
-            scored.append(self._scorer.score(
-                candidate=cand,
-                success_rate=success_rate,
-                risk_estimate=risk_estimate,
-                stability_estimate=stability_estimate,
-                drift_estimate=drift_estimate,
-            ))
+            scored.append(
+                self._scorer.score(
+                    candidate=cand,
+                    success_rate=success_rate,
+                    risk_estimate=risk_estimate,
+                    stability_estimate=stability_estimate,
+                    drift_estimate=drift_estimate,
+                )
+            )
 
         return scored

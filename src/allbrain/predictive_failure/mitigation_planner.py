@@ -34,9 +34,7 @@ class MitigationPlanner:
         urgency = STRATEGY_URGENCY.get(strategy, 0.30)
         expected_reduction = _clamp(urgency * prediction.probability)
 
-        plan_id = hashlib.sha256(
-            f"{prediction.fault_id}::{strategy}".encode()
-        ).hexdigest()[:16]
+        plan_id = hashlib.sha256(f"{prediction.fault_id}::{strategy}".encode()).hexdigest()[:16]
 
         return MitigationPlan(
             plan_id=plan_id,

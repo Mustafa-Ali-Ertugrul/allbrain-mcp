@@ -162,7 +162,17 @@ def test_contradiction_order_independence():
         id="10",
         payload={
             "context_key": "default",
-            "contradictions": [{"severity": "warning", "severity_score": 50, "agents": ["a", "b"], "related_files": [], "a_goal": "x", "b_goal": "y", "evidence_intent_ids": []}],
+            "contradictions": [
+                {
+                    "severity": "warning",
+                    "severity_score": 50,
+                    "agents": ["a", "b"],
+                    "related_files": [],
+                    "a_goal": "x",
+                    "b_goal": "y",
+                    "evidence_intent_ids": [],
+                }
+            ],
             "severity_summary": {"warning": 1},
             "evidence_event_ids": ["1", "2"],
             "template_version": 1,
@@ -222,7 +232,17 @@ def test_contradiction_reducer_idempotency():
         id="10",
         payload={
             "context_key": "default",
-            "contradictions": [{"severity": "warning", "severity_score": 50, "agents": [], "related_files": [], "a_goal": "", "b_goal": "", "evidence_intent_ids": []}],
+            "contradictions": [
+                {
+                    "severity": "warning",
+                    "severity_score": 50,
+                    "agents": [],
+                    "related_files": [],
+                    "a_goal": "",
+                    "b_goal": "",
+                    "evidence_intent_ids": [],
+                }
+            ],
             "severity_summary": {"warning": 1},
             "evidence_event_ids": [],
             "template_version": 1,
@@ -285,9 +305,33 @@ def test_contradiction_replay_round_trip_exact_equality():
 def test_contradiction_dedup():
     """dedup_contradictions collapses duplicates over the same intent pair,
     keeping the highest severity score."""
-    c_warning = {"severity": "warning", "severity_score": 50, "agents": [], "related_files": [], "a_goal": "", "b_goal": "", "evidence_intent_ids": ["i1", "i2"]}
-    c_critical = {"severity": "critical", "severity_score": 85, "agents": [], "related_files": [], "a_goal": "", "b_goal": "", "evidence_intent_ids": ["i1", "i2"]}
-    c_other = {"severity": "warning", "severity_score": 50, "agents": [], "related_files": [], "a_goal": "", "b_goal": "", "evidence_intent_ids": ["i3", "i4"]}
+    c_warning = {
+        "severity": "warning",
+        "severity_score": 50,
+        "agents": [],
+        "related_files": [],
+        "a_goal": "",
+        "b_goal": "",
+        "evidence_intent_ids": ["i1", "i2"],
+    }
+    c_critical = {
+        "severity": "critical",
+        "severity_score": 85,
+        "agents": [],
+        "related_files": [],
+        "a_goal": "",
+        "b_goal": "",
+        "evidence_intent_ids": ["i1", "i2"],
+    }
+    c_other = {
+        "severity": "warning",
+        "severity_score": 50,
+        "agents": [],
+        "related_files": [],
+        "a_goal": "",
+        "b_goal": "",
+        "evidence_intent_ids": ["i3", "i4"],
+    }
 
     result = dedup_contradictions([c_warning, c_critical, c_other])
     assert len(result) == 2

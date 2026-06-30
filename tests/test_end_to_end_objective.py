@@ -51,8 +51,7 @@ class TestEndToEndObjective:
         all_evs = []
         sigs = ["retry_spike", "latency_rise", "circuit_breaker_open", "failure_pattern", "anomaly"]
         for i in range(20):
-            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout",
-                              signals=[RiskSignal(sigs[i % 5], 0.85, 5)])
+            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout", signals=[RiskSignal(sigs[i % 5], 0.85, 5)])
             all_evs.extend(r["events"])
         all_types = _event_types(all_evs)
         assert EventType.OBJECTIVE_UPDATED.value in all_types
@@ -81,8 +80,7 @@ class TestEndToEndObjective:
         )
         all_evs = []
         for i in range(80):
-            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout",
-                              signals=[RiskSignal("retry_spike", 0.85, 5)])
+            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout", signals=[RiskSignal("retry_spike", 0.85, 5)])
             all_evs.extend(r["events"])
         all_types = _event_types(all_evs)
         assert EventType.OBJECTIVE_UPDATED.value in all_types
@@ -95,24 +93,37 @@ class TestEndToEndObjective:
             policy_store=PolicyStore(),
         )
         for i in range(5):
-            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout",
-                              signals=[RiskSignal("retry_spike", 0.7, 3)])
+            r = mgr.run_cycle(fault_id=f"f{i}", fault_type="timeout", signals=[RiskSignal("retry_spike", 0.7, 3)])
             assert not r.get("error")
 
     def test_pipeline_has_decision_flags(self):
         import inspect
 
         from allbrain.runtime_core.pipeline import SystemDecisionPipeline
+
         sig = inspect.signature(SystemDecisionPipeline.run)
-        for name in ["enable_counterfactual", "enable_scenarios", "enable_foresight", "enable_meta_reasoning", "enable_uncertainty", "enable_information_seeking"]:
+        for name in [
+            "enable_counterfactual",
+            "enable_scenarios",
+            "enable_foresight",
+            "enable_meta_reasoning",
+            "enable_uncertainty",
+            "enable_information_seeking",
+        ]:
             assert name in sig.parameters, f"{name} missing"
 
     def test_event_schemas_have_75_types(self):
-        for name in ["OBJECTIVE_UPDATED", "TRADEOFF_ANALYZED", "UTILITY_COMPUTED",
-                     "ALIGNMENT_FAILED", "OBJECTIVE_REBALANCED"]:
+        for name in [
+            "OBJECTIVE_UPDATED",
+            "TRADEOFF_ANALYZED",
+            "UTILITY_COMPUTED",
+            "ALIGNMENT_FAILED",
+            "OBJECTIVE_REBALANCED",
+        ]:
             assert hasattr(EventType, name), f"{name} missing"
 
     def test_hierarchical_priorities(self):
         from allbrain.objective_system import OBJECTIVE_PRIORITY_DEFAULTS, ObjectivePriority
+
         assert OBJECTIVE_PRIORITY_DEFAULTS["safety"] == ObjectivePriority.CRITICAL
         assert OBJECTIVE_PRIORITY_DEFAULTS["efficiency"] == ObjectivePriority.OPTIONAL

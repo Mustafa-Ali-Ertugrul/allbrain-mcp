@@ -18,6 +18,7 @@ class Coupling:
     M = [[p2p, p2s],
          [s2p, s2s]]
     """
+
     p2p: float = 0.85
     p2s: float = 0.15
     s2p: float = 0.10
@@ -26,8 +27,10 @@ class Coupling:
     def apply(self, policy_strength: float, scorer_strength: float) -> tuple[float, float]:
         new_p = self.p2p * policy_strength + self.p2s * scorer_strength
         new_s = self.s2p * policy_strength + self.s2s * scorer_strength
-        return (min(COEVOLUTION_MAX_STRENGTH, max(COEVOLUTION_MIN_STRENGTH, new_p)),
-                min(COEVOLUTION_MAX_STRENGTH, max(COEVOLUTION_MIN_STRENGTH, new_s)))
+        return (
+            min(COEVOLUTION_MAX_STRENGTH, max(COEVOLUTION_MIN_STRENGTH, new_p)),
+            min(COEVOLUTION_MAX_STRENGTH, max(COEVOLUTION_MIN_STRENGTH, new_s)),
+        )
 
 
 @dataclass

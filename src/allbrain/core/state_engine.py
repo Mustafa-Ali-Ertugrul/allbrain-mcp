@@ -20,7 +20,9 @@ class StateEngine:
         state["git"] = context["git"]
         return state
 
-    def apply_events(self, base_state: dict[str, Any], events: list[EventRead], git: dict[str, Any] | None = None) -> dict[str, Any]:
+    def apply_events(
+        self, base_state: dict[str, Any], events: list[EventRead], git: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         if not events:
             state = dict(base_state)
             state["git"] = git or {}

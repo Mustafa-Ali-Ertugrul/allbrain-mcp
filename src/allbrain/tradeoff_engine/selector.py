@@ -29,5 +29,7 @@ class Selector:
 
         return TradeoffResult(
             fault_type=winner.fault_type if winner else "unknown",
-            winner=winner, all_results=results, frontier=frontier,
+            winner=winner,
+            all_results=results,
+            frontier=frontier,
         )

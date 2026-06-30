@@ -33,7 +33,10 @@ class OutcomeValidator:
         self._was_capped = False
 
     def call_real_provider(
-        self, strategy: str, pre_risk: float, urgency: float,
+        self,
+        strategy: str,
+        pre_risk: float,
+        urgency: float,
     ) -> tuple[float, bool, float] | None:
         """Invoke the real provider if set. Returns None if not configured."""
         if self._real is None:
@@ -68,10 +71,7 @@ class OutcomeValidator:
         if self._real is None or real_effectiveness is None:
             self._was_capped = True
             return sim_effectiveness, True
-        combined = (
-            self._sim_weight * sim_effectiveness
-            + self.real_weight * real_effectiveness
-        )
+        combined = self._sim_weight * sim_effectiveness + self.real_weight * real_effectiveness
         return _clamp(combined, -1.0, 1.0), False
 
     def compute_combined_risk_delta(
@@ -86,8 +86,5 @@ class OutcomeValidator:
         if self._real is None or real_risk_delta is None:
             self._was_capped = True
             return sim_risk_delta, True
-        combined = (
-            self._sim_weight * sim_risk_delta
-            + self.real_weight * real_risk_delta
-        )
+        combined = self._sim_weight * sim_risk_delta + self.real_weight * real_risk_delta
         return _clamp(combined, -1.0, 1.0), False

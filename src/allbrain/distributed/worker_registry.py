@@ -35,7 +35,14 @@ class WorkerRegistration:
 class WorkerRegistry:
     workers: dict[str, WorkerRegistration] = field(default_factory=dict)
 
-    def register(self, worker_id: str, *, node_id: str, capabilities: dict[str, Any] | None = None, metadata: dict[str, Any] | None = None) -> WorkerRegistration:
+    def register(
+        self,
+        worker_id: str,
+        *,
+        node_id: str,
+        capabilities: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> WorkerRegistration:
         registration = WorkerRegistration(
             worker_id=worker_id,
             node_id=node_id,

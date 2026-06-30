@@ -43,9 +43,7 @@ class WorkerPool:
         self._in_flight_lock = asyncio.Lock()
         self._idle_event = asyncio.Event()
         self._idle_event.set()
-        self._stats: list[WorkerStats] = [
-            WorkerStats(worker_id=i) for i in range(num_workers)
-        ]
+        self._stats: list[WorkerStats] = [WorkerStats(worker_id=i) for i in range(num_workers)]
 
     async def start(self) -> None:
         if self._tasks:

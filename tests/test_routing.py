@@ -73,7 +73,9 @@ class TestPayloads:
         assert p["task_type"] == "x"
 
     def test_scored(self):
-        p = make_scored_payload(agent_id="a", task_type="x", selection_score=0.8, reputation=0.7, runtime_score=0.6, calibrated_trust=0.5)
+        p = make_scored_payload(
+            agent_id="a", task_type="x", selection_score=0.8, reputation=0.7, runtime_score=0.6, calibrated_trust=0.5
+        )
         assert p["agent_id"] == "a"
         assert p["runtime_score"] == 0.6
 

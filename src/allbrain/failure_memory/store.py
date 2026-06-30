@@ -56,16 +56,10 @@ class FailureMemoryStore:
         return list(self._by_fault_type.get(fault_type, []))
 
     def get_experiences(self, fault_type: str) -> list[RecoveryExperience]:
-        return [
-            exp for (ft, _), exp in self._experiences.items()
-            if ft == fault_type
-        ]
+        return [exp for (ft, _), exp in self._experiences.items() if ft == fault_type]
 
     def get_patterns(self, fault_type: str) -> list[FailurePattern]:
-        return [
-            pat for (ft, _), pat in self._patterns.items()
-            if ft == fault_type
-        ]
+        return [pat for (ft, _), pat in self._patterns.items() if ft == fault_type]
 
     def get_success_rate(self, fault_type: str, strategy: str) -> float | None:
         key = (fault_type, strategy)
@@ -91,13 +85,15 @@ class FailureMemoryStore:
             entry_experiences = tuple(self.get_experiences(ft))
             entry_patterns = tuple(self.get_patterns(ft))
             attempts = sum(e.attempts for e in entry_experiences)
-            entries.append({
-                "fault_type": ft,
-                "records": entry_records,
-                "experiences": entry_experiences,
-                "patterns": entry_patterns,
-                "total_attempts": attempts,
-            })
+            entries.append(
+                {
+                    "fault_type": ft,
+                    "records": entry_records,
+                    "experiences": entry_experiences,
+                    "patterns": entry_patterns,
+                    "total_attempts": attempts,
+                }
+            )
 
         return {
             "entries": entries,

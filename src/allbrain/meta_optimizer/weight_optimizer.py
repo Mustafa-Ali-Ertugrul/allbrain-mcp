@@ -55,7 +55,8 @@ class WeightOptimizer:
             drift_weight=self._clamp(current.drift_weight + grad.get("drift_weight", 0.0)),
             exploration_bonus=self._clamp_exploration(
                 current.exploration_bonus + grad.get("exploration_bonus", 0.0)
-                if "exploration_bonus" in grad else current.exploration_bonus
+                if "exploration_bonus" in grad
+                else current.exploration_bonus
             ),
             version=current.version,
         )

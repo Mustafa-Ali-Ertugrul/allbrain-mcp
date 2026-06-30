@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from allbrain.calibration.estimator import CALIBRATION_TEMPLATE_VERSION
 
-REQUIRED_KEYS: frozenset[str] = frozenset(
-    {"context_key", "predicted_confidence", "actual_outcome"}
-)
+REQUIRED_KEYS: frozenset[str] = frozenset({"context_key", "predicted_confidence", "actual_outcome"})
 
 
 def validate_payload(payload: dict) -> None:

@@ -15,7 +15,12 @@ class TeamOptimizer:
             team = event.payload.get("team_name")
             if not isinstance(team, str):
                 continue
-            agent = event.agent_id or event.payload.get("agent_id") or event.payload.get("from_agent") or event.payload.get("to_agent")
+            agent = (
+                event.agent_id
+                or event.payload.get("agent_id")
+                or event.payload.get("from_agent")
+                or event.payload.get("to_agent")
+            )
             if isinstance(agent, str):
                 members[team].add(agent)
             if event.type in {"collaboration_completed", "collaboration_failed"}:

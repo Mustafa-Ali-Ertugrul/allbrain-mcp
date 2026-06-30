@@ -15,6 +15,7 @@ from allbrain.events.schemas import EventType
 
 def _stable_causal_id(key: str, event_ids: list[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     ek = "|".join(sorted(str(e) for e in event_ids))
@@ -91,10 +92,13 @@ def estimate_treatment_effect(
 
     if min_n < CAUSAL_MIN_SAMPLES:
         return CausalImpact(
-            agent_id=agent_a, task_type=task_type,
+            agent_id=agent_a,
+            task_type=task_type,
             alternative_agent=agent_b,
-            impact_score=0.0, confidence=0.0,
-            sample_count=min_n, analysis_id=analysis_id,
+            impact_score=0.0,
+            confidence=0.0,
+            sample_count=min_n,
+            analysis_id=analysis_id,
         )
 
     a_mean = sum(a_scores) / a_n
@@ -106,7 +110,8 @@ def estimate_treatment_effect(
     confidence = raw_confidence * (1.0 - CAUSAL_CONFIDENCE_SHRINK * min(1.0, abs(impact_score)))
 
     return CausalImpact(
-        agent_id=agent_a, task_type=task_type,
+        agent_id=agent_a,
+        task_type=task_type,
         alternative_agent=agent_b,
         impact_score=impact_score,
         confidence=confidence,

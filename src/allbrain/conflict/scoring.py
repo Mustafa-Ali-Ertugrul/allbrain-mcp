@@ -42,7 +42,11 @@ class ConflictScorer:
             return 1.0
         if self._same_task(a, b):
             return 0.8
-        if {a.type, b.type} <= {EventType.TASK_STARTED.value, EventType.TASK_COMPLETED.value, EventType.TASK_BLOCKED.value}:
+        if {a.type, b.type} <= {
+            EventType.TASK_STARTED.value,
+            EventType.TASK_COMPLETED.value,
+            EventType.TASK_BLOCKED.value,
+        }:
             return 0.6
         return 0.0
 

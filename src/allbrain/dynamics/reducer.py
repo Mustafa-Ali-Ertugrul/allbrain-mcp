@@ -36,7 +36,8 @@ class CapabilityDynamicsReducer:
             tt = str(payload["task_type"])
             k = self._key(aid, tt)
             self._drift[k] = {
-                "agent_id": aid, "task_type": tt,
+                "agent_id": aid,
+                "task_type": tt,
                 "drift_score": float(payload["drift_score"]),
                 "drift_level": str(payload["drift_level"]),
                 "ema_short": float(payload["ema_short"]),
@@ -53,7 +54,8 @@ class CapabilityDynamicsReducer:
             tt = str(payload["task_type"])
             k = self._key(aid, tt)
             self._trend[k] = {
-                "agent_id": aid, "task_type": tt,
+                "agent_id": aid,
+                "task_type": tt,
                 "slope": float(payload["slope"]),
                 "label": str(payload["label"]),
                 "momentum": float(payload["momentum"]),
@@ -70,7 +72,8 @@ class CapabilityDynamicsReducer:
             tt = str(payload["task_type"])
             k = self._key(aid, tt)
             self._forecast[k] = {
-                "agent_id": aid, "task_type": tt,
+                "agent_id": aid,
+                "task_type": tt,
                 "horizon": int(payload["horizon"]),
                 "predicted_capability": float(payload["predicted_capability"]),
                 "confidence": float(payload["confidence"]),

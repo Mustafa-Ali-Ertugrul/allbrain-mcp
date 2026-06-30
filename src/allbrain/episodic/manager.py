@@ -86,10 +86,12 @@ class EpisodicManager:
             removed = self._episodes.pop(0)
             self._forgotten += 1
             self._retained = len(self._episodes)
-            forgotten.append({
-                "episode_id": removed.episode_id,
-                "reason": EVICTION_REASON_CAPACITY,
-            })
+            forgotten.append(
+                {
+                    "episode_id": removed.episode_id,
+                    "reason": EVICTION_REASON_CAPACITY,
+                }
+            )
 
         return {
             "stored": True,
@@ -118,16 +120,18 @@ class EpisodicManager:
         # Update retrieval metadata on matched episodes (create new Episode objects)
         updated: list[Episode] = []
         for ep, sim in matched:
-            updated.append(Episode(
-                episode_id=ep.episode_id,
-                timestamp=ep.timestamp,
-                reward=ep.reward,
-                importance=ep.importance,
-                workspace_items=ep.workspace_items,
-                decision_id=ep.decision_id,
-                retrieval_count=ep.retrieval_count + 1,
-                last_retrieved=self._time,
-            ))
+            updated.append(
+                Episode(
+                    episode_id=ep.episode_id,
+                    timestamp=ep.timestamp,
+                    reward=ep.reward,
+                    importance=ep.importance,
+                    workspace_items=ep.workspace_items,
+                    decision_id=ep.decision_id,
+                    retrieval_count=ep.retrieval_count + 1,
+                    last_retrieved=self._time,
+                )
+            )
             # Replace in main list
             for i, old_ep in enumerate(self._episodes):
                 if old_ep.episode_id == ep.episode_id:

@@ -16,11 +16,9 @@ MAX_RETRIES = 3
 
 
 class RandomLike(Protocol):
-    def random(self) -> float:
-        ...
+    def random(self) -> float: ...
 
-    def choice(self, seq: list[dict[str, Any]]) -> dict[str, Any]:
-        ...
+    def choice(self, seq: list[dict[str, Any]]) -> dict[str, Any]: ...
 
 
 class SchedulerV1:
@@ -60,17 +58,13 @@ class SchedulerV1:
         ]
         eligible = [item for item in scored if item["eligible"]]
         above_threshold = [
-            item
-            for item in eligible
-            if item["breakdown"]["capability_score"] >= self.min_capability_threshold
+            item for item in eligible if item["breakdown"]["capability_score"] >= self.min_capability_threshold
         ]
         fallback_mode = False
         if above_threshold:
             eligible = above_threshold
         else:
-            domain_matched = [
-                item for item in eligible if item["breakdown"]["domain_matched"]
-            ]
+            domain_matched = [item for item in eligible if item["breakdown"]["domain_matched"]]
             if domain_matched:
                 eligible = domain_matched
                 fallback_mode = True
@@ -135,11 +129,7 @@ class SchedulerV1:
         latency_score = _clamp(1 - min(agent_profile.cost["avg_latency_ms"] / 10_000, 1))
         load_score = _clamp(1 - min(current_load / 10, 1))
         score = _clamp(
-            capability_score * 0.40
-            + success_rate * 0.30
-            + confidence * 0.15
-            + latency_score * 0.10
-            + load_score * 0.05
+            capability_score * 0.40 + success_rate * 0.30 + confidence * 0.15 + latency_score * 0.10 + load_score * 0.05
         )
 
         attempted = agent_id in attempted_agents
@@ -147,10 +137,7 @@ class SchedulerV1:
         healthy = agent_profile.health.healthy or recovery_probe
         retry_budget_available = attempt_count < self.max_retries
         eligible = not attempted and healthy and retry_budget_available
-        domain_matched = any(
-            capability.domain == task_requirements.domain
-            for capability in agent_profile.capabilities
-        )
+        domain_matched = any(capability.domain == task_requirements.domain for capability in agent_profile.capabilities)
 
         return {
             "agent_id": agent_id,

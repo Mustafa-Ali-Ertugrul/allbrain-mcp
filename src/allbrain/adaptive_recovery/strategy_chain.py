@@ -77,7 +77,7 @@ class StrategyChain:
             strategies = self._apply_memory_bias(strategies, fault_type, memory)
 
         # Clamp to max chain length
-        strategies = strategies[:self._max]
+        strategies = strategies[: self._max]
 
         steps: list[RecoveryStep] = []
         cid = _chain_id(fault_id, fault_type)
@@ -88,13 +88,15 @@ class StrategyChain:
                 if c.strategy == strategy:
                     conf = max(0.0, min(1.0, c.confidence))
                     break
-            steps.append(RecoveryStep(
-                strategy=strategy,
-                order=order,
-                confidence=conf,
-                fault_id=fault_id,
-                chain_id=cid,
-            ))
+            steps.append(
+                RecoveryStep(
+                    strategy=strategy,
+                    order=order,
+                    confidence=conf,
+                    fault_id=fault_id,
+                    chain_id=cid,
+                )
+            )
 
         return RecoveryChain(
             chain_id=cid,

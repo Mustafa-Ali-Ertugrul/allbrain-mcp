@@ -18,8 +18,30 @@ class E:
 class TestReplay:
     def test_round_trip(self):
         events = [
-            E(EventType.AGENT_VOTE_CAST.value, "1", make_vote_payload(agent_id="a", candidate_id="c1", context_key="ctx", confidence=1.0, reputation=1.0, calibrated_trust=1.0)),
-            E(EventType.AGENT_VOTE_CAST.value, "2", make_vote_payload(agent_id="b", candidate_id="c1", context_key="ctx", confidence=0.5, reputation=0.5, calibrated_trust=0.5)),
+            E(
+                EventType.AGENT_VOTE_CAST.value,
+                "1",
+                make_vote_payload(
+                    agent_id="a",
+                    candidate_id="c1",
+                    context_key="ctx",
+                    confidence=1.0,
+                    reputation=1.0,
+                    calibrated_trust=1.0,
+                ),
+            ),
+            E(
+                EventType.AGENT_VOTE_CAST.value,
+                "2",
+                make_vote_payload(
+                    agent_id="b",
+                    candidate_id="c1",
+                    context_key="ctx",
+                    confidence=0.5,
+                    reputation=0.5,
+                    calibrated_trust=0.5,
+                ),
+            ),
         ]
         result = EventReplayEngine().replay(events)
         final = result["final_state"]
@@ -29,7 +51,18 @@ class TestReplay:
 
     def test_replay_equality(self):
         events = [
-            E(EventType.AGENT_VOTE_CAST.value, "1", make_vote_payload(agent_id="x", candidate_id="c", context_key="ctx", confidence=0.8, reputation=0.7, calibrated_trust=0.9)),
+            E(
+                EventType.AGENT_VOTE_CAST.value,
+                "1",
+                make_vote_payload(
+                    agent_id="x",
+                    candidate_id="c",
+                    context_key="ctx",
+                    confidence=0.8,
+                    reputation=0.7,
+                    calibrated_trust=0.9,
+                ),
+            ),
         ]
         r1 = EventReplayEngine().replay(events)
         r2 = EventReplayEngine().replay(events)

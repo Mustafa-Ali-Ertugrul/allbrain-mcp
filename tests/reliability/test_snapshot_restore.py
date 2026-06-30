@@ -7,8 +7,14 @@ from tests.test_sprint12_memory_policy_ui import events, make_context, save_even
 
 
 def seed(context) -> list[EventRead]:
-    assert save_event_impl(context, type=EventType.TASK_CREATED.value, payload={"task_id": "t1", "workflow_id": "wf1", "goal": "Build"}).ok
-    assert save_event_impl(context, type=EventType.TASK_ASSIGNED.value, payload={"task_id": "t1", "workflow_id": "wf1", "agent_id": "builder"}).ok
+    assert save_event_impl(
+        context, type=EventType.TASK_CREATED.value, payload={"task_id": "t1", "workflow_id": "wf1", "goal": "Build"}
+    ).ok
+    assert save_event_impl(
+        context,
+        type=EventType.TASK_ASSIGNED.value,
+        payload={"task_id": "t1", "workflow_id": "wf1", "agent_id": "builder"},
+    ).ok
     return events(context)
 
 

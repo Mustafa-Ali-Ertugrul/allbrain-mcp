@@ -7,18 +7,10 @@ from allbrain.failure_memory.model import FAILURE_MEMORY_TEMPLATE_VERSION
 MEMORY_STORED_KEYS: frozenset[str] = frozenset(
     {"fault_type", "strategy", "success", "severity", "occurred_at", "failure_count"}
 )
-MEMORY_RETRIEVED_KEYS: frozenset[str] = frozenset(
-    {"fault_type", "total_records", "experience_count"}
-)
-PATTERN_DETECTED_KEYS: frozenset[str] = frozenset(
-    {"fault_type", "strategy", "success_rate", "attempts", "severity"}
-)
-EXPERIENCE_UPDATED_KEYS: frozenset[str] = frozenset(
-    {"fault_type", "strategy", "success_rate", "attempts"}
-)
-LEARNING_APPLIED_KEYS: frozenset[str] = frozenset(
-    {"fault_type", "strategy", "bias_value"}
-)
+MEMORY_RETRIEVED_KEYS: frozenset[str] = frozenset({"fault_type", "total_records", "experience_count"})
+PATTERN_DETECTED_KEYS: frozenset[str] = frozenset({"fault_type", "strategy", "success_rate", "attempts", "severity"})
+EXPERIENCE_UPDATED_KEYS: frozenset[str] = frozenset({"fault_type", "strategy", "success_rate", "attempts"})
+LEARNING_APPLIED_KEYS: frozenset[str] = frozenset({"fault_type", "strategy", "bias_value"})
 
 
 def validate_failure_memory_stored(p: dict[str, Any]) -> None:

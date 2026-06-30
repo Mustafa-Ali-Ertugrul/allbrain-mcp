@@ -70,7 +70,9 @@ class DecisionEngine:
             analysis_id=analysis_id,
         )
 
-    def _run_debug(self, ctx: DecisionContext, *, episodes: tuple | None = None, concepts: tuple | None = None) -> DecisionResult:
+    def _run_debug(
+        self, ctx: DecisionContext, *, episodes: tuple | None = None, concepts: tuple | None = None
+    ) -> DecisionResult:
         """DEBUG mode: full trace with all 4 backends compared.
 
         Refinement #3: read-only dry-run. No events emitted.

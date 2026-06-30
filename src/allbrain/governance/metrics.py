@@ -42,7 +42,9 @@ class GovernanceMetrics:
             "trajectory_deviation_index": round(1.0 - _average(trajectory_scores, 1.0), 6),
             "autonomy_expansion_velocity": _velocity(autonomy_levels),
             "rejected_mutation_ratio": round(counts["reject_expansion"] / total, 6),
-            "constrained_mutation_ratio": round((counts["approve_with_constraints"] + counts["partial_approval"]) / total, 6),
+            "constrained_mutation_ratio": round(
+                (counts["approve_with_constraints"] + counts["partial_approval"]) / total, 6
+            ),
             "constitutional_violation_frequency": constitutional_violations,
             "system_identity_stability_score": _average(identity_scores, 1.0),
             "decision_counts": dict(sorted(counts.items())),

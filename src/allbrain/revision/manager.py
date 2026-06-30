@@ -215,11 +215,7 @@ class RevisionManager:
         analysis_id: str | None = None,
     ) -> RevisionState:
         ordered = canonical_event_sort(events)
-        all_event_ids = {
-            str(getattr(e, "id", ""))
-            for e in ordered
-            if getattr(e, "id", "")
-        }
+        all_event_ids = {str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")}
 
         last_payload: dict | None = None
         checkpoint_index = -1
@@ -268,7 +264,7 @@ class RevisionManager:
             )
 
         baseline = float(last_payload["new_confidence"])
-        trailing = ordered[checkpoint_index + 1:]
+        trailing = ordered[checkpoint_index + 1 :]
 
         contradiction_count = 0
         last_uncertainty = 0.0

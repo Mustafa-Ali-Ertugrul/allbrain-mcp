@@ -41,16 +41,18 @@ def test_drift_count_from_event_log():
         ),
     ]
     for idx in range(3):
-        events.append(MockEvent(
-            EventType.BELIEF_DRIFT_DETECTED.value,
-            id=str(10 + idx),
-            payload=make_drift_payload(
-                context_key="default",
-                belief_before=0.5,
-                belief_after=0.7,
-                reason="trust_shift",
-            ),
-        ))
+        events.append(
+            MockEvent(
+                EventType.BELIEF_DRIFT_DETECTED.value,
+                id=str(10 + idx),
+                payload=make_drift_payload(
+                    context_key="default",
+                    belief_before=0.5,
+                    belief_after=0.7,
+                    reason="trust_shift",
+                ),
+            )
+        )
 
     manager = RevisionManager()
     state = manager.query(events)

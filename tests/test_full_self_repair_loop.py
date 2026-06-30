@@ -49,8 +49,10 @@ class TestFullSelfRepairLoop:
             validation_gate=ValidationGate(min_stability=0.95),
             snapshot_manager=PolicySnapshotManager(),
         )
+
         def bad_provider(strategy, pre_risk, urgency):
             return (min(1.0, pre_risk + 0.30), False, 0.0)
+
         mgr._outcome_tracker.set_provider(bad_provider)
         all_evs = []
         for i in range(20):
@@ -73,7 +75,8 @@ class TestFullSelfRepairLoop:
         )
         for i in range(10):
             mgr.run_cycle(
-                fault_id="g" + str(i), fault_type="timeout",
+                fault_id="g" + str(i),
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", 0.85, 5)],
             )
         for _ in range(5):
@@ -82,18 +85,23 @@ class TestFullSelfRepairLoop:
             mgr._health_monitor.check(
                 "timeout",
                 mgr._validation_gate.compute_stability(
-                    fault_type="timeout", version=1,
+                    fault_type="timeout",
+                    version=1,
                     all_stats=mgr._learning_engine.stats,
-                    drift_events_recent=0, safety_violations=0,
+                    drift_events_recent=0,
+                    safety_violations=0,
                 ),
             )
+
         def bad_provider(strategy, pre_risk, urgency):
             return (min(1.0, pre_risk + 0.30), False, 0.0)
+
         mgr._outcome_tracker.set_provider(bad_provider)
         all_evs = []
         for i in range(16):
             r = mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="timeout",
+                fault_id="f" + str(i),
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", 0.85, 5)],
             )
             all_evs.extend(r["events"])
@@ -113,7 +121,8 @@ class TestFullSelfRepairLoop:
         )
         for i in range(10):
             mgr.run_cycle(
-                fault_id="g" + str(i), fault_type="timeout",
+                fault_id="g" + str(i),
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", 0.85, 5)],
             )
         for _ in range(5):
@@ -122,18 +131,23 @@ class TestFullSelfRepairLoop:
             mgr._health_monitor.check(
                 "timeout",
                 mgr._validation_gate.compute_stability(
-                    fault_type="timeout", version=1,
+                    fault_type="timeout",
+                    version=1,
                     all_stats=mgr._learning_engine.stats,
-                    drift_events_recent=0, safety_violations=0,
+                    drift_events_recent=0,
+                    safety_violations=0,
                 ),
             )
+
         def bad_provider(strategy, pre_risk, urgency):
             return (min(1.0, pre_risk + 0.30), False, 0.0)
+
         mgr._outcome_tracker.set_provider(bad_provider)
         all_evs = []
         for i in range(5):
             r = mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="timeout",
+                fault_id="f" + str(i),
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", 0.85, 5)],
             )
             all_evs.extend(r["events"])
@@ -154,7 +168,8 @@ class TestFullSelfRepairLoop:
         )
         for i in range(10):
             mgr.run_cycle(
-                fault_id="g" + str(i), fault_type="timeout",
+                fault_id="g" + str(i),
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", 0.85, 5)],
             )
         for _ in range(5):
@@ -163,18 +178,23 @@ class TestFullSelfRepairLoop:
             mgr._health_monitor.check(
                 "timeout",
                 mgr._validation_gate.compute_stability(
-                    fault_type="timeout", version=1,
+                    fault_type="timeout",
+                    version=1,
                     all_stats=mgr._learning_engine.stats,
-                    drift_events_recent=0, safety_violations=0,
+                    drift_events_recent=0,
+                    safety_violations=0,
                 ),
             )
+
         def bad_provider(strategy, pre_risk, urgency):
             return (min(1.0, pre_risk + 0.30), False, 0.0)
+
         mgr._outcome_tracker.set_provider(bad_provider)
         rollback_count = 0
         for i in range(10):
             r = mgr.run_cycle(
-                fault_id="f" + str(i), fault_type="timeout",
+                fault_id="f" + str(i),
+                fault_type="timeout",
                 signals=[RiskSignal("retry_spike", 0.85, 5)],
             )
             for e in r["events"]:
@@ -228,8 +248,10 @@ class TestFullSelfRepairLoop:
         ev = FakeEvent()
         ev.id, ev.type = "e1", EventType.POLICY_SNAPSHOTTED.value
         ev.payload = {
-            "snapshot_id": "s1", "fault_type": "timeout",
-            "policy_version": 1, "stability_score": 0.80,
+            "snapshot_id": "s1",
+            "fault_type": "timeout",
+            "policy_version": 1,
+            "stability_score": 0.80,
         }
         reducer.apply(ev)
         snap = reducer.snapshot()

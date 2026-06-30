@@ -26,6 +26,7 @@ def make_context(tmp_path: Path, *, active: bool = True) -> BrainContext:
 
 # --- Validation errors are user-visible ---
 
+
 def test_validation_error_visible_to_user(tmp_path: Path) -> None:
     """Pydantic ValidationError should show field info to the user."""
     context = make_context(tmp_path)
@@ -60,6 +61,7 @@ def test_oversized_payload_rejected(tmp_path: Path) -> None:
 
 # --- UserInputError is user-visible ---
 
+
 def test_user_input_error_visible_to_user(tmp_path: Path) -> None:
     """UserInputError should show the message to the user."""
     context = make_context(tmp_path)
@@ -79,6 +81,7 @@ def test_user_input_error_visible_to_user(tmp_path: Path) -> None:
 
 
 # --- Internal error masking ---
+
 
 def test_internal_error_masked(tmp_path: Path, monkeypatch) -> None:
     """Internal (non-ValidationError, non-UserInputError) must be masked."""

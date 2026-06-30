@@ -18,7 +18,11 @@ class TeamRegistry:
         return self.teams.get(name)
 
     def find_by_capability(self, capability: str) -> list[dict[str, Any]]:
-        return [team.to_dict() for team in sorted(self.teams.values(), key=lambda item: item.name) if capability in team.capabilities]
+        return [
+            team.to_dict()
+            for team in sorted(self.teams.values(), key=lambda item: item.name)
+            if capability in team.capabilities
+        ]
 
     def to_dict(self) -> dict[str, Any]:
         return {name: team.to_dict() for name, team in sorted(self.teams.items())}

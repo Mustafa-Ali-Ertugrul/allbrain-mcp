@@ -26,20 +26,28 @@ class TradeoffReducer:
         if not isinstance(payload, dict):
             return
         if et == EventType.TRADEOFF_ANALYZED.value:
-            try: validate_tradeoff_analyzed(payload)
-            except ValueError: return
+            try:
+                validate_tradeoff_analyzed(payload)
+            except ValueError:
+                return
             self._tradeoffs.append(payload)
             self._total_tradeoffs += 1
         elif et == EventType.UTILITY_COMPUTED.value:
-            try: validate_utility_computed(payload)
-            except ValueError: return
+            try:
+                validate_utility_computed(payload)
+            except ValueError:
+                return
             self._utilities.append(payload)
             self._total_utilities += 1
 
     def snapshot(self) -> dict[str, Any]:
-        return {"tradeoffs": list(self._tradeoffs), "utilities": list(self._utilities),
-                "total_tradeoffs": self._total_tradeoffs, "total_utilities": self._total_utilities,
-                "version": TRADEOFF_ENGINE_TEMPLATE_VERSION}
+        return {
+            "tradeoffs": list(self._tradeoffs),
+            "utilities": list(self._utilities),
+            "total_tradeoffs": self._total_tradeoffs,
+            "total_utilities": self._total_utilities,
+            "version": TRADEOFF_ENGINE_TEMPLATE_VERSION,
+        }
 
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
         return {"default": self.snapshot()}

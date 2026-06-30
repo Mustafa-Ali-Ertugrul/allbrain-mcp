@@ -21,7 +21,9 @@ class CollaborationMetrics:
             "delegation_count": counts["delegation_created"],
             "delegation_success_rate": round(delegation_successes / delegation_total, 6) if delegation_total else 0.0,
             "negotiation_count": counts["negotiation_started"],
-            "negotiation_success_rate": round(negotiation_successes / negotiation_total, 6) if negotiation_total else 0.0,
+            "negotiation_success_rate": round(negotiation_successes / negotiation_total, 6)
+            if negotiation_total
+            else 0.0,
             "consensus_participation": dict(sorted(votes_by_agent.items())),
             "team_efficiency": _team_efficiency(events),
             "supervisor_effectiveness": _supervisor_effectiveness(events),

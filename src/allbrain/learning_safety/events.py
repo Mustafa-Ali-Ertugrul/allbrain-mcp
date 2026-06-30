@@ -4,16 +4,32 @@ from typing import Any
 
 from allbrain.learning_safety.model import LEARNING_SAFETY_TEMPLATE_VERSION
 
-EXPLORATION_KEYS: frozenset[str] = frozenset({
-    "fault_type", "signal_type", "epsilon",
-    "selected_strategy", "was_exploration",
-})
-SIMULATION_WEIGHT_CAPPED_KEYS: frozenset[str] = frozenset({
-    "fault_type", "simulation_weight", "real_weight", "is_real_provider_set",
-})
-DRIFT_DETECTED_KEYS: frozenset[str] = frozenset({
-    "fault_type", "signal_type", "metric_value", "threshold", "details",
-})
+EXPLORATION_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "signal_type",
+        "epsilon",
+        "selected_strategy",
+        "was_exploration",
+    }
+)
+SIMULATION_WEIGHT_CAPPED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "simulation_weight",
+        "real_weight",
+        "is_real_provider_set",
+    }
+)
+DRIFT_DETECTED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "signal_type",
+        "metric_value",
+        "threshold",
+        "details",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:
@@ -29,7 +45,10 @@ def _check_str(v: Any, label: str) -> str:
 
 
 def _check_float_in_range(
-    v: Any, label: str, lo: float = 0.0, hi: float = 1.0,
+    v: Any,
+    label: str,
+    lo: float = 0.0,
+    hi: float = 1.0,
 ) -> float:
     if not isinstance(v, (int, float)):
         raise ValueError(f"{label} must be numeric, got {type(v).__name__}")

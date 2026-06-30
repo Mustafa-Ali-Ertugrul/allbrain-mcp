@@ -82,14 +82,17 @@ class SemanticManager:
                     self._time - match.last_activated if match.last_activated is not None else 0
                 ),
             )
-            self._replace_concept(match.concept_id, SemanticConcept(
-                concept_id=match.concept_id,
-                pattern_signature=new_signature,
-                episodes=new_episodes,
-                confidence=new_confidence,
-                retrieval_count=match.retrieval_count + 1,
-                last_activated=self._time,
-            ))
+            self._replace_concept(
+                match.concept_id,
+                SemanticConcept(
+                    concept_id=match.concept_id,
+                    pattern_signature=new_signature,
+                    episodes=new_episodes,
+                    confidence=new_confidence,
+                    retrieval_count=match.retrieval_count + 1,
+                    last_activated=self._time,
+                ),
+            )
             result["concept_updated"] = match.concept_id
 
         else:
@@ -117,20 +120,14 @@ class SemanticManager:
 
         # Apply decay to all concepts not activated this cycle
         self._concepts = apply_decay_to_all(self._concepts, self._time, decay_rate=CONFIDENCE_DECAY_RATE)
-        decayed_ids = [
-            c.concept_id for c in self._concepts
-            if c.last_activated is not None and c.confidence < 0.05
-        ]
+        decayed_ids = [c.concept_id for c in self._concepts if c.last_activated is not None and c.confidence < 0.05]
         result["decayed"] = decayed_ids
 
         # Trim to capacity
         self._concepts, forgotten_ids = trim_to_capacity(self._concepts, max_concepts=MAX_CONCEPTS)
         if forgotten_ids:
             self._forgotten += len(forgotten_ids)
-            result["forgotten"] = [
-                {"concept_id": fid, "reason": EVICTION_REASON_CAPACITY}
-                for fid in forgotten_ids
-            ]
+            result["forgotten"] = [{"concept_id": fid, "reason": EVICTION_REASON_CAPACITY} for fid in forgotten_ids]
         self._retained = len(self._concepts)
 
         return result
@@ -149,14 +146,17 @@ class SemanticManager:
 
         # Update retrieval metadata on matched concepts
         for concept, _ in matched:
-            self._replace_concept(concept.concept_id, SemanticConcept(
-                concept_id=concept.concept_id,
-                pattern_signature=concept.pattern_signature,
-                episodes=concept.episodes,
-                confidence=concept.confidence,
-                retrieval_count=concept.retrieval_count + 1,
-                last_activated=self._time,
-            ))
+            self._replace_concept(
+                concept.concept_id,
+                SemanticConcept(
+                    concept_id=concept.concept_id,
+                    pattern_signature=concept.pattern_signature,
+                    episodes=concept.episodes,
+                    confidence=concept.confidence,
+                    retrieval_count=concept.retrieval_count + 1,
+                    last_activated=self._time,
+                ),
+            )
 
         best_overlap = matched[0][1] if matched else 0.0
         return {

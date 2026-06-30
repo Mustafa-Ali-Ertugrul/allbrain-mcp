@@ -35,7 +35,7 @@ class TestEntropy:
         decay = 0.95
         assert entropy_decay(eps0, decay, 0) == pytest.approx(0.10)
         assert entropy_decay(eps0, decay, 1) == pytest.approx(0.095)
-        assert entropy_decay(eps0, decay, 10) == pytest.approx(0.10 * 0.95 ** 10)
+        assert entropy_decay(eps0, decay, 10) == pytest.approx(0.10 * 0.95**10)
 
     def test_calculator_current_epsilon(self):
         calc = EntropyCalculator(base_epsilon=0.20, decay_rate=0.90)

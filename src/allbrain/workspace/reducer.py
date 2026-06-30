@@ -57,8 +57,12 @@ class WorkspaceReducer:
             self._evicted_count += 1
 
     def snapshot(self) -> dict[str, dict[str, Any]]:
-        return {"active": dict(self._active), "capacity": self._capacity,
-                "seen": self._seen_count, "evicted": self._evicted_count}
+        return {
+            "active": dict(self._active),
+            "capacity": self._capacity,
+            "seen": self._seen_count,
+            "evicted": self._evicted_count,
+        }
 
     def all_snapshots(self) -> dict[str, dict[str, dict[str, Any]]]:
         return {"default": self.snapshot()}

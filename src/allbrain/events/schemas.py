@@ -467,6 +467,3 @@ SemanticEventType = {
     EventType.ALIGNMENT_FAILED,
     EventType.OBJECTIVE_REBALANCED,
 }
-
-
-

@@ -1,4 +1,5 @@
 """Domain module: intents."""
+
 from __future__ import annotations
 
 import logging
@@ -36,7 +37,9 @@ def extract_intents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             tool_args={"limit": data.limit},
             session_id=bound_session_id,
         )
-        return ToolResult(ok=True, data={"intents": [intent.model_dump(mode="json") for intent in intents], "count": len(intents)})
+        return ToolResult(
+            ok=True, data={"intents": [intent.model_dump(mode="json") for intent in intents], "count": len(intents)}
+        )
     except ValidationError as exc:
         return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
     except UserInputError as exc:

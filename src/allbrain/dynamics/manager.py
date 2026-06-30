@@ -54,18 +54,24 @@ class CapabilityDynamicsManager:
                 last_trend_label = str(payload.get("label", last_trend_label))
 
         drift = detect_drift(
-            agent_id=agent_id, task_type=task_type,
-            scores=scores, observation_count=obs_count,
+            agent_id=agent_id,
+            task_type=task_type,
+            scores=scores,
+            observation_count=obs_count,
             event_ids=event_ids,
         )
         trend = classify_trend(
-            agent_id=agent_id, task_type=task_type,
-            scores=scores, last_label=last_trend_label,
+            agent_id=agent_id,
+            task_type=task_type,
+            scores=scores,
+            last_label=last_trend_label,
             event_ids=event_ids,
         )
         forecast = predict(
-            agent_id=agent_id, task_type=task_type,
-            scores=scores, horizon=horizon,
+            agent_id=agent_id,
+            task_type=task_type,
+            scores=scores,
+            horizon=horizon,
             event_ids=event_ids,
         )
 

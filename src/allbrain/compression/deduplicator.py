@@ -21,8 +21,6 @@ class EventDeduplicator:
 
         retained_ids = {event.id for event in last_file_event.values()}
         compressed = [
-            event
-            for event in events
-            if event.type != EventType.FILE_MODIFIED.value or event.id in retained_ids
+            event for event in events if event.type != EventType.FILE_MODIFIED.value or event.id in retained_ids
         ]
         return compressed

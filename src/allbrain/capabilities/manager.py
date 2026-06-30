@@ -46,15 +46,21 @@ class CapabilityManager:
 
         if not matches:
             return CapabilityState(
-                agent_id=agent_id, capability_count=0, task_type=task_type,
-                match_score=0.0, match_kind="none",
+                agent_id=agent_id,
+                capability_count=0,
+                task_type=task_type,
+                match_score=0.0,
+                match_kind="none",
                 analysis_id=analysis_id or _stable_capability_id(agent_id, evidence),
             )
         best_score = max(s[0] for s in matches)
         best_kind = next((s[1] for s in matches if s[0] == best_score), "none")
         return CapabilityState(
-            agent_id=agent_id, capability_count=len(matches),
-            task_type=task_type, match_score=best_score, match_kind=best_kind,
+            agent_id=agent_id,
+            capability_count=len(matches),
+            task_type=task_type,
+            match_score=best_score,
+            match_kind=best_kind,
             analysis_id=analysis_id or _stable_capability_id(agent_id, evidence),
         )
 

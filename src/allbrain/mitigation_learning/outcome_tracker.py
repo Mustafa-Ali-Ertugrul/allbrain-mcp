@@ -46,7 +46,9 @@ class OutcomeTracker:
         """Measure post-execution state and return OutcomeRecord."""
         if self._provider is not None:
             post_risk, failure_prevented, stability_delta = self._provider(
-                strategy, pre_risk, urgency,
+                strategy,
+                pre_risk,
+                urgency,
             )
         else:
             base_eff = STRATEGY_BASE_EFFECTIVENESS.get(strategy, 0.30)
@@ -56,9 +58,7 @@ class OutcomeTracker:
             stability_delta = _clamp(pre_risk - post_risk)
 
         risk_delta = pre_risk - post_risk
-        outcome_id = hashlib.sha256(
-            f"{fault_id}|{plan_id}|{strategy}|{pre_risk:.6f}".encode()
-        ).hexdigest()[:16]
+        outcome_id = hashlib.sha256(f"{fault_id}|{plan_id}|{strategy}|{pre_risk:.6f}".encode()).hexdigest()[:16]
 
         return OutcomeRecord(
             outcome_id=outcome_id,

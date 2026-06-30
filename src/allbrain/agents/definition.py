@@ -153,9 +153,7 @@ class AgentDefinition:
             name=str(data.get("name", data["id"])),
             version=str(data.get("version", "1.0.0")),
             provider=AgentProvider(data.get("provider", "custom")),
-            capabilities=tuple(
-                AgentCapability.from_dict(c) for c in data.get("capabilities", [])
-            ),
+            capabilities=tuple(AgentCapability.from_dict(c) for c in data.get("capabilities", [])),
             cost=AgentCost.from_dict(data.get("cost", {})),
             latency_profile=LatencyProfile.from_dict(data.get("latency_profile", {})),
             max_context_tokens=int(data.get("max_context_tokens", 100_000)),

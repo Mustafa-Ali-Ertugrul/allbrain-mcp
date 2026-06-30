@@ -1,4 +1,5 @@
 """Unit tests for the sliding-window rate limiter."""
+
 import time
 
 import pytest

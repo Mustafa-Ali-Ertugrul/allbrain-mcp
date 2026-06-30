@@ -1,4 +1,5 @@
 """Domain module: task management tools."""
+
 from __future__ import annotations
 
 import logging
@@ -348,7 +349,9 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str,
         depends_on: str,
     ) -> dict[str, Any]:
-        result = add_task_dependency_impl(context, task_id=task_id, depends_on=depends_on, project_path=context.project_path)
+        result = add_task_dependency_impl(
+            context, task_id=task_id, depends_on=depends_on, project_path=context.project_path
+        )
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -357,7 +360,9 @@ def register_tools(mcp, context: BrainContext) -> None:
         new: int,
         old: int | None = None,
     ) -> dict[str, Any]:
-        result = change_task_priority_impl(context, task_id=task_id, old=old, new=new, project_path=context.project_path)
+        result = change_task_priority_impl(
+            context, task_id=task_id, old=old, new=new, project_path=context.project_path
+        )
         return result.model_dump(mode="json")
 
     @mcp.tool

@@ -1,4 +1,5 @@
 """Domain module: decisions."""
+
 from __future__ import annotations
 
 import logging

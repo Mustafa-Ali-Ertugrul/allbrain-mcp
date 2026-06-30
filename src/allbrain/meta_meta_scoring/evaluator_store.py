@@ -27,10 +27,7 @@ class EvaluatorStore:
         sub[profile.fault_type] = self._clamp(profile)
 
     def all_profiles(self) -> dict[str, dict[str, dict[str, Any]]]:
-        return {
-            eid: {ft: p.to_dict() for ft, p in m.items()}
-            for eid, m in self._profiles.items()
-        }
+        return {eid: {ft: p.to_dict() for ft, p in m.items()} for eid, m in self._profiles.items()}
 
     @staticmethod
     def _clamp(profile: EvaluatorProfile) -> EvaluatorProfile:

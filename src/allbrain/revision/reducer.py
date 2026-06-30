@@ -118,9 +118,7 @@ class RevisionReducer:
                 return
             if not isinstance(outcome, bool):
                 return
-            self._calibration_samples.setdefault(context_key, []).append(
-                (float(predicted), bool(outcome))
-            )
+            self._calibration_samples.setdefault(context_key, []).append((float(predicted), bool(outcome)))
             return
 
         if event_type == EventType.BELIEF_DRIFT_DETECTED.value and isinstance(payload, dict):
@@ -230,8 +228,7 @@ class RevisionReducer:
 
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
         return {
-            context_key: self._state_to_dict(self.snapshot(context_key=context_key))
-            for context_key in self._contexts
+            context_key: self._state_to_dict(self.snapshot(context_key=context_key)) for context_key in self._contexts
         }
 
     def known_context_keys(self) -> set[str]:

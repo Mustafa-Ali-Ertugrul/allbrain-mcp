@@ -19,10 +19,37 @@ class E:
 class TestReplay:
     def test_round_trip(self):
         from allbrain.replay import EventReplayEngine
+
         engine = EventReplayEngine()
         events = [
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_payload(agent_id="a", task_id="t1", success=True, confidence=1.0, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="x")),
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "2", make_payload(agent_id="b", task_id="t2", success=False, confidence=0.0, duration_ms=0, retry_count=5, reputation_score=0.0, analysis_id="y")),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "1",
+                make_payload(
+                    agent_id="a",
+                    task_id="t1",
+                    success=True,
+                    confidence=1.0,
+                    duration_ms=0,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="x",
+                ),
+            ),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "2",
+                make_payload(
+                    agent_id="b",
+                    task_id="t2",
+                    success=False,
+                    confidence=0.0,
+                    duration_ms=0,
+                    retry_count=5,
+                    reputation_score=0.0,
+                    analysis_id="y",
+                ),
+            ),
         ]
         result = engine.replay(events)
         final = result["final_state"]
@@ -33,9 +60,23 @@ class TestReplay:
 
     def test_replay_equality(self):
         from allbrain.replay import EventReplayEngine
+
         engine = EventReplayEngine()
         events = [
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_payload(agent_id="x", task_id="t", success=True, confidence=0.8, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="a")),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "1",
+                make_payload(
+                    agent_id="x",
+                    task_id="t",
+                    success=True,
+                    confidence=0.8,
+                    duration_ms=0,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="a",
+                ),
+            ),
         ]
         result1 = engine.replay(events)
         result2 = engine.replay(events)
@@ -43,6 +84,7 @@ class TestReplay:
 
     def test_replay_with_no_events(self):
         from allbrain.replay import EventReplayEngine
+
         engine = EventReplayEngine()
         result = engine.replay([])
         assert "reputation" in result["final_state"]
@@ -50,10 +92,24 @@ class TestReplay:
 
     def test_replay_preserves_other_projections(self):
         from allbrain.replay import EventReplayEngine
+
         engine = EventReplayEngine()
         events = [
             E(EventType.TASK_CREATED.value, "0", {"task_id": "t", "goal": "x"}),
-            E(EventType.AGENT_REPUTATION_UPDATED.value, "1", make_payload(agent_id="a", task_id="t", success=True, confidence=1.0, duration_ms=0, retry_count=0, reputation_score=0.0, analysis_id="x")),
+            E(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                "1",
+                make_payload(
+                    agent_id="a",
+                    task_id="t",
+                    success=True,
+                    confidence=1.0,
+                    duration_ms=0,
+                    retry_count=0,
+                    reputation_score=0.0,
+                    analysis_id="x",
+                ),
+            ),
         ]
         result = engine.replay(events)
         final = result["final_state"]

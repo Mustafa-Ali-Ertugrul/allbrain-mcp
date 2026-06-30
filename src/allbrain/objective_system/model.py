@@ -57,14 +57,23 @@ class ObjectiveWeights:
     version: int = 1
 
     def to_dict(self) -> dict[str, float]:
-        return {"safety": self.safety, "stability": self.stability, "success": self.success, "efficiency": self.efficiency}
+        return {
+            "safety": self.safety,
+            "stability": self.stability,
+            "success": self.success,
+            "efficiency": self.efficiency,
+        }
 
     @classmethod
     def from_dict(cls, fault_type: str, d: dict[str, Any]) -> ObjectiveWeights:
-        return cls(fault_type=fault_type,
-            safety=float(d.get("safety", 0.40)), stability=float(d.get("stability", 0.30)),
-            success=float(d.get("success", 0.20)), efficiency=float(d.get("efficiency", 0.10)),
-            version=int(d.get("version", 1)))
+        return cls(
+            fault_type=fault_type,
+            safety=float(d.get("safety", 0.40)),
+            stability=float(d.get("stability", 0.30)),
+            success=float(d.get("success", 0.20)),
+            efficiency=float(d.get("efficiency", 0.10)),
+            version=int(d.get("version", 1)),
+        )
 
 
 @dataclass(frozen=True)

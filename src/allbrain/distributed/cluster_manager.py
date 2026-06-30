@@ -12,8 +12,12 @@ class ClusterManager:
     node: NodeIdentity = field(default_factory=NodeIdentity.create)
     registry: WorkerRegistry = field(default_factory=WorkerRegistry)
 
-    def register_worker(self, worker_id: str, *, capabilities: dict[str, Any] | None = None, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
-        return self.registry.register(worker_id, node_id=self.node.node_id, capabilities=capabilities, metadata=metadata).to_dict()
+    def register_worker(
+        self, worker_id: str, *, capabilities: dict[str, Any] | None = None, metadata: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        return self.registry.register(
+            worker_id, node_id=self.node.node_id, capabilities=capabilities, metadata=metadata
+        ).to_dict()
 
     def heartbeat(self, worker_id: str) -> dict[str, Any]:
         return self.registry.heartbeat(worker_id).to_dict()

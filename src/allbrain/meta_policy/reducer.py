@@ -41,7 +41,8 @@ class MetaPolicyReducer:
             aid = str(payload["agent_id"])
             k = self._key(aid)
             self._evals[k] = {
-                "agent_id": aid, "mode": str(payload["mode"]),
+                "agent_id": aid,
+                "mode": str(payload["mode"]),
                 "exploration_rate": float(payload["exploration_rate"]),
             }
 

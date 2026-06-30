@@ -42,8 +42,12 @@ class MetaEvaluator:
 
         if len(self._score_buffer[key]) < 4:
             return MetaEvaluatorResult(
-                evaluator_id=evaluator_id, fault_type=fault_type,
-                accuracy=0.5, bias=0.0, needs_retraining=False, version=0,
+                evaluator_id=evaluator_id,
+                fault_type=fault_type,
+                accuracy=0.5,
+                bias=0.0,
+                needs_retraining=False,
+                version=0,
             )
 
         scores = list(self._score_buffer[key])
@@ -63,7 +67,9 @@ class MetaEvaluator:
 
         bias = mean_s - mean_d if mean_s > 0 else 0.0
 
-        needs_retraining = abs(accuracy) < META_EVALUATOR_ACCURACY_THRESHOLD or abs(bias) > META_EVALUATOR_BIAS_THRESHOLD
+        needs_retraining = (
+            abs(accuracy) < META_EVALUATOR_ACCURACY_THRESHOLD or abs(bias) > META_EVALUATOR_BIAS_THRESHOLD
+        )
 
         profile = self._store.get(evaluator_id, fault_type)
         profile.accuracy = profile.accuracy * 0.8 + accuracy * 0.2
@@ -71,8 +77,10 @@ class MetaEvaluator:
         self._store.set(profile)
 
         return MetaEvaluatorResult(
-            evaluator_id=evaluator_id, fault_type=fault_type,
-            accuracy=accuracy, bias=bias,
+            evaluator_id=evaluator_id,
+            fault_type=fault_type,
+            accuracy=accuracy,
+            bias=bias,
             needs_retraining=needs_retraining,
             version=profile.version,
         )

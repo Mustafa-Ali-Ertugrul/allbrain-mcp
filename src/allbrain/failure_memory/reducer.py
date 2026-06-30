@@ -52,14 +52,16 @@ class FailureMemoryReducer:
             except ValueError:
                 return
             self._total_stored += 1
-            self._records.append(FailureRecord(
-                fault_type=str(payload["fault_type"]),
-                severity=str(payload["severity"]),
-                recovery_strategy=str(payload["strategy"]),
-                success=bool(payload["success"]),
-                occurred_at=float(payload["occurred_at"]),
-                failure_count=int(payload["failure_count"]),
-            ))
+            self._records.append(
+                FailureRecord(
+                    fault_type=str(payload["fault_type"]),
+                    severity=str(payload["severity"]),
+                    recovery_strategy=str(payload["strategy"]),
+                    success=bool(payload["success"]),
+                    occurred_at=float(payload["occurred_at"]),
+                    failure_count=int(payload["failure_count"]),
+                )
+            )
 
         elif et == EventType.FAILURE_MEMORY_RETRIEVED.value:
             try:
@@ -74,13 +76,15 @@ class FailureMemoryReducer:
             except ValueError:
                 return
             self._total_patterns += 1
-            self._patterns.append(FailurePattern(
-                fault_type=str(payload["fault_type"]),
-                strategy=str(payload["strategy"]),
-                success_rate=float(payload["success_rate"]),
-                attempts=int(payload["attempts"]),
-                severity=str(payload["severity"]),
-            ))
+            self._patterns.append(
+                FailurePattern(
+                    fault_type=str(payload["fault_type"]),
+                    strategy=str(payload["strategy"]),
+                    success_rate=float(payload["success_rate"]),
+                    attempts=int(payload["attempts"]),
+                    severity=str(payload["severity"]),
+                )
+            )
 
         elif et == EventType.RECOVERY_EXPERIENCE_UPDATED.value:
             try:
@@ -88,13 +92,15 @@ class FailureMemoryReducer:
             except ValueError:
                 return
             self._total_experiences += 1
-            self._experiences.append(RecoveryExperience(
-                fault_type=str(payload["fault_type"]),
-                strategy=str(payload["strategy"]),
-                success_rate=float(payload["success_rate"]),
-                attempts=int(payload["attempts"]),
-                average_risk=0.0,
-            ))
+            self._experiences.append(
+                RecoveryExperience(
+                    fault_type=str(payload["fault_type"]),
+                    strategy=str(payload["strategy"]),
+                    success_rate=float(payload["success_rate"]),
+                    attempts=int(payload["attempts"]),
+                    average_risk=0.0,
+                )
+            )
 
         elif et == EventType.RECOVERY_LEARNING_APPLIED.value:
             try:

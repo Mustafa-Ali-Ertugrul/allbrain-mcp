@@ -21,6 +21,7 @@ from allbrain.world.transitions import LearnedTransitionBridge, StateTransitionB
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_obs(env: dict[str, str], *, obs_id: str = "obs-1") -> Any:
     """Create a mock WORLD_STATE_OBSERVED event."""
     from allbrain.models.schemas import EventRead
@@ -200,9 +201,7 @@ class TestTransitionLearner:
         events = []
         for i in range(MIN_SAMPLES):
             events.append(_make_obs({}, obs_id=f"o{i}"))
-            events.append(
-                _make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}")
-            )
+            events.append(_make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}"))
         learner = TransitionLearner()
         learner.learn(events)
 
@@ -219,15 +218,11 @@ class TestTransitionLearner:
         # 3 transitions to {"tests": "passed"}
         for i in range(3):
             events.append(_make_obs({}, obs_id=f"o{i}"))
-            events.append(
-                _make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}")
-            )
+            events.append(_make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}"))
         # 2 transitions to {"tests": "failed"}
         for i in range(3, 5):
             events.append(_make_obs({}, obs_id=f"o{i}"))
-            events.append(
-                _make_sim(f"o{i}", {"tests": "failed"}, sim_id=f"s{i}")
-            )
+            events.append(_make_sim(f"o{i}", {"tests": "failed"}, sim_id=f"s{i}"))
         learner = TransitionLearner()
         learner.learn(events)
 
@@ -244,9 +239,7 @@ class TestTransitionLearner:
         events: list[Any] = []
         for i in range(MIN_SAMPLES):
             events.append(_make_obs({}, obs_id=f"o{i}"))
-            events.append(
-                _make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}")
-            )
+            events.append(_make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}"))
         learner = TransitionLearner()
         learner.learn(events)
 
@@ -256,9 +249,7 @@ class TestTransitionLearner:
         events = []
         for i in range(MIN_SAMPLES):
             events.append(_make_obs({}, obs_id=f"o{i}"))
-            events.append(
-                _make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}")
-            )
+            events.append(_make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}"))
         learner = TransitionLearner()
         learner.learn(events)
 
@@ -270,9 +261,7 @@ class TestTransitionLearner:
         events = []
         for i in range(MIN_SAMPLES):
             events.append(_make_obs({}, obs_id=f"o{i}"))
-            events.append(
-                _make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}")
-            )
+            events.append(_make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}"))
         learner = TransitionLearner()
         learner.learn(events)
 
@@ -355,9 +344,7 @@ class TestLearnedTransitionBridge:
         events = []
         for i in range(MIN_SAMPLES):
             events.append(_make_obs({}, obs_id=f"o{i}"))
-            events.append(
-                _make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}")
-            )
+            events.append(_make_sim(f"o{i}", {"tests": "passed"}, sim_id=f"s{i}"))
         learner = TransitionLearner()
         learner.learn(events)
 
@@ -381,9 +368,7 @@ class TestLearnedTransitionBridge:
         events = []
         for i in range(MIN_SAMPLES):
             events.append(_make_obs({}, obs_id=f"o{i}"))
-            events.append(
-                _make_sim(f"o{i}", {"deployment": "running"}, sim_id=f"s{i}")
-            )
+            events.append(_make_sim(f"o{i}", {"deployment": "running"}, sim_id=f"s{i}"))
         learner = TransitionLearner()
         learner.learn(events)
 

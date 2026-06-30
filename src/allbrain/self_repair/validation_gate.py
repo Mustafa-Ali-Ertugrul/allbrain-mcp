@@ -34,30 +34,26 @@ class ValidationGate:
         drift_events_recent: int = 0,
         safety_violations: int = 0,
     ) -> StabilityReport:
-        relevant = [
-            s for s in all_stats.values() if s.fault_type == fault_type
-        ]
+        relevant = [s for s in all_stats.values() if s.fault_type == fault_type]
         if not relevant:
             return StabilityReport(
-                fault_type=fault_type, policy_version=version,
-                stability_score=0.0, success_rate=0.0,
-                drift_consistency=1.0, outcome_variance=0.0,
-                safety_violations=0, is_stable=False,
+                fault_type=fault_type,
+                policy_version=version,
+                stability_score=0.0,
+                success_rate=0.0,
+                drift_consistency=1.0,
+                outcome_variance=0.0,
+                safety_violations=0,
+                is_stable=False,
             )
 
-        avg_success_rate = (
-            sum(s.success_rate for s in relevant) / len(relevant)
-        )
+        avg_success_rate = sum(s.success_rate for s in relevant) / len(relevant)
         drift_consistency = _clamp(1.0 - drift_events_recent * 0.25)
 
-        variances = [
-            (s.success_rate - avg_success_rate) ** 2 for s in relevant
-        ]
+        variances = [(s.success_rate - avg_success_rate) ** 2 for s in relevant]
         outcome_variance = sum(variances) / len(relevant)
 
-        safety_norm = _clamp(
-            safety_violations / max(1, len(relevant))
-        )
+        safety_norm = _clamp(safety_violations / max(1, len(relevant)))
 
         stability_score = _clamp(
             0.40 * avg_success_rate

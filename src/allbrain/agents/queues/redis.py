@@ -79,10 +79,7 @@ class RedisTaskQueue(TaskQueue):
         if self._use_real:
             client = await self._get_redis()
             if client:
-                key = str(
-                    item.metadata.get("idempotency_key")
-                    or self._key_builder.queue_item_key(item)
-                )
+                key = str(item.metadata.get("idempotency_key") or self._key_builder.queue_item_key(item))
                 await client.hset(
                     f"queue:{key}",
                     mapping={"state": "queued", "payload": item.model_dump_json()},
@@ -139,7 +136,9 @@ class RedisTaskQueue(TaskQueue):
             record.lease_id = str(uuid7())
             record.leased_by = self.worker_id
             record.lease_expires_at = _now() + timedelta(seconds=self.lease_ttl_seconds)
-            record.item.metadata.update({"idempotency_key": key, "lease_id": record.lease_id, "attempts": record.attempts})
+            record.item.metadata.update(
+                {"idempotency_key": key, "lease_id": record.lease_id, "attempts": record.attempts}
+            )
             return record.item
         return None
 

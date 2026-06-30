@@ -65,7 +65,18 @@ def build_scale_dataset() -> list[EventSpec]:
     assignment_count = 0
     lifecycle_count = 0
     handoff_count = 0
-    category_cycle = ["file", "file", "file", "file", "lifecycle", "lifecycle", "assignment", "assignment", "handoff", "noise"]
+    category_cycle = [
+        "file",
+        "file",
+        "file",
+        "file",
+        "lifecycle",
+        "lifecycle",
+        "assignment",
+        "assignment",
+        "handoff",
+        "noise",
+    ]
     cursor = 0
     while sum(remaining.values()) > 0:
         category = category_cycle[cursor % len(category_cycle)]
@@ -142,11 +153,15 @@ def build_scale_dataset() -> list[EventSpec]:
 
 def _lifecycle_event(task_id: str, agent_id: str, index: int) -> EventSpec:
     if index < 500:
-        return EventSpec(EventType.TASK_STARTED.value, {"task_id": task_id, "task": f"Scale task {index % 500}"}, agent_id)
+        return EventSpec(
+            EventType.TASK_STARTED.value, {"task_id": task_id, "task": f"Scale task {index % 500}"}, agent_id
+        )
     if index < 850:
         return EventSpec(EventType.TASK_BLOCKED.value, {"task_id": task_id, "reason": "scale blocked"}, agent_id)
     if index < 1200:
-        return EventSpec(EventType.TASK_COMPLETED.value, {"task_id": task_id, "task": f"Scale task {index % 500}"}, agent_id)
+        return EventSpec(
+            EventType.TASK_COMPLETED.value, {"task_id": task_id, "task": f"Scale task {index % 500}"}, agent_id
+        )
     return EventSpec(EventType.TASK_FAILED.value, {"task_id": task_id, "reason": "scale failed"}, agent_id)
 
 

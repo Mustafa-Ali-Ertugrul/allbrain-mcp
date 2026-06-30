@@ -16,7 +16,9 @@ class TestDecisionContext:
 
     def test_partial_context(self):
         ctx = DecisionContext(
-            agent_id="a", task_type="t", contract=make_contract(dynamics=True),
+            agent_id="a",
+            task_type="t",
+            contract=make_contract(dynamics=True),
             dynamics={"drift_score": 0.1},
         )
         r = DecisionEngine().decide(ctx)

@@ -9,12 +9,16 @@ class ConflictResolver:
     def __init__(self, decision_margin: float = 0.25):
         self.decision_margin = decision_margin
 
-    def resolve(self, conflicts: list[dict[str, Any]], events: list[EventRead], agent_view: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def resolve(
+        self, conflicts: list[dict[str, Any]], events: list[EventRead], agent_view: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         events_by_id = {event.id: event for event in events}
         confidence_by_agent = {agent["agent_id"]: agent["confidence_score"] for agent in agent_view}
         resolved = []
         for conflict in conflicts:
-            evidence = [events_by_id[event_id] for event_id in conflict["evidence_event_ids"] if event_id in events_by_id]
+            evidence = [
+                events_by_id[event_id] for event_id in conflict["evidence_event_ids"] if event_id in events_by_id
+            ]
             if not evidence:
                 continue
             ranked = sorted(

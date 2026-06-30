@@ -52,9 +52,7 @@ class BetaPredictor:
         self._alphas: dict[str, float] = {}
         self._betas: dict[str, float] = {}
         self._costs: dict[str, list[float]] = defaultdict(list)
-        self._failure_contexts: dict[str, dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        self._failure_contexts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
     # ------------------------------------------------------------------
     # Learning
@@ -242,12 +240,7 @@ class BetaPredictor:
     def total_observations(self) -> int:
         _sum = 0
         for action in self._alphas:
-            _sum += (
-                self._alphas[action]
-                + self._betas[action]
-                - self._prior_alpha
-                - self._prior_beta
-            )
+            _sum += self._alphas[action] + self._betas[action] - self._prior_alpha - self._prior_beta
         return int(_sum)
 
 
@@ -299,9 +292,7 @@ class LearnedPredictionBridge:
         return None
 
     @staticmethod
-    def _compute_beta_stats(
-        alpha: float, beta: float
-    ) -> tuple[float, float, float, float]:
+    def _compute_beta_stats(alpha: float, beta: float) -> tuple[float, float, float, float]:
         """Compute (mu, risk, confidence, uncertainty) from Beta(α, β).
 
         mu         = α / (α + β)          (posterior mean)
@@ -406,6 +397,5 @@ class LearnedPredictionBridge:
     def _explanation(action: str, confidence: float) -> str:
         obs = "sufficient" if confidence >= 0.4 else "limited"
         return (
-            f"Beta-predicted {action}: posterior mean estimate "
-            f"with {obs} observations (confidence={confidence:.2f})."
+            f"Beta-predicted {action}: posterior mean estimate with {obs} observations (confidence={confidence:.2f})."
         )

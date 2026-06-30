@@ -56,9 +56,7 @@ class ContradictionDetector:
                 )
                 lifecycle_frozenset = frozenset(lifecycle_pair)
                 if shared_files and not same_goal and not self._supportive_pair(a.goal, b.goal):
-                    contradictions.append(
-                        self._contradiction(a, b, shared_files, SEVERITY_GOAL_DIVERGENCE)
-                    )
+                    contradictions.append(self._contradiction(a, b, shared_files, SEVERITY_GOAL_DIVERGENCE))
                 elif same_goal and lifecycle_frozenset in INCOMPATIBLE_LIFECYCLE:
                     contradictions.append(
                         self._contradiction(a, b, shared_files, SEVERITY_LIFECYCLE_INCOMPATIBLE_SAME_GOAL)

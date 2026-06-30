@@ -171,7 +171,9 @@ def _opencode_default() -> AgentDefinition:
         version="1.0.0",
         provider=AgentProvider.OPENCODE,
         capabilities=(
-            AgentCapability(domain="software", skills=frozenset({"implementation", "testing", "design", "review"}), weight=0.85),
+            AgentCapability(
+                domain="software", skills=frozenset({"implementation", "testing", "design", "review"}), weight=0.85
+            ),
         ),
         cost=AgentCost(avg_cost_per_call=0.0),
         latency_profile=LatencyProfile(p50_ms=5000, p95_ms=20000, p99_ms=40000),
@@ -186,9 +188,7 @@ def _codex_default() -> AgentDefinition:
         name="Codex CLI",
         version="1.0.0",
         provider=AgentProvider.CODEX,
-        capabilities=(
-            AgentCapability(domain="software", skills=frozenset({"implementation", "testing"}), weight=0.8),
-        ),
+        capabilities=(AgentCapability(domain="software", skills=frozenset({"implementation", "testing"}), weight=0.8),),
         cost=AgentCost(avg_cost_per_call=0.0),
         latency_profile=LatencyProfile(p50_ms=4500, p95_ms=18000, p99_ms=35000),
         max_context_tokens=32_000,
@@ -203,7 +203,9 @@ def _mock_default() -> AgentDefinition:
         version="1.0.0",
         provider=AgentProvider.MOCK,
         capabilities=(
-            AgentCapability(domain="software", skills=frozenset({"implementation", "testing", "design", "review"}), weight=1.0),
+            AgentCapability(
+                domain="software", skills=frozenset({"implementation", "testing", "design", "review"}), weight=1.0
+            ),
         ),
         cost=AgentCost(avg_cost_per_call=0.0),
         latency_profile=LatencyProfile(p50_ms=1, p95_ms=5, p99_ms=10),

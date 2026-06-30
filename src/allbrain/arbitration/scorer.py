@@ -12,6 +12,7 @@ from allbrain.arbitration.model import (
 
 def _stable_id(prefix: str, key: str, event_ids: Iterable[str] | None = None) -> str:
     import hashlib
+
     if event_ids is None:
         event_ids = []
     event_key = "|".join(sorted(str(eid) for eid in event_ids))

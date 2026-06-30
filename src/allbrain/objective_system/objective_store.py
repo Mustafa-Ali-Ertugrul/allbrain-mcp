@@ -32,13 +32,22 @@ class ObjectiveStore:
     @staticmethod
     def _normalize(weights: ObjectiveWeights) -> ObjectiveWeights:
         from allbrain.objective_system.model import OBJECTIVE_WEIGHT_MAX, OBJECTIVE_WEIGHT_MIN
+
         s = max(OBJECTIVE_WEIGHT_MIN, min(OBJECTIVE_WEIGHT_MAX, weights.safety))
         st = max(OBJECTIVE_WEIGHT_MIN, min(OBJECTIVE_WEIGHT_MAX, weights.stability))
         su = max(OBJECTIVE_WEIGHT_MIN, min(OBJECTIVE_WEIGHT_MAX, weights.success))
         e = max(OBJECTIVE_WEIGHT_MIN, min(OBJECTIVE_WEIGHT_MAX, weights.efficiency))
         total = s + st + su + e
         if total > 1.0:
-            s /= total; st /= total; su /= total; e /= total
-        return ObjectiveWeights(fault_type=weights.fault_type, safety=round(s,4),
-            stability=round(st,4), success=round(su,4), efficiency=round(e,4),
-            version=weights.version)
+            s /= total
+            st /= total
+            su /= total
+            e /= total
+        return ObjectiveWeights(
+            fault_type=weights.fault_type,
+            safety=round(s, 4),
+            stability=round(st, 4),
+            success=round(su, 4),
+            efficiency=round(e, 4),
+            version=weights.version,
+        )

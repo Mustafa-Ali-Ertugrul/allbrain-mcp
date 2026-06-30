@@ -67,7 +67,15 @@ class WorkspaceManager:
         self._total_evicted += len(removed)
 
         added: list[dict] = [{"item_id": new_item.item_id, "activation": activation, "source": SOURCE_DECISION}]
-        evicted: list[dict] = [{"item_id": r.item_id, "reason": EVICTION_REASON_CAPACITY if len(self._active_items) < len(self._active_items) else EVICTION_REASON_BELOW_MIN} for r in removed]
+        evicted: list[dict] = [
+            {
+                "item_id": r.item_id,
+                "reason": EVICTION_REASON_CAPACITY
+                if len(self._active_items) < len(self._active_items)
+                else EVICTION_REASON_BELOW_MIN,
+            }
+            for r in removed
+        ]
 
         return {
             "active_count": active_count,

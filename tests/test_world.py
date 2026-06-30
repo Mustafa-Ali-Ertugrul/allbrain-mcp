@@ -190,7 +190,9 @@ def test_pipeline_simulation_feeds_learning_with_world_prediction(tmp_path) -> N
 
     assert result["status"] == "COMPLETED"
     assert result["world_simulation"] is not None
-    assert result["world_simulation"]["prediction"]["success_probability"] == pytest.approx(result["execution_plan"]["predicted_success"], rel=1e-6)
+    assert result["world_simulation"]["prediction"]["success_probability"] == pytest.approx(
+        result["execution_plan"]["predicted_success"], rel=1e-6
+    )
     assert EventType.WORLD_SIMULATION_RUN.value in event_types
 
 

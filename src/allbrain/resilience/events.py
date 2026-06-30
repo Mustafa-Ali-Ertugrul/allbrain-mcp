@@ -4,19 +4,13 @@ from typing import Any
 
 from allbrain.resilience.model import RESILIENCE_TEMPLATE_VERSION
 
-ANOMALY_DETECTED_KEYS: frozenset[str] = frozenset(
-    {"fault_id", "component", "severity", "fault_type", "detected_at"}
-)
+ANOMALY_DETECTED_KEYS: frozenset[str] = frozenset({"fault_id", "component", "severity", "fault_type", "detected_at"})
 RECOVERY_PLANNED_KEYS: frozenset[str] = frozenset(
     {"plan_id", "fault_id", "strategy", "target_component", "priority", "reason"}
 )
 RECOVERY_CANCELLED_KEYS: frozenset[str] = frozenset({"plan_id", "reason"})
-SNAPSHOT_CREATED_KEYS: frozenset[str] = frozenset(
-    {"snapshot_id", "component", "created_at"}
-)
-FAILURE_ANALYZED_KEYS: frozenset[str] = frozenset(
-    {"fault_id", "root_cause", "confidence"}
-)
+SNAPSHOT_CREATED_KEYS: frozenset[str] = frozenset({"snapshot_id", "component", "created_at"})
+FAILURE_ANALYZED_KEYS: frozenset[str] = frozenset({"fault_id", "root_cause", "confidence"})
 
 VALID_SEVERITIES = {"low", "medium", "high", "critical"}
 VALID_STRATEGIES = {"retry", "rollback", "isolate", "repair"}
@@ -25,6 +19,7 @@ VALID_STRATEGIES = {"retry", "rollback", "isolate", "repair"}
 # ---------------------------------------------------------------------------
 # Validators
 # ---------------------------------------------------------------------------
+
 
 def validate_anomaly_detected(p: dict[str, Any]) -> None:
     m = ANOMALY_DETECTED_KEYS - set(p.keys())
@@ -89,6 +84,7 @@ def validate_failure_analyzed(p: dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 # Payload makers
 # ---------------------------------------------------------------------------
+
 
 def make_anomaly_detected_payload(
     *,

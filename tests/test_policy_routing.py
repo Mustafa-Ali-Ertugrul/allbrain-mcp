@@ -70,13 +70,23 @@ class TestMetaPolicyRouter:
 
     def test_all_default_families_have_strategies(self):
         from allbrain.policy_routing.model import FAMILY_STRATEGIES
+
         for ft in FamilyType:
             assert ft in FAMILY_STRATEGIES
             assert len(FAMILY_STRATEGIES[ft]) > 0
 
     def test_default_family_map_covers_expected_types(self):
-        expected = {"timeout", "retry_spike", "connection", "circuit_open",
-                     "latency_rise", "overload", "failure", "drift", "pattern"}
+        expected = {
+            "timeout",
+            "retry_spike",
+            "connection",
+            "circuit_open",
+            "latency_rise",
+            "overload",
+            "failure",
+            "drift",
+            "pattern",
+        }
         for key in expected:
             assert key in DEFAULT_FAMILY_MAP, f"Missing mapping for {key}"
 

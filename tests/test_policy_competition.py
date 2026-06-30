@@ -49,10 +49,14 @@ class TestCompetitionEngine:
         c2 = PolicyCandidate("p_low", "timeout", "log_warning", {}, 1)
         stats = {
             ("timeout", "timeout", "rate_limit"): _make_stats(
-                strategy="rate_limit", success_rate=0.9, total_uses=15,
+                strategy="rate_limit",
+                success_rate=0.9,
+                total_uses=15,
             ),
             ("timeout", "timeout", "log_warning"): _make_stats(
-                strategy="log_warning", success_rate=0.3, total_uses=5,
+                strategy="log_warning",
+                success_rate=0.3,
+                total_uses=5,
             ),
         }
         result = engine.compete([c1, c2], stats)
@@ -82,8 +86,7 @@ class TestCompetitionEngine:
     def test_multiple_candidates_ranked(self):
         engine = CompetitionEngine()
         candidates = [
-            PolicyCandidate(f"p{i}", "timeout", f"strategy_{i}", {}, 1)
-            for i in range(COMPETITION_CANDIDATE_COUNT)
+            PolicyCandidate(f"p{i}", "timeout", f"strategy_{i}", {}, 1) for i in range(COMPETITION_CANDIDATE_COUNT)
         ]
         stats = {
             ("timeout", "timeout", f"strategy_{i}"): _make_stats(
@@ -118,8 +121,11 @@ class TestCompetitionEngine:
         c = PolicyCandidate("my_id", "latency", "circuit_warmup", {"key": "val"}, 2)
         stats = {
             ("latency", "latency", "circuit_warmup"): _make_stats(
-                fault_type="latency", signal_type="latency",
-                strategy="circuit_warmup", success_rate=0.8, total_uses=20,
+                fault_type="latency",
+                signal_type="latency",
+                strategy="circuit_warmup",
+                success_rate=0.8,
+                total_uses=20,
             ),
         }
         result = engine.compete([c], stats)

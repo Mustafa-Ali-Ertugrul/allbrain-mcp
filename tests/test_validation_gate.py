@@ -9,8 +9,12 @@ from allbrain.self_repair.validation_gate import ValidationGate
 
 def _make_stats(ft, sig, strat, uses=10, succ=8, eff=0.7):
     return StrategyStats(
-        fault_type=ft, signal_type=sig, strategy=strat,
-        total_uses=uses, successes=succ, failures=uses - succ,
+        fault_type=ft,
+        signal_type=sig,
+        strategy=strat,
+        total_uses=uses,
+        successes=succ,
+        failures=uses - succ,
         avg_effectiveness=eff,
         success_rate=succ / max(uses, 1),
     )
@@ -32,8 +36,11 @@ class TestValidationGate:
             ("t", "s", "A"): _make_stats("t", "s", "A", uses=10, succ=0, eff=0.01),
         }
         result = self.gate.validate(
-            fault_type="t", version=2, all_stats=stats,
-            drift_events_recent=3, safety_violations=2,
+            fault_type="t",
+            version=2,
+            all_stats=stats,
+            drift_events_recent=3,
+            safety_violations=2,
         )
         assert not result.accepted
         assert len(result.failure_reasons) > 0
@@ -56,8 +63,11 @@ class TestValidationGate:
             ("t", "s", "A"): _make_stats("t", "s", "A", uses=10, succ=0, eff=0.0),
         }
         result = self.gate.validate(
-            fault_type="t", version=2, all_stats=stats,
-            drift_events_recent=5, safety_violations=3,
+            fault_type="t",
+            version=2,
+            all_stats=stats,
+            drift_events_recent=5,
+            safety_violations=3,
         )
         assert not result.accepted
         assert any("low_success_rate" in r for r in result.failure_reasons)
@@ -67,10 +77,16 @@ class TestValidationGate:
             ("t", "s", "A"): _make_stats("t", "s", "A", uses=10, succ=8, eff=0.7),
         }
         report_no_drift = self.gate.compute_stability(
-            fault_type="t", version=2, all_stats=stats, drift_events_recent=0,
+            fault_type="t",
+            version=2,
+            all_stats=stats,
+            drift_events_recent=0,
         )
         report_with_drift = self.gate.compute_stability(
-            fault_type="t", version=2, all_stats=stats, drift_events_recent=3,
+            fault_type="t",
+            version=2,
+            all_stats=stats,
+            drift_events_recent=3,
         )
         assert report_with_drift.stability_score < report_no_drift.stability_score
 
@@ -79,10 +95,16 @@ class TestValidationGate:
             ("t", "s", "A"): _make_stats("t", "s", "A", uses=10, succ=8, eff=0.7),
         }
         report_clean = self.gate.compute_stability(
-            fault_type="t", version=2, all_stats=stats, safety_violations=0,
+            fault_type="t",
+            version=2,
+            all_stats=stats,
+            safety_violations=0,
         )
         report_violated = self.gate.compute_stability(
-            fault_type="t", version=2, all_stats=stats, safety_violations=5,
+            fault_type="t",
+            version=2,
+            all_stats=stats,
+            safety_violations=5,
         )
         assert report_violated.stability_score < report_clean.stability_score
 

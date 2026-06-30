@@ -121,10 +121,7 @@ def test_unhealthy_agent_can_recover_after_circuit_breaker_window() -> None:
     result = scheduler.assign_task(
         task={"domain": "software", "required_skills": ["security"]},
         candidate_agents=["reviewer", "architect"],
-        metrics={
-            "reviewer": metrics("reviewer", consecutive_failures=5)
-            | {"last_failure_at": old_failure}
-        },
+        metrics={"reviewer": metrics("reviewer", consecutive_failures=5) | {"last_failure_at": old_failure}},
     )
 
     assert result["agent_id"] == "reviewer"
@@ -234,9 +231,7 @@ def test_agent_state_exposes_version_capabilities_cost_health_and_feedback() -> 
     )
 
     assert state["build"]["version"] == "1.0.0"
-    assert state["build"]["capabilities"] == {
-        "software": ["coding", "implementation", "refactoring"]
-    }
+    assert state["build"]["capabilities"] == {"software": ["coding", "implementation", "refactoring"]}
     assert state["build"]["health"]["healthy"] is False
     assert state["build"]["health"]["last_failure_reason"] == "timeout"
     assert state["build"]["health"]["in_probe_mode"] is False

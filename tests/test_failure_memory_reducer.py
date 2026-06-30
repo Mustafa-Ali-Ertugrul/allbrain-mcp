@@ -14,11 +14,15 @@ from allbrain.failure_memory.reducer import FailureMemoryReducer
 
 
 def _event(etype: str, payload: dict, eid: str = "e1") -> object:
-    return type("FakeEvent", (), {
-        "id": eid,
-        "type": etype,
-        "payload": payload,
-    })()
+    return type(
+        "FakeEvent",
+        (),
+        {
+            "id": eid,
+            "type": etype,
+            "payload": payload,
+        },
+    )()
 
 
 class TestFailureMemoryReducer:
@@ -33,9 +37,12 @@ class TestFailureMemoryReducer:
     def test_apply_stored_event_adds_record(self):
         reducer = FailureMemoryReducer()
         p = make_failure_memory_stored_payload(
-            fault_type="timeout", strategy="retry",
-            success=True, severity="high",
-            occurred_at=1.0, failure_count=0,
+            fault_type="timeout",
+            strategy="retry",
+            success=True,
+            severity="high",
+            occurred_at=1.0,
+            failure_count=0,
         )
         reducer.apply(_event(EventType.FAILURE_MEMORY_STORED.value, p))
         snap = reducer.snapshot()
@@ -45,9 +52,12 @@ class TestFailureMemoryReducer:
     def test_apply_stored_event_marks_success(self):
         reducer = FailureMemoryReducer()
         p = make_failure_memory_stored_payload(
-            fault_type="timeout", strategy="retry",
-            success=True, severity="medium",
-            occurred_at=2.0, failure_count=0,
+            fault_type="timeout",
+            strategy="retry",
+            success=True,
+            severity="medium",
+            occurred_at=2.0,
+            failure_count=0,
         )
         reducer.apply(_event(EventType.FAILURE_MEMORY_STORED.value, p))
         assert reducer.snapshot()["records"][0].success is True
@@ -55,9 +65,12 @@ class TestFailureMemoryReducer:
     def test_apply_stored_event_marks_failure(self):
         reducer = FailureMemoryReducer()
         p = make_failure_memory_stored_payload(
-            fault_type="timeout", strategy="retry",
-            success=False, severity="low",
-            occurred_at=3.0, failure_count=1,
+            fault_type="timeout",
+            strategy="retry",
+            success=False,
+            severity="low",
+            occurred_at=3.0,
+            failure_count=1,
         )
         reducer.apply(_event(EventType.FAILURE_MEMORY_STORED.value, p))
         assert reducer.snapshot()["records"][0].success is False
@@ -65,7 +78,9 @@ class TestFailureMemoryReducer:
     def test_apply_retrieved_event_increments(self):
         reducer = FailureMemoryReducer()
         p = make_failure_memory_retrieved_payload(
-            fault_type="timeout", total_records=5, experience_count=3,
+            fault_type="timeout",
+            total_records=5,
+            experience_count=3,
         )
         reducer.apply(_event(EventType.FAILURE_MEMORY_RETRIEVED.value, p))
         assert reducer.snapshot()["total_retrieved"] == 1
@@ -73,8 +88,11 @@ class TestFailureMemoryReducer:
     def test_apply_pattern_detected_event(self):
         reducer = FailureMemoryReducer()
         p = make_failure_pattern_detected_payload(
-            fault_type="timeout", strategy="retry",
-            success_rate=0.20, attempts=10, severity="high",
+            fault_type="timeout",
+            strategy="retry",
+            success_rate=0.20,
+            attempts=10,
+            severity="high",
         )
         reducer.apply(_event(EventType.FAILURE_PATTERN_DETECTED.value, p))
         snap = reducer.snapshot()
@@ -84,8 +102,10 @@ class TestFailureMemoryReducer:
     def test_apply_experience_updated_event(self):
         reducer = FailureMemoryReducer()
         p = make_recovery_experience_updated_payload(
-            fault_type="timeout", strategy="retry",
-            success_rate=0.75, attempts=10,
+            fault_type="timeout",
+            strategy="retry",
+            success_rate=0.75,
+            attempts=10,
         )
         reducer.apply(_event(EventType.RECOVERY_EXPERIENCE_UPDATED.value, p))
         snap = reducer.snapshot()
@@ -112,9 +132,12 @@ class TestFailureMemoryReducer:
     def test_duplicate_event_id_skipped(self):
         reducer = FailureMemoryReducer()
         p = make_failure_memory_stored_payload(
-            fault_type="timeout", strategy="retry",
-            success=True, severity="medium",
-            occurred_at=1.0, failure_count=0,
+            fault_type="timeout",
+            strategy="retry",
+            success=True,
+            severity="medium",
+            occurred_at=1.0,
+            failure_count=0,
         )
         reducer.apply(_event(EventType.FAILURE_MEMORY_STORED.value, p, eid="dup"))
         reducer.apply(_event(EventType.FAILURE_MEMORY_STORED.value, p, eid="dup"))

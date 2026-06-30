@@ -84,17 +84,13 @@ def maybe_auto_snapshot(context: BrainContext, *, project_path: str | Path) -> N
     snapshot_repo = SnapshotRepo(context.repository.engine)
     latest = snapshot_repo.get_latest(project.id)
     event_cursor = latest.event_cursor if latest is not None else None
-    events = context.repository.list_events_after(
-        project_path=context.project_path, event_cursor=event_cursor
-    )
+    events = context.repository.list_events_after(project_path=context.project_path, event_cursor=event_cursor)
     if snapshot_weight(events) < context.auto_snapshot_threshold:
         return
-    all_events = context.repository.list_events(
-        project_path=context.project_path, limit=50000
+    all_events = context.repository.list_events(project_path=context.project_path, limit=50000)
+    SnapshotEngine(SnapshotBuilder(include_derived=False), snapshot_repo).build_snapshot(
+        project_id=project.id, events=all_events
     )
-    SnapshotEngine(
-        SnapshotBuilder(include_derived=False), snapshot_repo
-    ).build_snapshot(project_id=project.id, events=all_events)
 
 
 def get_task_or_raise(task_state: dict[str, Any], task_id: str) -> dict[str, Any]:
@@ -143,9 +139,7 @@ def append_selection_decision(
     )
 
 
-def observability_project_and_limit(
-    context: BrainContext, kwargs: dict[str, Any]
-) -> tuple[str, int]:
+def observability_project_and_limit(context: BrainContext, kwargs: dict[str, Any]) -> tuple[str, int]:
     project_path = context.project_path
     limit = int(kwargs.get("limit", 5000) or 5000)
     if limit < 1 or limit > 50000:
@@ -174,20 +168,18 @@ def filter_observability_events(
     ]
 
 
-def merge_agent_metrics(
-    base: dict[str, dict[str, Any]], delta: dict[str, dict[str, Any]]
-) -> dict[str, dict[str, Any]]:
+def merge_agent_metrics(base: dict[str, dict[str, Any]], delta: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     if not base:
         return delta
-    merged: dict[str, dict[str, Any]] = {
-        agent_id: dict(metrics) for agent_id, metrics in base.items()
-    }
+    merged: dict[str, dict[str, Any]] = {agent_id: dict(metrics) for agent_id, metrics in base.items()}
     for agent_id, delta_metrics in delta.items():
         from allbrain.orchestrator.metrics import AgentPerformanceReducer
 
         metrics = merged.setdefault(
             agent_id,
-            AgentPerformanceReducer().reduce([]).get(
+            AgentPerformanceReducer()
+            .reduce([])
+            .get(
                 agent_id,
                 {
                     "agent_id": agent_id,

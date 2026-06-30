@@ -103,7 +103,9 @@ class TestPolicyBlender:
     def test_blend_returns_blended_policy(self):
         blender = PolicyBlender()
         result = blender.blend(
-            "v1", "v2", "timeout",
+            "v1",
+            "v2",
+            "timeout",
             {"rate": 0.2, "count": 10},
             {"rate": 0.8, "count": 20},
             stability_score=0.5,
@@ -117,7 +119,9 @@ class TestPolicyBlender:
     def test_blend_with_low_stability(self):
         blender = PolicyBlender()
         result = blender.blend(
-            "v1", "v2", "timeout",
+            "v1",
+            "v2",
+            "timeout",
             {"rate": 0.2},
             {"rate": 0.8},
             stability_score=0.2,
@@ -132,7 +136,9 @@ class TestPolicyBlender:
     def test_blend_with_high_stability(self):
         blender = PolicyBlender()
         result = blender.blend(
-            "v1", "v2", "timeout",
+            "v1",
+            "v2",
+            "timeout",
             {"rate": 0.2},
             {"rate": 0.8},
             stability_score=0.8,

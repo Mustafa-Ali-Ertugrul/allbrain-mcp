@@ -18,9 +18,7 @@ def _assert_no_nondeterminism_tokens(relative_dir: str, filename: str) -> None:
     path = Path(relative_dir) / filename
     content = path.read_text(encoding="utf-8")
     for token in ("uuid7", "datetime.now", "random.", "time.time"):
-        assert token not in content, (
-            f"{relative_dir}/{filename} uses {token!r} — must be deterministic hash only"
-        )
+        assert token not in content, f"{relative_dir}/{filename} uses {token!r} — must be deterministic hash only"
 
 
 def test_calibration_module_no_nondeterminism():
@@ -111,22 +109,30 @@ def test_calibration_does_not_change_confidence():
             self.payload = p
 
     base_events = [
-        E(EventType.BELIEF_REVISED.value, "1", make_revision_payload(
-            context_key="default",
-            old_confidence=0.90,
-            new_confidence=0.60,
-            reason="contradiction",
-            evidence_count=0,
-        )),
+        E(
+            EventType.BELIEF_REVISED.value,
+            "1",
+            make_revision_payload(
+                context_key="default",
+                old_confidence=0.90,
+                new_confidence=0.60,
+                reason="contradiction",
+                evidence_count=0,
+            ),
+        ),
         E(EventType.TRUST_UPDATED.value, "2", {"context_key": "default", "trust_score": 0.8}),
     ]
 
     with_calibration = list(base_events) + [
-        E(EventType.CALIBRATION_UPDATED.value, "3", make_calibration_payload(
-            context_key="default",
-            predicted_confidence=0.5,
-            actual_outcome=True,
-        )),
+        E(
+            EventType.CALIBRATION_UPDATED.value,
+            "3",
+            make_calibration_payload(
+                context_key="default",
+                predicted_confidence=0.5,
+                actual_outcome=True,
+            ),
+        ),
     ]
 
     manager = RevisionManager()

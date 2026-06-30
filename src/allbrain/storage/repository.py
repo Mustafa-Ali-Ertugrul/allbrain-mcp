@@ -32,9 +32,7 @@ class BrainRepository:
 
     def get_or_create_project(self, db: DbSession, project_path: str | Path | None) -> Project:
         canonical_path = canonicalize_project_path(project_path)
-        project = db.exec(
-            select(Project).where(Project.canonical_project_path == canonical_path)
-        ).first()
+        project = db.exec(select(Project).where(Project.canonical_project_path == canonical_path)).first()
         if project is not None:
             return project
 
@@ -50,9 +48,7 @@ class BrainRepository:
     def get_project_by_path(self, project_path: str | Path | None) -> Project | None:
         canonical_path = canonicalize_project_path(project_path)
         with open_session(self.engine) as db:
-            return db.exec(
-                select(Project).where(Project.canonical_project_path == canonical_path)
-            ).first()
+            return db.exec(select(Project).where(Project.canonical_project_path == canonical_path)).first()
 
     def create_session(self, project_path: str | Path | None, agent_name: str) -> Session:
         with open_session(self.engine) as db:
@@ -84,12 +80,40 @@ class BrainRepository:
         _session: DbSession | None = None,
     ) -> Event:
         if _session is not None:
-            event = self._append_event_core(_session, project_path=project_path, session_id=session_id, type=type, source=source, payload=payload, file_path=file_path, agent_id=agent_id, task_hint=task_hint, importance=importance, impact_score=impact_score, caused_by=caused_by, branch=branch)
+            event = self._append_event_core(
+                _session,
+                project_path=project_path,
+                session_id=session_id,
+                type=type,
+                source=source,
+                payload=payload,
+                file_path=file_path,
+                agent_id=agent_id,
+                task_hint=task_hint,
+                importance=importance,
+                impact_score=impact_score,
+                caused_by=caused_by,
+                branch=branch,
+            )
             _session.flush()
             _session.refresh(event)
             return event
         with open_session(self.engine) as db:
-            event = self._append_event_core(db, project_path=project_path, session_id=session_id, type=type, source=source, payload=payload, file_path=file_path, agent_id=agent_id, task_hint=task_hint, importance=importance, impact_score=impact_score, caused_by=caused_by, branch=branch)
+            event = self._append_event_core(
+                db,
+                project_path=project_path,
+                session_id=session_id,
+                type=type,
+                source=source,
+                payload=payload,
+                file_path=file_path,
+                agent_id=agent_id,
+                task_hint=task_hint,
+                importance=importance,
+                impact_score=impact_score,
+                caused_by=caused_by,
+                branch=branch,
+            )
             db.commit()
             db.refresh(event)
             return event
@@ -198,7 +222,9 @@ class BrainRepository:
                 return None
             return event_to_read(event)
 
-    def list_events_by_agents(self, *, project_path: str | Path | None, limit: int = 5000) -> dict[str, list[EventRead]]:
+    def list_events_by_agents(
+        self, *, project_path: str | Path | None, limit: int = 5000
+    ) -> dict[str, list[EventRead]]:
         events = self.list_events(project_path=project_path, limit=limit)
         grouped: dict[str, list[EventRead]] = {}
         for event in events:

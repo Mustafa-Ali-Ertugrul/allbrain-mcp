@@ -4,10 +4,16 @@ from typing import Any
 
 from allbrain.policy_competition.model import POLICY_COMPETITION_TEMPLATE_VERSION
 
-COMPETITION_HELD_KEYS: frozenset[str] = frozenset({
-    "fault_type", "winner_policy_id", "winner_strategy",
-    "winner_score", "confidence", "candidate_count",
-})
+COMPETITION_HELD_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_type",
+        "winner_policy_id",
+        "winner_strategy",
+        "winner_score",
+        "confidence",
+        "candidate_count",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:

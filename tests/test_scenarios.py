@@ -93,8 +93,14 @@ def test_scenario_metrics() -> None:
         analysis.best_case.prediction.success_probability - analysis.worst_case.prediction.success_probability, rel=1e-6
     )
     assert analysis.risk_volatility == pytest.approx(
-        max(s.prediction.risk for s in (analysis.best_case, analysis.expected_case, analysis.worst_case, analysis.safest_case))
-        - min(s.prediction.risk for s in (analysis.best_case, analysis.expected_case, analysis.worst_case, analysis.safest_case)),
+        max(
+            s.prediction.risk
+            for s in (analysis.best_case, analysis.expected_case, analysis.worst_case, analysis.safest_case)
+        )
+        - min(
+            s.prediction.risk
+            for s in (analysis.best_case, analysis.expected_case, analysis.worst_case, analysis.safest_case)
+        ),
         rel=1e-6,
     )
     assert 0.0 <= analysis.uncertainty <= 1.0

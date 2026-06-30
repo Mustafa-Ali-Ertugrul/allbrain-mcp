@@ -16,6 +16,7 @@ class MockEvent:
         self.task_hint = task_hint
         self.created_at = created_at or datetime.now()
 
+
 def test_belief_convergence():
     events = [
         MockEvent(EventType.TASK_COMPLETED.value, id="1", task_hint="test"),
@@ -39,6 +40,7 @@ def test_belief_convergence():
     assert manager_state.blocked == reducer_state.blocked
     assert manager_state.analysis_id == reducer_state.analysis_id
 
+
 def test_belief_order_independence():
     e1 = MockEvent(EventType.TASK_COMPLETED.value, id="1", task_hint="test", created_at=datetime(2020, 1, 1))
     e2 = MockEvent(EventType.TASK_FAILED.value, id="2", task_hint="test", created_at=datetime(2020, 1, 2))
@@ -55,12 +57,13 @@ def test_belief_order_independence():
     assert state1.beta == state2.beta
     assert state1.analysis_id == state2.analysis_id
 
+
 def test_belief_reducer_consumes_computed():
     e1 = MockEvent(EventType.TASK_COMPLETED.value, id="1", task_hint="test")
     computed = MockEvent(
         EventType.BELIEF_COMPUTED.value,
         id="2",
-        payload={"context_key": "test", "successes": 5, "failures": 2, "blocked": 1}
+        payload={"context_key": "test", "successes": 5, "failures": 2, "blocked": 1},
     )
     e3 = MockEvent(EventType.TASK_COMPLETED.value, id="3", task_hint="test")
 
@@ -83,13 +86,14 @@ def test_belief_reducer_consumes_computed():
     assert state3.successes == 6
     assert state3.failures == 2
 
+
 def test_manager_consumes_computed():
     e1 = MockEvent(EventType.TASK_COMPLETED.value, id="1", task_hint="test", created_at=datetime(2020, 1, 1))
     computed = MockEvent(
         EventType.BELIEF_COMPUTED.value,
         id="2",
         payload={"context_key": "test", "successes": 5, "failures": 2, "blocked": 1},
-        created_at=datetime(2020, 1, 2)
+        created_at=datetime(2020, 1, 2),
     )
     e3 = MockEvent(EventType.TASK_COMPLETED.value, id="3", task_hint="test", created_at=datetime(2020, 1, 3))
 

@@ -40,9 +40,7 @@ class TestStrategyChainBuild:
         assert chain.current_index == 0
 
     def test_single_candidate_produces_one_step(self):
-        chain = StrategyChain().build(
-            [_candidate(strategy="retry")], fault_id="f1", fault_type="timeout"
-        )
+        chain = StrategyChain().build([_candidate(strategy="retry")], fault_id="f1", fault_type="timeout")
         assert len(chain.steps) == 1
         assert chain.steps[0].strategy == "retry"
         assert chain.steps[0].order == 1
@@ -65,52 +63,32 @@ class TestStrategyChainBuild:
         assert strategies == ["retry", "rollback"]
 
     def test_max_chain_length_clamp(self):
-        cands = [
-            _candidate(strategy=f"s{i}", confidence=0.9 - i * 0.1)
-            for i in range(10)
-        ]
+        cands = [_candidate(strategy=f"s{i}", confidence=0.9 - i * 0.1) for i in range(10)]
         chain = StrategyChain(max_chain_length=3).build(cands, fault_id="f1", fault_type="timeout")
         assert len(chain.steps) == 3
 
     def test_default_max_chain_length_applied(self):
-        cands = [
-            _candidate(strategy=f"s{i}", confidence=0.9 - i * 0.1)
-            for i in range(10)
-        ]
+        cands = [_candidate(strategy=f"s{i}", confidence=0.9 - i * 0.1) for i in range(10)]
         chain = StrategyChain().build(cands, fault_id="f1", fault_type="timeout")
         assert len(chain.steps) == DEFAULT_MAX_CHAIN_LENGTH
 
     def test_chain_id_deterministic(self):
-        chain1 = StrategyChain().build(
-            [_candidate("retry")], fault_id="f1", fault_type="timeout"
-        )
-        chain2 = StrategyChain().build(
-            [_candidate("retry")], fault_id="f1", fault_type="timeout"
-        )
+        chain1 = StrategyChain().build([_candidate("retry")], fault_id="f1", fault_type="timeout")
+        chain2 = StrategyChain().build([_candidate("retry")], fault_id="f1", fault_type="timeout")
         assert chain1.chain_id == chain2.chain_id
 
     def test_chain_id_different_for_different_fault_ids(self):
-        chain1 = StrategyChain().build(
-            [_candidate("retry")], fault_id="f1", fault_type="timeout"
-        )
-        chain2 = StrategyChain().build(
-            [_candidate("retry")], fault_id="f2", fault_type="timeout"
-        )
+        chain1 = StrategyChain().build([_candidate("retry")], fault_id="f1", fault_type="timeout")
+        chain2 = StrategyChain().build([_candidate("retry")], fault_id="f2", fault_type="timeout")
         assert chain1.chain_id != chain2.chain_id
 
     def test_chain_id_different_for_different_fault_types(self):
-        chain1 = StrategyChain().build(
-            [_candidate("retry")], fault_id="f1", fault_type="timeout"
-        )
-        chain2 = StrategyChain().build(
-            [_candidate("retry")], fault_id="f1", fault_type="corruption"
-        )
+        chain1 = StrategyChain().build([_candidate("retry")], fault_id="f1", fault_type="timeout")
+        chain2 = StrategyChain().build([_candidate("retry")], fault_id="f1", fault_type="corruption")
         assert chain1.chain_id != chain2.chain_id
 
     def test_chain_id_length_is_16_chars(self):
-        chain = StrategyChain().build(
-            [_candidate("retry")], fault_id="f1", fault_type="timeout"
-        )
+        chain = StrategyChain().build([_candidate("retry")], fault_id="f1", fault_type="timeout")
         assert len(chain.chain_id) == 16
 
     def test_step_confidence_clamped_to_zero_one(self):

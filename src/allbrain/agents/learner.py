@@ -37,9 +37,7 @@ class CapabilityLearner:
         self._success[key] = prior_success * (1 - self.alpha) + new_success * self.alpha
 
         prior_latency = self._latency.get(key, 0.0)
-        self._latency[key] = (
-            prior_latency * (1 - self.alpha) + metrics.duration_ms * self.alpha
-        )
+        self._latency[key] = prior_latency * (1 - self.alpha) + metrics.duration_ms * self.alpha
 
         self._count[key] = self._count.get(key, 0) + 1
 
@@ -54,15 +52,15 @@ class CapabilityLearner:
         return self._count.get(self._key(agent_id, domain), 0)
 
     def get_all(self, agent_id: str) -> dict[str, float]:
-        return {
-            domain: self.get_capability(agent_id, domain)
-            for (_, domain), _ in self._success.items()
-            if _ == agent_id or True  # not used; replaced below
-        } if False else {
-            domain: self.get_capability(agent_id, domain)
-            for (aid, domain) in self._success
-            if aid == agent_id
-        }
+        return (
+            {
+                domain: self.get_capability(agent_id, domain)
+                for (_, domain), _ in self._success.items()
+                if _ == agent_id or True  # not used; replaced below
+            }
+            if False
+            else {domain: self.get_capability(agent_id, domain) for (aid, domain) in self._success if aid == agent_id}
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {

@@ -1,4 +1,5 @@
 """Domain module: counterfactual."""
+
 from __future__ import annotations
 
 import logging

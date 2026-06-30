@@ -9,9 +9,12 @@ from allbrain.failure_memory.store import FailureMemoryStore
 
 def _record(ft: str = "timeout", strategy: str = "retry", success: bool = True) -> FailureRecord:
     return FailureRecord(
-        fault_type=ft, severity="medium",
-        recovery_strategy=strategy, success=success,
-        occurred_at=1.0, failure_count=0,
+        fault_type=ft,
+        severity="medium",
+        recovery_strategy=strategy,
+        success=success,
+        occurred_at=1.0,
+        failure_count=0,
     )
 
 

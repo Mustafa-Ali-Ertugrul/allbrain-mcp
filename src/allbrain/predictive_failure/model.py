@@ -48,6 +48,7 @@ STRATEGY_URGENCY: dict[str, float] = {
 @dataclass(frozen=True)
 class RiskSignal:
     """A single risk signal observed from the environment."""
+
     signal_type: str
     severity: float
     frequency: int
@@ -57,6 +58,7 @@ class RiskSignal:
 @dataclass(frozen=True)
 class FailurePrediction:
     """Result of predicting a failure from risk signals."""
+
     fault_id: str
     fault_type: str
     probability: float
@@ -68,6 +70,7 @@ class FailurePrediction:
 @dataclass(frozen=True)
 class MitigationPlan:
     """A planned proactive mitigation action."""
+
     plan_id: str
     fault_id: str
     fault_type: str
@@ -79,6 +82,7 @@ class MitigationPlan:
 @dataclass(frozen=True)
 class ProactiveAction:
     """The result of executing a proactive mitigation."""
+
     action_id: str
     plan_id: str
     snapshot_id: str

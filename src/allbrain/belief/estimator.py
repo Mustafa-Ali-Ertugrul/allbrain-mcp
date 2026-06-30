@@ -10,7 +10,7 @@ from allbrain.events import EventType
 
 def _stable_analysis_id(context_key: str, evidence_event_ids: Iterable[str] | None = None) -> str:
     """Deterministic analysis_id derived from context and evidence.
-    
+
     Same context + same evidence -> same id (replay-safe).
     Different evidence -> different id (per-computation unique).
     """

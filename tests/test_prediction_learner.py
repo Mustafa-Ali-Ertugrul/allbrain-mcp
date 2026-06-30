@@ -20,6 +20,7 @@ from allbrain.world.prediction_learner import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_obs(env: dict[str, str], *, obs_id: str = "obs-1") -> Any:
     """Create a mock WORLD_STATE_OBSERVED event."""
     from allbrain.models.schemas import EventRead

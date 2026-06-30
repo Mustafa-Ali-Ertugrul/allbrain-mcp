@@ -38,8 +38,7 @@ def allocate_budget(
         n = len(ratios)
         even = total_budget / n
         return {
-            s: AttentionWeight(signal=s, importance=importances.get(s, 0.0),
-                               cost=costs.get(s, 1.0), allocation=even)
+            s: AttentionWeight(signal=s, importance=importances.get(s, 0.0), cost=costs.get(s, 1.0), allocation=even)
             for s in ratios
         }
 

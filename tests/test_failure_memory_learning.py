@@ -18,8 +18,10 @@ class TestLearner:
         store = FailureMemoryStore()
         learner = Learner(store)
         result = learner.record_outcome(
-            fault_type="timeout", strategy="retry",
-            success=True, severity="high",
+            fault_type="timeout",
+            strategy="retry",
+            success=True,
+            severity="high",
         )
         assert result["new_experience"] is not None
         assert result["new_experience"].success_rate == 1.0
@@ -28,12 +30,16 @@ class TestLearner:
         store = FailureMemoryStore()
         learner = Learner(store)
         learner.record_outcome(
-            fault_type="timeout", strategy="retry",
-            success=True, severity="medium",
+            fault_type="timeout",
+            strategy="retry",
+            success=True,
+            severity="medium",
         )
         result = learner.record_outcome(
-            fault_type="timeout", strategy="retry",
-            success=False, severity="medium",
+            fault_type="timeout",
+            strategy="retry",
+            success=False,
+            severity="medium",
         )
         assert result["new_experience"].success_rate == 0.5
 
@@ -42,23 +48,30 @@ class TestLearner:
         learner = Learner(store)
         for _ in range(8):
             learner.record_outcome(
-                fault_type="timeout", strategy="retry",
-                success=True, severity="low",
+                fault_type="timeout",
+                strategy="retry",
+                success=True,
+                severity="low",
             )
         for _ in range(2):
             learner.record_outcome(
-                fault_type="timeout", strategy="retry",
-                success=False, severity="low",
+                fault_type="timeout",
+                strategy="retry",
+                success=False,
+                severity="low",
             )
         result = learner.record_outcome(
-            fault_type="timeout", strategy="retry",
-            success=False, severity="low",
+            fault_type="timeout",
+            strategy="retry",
+            success=False,
+            severity="low",
         )
         assert result["new_experience"].success_rate == pytest.approx(8 / 11)
 
     def test_pattern_detected_below_threshold(self):
         store = FailureMemoryStore()
-        learner = Learner(store,
+        learner = Learner(
+            store,
             pattern_min_samples=3,
             pattern_success_threshold=PATTERN_SUCCESS_THRESHOLD,
         )
@@ -83,7 +96,8 @@ class TestLearner:
 
     def test_pattern_not_detected_above_threshold(self):
         store = FailureMemoryStore()
-        learner = Learner(store,
+        learner = Learner(
+            store,
             pattern_min_samples=3,
             pattern_success_threshold=0.30,
         )
@@ -105,8 +119,10 @@ class TestLearner:
         store = FailureMemoryStore()
         learner = Learner(store)
         result = learner.record_outcome(
-            fault_type="timeout", strategy="retry",
-            success=True, severity="medium",
+            fault_type="timeout",
+            strategy="retry",
+            success=True,
+            severity="medium",
         )
         assert "new_experience" in result
         assert "pattern_detected" in result
@@ -131,8 +147,10 @@ class TestLearner:
         store = FailureMemoryStore()
         learner = Learner(store)
         result = learner.record_outcome(
-            fault_type="timeout", strategy="retry",
-            success=False, severity="medium",
+            fault_type="timeout",
+            strategy="retry",
+            success=False,
+            severity="medium",
             failure_count=3,
         )
         assert result["new_experience"] is not None
@@ -141,8 +159,10 @@ class TestLearner:
         store = FailureMemoryStore()
         learner = Learner(store)
         result = learner.record_outcome(
-            fault_type="timeout", strategy="retry",
-            success=True, severity="low",
+            fault_type="timeout",
+            strategy="retry",
+            success=True,
+            severity="low",
             occurred_at=100.5,
         )
         assert result["new_experience"] is not None

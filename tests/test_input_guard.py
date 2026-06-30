@@ -3,6 +3,7 @@
 These match the pentest test cases exactly — both positive (should be
 redacted) and negative (FP guards).
 """
+
 from allbrain.security.input_guard import sanitize_user_text
 
 

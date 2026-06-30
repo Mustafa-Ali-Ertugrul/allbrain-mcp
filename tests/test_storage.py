@@ -177,9 +177,7 @@ def test_payload_version_column_backfilled_on_old_schema(tmp_path: Path) -> None
             "CREATE TABLE session (id INTEGER PRIMARY KEY, project_id INTEGER, agent_name TEXT, "
             "started_at TIMESTAMP, ended_at TIMESTAMP, status TEXT)"
         )
-        conn.exec_driver_sql(
-            "INSERT INTO session (id, project_id, agent_name) VALUES (1, 1, 'legacy')"
-        )
+        conn.exec_driver_sql("INSERT INTO session (id, project_id, agent_name) VALUES (1, 1, 'legacy')")
         conn.exec_driver_sql(
             "INSERT INTO event (id, project_id, session_id, type, source, payload_json, created_at) "
             "VALUES ('legacy-evt-1', 1, 1, 'legacy_event', 'legacy', '{\"old\": true}', '2024-01-01 00:00:00')"

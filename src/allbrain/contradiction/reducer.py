@@ -71,10 +71,7 @@ class ContradictionReducer:
         )
 
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
-        return {
-            context_key: self.snapshot(context_key=context_key).model_dump()
-            for context_key in self._contexts
-        }
+        return {context_key: self.snapshot(context_key=context_key).model_dump() for context_key in self._contexts}
 
     def known_context_keys(self) -> set[str]:
         return set(self._contexts.keys())

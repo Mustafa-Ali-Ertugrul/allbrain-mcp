@@ -40,7 +40,7 @@ class BeliefManager:
             successes = checkpoint.get("successes", 0)
             failures = checkpoint.get("failures", 0)
             blocked = checkpoint.get("blocked", 0)
-            trailing = ordered[checkpoint_index + 1:]
+            trailing = ordered[checkpoint_index + 1 :]
             trail_s, trail_f, trail_b = tally_outcomes(trailing, context_key=context_key)
             successes += trail_s
             failures += trail_f

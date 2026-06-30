@@ -28,9 +28,7 @@ class PolicySnapshotManager:
         stability_score: float,
         stats_snapshot: dict[str, Any],
     ) -> PolicySnapshot:
-        snapshot_id = hashlib.sha256(
-            f"{fault_type}|{version}|{time.time()}".encode()
-        ).hexdigest()[:16]
+        snapshot_id = hashlib.sha256(f"{fault_type}|{version}|{time.time()}".encode()).hexdigest()[:16]
         snap = PolicySnapshot(
             snapshot_id=snapshot_id,
             policy_version=version,
@@ -49,10 +47,7 @@ class PolicySnapshotManager:
         return list(self._snapshots.get(fault_type, []))
 
     def get_last_stable(self, fault_type: str) -> PolicySnapshot | None:
-        stable = [
-            s for s in self.get_history(fault_type)
-            if s.stability_score >= STABLE_BASELINE
-        ]
+        stable = [s for s in self.get_history(fault_type) if s.stability_score >= STABLE_BASELINE]
         return stable[-1] if stable else None
 
 
@@ -72,9 +67,7 @@ class RecoveryExecutor:
         drift_guard: Any,
     ) -> RecoveryReport:
         """Post-rollback stabilization."""
-        recovery_id = hashlib.sha256(
-            f"{plan.rollback_id}|recover|{time.time()}".encode()
-        ).hexdigest()[:16]
+        recovery_id = hashlib.sha256(f"{plan.rollback_id}|recover|{time.time()}".encode()).hexdigest()[:16]
 
         if health_monitor is not None:
             health_monitor.reset_fault(fault_type)

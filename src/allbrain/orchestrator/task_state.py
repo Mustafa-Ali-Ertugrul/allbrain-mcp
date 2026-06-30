@@ -152,14 +152,17 @@ class TaskStateReducer:
         }:
             subtask_id = payload.get("node_id")
             subtasks = task.setdefault("subtasks", {})
-            sub = subtasks.setdefault(subtask_id, {
-                "node_id": subtask_id,
-                "status": "pending",
-                "agent_id": None,
-                "goal": payload.get("goal"),
-                "score": payload.get("score"),
-                "reason": payload.get("reason"),
-            })
+            sub = subtasks.setdefault(
+                subtask_id,
+                {
+                    "node_id": subtask_id,
+                    "status": "pending",
+                    "agent_id": None,
+                    "goal": payload.get("goal"),
+                    "score": payload.get("score"),
+                    "reason": payload.get("reason"),
+                },
+            )
             if event.type == EventType.SUBTASK_CREATED.value:
                 sub["status"] = "pending"
                 sub["goal"] = payload.get("goal") or sub.get("goal")
@@ -174,59 +177,73 @@ class TaskStateReducer:
                 sub["reason"] = payload.get("reason")
                 sub["retry_count"] = payload.get("retry_count", 0)
         elif event.type == EventType.WORKFLOW_STATE_CHANGED.value:
-            task.setdefault("workflow_states", []).append({
-                "node_id": payload.get("node_id"),
-                "previous_status": payload.get("previous_status"),
-                "new_status": payload.get("new_status"),
-                "reason": payload.get("reason"),
-                "agent_id": payload.get("agent_id") or event.agent_id,
-            })
+            task.setdefault("workflow_states", []).append(
+                {
+                    "node_id": payload.get("node_id"),
+                    "previous_status": payload.get("previous_status"),
+                    "new_status": payload.get("new_status"),
+                    "reason": payload.get("reason"),
+                    "agent_id": payload.get("agent_id") or event.agent_id,
+                }
+            )
         elif event.type == EventType.RETRY_SCHEDULED.value:
-            task.setdefault("retries", []).append({
-                "node_id": payload.get("node_id"),
-                "retry_count": payload.get("retry_count"),
-                "reason": payload.get("reason"),
-            })
+            task.setdefault("retries", []).append(
+                {
+                    "node_id": payload.get("node_id"),
+                    "retry_count": payload.get("retry_count"),
+                    "reason": payload.get("reason"),
+                }
+            )
         elif event.type in {
             EventType.AGENT_EXECUTION_STARTED.value,
             EventType.AGENT_EXECUTION_COMPLETED.value,
             EventType.AGENT_EXECUTION_FAILED.value,
         }:
-            task.setdefault("agent_executions", []).append({
-                "node_id": payload.get("node_id"),
-                "agent_id": payload.get("agent_id"),
-                "event_type": event.type,
-                "duration_ms": payload.get("duration_ms"),
-                "input_tokens": payload.get("input_tokens"),
-                "output_tokens": payload.get("output_tokens"),
-                "cost_usd": payload.get("cost_usd"),
-                "success": payload.get("success"),
-                "error": payload.get("error"),
-            })
+            task.setdefault("agent_executions", []).append(
+                {
+                    "node_id": payload.get("node_id"),
+                    "agent_id": payload.get("agent_id"),
+                    "event_type": event.type,
+                    "duration_ms": payload.get("duration_ms"),
+                    "input_tokens": payload.get("input_tokens"),
+                    "output_tokens": payload.get("output_tokens"),
+                    "cost_usd": payload.get("cost_usd"),
+                    "success": payload.get("success"),
+                    "error": payload.get("error"),
+                }
+            )
         elif event.type == EventType.AGENT_REGISTERED.value:
-            task.setdefault("registered_agents", []).append({
-                "agent_id": payload.get("agent_id"),
-                "provider": payload.get("provider"),
-                "version": payload.get("version"),
-            })
+            task.setdefault("registered_agents", []).append(
+                {
+                    "agent_id": payload.get("agent_id"),
+                    "provider": payload.get("provider"),
+                    "version": payload.get("version"),
+                }
+            )
         elif event.type == EventType.AGENT_HEALTH_CHANGED.value:
-            task.setdefault("agent_health", []).append({
-                "agent_id": payload.get("agent_id"),
-                "status": payload.get("status"),
-                "consecutive_failures": payload.get("consecutive_failures"),
-            })
+            task.setdefault("agent_health", []).append(
+                {
+                    "agent_id": payload.get("agent_id"),
+                    "status": payload.get("status"),
+                    "consecutive_failures": payload.get("consecutive_failures"),
+                }
+            )
         elif event.type == EventType.COST_CEILING_EXCEEDED.value:
-            task.setdefault("cost_violations", []).append({
-                "agent_id": payload.get("agent_id"),
-                "estimated_cost": payload.get("estimated_cost"),
-                "limit": payload.get("limit"),
-            })
+            task.setdefault("cost_violations", []).append(
+                {
+                    "agent_id": payload.get("agent_id"),
+                    "estimated_cost": payload.get("estimated_cost"),
+                    "limit": payload.get("limit"),
+                }
+            )
         elif event.type == EventType.CAPABILITY_UPDATED.value:
-            task.setdefault("capability_updates", []).append({
-                "agent_id": payload.get("agent_id"),
-                "domain": payload.get("domain"),
-                "capability": payload.get("capability"),
-            })
+            task.setdefault("capability_updates", []).append(
+                {
+                    "agent_id": payload.get("agent_id"),
+                    "domain": payload.get("domain"),
+                    "capability": payload.get("capability"),
+                }
+            )
 
     def _agent_queue(self, tasks: dict[str, dict[str, Any]]) -> dict[str, list[str]]:
         queue: dict[str, list[str]] = {}
@@ -253,11 +270,7 @@ class TaskStateReducer:
             "handoffs": handoffs,
             "agent_queue": queue,
             "open_task_ids": [
-                task_id
-                for task_id, task in tasks.items()
-                if task["status"] not in {"completed", "failed"}
+                task_id for task_id, task in tasks.items() if task["status"] not in {"completed", "failed"}
             ],
-            "completed_task_ids": [
-                task_id for task_id, task in tasks.items() if task["status"] == "completed"
-            ],
+            "completed_task_ids": [task_id for task_id, task in tasks.items() if task["status"] == "completed"],
         }

@@ -8,7 +8,9 @@ from allbrain.workflow.models import TaskNode
 
 
 def make_item(node_id: str = "n1") -> QueueItem:
-    return QueueItem(node=TaskNode(node_id=node_id, task_id="t1", goal="Do thing"), agent_id="builder", workflow_id="wf1")
+    return QueueItem(
+        node=TaskNode(node_id=node_id, task_id="t1", goal="Do thing"), agent_id="builder", workflow_id="wf1"
+    )
 
 
 async def test_redis_queue_duplicate_delivery_and_recovery_are_deterministic() -> None:

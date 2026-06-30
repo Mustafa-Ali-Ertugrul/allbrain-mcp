@@ -26,8 +26,13 @@ class TestDynamicsReplay:
 
     def test_round_trip_drift_event(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value, "e1",
-              make_drift_payload(agent_id="a", task_type="t", drift_score=0.1, drift_level="medium", ema_short=0.5, ema_long=0.4)),
+            E(
+                EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value,
+                "e1",
+                make_drift_payload(
+                    agent_id="a", task_type="t", drift_score=0.1, drift_level="medium", ema_short=0.5, ema_long=0.4
+                ),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert "a::t" in f["dynamics"]
@@ -35,24 +40,45 @@ class TestDynamicsReplay:
 
     def test_round_trip_trend_event(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_TREND_UPDATED.value, "e1",
-              make_trend_payload(agent_id="a", task_type="t", slope=0.03, label="improving", momentum=0.5, consecutive_count=3)),
+            E(
+                EventType.AGENT_CAPABILITY_TREND_UPDATED.value,
+                "e1",
+                make_trend_payload(
+                    agent_id="a", task_type="t", slope=0.03, label="improving", momentum=0.5, consecutive_count=3
+                ),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert f["dynamics"]["a::t"]["trend"]["label"] == "improving"
 
     def test_round_trip_forecast_event(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_FORECAST_UPDATED.value, "e1",
-              make_forecast_payload(agent_id="a", task_type="t", horizon=5, predicted_capability=0.7, confidence=0.8, current_capability=0.6, delta=0.1)),
+            E(
+                EventType.AGENT_CAPABILITY_FORECAST_UPDATED.value,
+                "e1",
+                make_forecast_payload(
+                    agent_id="a",
+                    task_type="t",
+                    horizon=5,
+                    predicted_capability=0.7,
+                    confidence=0.8,
+                    current_capability=0.6,
+                    delta=0.1,
+                ),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert f["dynamics"]["a::t"]["forecast"]["predicted_capability"] == 0.7
 
     def test_determinism(self):
         evts = [
-            E(EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value, "e1",
-              make_drift_payload(agent_id="x", task_type="y", drift_score=0.04, drift_level="low", ema_short=0.5, ema_long=0.48)),
+            E(
+                EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value,
+                "e1",
+                make_drift_payload(
+                    agent_id="x", task_type="y", drift_score=0.04, drift_level="low", ema_short=0.5, ema_long=0.48
+                ),
+            ),
         ]
         r1 = EventReplayEngine().replay(evts)["final_state"]["dynamics"]
         r2 = EventReplayEngine().replay(evts)["final_state"]["dynamics"]
@@ -60,11 +86,20 @@ class TestDynamicsReplay:
 
     def test_mixed_with_learning_events(self):
         from allbrain.learning import make_learned_payload
+
         evts = [
-            E(EventType.AGENT_CAPABILITY_LEARNED.value, "e1",
-              make_learned_payload(agent_id="a", task_type="t", old_score=0.3, new_score=0.8, delta=0.5)),
-            E(EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value, "e2",
-              make_drift_payload(agent_id="a", task_type="t", drift_score=0.12, drift_level="medium", ema_short=0.6, ema_long=0.4)),
+            E(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                "e1",
+                make_learned_payload(agent_id="a", task_type="t", old_score=0.3, new_score=0.8, delta=0.5),
+            ),
+            E(
+                EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value,
+                "e2",
+                make_drift_payload(
+                    agent_id="a", task_type="t", drift_score=0.12, drift_level="medium", ema_short=0.6, ema_long=0.4
+                ),
+            ),
         ]
         f = EventReplayEngine().replay(evts)["final_state"]
         assert "learning" in f

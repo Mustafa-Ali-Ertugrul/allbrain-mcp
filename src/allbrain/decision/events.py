@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from allbrain.decision.model import DECISION_TEMPLATE_VERSION
 
-DECISION_KEYS: frozenset[str] = frozenset(
-    {"agent_id", "task_type", "score", "mode", "contributors", "backend_trace"}
-)
+DECISION_KEYS: frozenset[str] = frozenset({"agent_id", "task_type", "score", "mode", "contributors", "backend_trace"})
 
 
 def validate_decision(p: dict) -> None:

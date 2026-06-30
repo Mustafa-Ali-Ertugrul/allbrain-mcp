@@ -28,17 +28,13 @@ class DecisionAnalyzer:
                 factor="predicted_success",
                 contribution=success_delta,
                 explanation=(
-                    f"Selected plan success {selected_plan.predicted_success:.2f} "
-                    f"vs average {avg_success:.2f}"
+                    f"Selected plan success {selected_plan.predicted_success:.2f} vs average {avg_success:.2f}"
                 ),
             ),
             DecisionReason(
                 factor="cumulative_risk",
                 contribution=risk_delta,
-                explanation=(
-                    f"Selected plan risk {selected_plan.cumulative_risk:.2f} "
-                    f"vs average {avg_risk:.2f}"
-                ),
+                explanation=(f"Selected plan risk {selected_plan.cumulative_risk:.2f} vs average {avg_risk:.2f}"),
             ),
             DecisionReason(
                 factor="horizon",

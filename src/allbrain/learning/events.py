@@ -2,15 +2,9 @@ from __future__ import annotations
 
 from allbrain.learning.model import LEARNING_TEMPLATE_VERSION
 
-OBSERVED_KEYS: frozenset[str] = frozenset(
-    {"agent_id", "task_type", "success", "runtime_score", "selection_score"}
-)
-LEARNED_KEYS: frozenset[str] = frozenset(
-    {"agent_id", "task_type", "old_score", "new_score", "delta"}
-)
-DECAYED_KEYS: frozenset[str] = frozenset(
-    {"agent_id", "task_type", "old_score", "new_score"}
-)
+OBSERVED_KEYS: frozenset[str] = frozenset({"agent_id", "task_type", "success", "runtime_score", "selection_score"})
+LEARNED_KEYS: frozenset[str] = frozenset({"agent_id", "task_type", "old_score", "new_score", "delta"})
+DECAYED_KEYS: frozenset[str] = frozenset({"agent_id", "task_type", "old_score", "new_score"})
 
 
 def validate_observed(p: dict) -> None:
@@ -58,40 +52,60 @@ def validate_decayed(p: dict) -> None:
 
 
 def make_observed_payload(
-    *, agent_id: str, task_type: str, success: bool,
-    runtime_score: float, selection_score: float,
+    *,
+    agent_id: str,
+    task_type: str,
+    success: bool,
+    runtime_score: float,
+    selection_score: float,
     tv: int = LEARNING_TEMPLATE_VERSION,
 ) -> dict:
     p = {
-        "agent_id": str(agent_id), "task_type": str(task_type),
-        "success": bool(success), "runtime_score": float(runtime_score),
-        "selection_score": float(selection_score), "template_version": int(tv),
+        "agent_id": str(agent_id),
+        "task_type": str(task_type),
+        "success": bool(success),
+        "runtime_score": float(runtime_score),
+        "selection_score": float(selection_score),
+        "template_version": int(tv),
     }
     validate_observed(p)
     return p
 
 
 def make_learned_payload(
-    *, agent_id: str, task_type: str, old_score: float,
-    new_score: float, delta: float,
+    *,
+    agent_id: str,
+    task_type: str,
+    old_score: float,
+    new_score: float,
+    delta: float,
     tv: int = LEARNING_TEMPLATE_VERSION,
 ) -> dict:
     p = {
-        "agent_id": str(agent_id), "task_type": str(task_type),
-        "old_score": float(old_score), "new_score": float(new_score),
-        "delta": float(delta), "template_version": int(tv),
+        "agent_id": str(agent_id),
+        "task_type": str(task_type),
+        "old_score": float(old_score),
+        "new_score": float(new_score),
+        "delta": float(delta),
+        "template_version": int(tv),
     }
     validate_learned(p)
     return p
 
 
 def make_decayed_payload(
-    *, agent_id: str, task_type: str, old_score: float, new_score: float,
+    *,
+    agent_id: str,
+    task_type: str,
+    old_score: float,
+    new_score: float,
     tv: int = LEARNING_TEMPLATE_VERSION,
 ) -> dict:
     p = {
-        "agent_id": str(agent_id), "task_type": str(task_type),
-        "old_score": float(old_score), "new_score": float(new_score),
+        "agent_id": str(agent_id),
+        "task_type": str(task_type),
+        "old_score": float(old_score),
+        "new_score": float(new_score),
         "template_version": int(tv),
     }
     validate_decayed(p)

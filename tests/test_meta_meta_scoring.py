@@ -44,6 +44,7 @@ class TestMetaEvaluator:
         store = EvaluatorStore()
         evaluator = MetaEvaluator(store)
         import random
+
         for _ in range(50):
             evaluator.evaluate("s1", "timeout", 0.95, 0.90)
         for _ in range(50):
@@ -75,6 +76,7 @@ class TestMetaEvaluator:
         for _ in range(50):
             evaluator.evaluate("a", "timeout", 0.95, 0.90)
         import random
+
         for _ in range(50):
             evaluator.evaluate("b", "timeout", random.uniform(0.1, 0.9), random.uniform(0.1, 0.9))
         pa = store.get("a", "timeout")
@@ -85,27 +87,44 @@ class TestMetaEvaluator:
 class TestEvaluatorEvents:
     def test_valid_payload(self):
         p = make_evaluator_profile_updated_payload(
-            evaluator_id="s1", fault_type="timeout",
-            accuracy=0.7, bias=0.1, stability=0.5, drift_sensitivity=0.1, version=1,
+            evaluator_id="s1",
+            fault_type="timeout",
+            accuracy=0.7,
+            bias=0.1,
+            stability=0.5,
+            drift_sensitivity=0.1,
+            version=1,
         )
         validate_evaluator_profile_updated(p)
 
     def test_invalid_accuracy(self):
         with pytest.raises(ValueError):
             make_evaluator_profile_updated_payload(
-                evaluator_id="s1", fault_type="timeout",
-                accuracy=5.0, bias=0.1, stability=0.5, drift_sensitivity=0.1, version=1,
+                evaluator_id="s1",
+                fault_type="timeout",
+                accuracy=5.0,
+                bias=0.1,
+                stability=0.5,
+                drift_sensitivity=0.1,
+                version=1,
             )
 
 
 class TestMetaMetaReducer:
     def test_tracks_updates(self):
         reducer = MetaMetaScoringReducer()
-        ev = _make_event(EventType.EVALUATOR_PROFILE_UPDATED.value, {
-            "evaluator_id": "s1", "fault_type": "timeout",
-            "accuracy": 0.7, "bias": 0.1, "stability": 0.5,
-            "drift_sensitivity": 0.1, "version": 1,
-        })
+        ev = _make_event(
+            EventType.EVALUATOR_PROFILE_UPDATED.value,
+            {
+                "evaluator_id": "s1",
+                "fault_type": "timeout",
+                "accuracy": 0.7,
+                "bias": 0.1,
+                "stability": 0.5,
+                "drift_sensitivity": 0.1,
+                "version": 1,
+            },
+        )
         reducer.apply(ev)
         snap = reducer.all_snapshots()
         assert snap["default"]["total_updates"] == 1
@@ -113,6 +132,7 @@ class TestMetaMetaReducer:
 
 def _make_event(type_str, payload):
     import types
+
     ev = types.SimpleNamespace()
     ev.id = f"test_{type_str}_{hash(str(payload))}"
     ev.type = type_str

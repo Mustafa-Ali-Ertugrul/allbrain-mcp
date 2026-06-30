@@ -94,9 +94,7 @@ class BeliefReducer:
                 "analysis_id": state.analysis_id,
                 "template_version": state.template_version,
             }
-            for context_key, state in (
-                (k, self.snapshot(context_key=k)) for k in self._contexts
-            )
+            for context_key, state in ((k, self.snapshot(context_key=k)) for k in self._contexts)
         }
 
     def known_context_keys(self) -> set[str]:

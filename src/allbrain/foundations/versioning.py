@@ -66,7 +66,5 @@ def normalize_payload(
     from_version: int,
     to_version: int | None = None,
 ) -> dict:
-    normalized, _ = _DEFAULT_UPCASTER.migrate(
-        payload, from_version=from_version, to_version=to_version
-    )
+    normalized, _ = _DEFAULT_UPCASTER.migrate(payload, from_version=from_version, to_version=to_version)
     return normalized

@@ -6,26 +6,59 @@ from allbrain.predictive_failure.model import PREDICTIVE_FAILURE_TEMPLATE_VERSIO
 
 # ── Key sets ───────────────────────────────────────────────────────
 
-SIGNAL_DETECTED_KEYS: frozenset[str] = frozenset({
-    "fault_id", "signal_type", "severity", "frequency",
-})
-RISK_COMPUTED_KEYS: frozenset[str] = frozenset({
-    "fault_id", "fault_type", "risk_score", "contributing_signal_types",
-})
-FAILURE_PREDICTED_KEYS: frozenset[str] = frozenset({
-    "fault_id", "fault_type", "probability", "confidence", "level",
-})
-MITIGATION_PLANNED_KEYS: frozenset[str] = frozenset({
-    "plan_id", "fault_id", "fault_type", "strategy", "urgency",
-    "expected_risk_reduction",
-})
-RECOVERY_EXECUTED_KEYS: frozenset[str] = frozenset({
-    "action_id", "plan_id", "snapshot_id", "success", "message",
-    "rollback_possible",
-})
-FAILURE_AVOIDED_KEYS: frozenset[str] = frozenset({
-    "fault_id", "original_probability", "mitigation_strategy", "snapshot_id",
-})
+SIGNAL_DETECTED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_id",
+        "signal_type",
+        "severity",
+        "frequency",
+    }
+)
+RISK_COMPUTED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_id",
+        "fault_type",
+        "risk_score",
+        "contributing_signal_types",
+    }
+)
+FAILURE_PREDICTED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_id",
+        "fault_type",
+        "probability",
+        "confidence",
+        "level",
+    }
+)
+MITIGATION_PLANNED_KEYS: frozenset[str] = frozenset(
+    {
+        "plan_id",
+        "fault_id",
+        "fault_type",
+        "strategy",
+        "urgency",
+        "expected_risk_reduction",
+    }
+)
+RECOVERY_EXECUTED_KEYS: frozenset[str] = frozenset(
+    {
+        "action_id",
+        "plan_id",
+        "snapshot_id",
+        "success",
+        "message",
+        "rollback_possible",
+    }
+)
+FAILURE_AVOIDED_KEYS: frozenset[str] = frozenset(
+    {
+        "fault_id",
+        "original_probability",
+        "mitigation_strategy",
+        "snapshot_id",
+    }
+)
 
 # ── Internal helpers ───────────────────────────────────────────────
 
@@ -43,7 +76,10 @@ def _check_str(v: Any, label: str) -> str:
 
 
 def _check_float_in_range(
-    v: Any, label: str, lo: float = 0.0, hi: float = 1.0,
+    v: Any,
+    label: str,
+    lo: float = 0.0,
+    hi: float = 1.0,
 ) -> float:
     if not isinstance(v, (int, float)):
         raise ValueError(f"{label} must be numeric, got {type(v).__name__}")

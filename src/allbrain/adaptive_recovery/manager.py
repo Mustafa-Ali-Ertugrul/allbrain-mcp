@@ -77,25 +77,29 @@ class AdaptiveRecoveryManager:
         steps_taken = 0
 
         # Emit chain created
-        events.append({
-            "event_type": EventType.RECOVERY_CHAIN_CREATED.value,
-            "chain_id": chain.chain_id,
-            "fault_id": fault_id,
-            "fault_type": fault_type,
-            "steps_count": len(chain.steps),
-            "strategies": [s.strategy for s in chain.steps],
-        })
+        events.append(
+            {
+                "event_type": EventType.RECOVERY_CHAIN_CREATED.value,
+                "chain_id": chain.chain_id,
+                "fault_id": fault_id,
+                "fault_type": fault_type,
+                "steps_count": len(chain.steps),
+                "strategies": [s.strategy for s in chain.steps],
+            }
+        )
 
         if not chain.steps:
             outcome = CHAIN_OUTCOME_FAILED
             steps_taken = 0
-            events.append({
-                "event_type": EventType.ADAPTIVE_RECOVERY_COMPLETED.value,
-                "chain_id": chain.chain_id,
-                "fault_id": fault_id,
-                "outcome": outcome,
-                "steps_taken": 0,
-            })
+            events.append(
+                {
+                    "event_type": EventType.ADAPTIVE_RECOVERY_COMPLETED.value,
+                    "chain_id": chain.chain_id,
+                    "fault_id": fault_id,
+                    "outcome": outcome,
+                    "steps_taken": 0,
+                }
+            )
             return {
                 "chain_id": chain.chain_id,
                 "fault_id": fault_id,
@@ -111,10 +115,7 @@ class AdaptiveRecoveryManager:
                 "chain_id": chain.chain_id,
                 "fault_id": fault_id,
                 "fault_type": fault_type,
-                "steps": [
-                    {"strategy": s.strategy, "order": s.order, "confidence": s.confidence}
-                    for s in chain.steps
-                ],
+                "steps": [{"strategy": s.strategy, "order": s.order, "confidence": s.confidence} for s in chain.steps],
                 "outcome": "",
                 "steps_taken": 0,
                 "events": events,
@@ -129,48 +130,56 @@ class AdaptiveRecoveryManager:
             steps_taken = idx + 1
 
             # Emit step started
-            events.append({
-                "event_type": EventType.RECOVERY_STEP_STARTED.value,
-                "chain_id": chain.chain_id,
-                "fault_id": fault_id,
-                "strategy": step.strategy,
-                "order": step.order,
-                "step_index": idx,
-            })
+            events.append(
+                {
+                    "event_type": EventType.RECOVERY_STEP_STARTED.value,
+                    "chain_id": chain.chain_id,
+                    "fault_id": fault_id,
+                    "strategy": step.strategy,
+                    "order": step.order,
+                    "step_index": idx,
+                }
+            )
 
             if success:
                 outcome = CHAIN_OUTCOME_SUCCESS
-                events.append({
-                    "event_type": EventType.RECOVERY_STEP_SUCCEEDED.value,
-                    "chain_id": chain.chain_id,
-                    "fault_id": fault_id,
-                    "strategy": step.strategy,
-                    "order": step.order,
-                    "confidence": step.confidence,
-                })
+                events.append(
+                    {
+                        "event_type": EventType.RECOVERY_STEP_SUCCEEDED.value,
+                        "chain_id": chain.chain_id,
+                        "fault_id": fault_id,
+                        "strategy": step.strategy,
+                        "order": step.order,
+                        "confidence": step.confidence,
+                    }
+                )
                 break
             else:
-                events.append({
-                    "event_type": EventType.RECOVERY_STEP_FAILED.value,
-                    "chain_id": chain.chain_id,
-                    "fault_id": fault_id,
-                    "strategy": step.strategy,
-                    "order": step.order,
-                    "reason": "step_failed",
-                })
+                events.append(
+                    {
+                        "event_type": EventType.RECOVERY_STEP_FAILED.value,
+                        "chain_id": chain.chain_id,
+                        "fault_id": fault_id,
+                        "strategy": step.strategy,
+                        "order": step.order,
+                        "reason": "step_failed",
+                    }
+                )
 
                 # Try next step via switch policy
                 next_idx = self._switch_policy.next_step(chain, idx)
                 if next_idx is not None and next_idx < len(chain.steps):
                     next_step = chain.steps[next_idx]
-                    events.append({
-                        "event_type": EventType.RECOVERY_STRATEGY_SWITCHED.value,
-                        "chain_id": chain.chain_id,
-                        "fault_id": fault_id,
-                        "from_strategy": step.strategy,
-                        "to_strategy": next_step.strategy,
-                        "reason": "step_failed_switching",
-                    })
+                    events.append(
+                        {
+                            "event_type": EventType.RECOVERY_STRATEGY_SWITCHED.value,
+                            "chain_id": chain.chain_id,
+                            "fault_id": fault_id,
+                            "from_strategy": step.strategy,
+                            "to_strategy": next_step.strategy,
+                            "reason": "step_failed_switching",
+                        }
+                    )
                 else:
                     # Chain exhausted, escalate
                     outcome = CHAIN_OUTCOME_ESCALATED
@@ -180,22 +189,21 @@ class AdaptiveRecoveryManager:
         if not outcome:
             outcome = CHAIN_OUTCOME_ESCALATED
 
-        events.append({
-            "event_type": EventType.ADAPTIVE_RECOVERY_COMPLETED.value,
-            "chain_id": chain.chain_id,
-            "fault_id": fault_id,
-            "outcome": outcome,
-            "steps_taken": steps_taken,
-        })
+        events.append(
+            {
+                "event_type": EventType.ADAPTIVE_RECOVERY_COMPLETED.value,
+                "chain_id": chain.chain_id,
+                "fault_id": fault_id,
+                "outcome": outcome,
+                "steps_taken": steps_taken,
+            }
+        )
 
         return {
             "chain_id": chain.chain_id,
             "fault_id": fault_id,
             "fault_type": fault_type,
-            "steps": [
-                {"strategy": s.strategy, "order": s.order, "confidence": s.confidence}
-                for s in chain.steps
-            ],
+            "steps": [{"strategy": s.strategy, "order": s.order, "confidence": s.confidence} for s in chain.steps],
             "outcome": outcome,
             "steps_taken": steps_taken,
             "events": events,

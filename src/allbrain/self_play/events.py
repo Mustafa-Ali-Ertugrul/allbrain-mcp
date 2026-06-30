@@ -4,10 +4,17 @@ from typing import Any
 
 from allbrain.self_play.model import SELF_PLAY_TEMPLATE_VERSION
 
-MATCH_PLAYED_KEYS: frozenset[str] = frozenset({
-    "policy_a", "policy_b", "winner", "score_a", "score_b",
-    "confidence", "fault_type",
-})
+MATCH_PLAYED_KEYS: frozenset[str] = frozenset(
+    {
+        "policy_a",
+        "policy_b",
+        "winner",
+        "score_a",
+        "score_b",
+        "confidence",
+        "fault_type",
+    }
+)
 
 
 def _check_keys(p: dict[str, Any], keys: frozenset[str], label: str) -> None:

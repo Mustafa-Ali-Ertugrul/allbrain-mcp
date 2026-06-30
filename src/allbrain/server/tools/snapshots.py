@@ -1,4 +1,5 @@
 """Domain module: snapshots."""
+
 from __future__ import annotations
 
 import logging
@@ -41,18 +42,23 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         from allbrain.resume.incremental import IncrementalResumeEngine
         from allbrain.resume.multi_agent import MultiAgentResumeEngine
         from allbrain.snapshot.versions import is_compatible
+
         events = None
         if not data.use_snapshot:
             events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         all_events = events
         if all_events is None:
             from allbrain.storage.snapshot_repo import SnapshotRepo
+
             snapshot = SnapshotRepo(context.repository.engine).get_latest(project.id)
             if snapshot is not None and is_compatible(snapshot.metadata):
-                all_events = context.repository.list_events_after(project_path=context.project_path, event_cursor=snapshot.event_cursor)
+                all_events = context.repository.list_events_after(
+                    project_path=context.project_path, event_cursor=snapshot.event_cursor
+                )
             else:
                 all_events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
         from allbrain.storage.snapshot_repo import SnapshotRepo
+
         incremental = IncrementalResumeEngine(
             repository=context.repository,
             snapshot_repo=SnapshotRepo(context.repository.engine),
@@ -92,6 +98,7 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 
         from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
         from allbrain.storage.snapshot_repo import SnapshotRepo
+
         snapshot_repo = SnapshotRepo(context.repository.engine)
         latest = snapshot_repo.get_latest(project.id)
         if latest is not None and not data.force:
@@ -142,6 +149,7 @@ def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         from allbrain.resume.intent_resume import IntentResumeEngine
         from allbrain.resume.multi_agent import MultiAgentResumeEngine
         from allbrain.storage.snapshot_repo import SnapshotRepo
+
         incremental = IncrementalResumeEngine(
             repository=context.repository,
             snapshot_repo=SnapshotRepo(context.repository.engine),

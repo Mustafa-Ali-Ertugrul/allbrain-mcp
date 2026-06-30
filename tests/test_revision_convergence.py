@@ -15,6 +15,7 @@ from allbrain.revision import (
 def _make_event(event_id: str, event_type: str, payload: dict | None = None, created_at: datetime | None = None):
     class _E:
         pass
+
     e = _E()
     e.id = event_id
     e.type = event_type

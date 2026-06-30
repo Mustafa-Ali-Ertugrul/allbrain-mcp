@@ -29,9 +29,12 @@ class TestMetaScorer:
         store = ProfileStore()
         scorer = MetaScorer(store)
         result = scorer.score(
-            "timeout", 0.38,
-            success_rate=0.8, risk_estimate=0.4,
-            stability_estimate=0.6, drift_estimate=0.2,
+            "timeout",
+            0.38,
+            success_rate=0.8,
+            risk_estimate=0.4,
+            stability_estimate=0.6,
+            drift_estimate=0.2,
         )
         assert result.static_score == 0.38
         assert abs(result.meta_score - 0.38) < 1e-6
@@ -40,24 +43,35 @@ class TestMetaScorer:
         store = ProfileStore()
         scorer = MetaScorer(store)
         result = scorer.score(
-            "timeout", 0.42,
-            success_rate=0.8, risk_estimate=0.4,
-            stability_estimate=0.6, drift_estimate=0.2,
+            "timeout",
+            0.42,
+            success_rate=0.8,
+            risk_estimate=0.4,
+            stability_estimate=0.6,
+            drift_estimate=0.2,
         )
         assert not result.override_applied
         assert result.confidence < 1.0
 
     def test_override_applied_when_gap_large(self):
         store = ProfileStore()
-        store.set(ScoringProfile("timeout",
-            success_weight=0.05, risk_weight=0.70,
-            stability_weight=0.05, drift_weight=0.05,
-        ))
+        store.set(
+            ScoringProfile(
+                "timeout",
+                success_weight=0.05,
+                risk_weight=0.70,
+                stability_weight=0.05,
+                drift_weight=0.05,
+            )
+        )
         scorer = MetaScorer(store)
         result = scorer.score(
-            "timeout", 0.42,
-            success_rate=0.8, risk_estimate=0.4,
-            stability_estimate=0.6, drift_estimate=0.2,
+            "timeout",
+            0.42,
+            success_rate=0.8,
+            risk_estimate=0.4,
+            stability_estimate=0.6,
+            drift_estimate=0.2,
         )
         assert result.override_applied
         assert result.blended_score != result.static_score
@@ -67,21 +81,22 @@ class TestMetaScorer:
         store.set(ScoringProfile("timeout", success_weight=0.10))
         store.set(ScoringProfile("overload", success_weight=0.60))
         scorer = MetaScorer(store)
-        r_timeout = scorer.score("timeout", 0.5,
-            success_rate=1.0, risk_estimate=0.5, stability_estimate=0.5, drift_estimate=0.0)
-        r_overload = scorer.score("overload", 0.5,
-            success_rate=1.0, risk_estimate=0.5, stability_estimate=0.5, drift_estimate=0.0)
+        r_timeout = scorer.score(
+            "timeout", 0.5, success_rate=1.0, risk_estimate=0.5, stability_estimate=0.5, drift_estimate=0.0
+        )
+        r_overload = scorer.score(
+            "overload", 0.5, success_rate=1.0, risk_estimate=0.5, stability_estimate=0.5, drift_estimate=0.0
+        )
         assert r_timeout.meta_score != r_overload.meta_score
 
     def test_exploration_bonus_adds_to_score(self):
         store = ProfileStore()
         store.set(ScoringProfile("latency", exploration_bonus=0.15))
         scorer = MetaScorer(store)
-        result = scorer.score("latency", 0.4,
-            success_rate=0.6, risk_estimate=0.5, stability_estimate=0.5, drift_estimate=0.3)
-        meta_no_bonus = (
-            0.6 * 0.5 - (1 - 0.5) * 0.2 + 0.5 * 0.2 - 0.3 * 0.1
+        result = scorer.score(
+            "latency", 0.4, success_rate=0.6, risk_estimate=0.5, stability_estimate=0.5, drift_estimate=0.3
         )
+        meta_no_bonus = 0.6 * 0.5 - (1 - 0.5) * 0.2 + 0.5 * 0.2 - 0.3 * 0.1
         assert result.meta_score == meta_no_bonus + 0.15
 
     def test_version_increments_on_set(self):
@@ -114,9 +129,12 @@ class TestMetaScoringEvents:
     def test_valid_payload(self):
         p = make_scoring_profile_updated_payload(
             fault_type="timeout",
-            success_weight=0.50, risk_weight=0.20,
-            stability_weight=0.20, drift_weight=0.10,
-            exploration_bonus=0.0, version=1,
+            success_weight=0.50,
+            risk_weight=0.20,
+            stability_weight=0.20,
+            drift_weight=0.10,
+            exploration_bonus=0.0,
+            version=1,
         )
         validate_scoring_profile_updated(p)
 
@@ -128,21 +146,30 @@ class TestMetaScoringEvents:
         with pytest.raises(ValueError):
             make_scoring_profile_updated_payload(
                 fault_type="timeout",
-                success_weight=1.5, risk_weight=0.20,
-                stability_weight=0.20, drift_weight=0.10,
-                exploration_bonus=0.0, version=1,
+                success_weight=1.5,
+                risk_weight=0.20,
+                stability_weight=0.20,
+                drift_weight=0.10,
+                exploration_bonus=0.0,
+                version=1,
             )
 
 
 class TestMetaScoringReducer:
     def test_tracks_profile_updates(self):
         reducer = MetaScoringReducer()
-        event = _make_event(EventType.SCORING_PROFILE_UPDATED.value, {
-            "fault_type": "timeout", "success_weight": 0.30,
-            "risk_weight": 0.20, "stability_weight": 0.25,
-            "drift_weight": 0.15, "exploration_bonus": 0.05,
-            "version": 1,
-        })
+        event = _make_event(
+            EventType.SCORING_PROFILE_UPDATED.value,
+            {
+                "fault_type": "timeout",
+                "success_weight": 0.30,
+                "risk_weight": 0.20,
+                "stability_weight": 0.25,
+                "drift_weight": 0.15,
+                "exploration_bonus": 0.05,
+                "version": 1,
+            },
+        )
         reducer.apply(event)
         snap = reducer.all_snapshots()
         assert snap["default"]["total_updates"] == 1
@@ -156,6 +183,7 @@ class TestMetaScoringReducer:
 
 def _make_event(type_str: str, payload: dict):
     import types
+
     ev = types.SimpleNamespace()
     ev.id = f"test_{type_str}_{hash(str(payload))}"
     ev.type = type_str

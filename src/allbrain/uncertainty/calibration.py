@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 
-def observed_success_rate(events: list[Any], *, total_threshold: int = 100, context_key: str | None = None, belief: Any = None) -> float:
+def observed_success_rate(
+    events: list[Any], *, total_threshold: int = 100, context_key: str | None = None, belief: Any = None
+) -> float:
     if belief is not None:
         belief_mean = getattr(belief, "mean", None)
         if belief_mean is None and isinstance(belief, dict):

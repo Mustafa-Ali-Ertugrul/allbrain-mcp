@@ -5,7 +5,11 @@ from allbrain.workspace import MIN_ACTIVATION, WorkspaceItem, select_workspace_i
 
 class TestSelector:
     def test_ordering(self):
-        items = [WorkspaceItem("1", "d", 0.5, 100), WorkspaceItem("2", "d", 0.9, 200), WorkspaceItem("3", "d", 0.3, 300)]
+        items = [
+            WorkspaceItem("1", "d", 0.5, 100),
+            WorkspaceItem("2", "d", 0.9, 200),
+            WorkspaceItem("3", "d", 0.3, 300),
+        ]
         selected = select_workspace_items(items, 5)
         assert selected[0].item_id == "2"
 
@@ -31,8 +35,10 @@ class TestSelector:
 
     def test_mixed_activations(self):
         items = [
-            WorkspaceItem("a", "d", 0.9, 5), WorkspaceItem("b", "d", 0.7, 4),
-            WorkspaceItem("c", "d", 0.8, 3), WorkspaceItem("d", "d", 0.6, 2),
+            WorkspaceItem("a", "d", 0.9, 5),
+            WorkspaceItem("b", "d", 0.7, 4),
+            WorkspaceItem("c", "d", 0.8, 3),
+            WorkspaceItem("d", "d", 0.6, 2),
         ]
         selected = select_workspace_items(items, 5)
         assert [s.item_id for s in selected] == ["a", "c", "b", "d"]

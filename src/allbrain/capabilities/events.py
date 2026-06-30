@@ -43,26 +43,29 @@ def validate_matched(payload: dict) -> None:
         raise ValueError("match_score must be in [0,1]")
 
 
-def make_registered_payload(*, agent_id: str, capability: str, weight: float,
-                            tv: int = CAPABILITY_TEMPLATE_VERSION) -> dict:
-    p = {"agent_id": str(agent_id), "capability": str(capability),
-         "weight": float(weight), "template_version": int(tv)}
+def make_registered_payload(
+    *, agent_id: str, capability: str, weight: float, tv: int = CAPABILITY_TEMPLATE_VERSION
+) -> dict:
+    p = {"agent_id": str(agent_id), "capability": str(capability), "weight": float(weight), "template_version": int(tv)}
     validate_registered(p)
     return p
 
 
-def make_classified_payload(*, task_id: str, task_type: str,
-                            tv: int = CAPABILITY_TEMPLATE_VERSION) -> dict:
-    p = {"task_id": str(task_id), "task_type": str(task_type),
-         "template_version": int(tv)}
+def make_classified_payload(*, task_id: str, task_type: str, tv: int = CAPABILITY_TEMPLATE_VERSION) -> dict:
+    p = {"task_id": str(task_id), "task_type": str(task_type), "template_version": int(tv)}
     validate_classified(p)
     return p
 
 
-def make_matched_payload(*, agent_id: str, task_type: str, match_score: float,
-                         match_kind: str, tv: int = CAPABILITY_TEMPLATE_VERSION) -> dict:
-    p = {"agent_id": str(agent_id), "task_type": str(task_type),
-         "match_score": float(match_score), "match_kind": str(match_kind),
-         "template_version": int(tv)}
+def make_matched_payload(
+    *, agent_id: str, task_type: str, match_score: float, match_kind: str, tv: int = CAPABILITY_TEMPLATE_VERSION
+) -> dict:
+    p = {
+        "agent_id": str(agent_id),
+        "task_type": str(task_type),
+        "match_score": float(match_score),
+        "match_kind": str(match_kind),
+        "template_version": int(tv),
+    }
     validate_matched(p)
     return p

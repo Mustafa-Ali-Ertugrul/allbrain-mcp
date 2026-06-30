@@ -22,7 +22,9 @@ class Delegation:
 
 class DelegationService:
     def create(self, *, task_id: str, from_agent: str, to_agent: str, reason: str) -> Delegation:
-        return Delegation(delegation_id=str(uuid7()), task_id=task_id, from_agent=from_agent, to_agent=to_agent, reason=reason)
+        return Delegation(
+            delegation_id=str(uuid7()), task_id=task_id, from_agent=from_agent, to_agent=to_agent, reason=reason
+        )
 
     def complete_payload(self, delegation: Delegation, *, outcome: str) -> dict[str, Any]:
         payload = delegation.to_event_payload()

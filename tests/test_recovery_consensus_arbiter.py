@@ -10,9 +10,13 @@ from allbrain.recovery_consensus.model import CandidateStrategy
 def _scored_single(strategy, success=0.7, confidence=0.8, risk=0.2):
     """Helper: create and evaluate a single candidate."""
     c = CandidateStrategy(
-        strategy=strategy, confidence=confidence, risk=risk,
-        estimated_success=success, explanation=strategy,
-        fault_id="f1", component="worker",
+        strategy=strategy,
+        confidence=confidence,
+        risk=risk,
+        estimated_success=success,
+        explanation=strategy,
+        fault_id="f1",
+        component="worker",
     )
     return Evaluator().evaluate([c])
 
@@ -37,14 +41,22 @@ class TestArbiterArbitrate:
     def test_consensus_reached_for_strong_winner(self):
         arb = Arbiter(min_consensus_ratio=0.5)
         c1 = CandidateStrategy(
-            strategy="retry", confidence=1.0, risk=0.0,
-            estimated_success=1.0, explanation="best",
-            fault_id="f1", component="worker",
+            strategy="retry",
+            confidence=1.0,
+            risk=0.0,
+            estimated_success=1.0,
+            explanation="best",
+            fault_id="f1",
+            component="worker",
         )
         c2 = CandidateStrategy(
-            strategy="isolate", confidence=0.1, risk=0.9,
-            estimated_success=0.1, explanation="worst",
-            fault_id="f1", component="worker",
+            strategy="isolate",
+            confidence=0.1,
+            risk=0.9,
+            estimated_success=0.1,
+            explanation="worst",
+            fault_id="f1",
+            component="worker",
         )
         scored = Evaluator().evaluate([c1, c2])
         d = arb.arbitrate(scored, fault_id="f1")
@@ -54,14 +66,22 @@ class TestArbiterArbitrate:
     def test_low_consensus_detected(self):
         arb = Arbiter(min_consensus_ratio=0.95)
         c1 = CandidateStrategy(
-            strategy="retry", confidence=0.6, risk=0.4,
-            estimated_success=0.6, explanation="a",
-            fault_id="f1", component="worker",
+            strategy="retry",
+            confidence=0.6,
+            risk=0.4,
+            estimated_success=0.6,
+            explanation="a",
+            fault_id="f1",
+            component="worker",
         )
         c2 = CandidateStrategy(
-            strategy="rollback", confidence=0.5, risk=0.5,
-            estimated_success=0.5, explanation="b",
-            fault_id="f1", component="worker",
+            strategy="rollback",
+            confidence=0.5,
+            risk=0.5,
+            estimated_success=0.5,
+            explanation="b",
+            fault_id="f1",
+            component="worker",
         )
         scored = Evaluator().evaluate([c1, c2])
         d = arb.arbitrate(scored, fault_id="f1")
@@ -70,14 +90,22 @@ class TestArbiterArbitrate:
     def test_rejected_strategies_listed(self):
         arb = Arbiter()
         c1 = CandidateStrategy(
-            strategy="retry", confidence=1.0, risk=0.0,
-            estimated_success=1.0, explanation="best",
-            fault_id="f1", component="worker",
+            strategy="retry",
+            confidence=1.0,
+            risk=0.0,
+            estimated_success=1.0,
+            explanation="best",
+            fault_id="f1",
+            component="worker",
         )
         c2 = CandidateStrategy(
-            strategy="rollback", confidence=0.3, risk=0.7,
-            estimated_success=0.3, explanation="b",
-            fault_id="f1", component="worker",
+            strategy="rollback",
+            confidence=0.3,
+            risk=0.7,
+            estimated_success=0.3,
+            explanation="b",
+            fault_id="f1",
+            component="worker",
         )
         scored = Evaluator().evaluate([c1, c2])
         d = arb.arbitrate(scored, fault_id="f1")

@@ -9,6 +9,7 @@ from allbrain.revision import RevisionManager, RevisionReducer, make_payload
 def _make_event(event_id: str, event_type: str, payload: dict | None = None):
     class _E:
         pass
+
     e = _E()
     e.id = event_id
     e.type = event_type

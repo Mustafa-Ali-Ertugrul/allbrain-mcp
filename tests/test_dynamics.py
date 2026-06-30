@@ -53,8 +53,8 @@ class TestDriftDetection:
         assert state.drift_score < 0.2
 
     def test_multi_task_drift_isolation(self):
-        state_a = detect_drift(agent_id="a", task_type="t", scores=[0.9]*30, observation_count=30)
-        state_b = detect_drift(agent_id="b", task_type="u", scores=[0.1]*30, observation_count=30)
+        state_a = detect_drift(agent_id="a", task_type="t", scores=[0.9] * 30, observation_count=30)
+        state_b = detect_drift(agent_id="b", task_type="u", scores=[0.1] * 30, observation_count=30)
         assert state_a.drift_score != state_b.drift_score or state_a.agent_id == "a"
 
     def test_threshold_gating_below(self):
@@ -84,31 +84,46 @@ class TestDriftDetection:
 
 class TestPayloads:
     def test_make_drift_payload(self):
-        p = make_drift_payload(agent_id="a", task_type="t", drift_score=0.1, drift_level="low", ema_short=0.5, ema_long=0.5)
+        p = make_drift_payload(
+            agent_id="a", task_type="t", drift_score=0.1, drift_level="low", ema_short=0.5, ema_long=0.5
+        )
         assert p["agent_id"] == "a"
         assert p["drift_score"] == 0.1
         assert p["drift_level"] == "low"
 
     def test_make_trend_payload(self):
-        p = make_trend_payload(agent_id="a", task_type="t", slope=0.01, label="improving", momentum=0.5, consecutive_count=3)
+        p = make_trend_payload(
+            agent_id="a", task_type="t", slope=0.01, label="improving", momentum=0.5, consecutive_count=3
+        )
         assert p["label"] == "improving"
 
     def test_make_forecast_payload(self):
-        p = make_forecast_payload(agent_id="a", task_type="t", horizon=5, predicted_capability=0.7, confidence=0.8, current_capability=0.6, delta=0.1)
+        p = make_forecast_payload(
+            agent_id="a",
+            task_type="t",
+            horizon=5,
+            predicted_capability=0.7,
+            confidence=0.8,
+            current_capability=0.6,
+            delta=0.1,
+        )
         assert p["predicted_capability"] == 0.7
 
     def test_validate_drift_rejects(self):
         import pytest
+
         with pytest.raises(ValueError):
             validate_drift({})
 
     def test_validate_trend_rejects(self):
         import pytest
+
         with pytest.raises(ValueError):
             validate_trend({})
 
     def test_validate_forecast_rejects(self):
         import pytest
+
         with pytest.raises(ValueError):
             validate_forecast({})
 
@@ -116,25 +131,43 @@ class TestPayloads:
 class TestDynamicScoring:
     def test_dynamics_score_improving(self):
         s = dynamics_selection_score(
-            reputation=0.8, runtime_score=0.7, calibrated_trust=0.6,
-            consensus_score=0.5, capability_match=0.4, learned_capability=0.6,
-            drift_score=0.0, trend_label="improving", forecast_score=0.7,
+            reputation=0.8,
+            runtime_score=0.7,
+            calibrated_trust=0.6,
+            consensus_score=0.5,
+            capability_match=0.4,
+            learned_capability=0.6,
+            drift_score=0.0,
+            trend_label="improving",
+            forecast_score=0.7,
         )
         assert isinstance(s, float)
 
     def test_dynamics_score_degrading(self):
         s = dynamics_selection_score(
-            reputation=0.8, runtime_score=0.7, calibrated_trust=0.6,
-            consensus_score=0.5, capability_match=0.4, learned_capability=0.6,
-            drift_score=0.1, trend_label="degrading", forecast_score=0.3,
+            reputation=0.8,
+            runtime_score=0.7,
+            calibrated_trust=0.6,
+            consensus_score=0.5,
+            capability_match=0.4,
+            learned_capability=0.6,
+            drift_score=0.1,
+            trend_label="degrading",
+            forecast_score=0.3,
         )
         assert isinstance(s, float)
 
     def test_drift_penalty_min_clamp(self):
         s = dynamics_selection_score(
-            reputation=0.8, runtime_score=0.7, calibrated_trust=0.6,
-            consensus_score=0.5, capability_match=0.4, learned_capability=0.6,
-            drift_score=1.0, trend_label="unstable", forecast_score=0.0,
+            reputation=0.8,
+            runtime_score=0.7,
+            calibrated_trust=0.6,
+            consensus_score=0.5,
+            capability_match=0.4,
+            learned_capability=0.6,
+            drift_score=1.0,
+            trend_label="unstable",
+            forecast_score=0.0,
         )
         assert s >= 0.0
         assert s <= 1.0
@@ -142,21 +175,49 @@ class TestDynamicScoring:
 
 class TestStates:
     def test_drift_state_frozen(self):
-        s = DriftState(agent_id="a", task_type="t", drift_score=0.0, drift_level="low", ema_short=0.5, ema_long=0.5, observation_count=10, analysis_id="d-1")
+        s = DriftState(
+            agent_id="a",
+            task_type="t",
+            drift_score=0.0,
+            drift_level="low",
+            ema_short=0.5,
+            ema_long=0.5,
+            observation_count=10,
+            analysis_id="d-1",
+        )
         assert s.agent_id == "a"
 
     def test_trend_state_frozen(self):
-        s = TrendState(agent_id="a", task_type="t", slope=0.01, label="stable", momentum=0.0, consecutive_count=0, momentum_samples=10, analysis_id="d-2")
+        s = TrendState(
+            agent_id="a",
+            task_type="t",
+            slope=0.01,
+            label="stable",
+            momentum=0.0,
+            consecutive_count=0,
+            momentum_samples=10,
+            analysis_id="d-2",
+        )
         assert s.label == "stable"
 
     def test_forecast_state_frozen(self):
-        s = ForecastState(agent_id="a", task_type="t", horizon=5, predicted_capability=0.5, confidence=0.8, current_capability=0.5, delta=0.0, analysis_id="d-3")
+        s = ForecastState(
+            agent_id="a",
+            task_type="t",
+            horizon=5,
+            predicted_capability=0.5,
+            confidence=0.8,
+            current_capability=0.5,
+            delta=0.0,
+            analysis_id="d-3",
+        )
         assert s.predicted_capability == 0.5
 
 
 class TestEventTypes:
     def test_new_events_in_semantic_set(self):
         from allbrain.events import SemanticEventType
+
         assert EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value in SemanticEventType
         assert EventType.AGENT_CAPABILITY_TREND_UPDATED.value in SemanticEventType
         assert EventType.AGENT_CAPABILITY_FORECAST_UPDATED.value in SemanticEventType

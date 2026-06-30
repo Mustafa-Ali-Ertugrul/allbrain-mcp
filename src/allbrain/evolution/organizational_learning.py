@@ -15,7 +15,9 @@ class OrganizationalLearning:
         delegation_patterns = DelegationOptimizer().optimize(events)
         consensus_patterns = ConsensusOptimizer().optimize(events)
         supervisor_patterns = SupervisorOptimizer().optimize(events)
-        pattern_count = len(team_patterns) + len(delegation_patterns) + len(consensus_patterns) + len(supervisor_patterns)
+        pattern_count = (
+            len(team_patterns) + len(delegation_patterns) + len(consensus_patterns) + len(supervisor_patterns)
+        )
         return {
             "team_patterns": team_patterns,
             "delegation_patterns": delegation_patterns,

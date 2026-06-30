@@ -27,7 +27,9 @@ class GovernancePolicySynthesizer:
             "policy_updates": [
                 {
                     "policy_id": "autonomous_governance",
-                    "suggested_change": "tighten_constraints" if decision != "approve_expansion" else "maintain_current_thresholds",
+                    "suggested_change": "tighten_constraints"
+                    if decision != "approve_expansion"
+                    else "maintain_current_thresholds",
                     "reason": decision,
                 }
             ],

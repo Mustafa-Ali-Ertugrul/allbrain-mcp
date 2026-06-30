@@ -1,4 +1,5 @@
 """Domain module: knowledge."""
+
 from __future__ import annotations
 
 import logging
@@ -193,7 +194,9 @@ def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         bound_session_id = bind_session_id(context, None)
         project_path = context.project_path
         try:
-            events = context.repository.list_events(project_path=context.project_path, limit=data.limit, session_id=bound_session_id)
+            events = context.repository.list_events(
+                project_path=context.project_path, limit=data.limit, session_id=bound_session_id
+            )
         except Exception:
             events = []
         manager = BeliefManager(prior_alpha=data.prior_alpha, prior_beta=data.prior_beta)
@@ -240,7 +243,9 @@ def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> T
         except ValueError:
             return ToolResult(ok=False, error=f"unknown action '{data.action}'")
         try:
-            events = context.repository.list_events(project_path=context.project_path, limit=data.limit, session_id=bound_session_id)
+            events = context.repository.list_events(
+                project_path=context.project_path, limit=data.limit, session_id=bound_session_id
+            )
         except Exception:
             events = []
         manager = BeliefManager(prior_alpha=data.prior_alpha, prior_beta=data.prior_beta)

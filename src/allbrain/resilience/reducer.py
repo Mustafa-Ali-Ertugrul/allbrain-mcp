@@ -72,11 +72,7 @@ class ResilienceReducer:
                 priority=int(payload["priority"]),
                 reason=str(payload["reason"]),
                 parameters=dict(payload.get("parameters", {})),
-                guardrail_score=(
-                    float(payload["guardrail_score"])
-                    if "guardrail_score" in payload
-                    else None
-                ),
+                guardrail_score=(float(payload["guardrail_score"]) if "guardrail_score" in payload else None),
                 created_at=int(payload.get("created_at", 0)),
             )
             self._plans.append(plan)

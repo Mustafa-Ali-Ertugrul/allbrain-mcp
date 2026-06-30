@@ -47,30 +47,34 @@ class RecoveryConsensusReducer:
             strategies = list(payload.get("strategies", []))
             fault_id = str(payload["fault_id"])
             for s in strategies:
-                self._candidates.append(CandidateStrategy(
-                    strategy=s,
-                    confidence=0.0,
-                    risk=0.0,
-                    estimated_success=0.0,
-                    explanation="generated",
-                    fault_id=fault_id,
-                    component="unknown",
-                ))
+                self._candidates.append(
+                    CandidateStrategy(
+                        strategy=s,
+                        confidence=0.0,
+                        risk=0.0,
+                        estimated_success=0.0,
+                        explanation="generated",
+                        fault_id=fault_id,
+                        component="unknown",
+                    )
+                )
 
         elif et == EventType.RECOVERY_STRATEGY_EVALUATED.value:
             try:
                 validate_strategy_evaluated(payload)
             except ValueError:
                 return
-            self._candidates.append(CandidateStrategy(
-                strategy=str(payload["strategy"]),
-                confidence=float(payload["confidence"]),
-                risk=float(payload["risk"]),
-                estimated_success=float(payload["estimated_success"]),
-                explanation="evaluated",
-                fault_id=str(payload["fault_id"]),
-                component="unknown",
-            ))
+            self._candidates.append(
+                CandidateStrategy(
+                    strategy=str(payload["strategy"]),
+                    confidence=float(payload["confidence"]),
+                    risk=float(payload["risk"]),
+                    estimated_success=float(payload["estimated_success"]),
+                    explanation="evaluated",
+                    fault_id=str(payload["fault_id"]),
+                    component="unknown",
+                )
+            )
 
         elif et == EventType.RECOVERY_CONSENSUS_REACHED.value:
             try:
@@ -79,15 +83,17 @@ class RecoveryConsensusReducer:
                 return
             self._total_decisions += 1
             self._consensus_reached += 1
-            self._decisions.append(RecoveryDecision(
-                selected_strategy=str(payload["selected_strategy"]),
-                consensus_score=float(payload["consensus_score"]),
-                rejected_strategies=(),
-                reason="consensus_reached",
-                fault_id=str(payload["fault_id"]),
-                decision_id=str(payload["decision_id"]),
-                candidate_count=int(payload["candidate_count"]),
-            ))
+            self._decisions.append(
+                RecoveryDecision(
+                    selected_strategy=str(payload["selected_strategy"]),
+                    consensus_score=float(payload["consensus_score"]),
+                    rejected_strategies=(),
+                    reason="consensus_reached",
+                    fault_id=str(payload["fault_id"]),
+                    decision_id=str(payload["decision_id"]),
+                    candidate_count=int(payload["candidate_count"]),
+                )
+            )
 
         elif et == EventType.RECOVERY_STRATEGY_REJECTED.value:
             try:

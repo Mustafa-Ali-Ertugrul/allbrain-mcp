@@ -28,9 +28,7 @@ def allocate_credit(
     if abs(total_contrib) < 1e-12:
         return ()
 
-    proportional = {
-        s: v / total_contrib for s, v in contributors.items()
-    }
+    proportional = {s: v / total_contrib for s, v in contributors.items()}
 
     allocations: list[CreditAllocation] = []
     for signal in contributors:
@@ -38,8 +36,7 @@ def allocate_credit(
         cf_credit = cf_scores.get(signal, 0.0) * ATTRIBUTION_CF_CONFIDENCE
 
         contribution = (
-            ATTRIBUTION_PROPORTIONAL_WEIGHT * p_credit
-            + (1.0 - ATTRIBUTION_PROPORTIONAL_WEIGHT) * cf_credit
+            ATTRIBUTION_PROPORTIONAL_WEIGHT * p_credit + (1.0 - ATTRIBUTION_PROPORTIONAL_WEIGHT) * cf_credit
         ) * reward
 
         confidence = ATTRIBUTION_PROPORTIONAL_WEIGHT + (1.0 - ATTRIBUTION_PROPORTIONAL_WEIGHT) * (
@@ -47,11 +44,13 @@ def allocate_credit(
         )
 
         if abs(contribution) >= ATTRIBUTION_MIN_CONTRIBUTION:
-            allocations.append(CreditAllocation(
-                signal=signal,
-                contribution=max(-1.0, min(1.0, contribution)),
-                confidence=confidence,
-            ))
+            allocations.append(
+                CreditAllocation(
+                    signal=signal,
+                    contribution=max(-1.0, min(1.0, contribution)),
+                    confidence=confidence,
+                )
+            )
 
     return tuple(allocations)
 

@@ -19,6 +19,7 @@ class MockEvent:
         self.payload = payload or {}
         self.task_hint = task_hint
 
+
 def test_beta_functions():
     assert beta_mean(1.0, 1.0) == 0.5
     assert beta_mean(2.0, 1.0) == pytest.approx(0.6666, abs=1e-3)
@@ -27,6 +28,7 @@ def test_beta_functions():
 
     assert beta_info_gain(1.0, 1.0) > 0.0
 
+
 def test_outcome_of():
     assert _outcome_of(MockEvent(EventType.TASK_COMPLETED.value)) == OutcomeKind.SUCCESS
     assert _outcome_of(MockEvent(EventType.PIPELINE_RUN_COMPLETED.value)) == OutcomeKind.SUCCESS
@@ -34,10 +36,12 @@ def test_outcome_of():
     assert _outcome_of(MockEvent(EventType.TASK_BLOCKED.value)) == OutcomeKind.BLOCKED
     assert _outcome_of(MockEvent("unknown")) is None
 
+
 def test_context_key_of():
     assert _context_key_of(MockEvent("type", payload={"objective": {"kind": "test_kind"}})) == "test_kind"
     assert _context_key_of(MockEvent("type", task_hint="test_hint")) == "test_hint"
     assert _context_key_of(MockEvent("type")) == "default"
+
 
 def test_tally_outcomes():
     events = [
@@ -54,6 +58,7 @@ def test_tally_outcomes():
     assert blocked == 1
     assert len(seen_ids) == 4
 
+
 def test_stable_analysis_id():
     id1 = _stable_analysis_id("test", ["1", "2"])
     id2 = _stable_analysis_id("test", ["2", "1"])
@@ -64,4 +69,3 @@ def test_stable_analysis_id():
     assert id1 != id3  # Different context matters
     assert id1 != id4  # Different evidence matters
     assert id1.startswith("belief-")
-

@@ -90,9 +90,7 @@ class SafetyWrapper:
         goal = str(clean_task.get("goal") or "")
         input_tokens = estimate_input_tokens(goal)
         if input_tokens > self.limits.max_input_tokens:
-            raise InputRejected(
-                f"Input tokens ({input_tokens}) exceed limit ({self.limits.max_input_tokens})"
-            )
+            raise InputRejected(f"Input tokens ({input_tokens}) exceed limit ({self.limits.max_input_tokens})")
 
         # 3. Cost ceiling check (per call + per workflow)
         estimated = self.adapter.estimate_cost(clean_task)
@@ -133,6 +131,4 @@ class SafetyWrapper:
         while self.state.call_timestamps and now - self.state.call_timestamps[0] > window:
             self.state.call_timestamps.popleft()
         if len(self.state.call_timestamps) >= self.limits.max_calls_per_minute:
-            raise RateLimitExceeded(
-                f"Rate limit exceeded: {len(self.state.call_timestamps)} calls in last {window}s"
-            )
+            raise RateLimitExceeded(f"Rate limit exceeded: {len(self.state.call_timestamps)} calls in last {window}s")

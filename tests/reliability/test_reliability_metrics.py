@@ -15,7 +15,9 @@ def test_reliability_metrics_are_event_derived(tmp_path) -> None:
     assert save_event_impl(context, type=EventType.WORKER_STARTED.value, payload={"worker_id": "w1"}).ok
     assert save_event_impl(context, type=EventType.DUPLICATE_DETECTED.value, payload={"idempotency_key": "k1"}).ok
     assert save_event_impl(context, type=EventType.LEASE_EXPIRED.value, payload={"lease_id": "l1"}).ok
-    assert save_event_impl(context, type=EventType.TASK_REQUEUED.value, payload={"task_id": "t1", "queue_backend": "sqlite"}).ok
+    assert save_event_impl(
+        context, type=EventType.TASK_REQUEUED.value, payload={"task_id": "t1", "queue_backend": "sqlite"}
+    ).ok
     assert save_event_impl(context, type=EventType.RECOVERY_COMPLETED.value, payload={"task_id": "t1"}).ok
 
     metrics = ReliabilityMetrics().build(events(context))

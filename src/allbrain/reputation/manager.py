@@ -38,11 +38,7 @@ class ReputationManager:
         analysis_id: str | None = None,
     ) -> ReputationState:
         ordered = canonical_event_sort(events)
-        all_event_ids = {
-            str(getattr(e, "id", ""))
-            for e in ordered
-            if getattr(e, "id", "")
-        }
+        all_event_ids = {str(getattr(e, "id", "")) for e in ordered if getattr(e, "id", "")}
 
         samples: list[tuple[bool, float, float, float]] = []
         for event in ordered:

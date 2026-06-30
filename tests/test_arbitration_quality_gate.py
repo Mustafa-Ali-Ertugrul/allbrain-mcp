@@ -39,10 +39,26 @@ class TestQualityGate:
                 self.payload = p
 
         base = [
-            E(EventType.BELIEF_REVISED.value, "1", make_rev_payload(context_key="default", old_confidence=0.9, new_confidence=0.6, reason="contradiction", evidence_count=0)),
+            E(
+                EventType.BELIEF_REVISED.value,
+                "1",
+                make_rev_payload(
+                    context_key="default",
+                    old_confidence=0.9,
+                    new_confidence=0.6,
+                    reason="contradiction",
+                    evidence_count=0,
+                ),
+            ),
         ]
         with_consensus = list(base) + [
-            E(EventType.AGENT_CONSENSUS_REACHED.value, "2", make_consensus_payload(context_key="default", winner_candidate="c", score=0.5, agreement_ratio=1.0, method="weighted")),
+            E(
+                EventType.AGENT_CONSENSUS_REACHED.value,
+                "2",
+                make_consensus_payload(
+                    context_key="default", winner_candidate="c", score=0.5, agreement_ratio=1.0, method="weighted"
+                ),
+            ),
         ]
         manager = RevisionManager()
         s_before = manager.query(base)
@@ -67,5 +83,9 @@ class TestQualityGate:
                 continue
             for pattern in forbidden:
                 assert not re.search(pattern, line), (
-                    "revision/manager.py:" + str(line_no) + " contains " + repr(pattern) + " -- Zorunlu: consensus must come from event log, not recompute."
+                    "revision/manager.py:"
+                    + str(line_no)
+                    + " contains "
+                    + repr(pattern)
+                    + " -- Zorunlu: consensus must come from event log, not recompute."
                 )

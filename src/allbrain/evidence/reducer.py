@@ -42,12 +42,15 @@ class EvidenceReducer:
             context_key = payload.get("context_key") or "default"
             if not isinstance(context_key, str) or not context_key:
                 context_key = "default"
-            bucket = self._contexts.setdefault(context_key, {
-                "evidence_count": 0,
-                "weights": [],
-                "trust_score": 1.0,
-                "last_trust_payload": None,
-            })
+            bucket = self._contexts.setdefault(
+                context_key,
+                {
+                    "evidence_count": 0,
+                    "weights": [],
+                    "trust_score": 1.0,
+                    "last_trust_payload": None,
+                },
+            )
             weight = payload.get("weight")
             if isinstance(weight, (int, float)):
                 bucket["weights"].append(float(weight))
@@ -60,12 +63,15 @@ class EvidenceReducer:
                 context_key = "default"
             trust_score_value = payload.get("trust_score")
             if isinstance(trust_score_value, (int, float)):
-                bucket = self._contexts.setdefault(context_key, {
-                    "evidence_count": 0,
-                    "weights": [],
-                    "trust_score": 1.0,
-                    "last_trust_payload": None,
-                })
+                bucket = self._contexts.setdefault(
+                    context_key,
+                    {
+                        "evidence_count": 0,
+                        "weights": [],
+                        "trust_score": 1.0,
+                        "last_trust_payload": None,
+                    },
+                )
                 bucket["trust_score"] = max(0.0, min(1.0, float(trust_score_value)))
                 bucket["last_trust_payload"] = payload
             return
@@ -96,9 +102,7 @@ class EvidenceReducer:
                 "average_weight": state.average_weight,
                 "trust_score": state.trust_score,
             }
-            for context_key, state in (
-                (k, self.snapshot(context_key=k)) for k in self._contexts
-            )
+            for context_key, state in ((k, self.snapshot(context_key=k)) for k in self._contexts)
         }
 
     def known_context_keys(self) -> set[str]:

@@ -10,7 +10,13 @@ from allbrain.value_alignment.model import (
 from allbrain.value_alignment.reducer import ValueAlignmentReducer
 
 __all__ = [
-    "VALUE_ALIGNMENT_TEMPLATE_VERSION", "Constraint", "AlignmentScore", "AlignmentResult",
-    "ConstraintEngine", "AlignmentScoreTracker", "ValueAlignmentReducer",
-    "validate_alignment_failed", "make_alignment_failed_payload",
+    "VALUE_ALIGNMENT_TEMPLATE_VERSION",
+    "Constraint",
+    "AlignmentScore",
+    "AlignmentResult",
+    "ConstraintEngine",
+    "AlignmentScoreTracker",
+    "ValueAlignmentReducer",
+    "validate_alignment_failed",
+    "make_alignment_failed_payload",
 ]

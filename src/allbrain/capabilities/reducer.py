@@ -32,9 +32,7 @@ class CapabilityReducer:
                 return
             aid = str(payload["agent_id"])
             ctx = self._agents.setdefault(aid, {"matches": [], "task_type": ""})
-            ctx["matches"].append(
-                (float(payload["match_score"]), str(payload.get("match_kind", "none")))
-            )
+            ctx["matches"].append((float(payload["match_score"]), str(payload.get("match_kind", "none"))))
             ctx["task_type"] = str(payload.get("task_type", ""))
             return
 
@@ -44,25 +42,33 @@ class CapabilityReducer:
         matches = ctx["matches"]
         if not matches:
             return CapabilityState(
-                agent_id=agent_id, capability_count=0, task_type="",
-                match_score=0.0, match_kind="none",
+                agent_id=agent_id,
+                capability_count=0,
+                task_type="",
+                match_score=0.0,
+                match_kind="none",
                 analysis_id=_stable_capability_id(agent_id, evidence),
             )
         best_score = max(s[0] for s in matches)
         best_kind = next((s[1] for s in matches if s[0] == best_score), "none")
         return CapabilityState(
-            agent_id=agent_id, capability_count=len(matches),
+            agent_id=agent_id,
+            capability_count=len(matches),
             task_type=str(ctx["task_type"]),
-            match_score=best_score, match_kind=best_kind,
+            match_score=best_score,
+            match_kind=best_kind,
             analysis_id=_stable_capability_id(agent_id, evidence),
         )
 
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
         return {
             aid: {
-                "agent_id": s.agent_id, "capability_count": s.capability_count,
-                "task_type": s.task_type, "match_score": s.match_score,
-                "match_kind": s.match_kind, "analysis_id": s.analysis_id,
+                "agent_id": s.agent_id,
+                "capability_count": s.capability_count,
+                "task_type": s.task_type,
+                "match_score": s.match_score,
+                "match_kind": s.match_kind,
+                "analysis_id": s.analysis_id,
                 "template_version": s.template_version,
             }
             for aid, s in ((k, self.snapshot(agent_id=k)) for k in self._agents)

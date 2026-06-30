@@ -31,14 +31,23 @@ class MockEvent:
 def test_last_uncertainty_overrides_earlier():
     """Last UNCERTAINTY_COMPUTED in the trailing slice is authoritative (last-wins)."""
     revised = make_revision_payload(
-        context_key="default", old_confidence=0.90, new_confidence=0.70,
-        reason="contradiction", evidence_count=0,
+        context_key="default",
+        old_confidence=0.90,
+        new_confidence=0.70,
+        reason="contradiction",
+        evidence_count=0,
     )
     u_first = make_uncertainty_payload(
-        context_key="default", uncertainty=0.10, confidence_interval=0.05, evidence_count=10,
+        context_key="default",
+        uncertainty=0.10,
+        confidence_interval=0.05,
+        evidence_count=10,
     )
     u_last = make_uncertainty_payload(
-        context_key="default", uncertainty=0.45, confidence_interval=0.225, evidence_count=10,
+        context_key="default",
+        uncertainty=0.45,
+        confidence_interval=0.225,
+        evidence_count=10,
     )
     events = [
         MockEvent(EventType.BELIEF_REVISED.value, id="1", payload=revised),
@@ -66,14 +75,20 @@ def test_uncertainty_payload_is_read_directly():
     This is the Zorunlu: 'Manager içerisinde: if uncertainty missing: recompute() yasaktır.'
     """
     revised = make_revision_payload(
-        context_key="default", old_confidence=0.90, new_confidence=0.50,
-        reason="contradiction", evidence_count=0,
+        context_key="default",
+        old_confidence=0.90,
+        new_confidence=0.50,
+        reason="contradiction",
+        evidence_count=0,
     )
     # Even though no real computation was done (the pipeline would call
     # composite_uncertainty to derive 0.30 for variance=0.20, evidence=20, contradictions=2),
     # we use a different value (0.99) to prove the manager reads the payload, not recomputes.
     uncertainty = make_uncertainty_payload(
-        context_key="default", uncertainty=0.99, confidence_interval=0.495, evidence_count=10,
+        context_key="default",
+        uncertainty=0.99,
+        confidence_interval=0.495,
+        evidence_count=10,
     )
     events = [
         MockEvent(EventType.BELIEF_REVISED.value, id="1", payload=revised),
@@ -90,11 +105,17 @@ def test_uncertainty_payload_is_read_directly():
 def test_authoritative_uncertainty_does_not_propagate_to_other_context():
     """An UNCERTAINTY_COMPUTED for context_a must not affect a query for context_b."""
     revised_a = make_revision_payload(
-        context_key="ctx_a", old_confidence=0.90, new_confidence=0.50,
-        reason="contradiction", evidence_count=0,
+        context_key="ctx_a",
+        old_confidence=0.90,
+        new_confidence=0.50,
+        reason="contradiction",
+        evidence_count=0,
     )
     uncertainty_a = make_uncertainty_payload(
-        context_key="ctx_a", uncertainty=0.99, confidence_interval=0.495, evidence_count=10,
+        context_key="ctx_a",
+        uncertainty=0.99,
+        confidence_interval=0.495,
+        evidence_count=10,
     )
     events = [
         MockEvent(EventType.BELIEF_REVISED.value, id="1", payload=revised_a),
@@ -117,8 +138,11 @@ def test_authoritative_uncertainty_does_not_propagate_to_other_context():
 def test_invalid_uncertainty_payload_ignored():
     """Invalid UNCERTAINTY_COMPUTED payloads are ignored (no state corruption)."""
     revised = make_revision_payload(
-        context_key="default", old_confidence=0.90, new_confidence=0.70,
-        reason="contradiction", evidence_count=0,
+        context_key="default",
+        old_confidence=0.90,
+        new_confidence=0.70,
+        reason="contradiction",
+        evidence_count=0,
     )
     invalid = {
         "context_key": "default",
@@ -143,6 +167,9 @@ def test_invalid_uncertainty_payload_ignored():
 def test_validate_payload_uncertainty_accepts_valid():
     """Direct unit test of the validate_payload function."""
     payload = make_uncertainty_payload(
-        context_key="x", uncertainty=0.5, confidence_interval=0.25, evidence_count=10,
+        context_key="x",
+        uncertainty=0.5,
+        confidence_interval=0.25,
+        evidence_count=10,
     )
     validate_uncertainty_payload(payload)

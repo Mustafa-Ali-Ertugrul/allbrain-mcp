@@ -51,6 +51,11 @@ class Simulator:
         if stats is None:
             return 0.3
         penalty = 0.5 if stats.disabled else 0.0
-        return min(1.0, max(0.0,
-            SELF_PLAY_SIM_WEIGHT_CAP * (0.50 * stats.success_rate + 0.25 * stats.avg_effectiveness - 0.25 * penalty)
-        ))
+        return min(
+            1.0,
+            max(
+                0.0,
+                SELF_PLAY_SIM_WEIGHT_CAP
+                * (0.50 * stats.success_rate + 0.25 * stats.avg_effectiveness - 0.25 * penalty),
+            ),
+        )
