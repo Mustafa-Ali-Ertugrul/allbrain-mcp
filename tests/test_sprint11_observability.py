@@ -15,21 +15,7 @@ from allbrain.server.app import (
     replay_workflow_impl,
     save_event_impl,
 )
-from allbrain.storage import BrainRepository, create_engine_for_path, init_db
-
-
-def make_context(tmp_path: Path) -> BrainContext:
-    engine = create_engine_for_path(tmp_path / "allbrain.db")
-    init_db(engine)
-    repo = BrainRepository(engine)
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=repo.create_session(project_root, "codex"),
-        auto_snapshot_threshold=10_000,
-    )
+from tests._helpers import make_context
 
 
 def seed_trace_events(context: BrainContext) -> None:
@@ -89,7 +75,7 @@ def events(context: BrainContext):
 
 
 def test_trace_builds_nested_spans_and_otel_export(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_trace_events(context)
 
     spans = Tracer().build_spans(events(context))
@@ -104,7 +90,7 @@ def test_trace_builds_nested_spans_and_otel_export(tmp_path: Path) -> None:
 
 
 def test_replay_is_deterministic_and_cursor_resumable(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_trace_events(context)
     all_events = events(context)
 
@@ -119,7 +105,7 @@ def test_replay_is_deterministic_and_cursor_resumable(tmp_path: Path) -> None:
 
 
 def test_failure_analyzer_finds_failed_agent_and_reason(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_trace_events(context)
 
     result = FailureAnalyzer().analyze(events(context))
@@ -130,7 +116,7 @@ def test_failure_analyzer_finds_failed_agent_and_reason(tmp_path: Path) -> None:
 
 
 def test_graph_builder_queries_failed_paths_and_cost(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_trace_events(context)
     assert save_event_impl(
         context,
@@ -149,7 +135,7 @@ def test_graph_builder_queries_failed_paths_and_cost(tmp_path: Path) -> None:
 
 
 def test_advanced_metrics_and_ranking(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_trace_events(context)
 
     metrics = AdvancedMetrics().build(events(context))
@@ -161,7 +147,7 @@ def test_advanced_metrics_and_ranking(tmp_path: Path) -> None:
 
 
 def test_sprint11_mcp_impls_return_stable_payloads(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_trace_events(context)
 
     trace = get_workflow_trace_impl(context, workflow_id="wf1")

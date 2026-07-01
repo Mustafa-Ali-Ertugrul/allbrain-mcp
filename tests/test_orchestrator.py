@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from allbrain.events import EventType
-from allbrain.server import BrainContext
 from allbrain.server.app import (
     add_task_dependency_impl,
     assign_task_impl,
@@ -14,26 +13,11 @@ from allbrain.server.app import (
     save_event_impl,
 )
 from allbrain.snapshot.versions import snapshot_versions
-from allbrain.storage import BrainRepository, create_engine_for_path, init_db
-
-
-def make_context(tmp_path: Path, agent: str = "codex") -> BrainContext:
-    engine = create_engine_for_path(tmp_path / "allbrain.db")
-    init_db(engine)
-    repo = BrainRepository(engine)
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    session = repo.create_session(project_root, agent)
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=session,
-        auto_snapshot_threshold=10_000,
-    )
+from tests._helpers import make_context
 
 
 def test_create_task_and_assignment_store_score_breakdown(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     created = create_task_impl(
         context,
         task_id="task_jwt",
@@ -61,7 +45,7 @@ def test_create_task_and_assignment_store_score_breakdown(tmp_path: Path) -> Non
 
 
 def test_task_dependency_priority_queue_and_ownership_history_are_replayable(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     assert create_task_impl(context, task_id="task_a", goal="Auth refactor", kind="refactor", priority=2).ok
     assert create_task_impl(context, task_id="task_b", goal="JWT implementation", kind="implementation", priority=2).ok
     assert add_task_dependency_impl(context, task_id="task_b", depends_on="task_a").ok
@@ -81,7 +65,7 @@ def test_task_dependency_priority_queue_and_ownership_history_are_replayable(tmp
 
 
 def test_orchestrator_recommends_handoff_for_blocked_task(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     assert create_task_impl(context, task_id="task_jwt", goal="JWT implementation", kind="reasoning", priority=5).ok
     assert assign_task_impl(context, task_id="task_jwt", agent_id="codex").ok
     assert save_event_impl(
@@ -101,7 +85,7 @@ def test_orchestrator_recommends_handoff_for_blocked_task(tmp_path: Path) -> Non
 
 
 def test_handoff_emits_handoff_and_assignment_events(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     assert create_task_impl(context, task_id="task_tests", goal="Write tests", kind="testing", priority=4).ok
     assert assign_task_impl(context, task_id="task_tests", agent_id="claude").ok
 
@@ -115,7 +99,7 @@ def test_handoff_emits_handoff_and_assignment_events(tmp_path: Path) -> None:
 
 
 def test_orchestrator_snapshot_v7_contains_task_layers(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     assert create_task_impl(context, task_id="task_jwt", goal="JWT implementation", kind="implementation").ok
     assert assign_task_impl(context, task_id="task_jwt").ok
 
@@ -131,7 +115,7 @@ def test_orchestrator_snapshot_v7_contains_task_layers(tmp_path: Path) -> None:
 
 
 def test_audit_replay_determinism_full_replay_equals_snapshot_delta(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     agents = ["codex", "claude", "opencode"]
     session_id = context.active_session_id or 0
 

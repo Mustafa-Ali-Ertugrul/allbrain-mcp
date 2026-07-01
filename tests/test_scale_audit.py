@@ -9,7 +9,7 @@ from typing import Any
 from allbrain.events import EventType
 from allbrain.server import BrainContext
 from allbrain.server.app import create_snapshot_impl, orchestrate_project_impl, resume_project_impl
-from allbrain.storage import BrainRepository, create_engine_for_path, init_db
+from tests._helpers import make_context
 
 
 @dataclass(frozen=True)
@@ -18,21 +18,6 @@ class EventSpec:
     payload: dict[str, Any]
     agent_id: str
     file_path: str | None = None
-
-
-def make_context(tmp_path: Path) -> BrainContext:
-    engine = create_engine_for_path(tmp_path / "allbrain.db")
-    init_db(engine)
-    repo = BrainRepository(engine)
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    session = repo.create_session(project_root, "codex")
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=session,
-        auto_snapshot_threshold=100_000,
-    )
 
 
 def build_scale_dataset() -> list[EventSpec]:
@@ -180,7 +165,7 @@ def append_specs(context: BrainContext, specs: list[EventSpec]) -> None:
 
 
 def test_audit2_scale_performance_baseline_and_snapshot_delta_determinism(tmp_path: Path, record_property) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=100_000)
     specs = build_scale_dataset()
     append_specs(context, specs[:9800])
 

@@ -3,18 +3,9 @@ from __future__ import annotations
 import random
 from pathlib import Path
 
-from allbrain.server import BrainContext
 from allbrain.server.app import resume_project_impl, save_event_impl
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
-
-
-def make_context(repo: BrainRepository, project_root: Path, agent: str) -> BrainContext:
-    session = repo.create_session(project_root, agent)
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=session,
-    )
+from tests._helpers import make_context_from_repo
 
 
 def test_stress_1000_events_random_churn_and_5_agent_switches(tmp_path: Path) -> None:
@@ -25,7 +16,7 @@ def test_stress_1000_events_random_churn_and_5_agent_switches(tmp_path: Path) ->
     project_root = tmp_path / "project"
     project_root.mkdir()
 
-    codex_context = make_context(repo, project_root, "codex")
+    codex_context = make_context_from_repo(repo, project_root, "codex")
     files = [f"module_{index}.py" for index in range(40)]
     tasks = [f"Task {index}" for index in range(25)]
     expected_files: set[str] = set()
@@ -70,7 +61,7 @@ def test_stress_1000_events_random_churn_and_5_agent_switches(tmp_path: Path) ->
     resume_event_counts = []
     tool_usage_counts = []
     for agent_index, agent in enumerate(["claude", "antigravity", "opencode", "codex-2", "claude-2"]):
-        context = make_context(repo, project_root, agent)
+        context = make_context_from_repo(repo, project_root, agent)
         result = resume_project_impl(context, include_git=False, limit=5000)
         assert result.ok, result.error
 

@@ -9,29 +9,8 @@ from allbrain.server import BrainContext
 from allbrain.server.app import create_snapshot_impl, resume_project_impl, save_event_impl
 from allbrain.snapshot import SnapshotCompactor
 from allbrain.snapshot.versions import snapshot_versions
-from allbrain.storage import BrainRepository, SnapshotRepo, create_engine_for_path, init_db
-
-
-def make_context(
-    repo: BrainRepository, project_root: Path, agent: str, threshold: int = 50, snapshot_check_interval: int = 100
-) -> BrainContext:
-    session = repo.create_session(project_root, agent)
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=session,
-        auto_snapshot_threshold=threshold,
-        snapshot_check_interval=snapshot_check_interval,
-    )
-
-
-def make_repo(tmp_path: Path) -> tuple[BrainRepository, Path]:
-    engine = create_engine_for_path(tmp_path / "allbrain.db")
-    init_db(engine)
-    repo = BrainRepository(engine)
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    return repo, project_root
+from allbrain.storage import BrainRepository, SnapshotRepo
+from tests._helpers import make_context_from_repo, make_repo
 
 
 def seed_events(context: BrainContext, count: int) -> None:
@@ -85,7 +64,7 @@ def comparable_resume(data: dict) -> dict:
 
 def test_snapshot_correctness_matches_full_replay_for_500_events(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=10_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     seed_events(context, 500)
 
     snapshot_result = create_snapshot_impl(context, force=True, limit=5000)
@@ -101,7 +80,7 @@ def test_snapshot_correctness_matches_full_replay_for_500_events(tmp_path: Path)
 
 def test_compression_safety_collapses_file_churn_and_groups_failure_metadata(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=10_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     for _ in range(5):
         assert save_event_impl(context, type="file_modified", payload={}, file_path="auth.py").ok
     for _ in range(3):
@@ -122,7 +101,7 @@ def test_compression_safety_collapses_file_churn_and_groups_failure_metadata(tmp
 
 def test_compression_is_idempotent_and_deterministic(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=10_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     for index in range(10):
         assert save_event_impl(context, type="file_modified", payload={"index": index}, file_path="auth.py").ok
     assert save_event_impl(context, type="failure", payload={"error": "same"}).ok
@@ -137,7 +116,7 @@ def test_compression_is_idempotent_and_deterministic(tmp_path: Path) -> None:
 
 def test_incremental_resume_applies_delta_after_snapshot_cursor(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=10_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     seed_events(context, 40)
     snapshot_result = create_snapshot_impl(context, force=True, limit=500)
     assert snapshot_result.ok
@@ -154,12 +133,12 @@ def test_incremental_resume_applies_delta_after_snapshot_cursor(tmp_path: Path) 
 
 def test_agent_switch_uses_snapshot_for_context_reconstruction(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    codex = make_context(repo, project_root, "codex", threshold=10_000)
+    codex = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     seed_events(codex, 100)
     snapshot_result = create_snapshot_impl(codex, force=True, limit=1000)
     assert snapshot_result.ok
 
-    claude = make_context(repo, project_root, "claude", threshold=10_000)
+    claude = make_context_from_repo(repo, project_root, "claude", auto_snapshot_threshold=10_000)
     resumed = resume_project_impl(claude, include_git=False, use_snapshot=True, limit=1000)
 
     assert resumed.ok
@@ -170,7 +149,9 @@ def test_agent_switch_uses_snapshot_for_context_reconstruction(tmp_path: Path) -
 
 def test_auto_snapshot_trigger_uses_weighted_event_score(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=100, snapshot_check_interval=1)
+    context = make_context_from_repo(
+        repo, project_root, "codex", auto_snapshot_threshold=100, snapshot_check_interval=1
+    )
     for index in range(13):
         assert save_event_impl(context, type="failure", payload={"error": f"failure-{index}"}).ok
     project = repo.get_project_by_path(project_root)
@@ -184,7 +165,7 @@ def test_auto_snapshot_trigger_uses_weighted_event_score(tmp_path: Path) -> None
 
 def test_snapshot_delta_rebuild_equals_full_replay(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=10_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     seed_events(context, 120)
     snapshot_result = create_snapshot_impl(context, force=True, limit=1000)
     assert snapshot_result.ok
@@ -201,7 +182,7 @@ def test_snapshot_delta_rebuild_equals_full_replay(tmp_path: Path) -> None:
 
 def test_incompatible_snapshot_falls_back_to_full_replay(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=10_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     seed_events(context, 20)
     snapshot_result = create_snapshot_impl(context, force=True, limit=100)
     assert snapshot_result.ok
@@ -224,7 +205,7 @@ def test_incompatible_snapshot_falls_back_to_full_replay(tmp_path: Path) -> None
 
 def test_v6_snapshot_adapter_adds_scheduler_defaults(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=10_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     seed_events(context, 5)
     project = repo.get_project_by_path(project_root)
     assert project is not None
@@ -253,7 +234,7 @@ def test_v6_snapshot_adapter_adds_scheduler_defaults(tmp_path: Path) -> None:
 
 def test_snapshot_compaction_creates_checkpoint_from_latest_snapshot(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=10_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     seed_events(context, 30)
     snapshot_result = create_snapshot_impl(context, force=True, limit=100)
     assert snapshot_result.ok
@@ -269,7 +250,7 @@ def test_snapshot_compaction_creates_checkpoint_from_latest_snapshot(tmp_path: P
 
 def test_snapshot_resume_10k_events_under_50ms(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=100_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=100_000)
     seed_raw_file_events(repo, project_root, 10_000)
     snapshot_result = create_snapshot_impl(context, force=True, limit=25_000)
     assert snapshot_result.ok
@@ -286,7 +267,7 @@ def test_snapshot_resume_10k_events_under_50ms(tmp_path: Path) -> None:
 
 def test_snapshot_can_include_derived_layers_on_demand(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex", threshold=10_000)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
     assert save_event_impl(context, type="task_started", payload={"task": "JWT"}, file_path="auth.py").ok
 
     snapshot_result = create_snapshot_impl(context, force=True, include_derived=True, limit=100)

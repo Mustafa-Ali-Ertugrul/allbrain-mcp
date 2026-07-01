@@ -5,7 +5,6 @@ from pathlib import Path
 from allbrain.contradiction import ContradictionDetector
 from allbrain.intent import IntentExtractor, IntentStore
 from allbrain.resume import IncrementalResumeEngine, IntentResumeEngine, MultiAgentResumeEngine
-from allbrain.server import BrainContext
 from allbrain.server.app import (
     create_snapshot_impl,
     detect_contradictions_impl,
@@ -14,24 +13,8 @@ from allbrain.server.app import (
     save_event_impl,
 )
 from allbrain.server.tools.intents import register_tools as register_intent_tools
-from allbrain.storage import BrainRepository, SnapshotRepo, create_engine_for_path, init_db
-
-
-def make_repo(tmp_path: Path) -> tuple[BrainRepository, Path]:
-    engine = create_engine_for_path(tmp_path / "allbrain.db")
-    init_db(engine)
-    repo = BrainRepository(engine)
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    return repo, project_root
-
-
-def make_context(repo: BrainRepository, project_root: Path, agent: str) -> BrainContext:
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=repo.create_session(project_root, agent),
-    )
+from allbrain.storage import BrainRepository, SnapshotRepo
+from tests._helpers import make_context_from_repo, make_repo
 
 
 class ToolRegistry:
@@ -45,7 +28,7 @@ class ToolRegistry:
 
 def test_intent_extractor_maps_semantic_events_and_ignores_tool_call(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
     save_event_impl(context, type="task_started", payload={"task": "JWT"})
     save_event_impl(context, type="file_modified", payload={}, file_path="auth.py")
     save_event_impl(context, type="failure", payload={"error": "bad"})
@@ -71,7 +54,7 @@ def test_intent_extractor_maps_semantic_events_and_ignores_tool_call(tmp_path: P
 
 def test_intent_graph_links_shared_file_same_task_and_caused_by_lineage(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
     parent = save_event_impl(context, type="task_started", payload={"task": "JWT"})
     save_event_impl(context, type="task_blocked", payload={"task": "JWT"}, caused_by=parent.data["id"])
     save_event_impl(context, type="task_completed", payload={"task": "JWT"})
@@ -92,13 +75,13 @@ def test_intent_graph_links_shared_file_same_task_and_caused_by_lineage(tmp_path
 def test_contradiction_detector_flags_different_goals_on_shared_file(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
     save_event_impl(
-        make_context(repo, project_root, "codex"),
+        make_context_from_repo(repo, project_root, "codex"),
         type="task_started",
         payload={"task": "JWT refactor"},
         file_path="auth.py",
     )
     save_event_impl(
-        make_context(repo, project_root, "claude"),
+        make_context_from_repo(repo, project_root, "claude"),
         type="task_started",
         payload={"task": "Auth cleanup"},
         file_path="auth.py",
@@ -115,11 +98,11 @@ def test_contradiction_detector_flags_different_goals_on_shared_file(tmp_path: P
 
 def test_contradiction_detector_ignores_same_agent_and_same_goal(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    codex = make_context(repo, project_root, "codex")
+    codex = make_context_from_repo(repo, project_root, "codex")
     save_event_impl(codex, type="task_started", payload={"task": "JWT"}, file_path="auth.py")
     save_event_impl(codex, type="task_started", payload={"task": "Auth cleanup"}, file_path="auth.py")
     save_event_impl(
-        make_context(repo, project_root, "claude"),
+        make_context_from_repo(repo, project_root, "claude"),
         type="task_started",
         payload={"task": "JWT"},
         file_path="middleware.py",
@@ -133,20 +116,20 @@ def test_contradiction_detector_ignores_same_agent_and_same_goal(tmp_path: Path)
 def test_resume_with_intent_contradiction_overrides_next_step(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
     save_event_impl(
-        make_context(repo, project_root, "codex"),
+        make_context_from_repo(repo, project_root, "codex"),
         type="task_started",
         payload={"task": "JWT refactor"},
         file_path="auth.py",
     )
     save_event_impl(
-        make_context(repo, project_root, "claude"),
+        make_context_from_repo(repo, project_root, "claude"),
         type="task_started",
         payload={"task": "Auth cleanup"},
         file_path="auth.py",
     )
 
     result = resume_with_intent_impl(
-        make_context(repo, project_root, "opencode"), include_git=False, use_snapshot=False
+        make_context_from_repo(repo, project_root, "opencode"), include_git=False, use_snapshot=False
     )
 
     assert result.ok
@@ -156,10 +139,12 @@ def test_resume_with_intent_contradiction_overrides_next_step(tmp_path: Path) ->
 
 def test_resume_with_intent_continues_latest_intent_without_contradiction(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    save_event_impl(make_context(repo, project_root, "codex"), type="task_started", payload={"task": "JWT refactor"})
-    save_event_impl(make_context(repo, project_root, "codex"), type="file_modified", payload={}, file_path="auth.py")
+    codex = make_context_from_repo(repo, project_root, "codex")
+    save_event_impl(codex, type="task_started", payload={"task": "JWT refactor"})
+    save_event_impl(codex, type="file_modified", payload={}, file_path="auth.py")
 
-    result = resume_with_intent_impl(make_context(repo, project_root, "claude"), include_git=False, use_snapshot=False)
+    claude = make_context_from_repo(repo, project_root, "claude")
+    result = resume_with_intent_impl(claude, include_git=False, use_snapshot=False)
 
     assert result.ok
     assert result.data["contradiction_view"]["count"] == 0
@@ -169,18 +154,18 @@ def test_resume_with_intent_continues_latest_intent_without_contradiction(tmp_pa
 def test_intent_mcp_tools_return_intents_and_contradictions(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
     save_event_impl(
-        make_context(repo, project_root, "codex"),
+        make_context_from_repo(repo, project_root, "codex"),
         type="task_started",
         payload={"task": "JWT refactor"},
         file_path="auth.py",
     )
     save_event_impl(
-        make_context(repo, project_root, "claude"),
+        make_context_from_repo(repo, project_root, "claude"),
         type="task_started",
         payload={"task": "Auth cleanup"},
         file_path="auth.py",
     )
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
 
     intents = extract_intents_impl(context)
     contradictions = detect_contradictions_impl(context)
@@ -193,7 +178,7 @@ def test_intent_mcp_tools_return_intents_and_contradictions(tmp_path: Path) -> N
 
 def test_registered_intent_tools_use_bound_project_context(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
     registry = ToolRegistry()
     register_intent_tools(registry, context)
 
@@ -205,7 +190,7 @@ def test_registered_intent_tools_use_bound_project_context(tmp_path: Path) -> No
 
 def test_intent_impl_rejects_per_call_project_override(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
 
     intents = extract_intents_impl(context, project_path=str(tmp_path / "other"))
     contradictions = detect_contradictions_impl(context, project_path=str(tmp_path / "other"))
@@ -218,10 +203,10 @@ def test_intent_impl_rejects_per_call_project_override(tmp_path: Path) -> None:
 
 def test_snapshot_v7_stores_intent_and_contradiction_summaries(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
     save_event_impl(context, type="task_started", payload={"task": "JWT refactor"}, file_path="auth.py")
     save_event_impl(
-        make_context(repo, project_root, "claude"),
+        make_context_from_repo(repo, project_root, "claude"),
         type="task_started",
         payload={"task": "Auth cleanup"},
         file_path="auth.py",
@@ -237,7 +222,7 @@ def test_snapshot_v7_stores_intent_and_contradiction_summaries(tmp_path: Path) -
 
 def test_v4_snapshot_adapter_adds_empty_intent_defaults(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
     save_event_impl(context, type="task_started", payload={"task": "JWT"})
     project = repo.get_project_by_path(project_root)
     assert project is not None
@@ -261,7 +246,7 @@ def test_v4_snapshot_adapter_adds_empty_intent_defaults(tmp_path: Path) -> None:
 
 def test_intent_drift_collapses_file_churn_into_main_task_intent(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
     save_event_impl(context, type="task_started", payload={"task": "JWT refactor"})
     for index in range(50):
         save_event_impl(context, type="file_modified", payload={}, file_path=f"auth_{index % 3}.py")
@@ -279,13 +264,13 @@ def test_intent_drift_collapses_file_churn_into_main_task_intent(tmp_path: Path)
 def test_contradiction_false_positive_refactor_plus_tests_is_supportive(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
     save_event_impl(
-        make_context(repo, project_root, "codex"),
+        make_context_from_repo(repo, project_root, "codex"),
         type="task_started",
         payload={"task": "refactor auth.py"},
         file_path="auth.py",
     )
     save_event_impl(
-        make_context(repo, project_root, "claude"),
+        make_context_from_repo(repo, project_root, "claude"),
         type="task_started",
         payload={"task": "add tests for auth.py"},
         file_path="auth.py",
@@ -298,11 +283,11 @@ def test_contradiction_false_positive_refactor_plus_tests_is_supportive(tmp_path
 
 def test_snapshot_delta_intent_replay_equals_full_replay_for_graph_contradictions_and_decision(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    codex = make_context(repo, project_root, "codex")
+    codex = make_context_from_repo(repo, project_root, "codex")
     save_event_impl(codex, type="task_started", payload={"task": "JWT refactor"}, file_path="auth.py")
     create_snapshot_impl(codex, force=True)
     save_event_impl(
-        make_context(repo, project_root, "claude"),
+        make_context_from_repo(repo, project_root, "claude"),
         type="task_started",
         payload={"task": "Auth cleanup"},
         file_path="auth.py",
