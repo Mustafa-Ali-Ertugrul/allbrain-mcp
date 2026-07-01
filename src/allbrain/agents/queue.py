@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
@@ -21,13 +22,30 @@ class QueueItem:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "node_id": self.node.node_id,
+            "node": self.node.to_dict(),
             "agent_id": self.agent_id,
             "workflow_id": self.workflow_id,
             "enqueued_at": self.enqueued_at.isoformat(),
             "parent_results": {nid: r.to_dict() for nid, r in self.parent_results.items()},
             "metadata": dict(self.metadata),
         }
+
+    def model_dump_json(self) -> str:
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def model_validate_json(cls, data: str | bytes) -> QueueItem:
+        if isinstance(data, bytes):
+            data = data.decode()
+        raw: dict[str, Any] = json.loads(data)
+        return cls(
+            node=TaskNode.from_dict(raw["node"]),
+            agent_id=raw["agent_id"],
+            workflow_id=raw["workflow_id"],
+            enqueued_at=datetime.fromisoformat(raw["enqueued_at"]),
+            parent_results={nid: SubtaskResult.from_dict(r) for nid, r in raw.get("parent_results", {}).items()},
+            metadata=raw.get("metadata", {}),
+        )
 
 
 class TaskQueue(ABC):
