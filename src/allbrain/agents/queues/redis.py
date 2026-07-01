@@ -80,6 +80,7 @@ class RedisTaskQueue(TaskQueue):
             client = await self._get_redis()
             if client:
                 key = str(item.metadata.get("idempotency_key") or self._key_builder.queue_item_key(item))
+                item.metadata["idempotency_key"] = key
                 await client.hset(
                     f"queue:{key}",
                     mapping={"state": "queued", "payload": item.model_dump_json()},
@@ -111,10 +112,19 @@ class RedisTaskQueue(TaskQueue):
                     state = data.get(b"state", b"").decode()
                     if state != "queued":
                         continue
-                    await client.hset(f"queue:{key}", "state", "leased")
-                    from allbrain.models.schemas import ToolResult
-
-                    return QueueItem.model_validate_json(data[b"payload"])
+                    lease_id = str(uuid7())
+                    await client.hset(
+                        f"queue:{key}",
+                        mapping={
+                            "state": "leased",
+                            "lease_id": lease_id,
+                            "leased_by": self.worker_id,
+                            "lease_expires_at": (_now() + timedelta(seconds=self.lease_ttl_seconds)).isoformat(),
+                        },
+                    )
+                    item = QueueItem.model_validate_json(data[b"payload"])
+                    item.metadata.update({"idempotency_key": key, "lease_id": lease_id})
+                    return item
         # Fallback
         deadline = None if timeout is None else _now() + timedelta(seconds=timeout)
         while True:
@@ -172,6 +182,15 @@ class RedisTaskQueue(TaskQueue):
 
     async def renew_lease(self, item: QueueItem) -> None:
         key = _key(item)
+        if self._use_real:
+            client = await self._get_redis()
+            if client:
+                await client.hset(
+                    f"queue:{key}",
+                    "lease_expires_at",
+                    (_now() + timedelta(seconds=self.lease_ttl_seconds)).isoformat(),
+                )
+            return
         record = self.store.records.get(key)
         if record and record.state == "leased":
             record.lease_expires_at = _now() + timedelta(seconds=self.lease_ttl_seconds)
@@ -198,11 +217,17 @@ class RedisTaskQueue(TaskQueue):
     def capabilities(self) -> dict[str, object]:
         cap: dict[str, object] = {"backend": "redis", "persistent": True, "lease_aware": True, "available": True}
         if self._use_real:
-            cap["distributed_ready"] = True
+            cap["distributed_ready"] = False
+            cap["experimental"] = True
         else:
             cap["distributed_ready"] = False
             cap["simulation"] = True
         return cap
+
+    async def close(self) -> None:
+        if self._redis_client is not None:
+            await self._redis_client.aclose()
+            self._redis_client = None
 
 
 def _key(item: QueueItem) -> str:

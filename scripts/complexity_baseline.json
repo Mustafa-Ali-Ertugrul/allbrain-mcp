@@ -15,8 +15,6 @@
     "allbrain/graph/workflow_graph_builder.py::_add_collaboration_graph": {"complexity": 20, "lines": 94},
     "allbrain/graph/workflow_graph_builder.py::_event_backed_node_id": {"complexity": 16, "lines": 36},
     "allbrain/orchestrator/metrics/agent_performance_reducer.py::AgentPerformanceReducer.reduce": {"complexity": 16, "lines": 37},
-    "allbrain/predictive_failure/manager.py::PredictiveFailureManager._run_learning_and_self_repair": {"complexity": 48, "lines": 395},
-    "allbrain/predictive_failure/manager.py::PredictiveFailureManager._select_strategy": {"complexity": 29, "lines": 326},
     "allbrain/predictive_failure/reducer.py::PredictiveFailureReducer.apply": {"complexity": 19, "lines": 62},
     "allbrain/recovery_consensus/reducer.py::RecoveryConsensusReducer.apply": {"complexity": 16, "lines": 80},
     "allbrain/replay/event_replay_engine.py::EventReplayEngine._apply": {"complexity": 30, "lines": 92},
