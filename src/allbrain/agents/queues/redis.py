@@ -100,17 +100,27 @@ class RedisTaskQueue(TaskQueue):
         if self._use_real:
             client = await self._get_redis()
             if client:
-                # Simplified real-redis dequeue: pop from queue:order
+                # Peek-first dequeue: LINDEX to check state, LPOP only when queued.
+                # This avoids permanently dropping keys that are leased/completed
+                # but still sitting in queue:order.
                 while True:
-                    key = await client.lpop("queue:order")
-                    if key is None:
+                    raw = await client.lindex("queue:order", 0)
+                    if raw is None:
                         return None
-                    key = key.decode()
+                    key = raw.decode()
                     data = await client.hgetall(f"queue:{key}")
                     if not data:
+                        # Stale key — pop and discard
+                        await client.lpop("queue:order")
                         continue
                     state = data.get(b"state", b"").decode()
                     if state != "queued":
+                        # Leave non-queued keys in the list for recovery logic
+                        return None
+                    # Atomically pop now that we know it's queued
+                    popped = await client.lpop("queue:order")
+                    if popped is None or popped.decode() != key:
+                        # Race: another consumer grabbed it; retry
                         continue
                     lease_id = str(uuid7())
                     await client.hset(

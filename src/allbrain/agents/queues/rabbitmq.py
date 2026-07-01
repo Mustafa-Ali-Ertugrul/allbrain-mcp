@@ -81,23 +81,29 @@ class RabbitMQTaskQueue(RedisTaskQueue):
             msg = await queue.get(fail=False, no_ack=False)
             if msg:
                 item = QueueItem.model_validate_json(msg.body)
-                self._inflight[id(item)] = msg
+                delivery_tag = msg.delivery_tag
+                item.metadata["delivery_tag"] = delivery_tag
+                self._inflight[delivery_tag] = msg
                 return item
             return None
         return await super().dequeue(timeout=timeout)
 
     async def ack(self, item: QueueItem) -> None:
-        message = self._inflight.pop(id(item), None)
-        if message is not None:
-            await message.ack()
-            return
+        delivery_tag = item.metadata.pop("delivery_tag", None)
+        if delivery_tag is not None:
+            message = self._inflight.pop(delivery_tag, None)
+            if message is not None:
+                await message.ack()
+                return
         await super().ack(item)
 
     async def nack(self, item: QueueItem, *, requeue: bool = True, reason: str | None = None) -> None:
-        message = self._inflight.pop(id(item), None)
-        if message is not None:
-            await message.nack(requeue=requeue)
-            return
+        delivery_tag = item.metadata.pop("delivery_tag", None)
+        if delivery_tag is not None:
+            message = self._inflight.pop(delivery_tag, None)
+            if message is not None:
+                await message.nack(requeue=requeue)
+                return
         await super().nack(item, requeue=requeue, reason=reason)
 
     def capabilities(self) -> dict[str, object]:

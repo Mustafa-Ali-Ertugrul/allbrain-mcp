@@ -22,7 +22,7 @@ async def test_real_redis_round_trip_ack_and_reconnect() -> None:
     url = os.environ.get("ALLBRAIN_TEST_REDIS_URL")
     if not url:
         pytest.skip("ALLBRAIN_TEST_REDIS_URL is not configured")
-    import redis.asyncio as redis
+    redis = pytest.importorskip("redis.asyncio")
 
     client = redis.from_url(url)
     await client.flushdb()
@@ -47,8 +47,10 @@ async def test_real_rabbitmq_round_trip_ack_and_reconnect() -> None:
     url = os.environ.get("ALLBRAIN_TEST_AMQP_URL")
     if not url:
         pytest.skip("ALLBRAIN_TEST_AMQP_URL is not configured")
+    pytest.importorskip("aio_pika")
     producer = RabbitMQTaskQueue(amqp_url=url, queue_name="allbrain.contract")
     queue = await producer._ensure_amqp()
+    assert queue is not None, "RabbitMQ queue not available"
     await queue.purge()
     await producer.enqueue(_item("rabbit"))
     await producer.close()
