@@ -251,6 +251,149 @@ def test_active_session_setter_under_contention(tmp_path: Path) -> None:
     assert context.active_session_id == sess.id
 
 
+def test_agent_name_concurrent_read_write(tmp_path: Path) -> None:
+    """agent_name property must be thread-safe under concurrent R/W."""
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+
+    context = BrainContext(repository=repo, project_path=str(tmp_path / "project"), agent_name="initial")
+    assert context.agent_name == "initial"
+    errors: list[str] = []
+
+    def _writer(tid: int) -> None:
+        for _ in range(50):
+            context.agent_name = f"writer-{tid}"
+
+    def _reader(tid: int) -> None:
+        for _ in range(50):
+            try:
+                _name = context.agent_name
+                assert isinstance(_name, str)
+            except Exception as exc:
+                errors.append(f"r{tid}: {exc}")
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        writers = [pool.submit(_writer, t) for t in range(3)]
+        readers = [pool.submit(_reader, t) for t in range(3)]
+        for f in as_completed(writers + readers):
+            f.result()
+
+    assert not errors, f"reader errors: {errors[:5]}"
+    # Must be some writer's name, never None.
+    final = context.agent_name
+    assert final.startswith("writer-")
+
+
+def test_client_info_concurrent(tmp_path: Path) -> None:
+    """client_name / client_version must be thread-safe under concurrent writes."""
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+
+    context = BrainContext(repository=repo, project_path=str(tmp_path / "project"))
+    errors: list[str] = []
+
+    def _setter(tid: int) -> None:
+        for i in range(30):
+            context.set_client_info(f"client-{tid}-{i}", f"v{tid}.{i}")
+
+    def _reader(tid: int) -> None:
+        for _ in range(30):
+            try:
+                _cn = context.client_name
+                _cv = context.client_version
+            except Exception as exc:
+                errors.append(f"r{tid}: {exc}")
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        setters = [pool.submit(_setter, t) for t in range(3)]
+        readers = [pool.submit(_reader, t) for t in range(3)]
+        for f in as_completed(setters + readers):
+            f.result()
+
+    assert not errors, f"reader errors: {errors[:5]}"
+    # Must never be None (set_client_info only writes when truthy)
+    assert context.client_name is not None
+    assert context.client_version is not None
+
+
+def test_git_baseline_concurrent(tmp_path: Path) -> None:
+    """git_baseline property must be thread-safe under concurrent R/W."""
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+
+    context = BrainContext(repository=repo, project_path=str(tmp_path / "project"))
+    assert context.git_baseline is None
+    errors: list[str] = []
+
+    def _writer(tid: int) -> None:
+        for i in range(30):
+            context.git_baseline = {"version": f"{tid}.{i}", "files": {f"f{tid}_{i}": "hash"}}
+
+    def _reader(tid: int) -> None:
+        for _ in range(30):
+            try:
+                _gb = context.git_baseline
+            except Exception as exc:
+                errors.append(f"r{tid}: {exc}")
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        writers = [pool.submit(_writer, t) for t in range(3)]
+        readers = [pool.submit(_reader, t) for t in range(3)]
+        for f in as_completed(writers + readers):
+            f.result()
+
+    assert not errors, f"reader errors: {errors[:5]}"
+    # git_baseline must be a valid dict, not corrupted.
+    final = context.git_baseline
+    assert final is not None
+    assert "version" in final
+    assert "files" in final
+
+
+def test_active_session_id_toctou(tmp_path: Path) -> None:
+    """active_session_id must not return stale id after session replaced.
+
+    Single lock acquisition in the property prevents TOCTOU.
+    """
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+
+    context = BrainContext(
+        repository=repo,
+        project_path=str(project_root.resolve()),
+        agent_name="toctou-test",
+    )
+    sess1 = context.ensure_active_session()
+    assert sess1 is not None
+
+    def _swapper() -> None:
+        for _ in range(20):
+            s = context.ensure_active_session()
+            context.active_session = s  # self-set (no-op but exercises setter)
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(_swapper) for _ in range(4)]
+        for f in as_completed(futures):
+            f.result()
+
+    # After all swaps, active_session_id must match the active session.
+    assert context.active_session_id == context.active_session.id
+
+
 def test_concurrent_mixed_operations(tmp_path: Path) -> None:
     """Mix of save_event, create_task, and list_events concurrently."""
     context = _shared_context(tmp_path)
