@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from allbrain.events import EventType
-from allbrain.server import BrainContext
 from allbrain.server.app import (
     assign_task_impl,
     compare_agents_impl,
@@ -12,25 +11,11 @@ from allbrain.server.app import (
     replay_workflow_impl,
     save_event_impl,
 )
-from allbrain.storage import BrainRepository, create_engine_for_path, init_db
-
-
-def make_context(tmp_path: Path) -> BrainContext:
-    engine = create_engine_for_path(tmp_path / "allbrain.db")
-    init_db(engine)
-    repo = BrainRepository(engine)
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=repo.create_session(project_root, "codex"),
-        auto_snapshot_threshold=10_000,
-    )
+from tests._helpers import make_context
 
 
 def test_assignment_persists_selection_decision_event(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     assert create_task_impl(context, task_id="task_sec", goal="Security review", kind="review").ok
 
     assigned = assign_task_impl(context, task_id="task_sec")
@@ -43,7 +28,7 @@ def test_assignment_persists_selection_decision_event(tmp_path: Path) -> None:
 
 
 def test_workflow_replay_attaches_selection_decision_to_assignment(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     assert create_task_impl(context, task_id="task_sec", goal="Security review", kind="review").ok
     assert assign_task_impl(context, task_id="task_sec").ok
 
@@ -57,7 +42,7 @@ def test_workflow_replay_attaches_selection_decision_to_assignment(tmp_path: Pat
 
 
 def test_agent_comparison_counts_decisions_and_outcomes(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     assert create_task_impl(context, task_id="task_sec", goal="Security review", kind="review").ok
     assigned = assign_task_impl(context, task_id="task_sec")
     agent_id = assigned.data["assignment"]["agent_id"]
@@ -76,7 +61,7 @@ def test_agent_comparison_counts_decisions_and_outcomes(tmp_path: Path) -> None:
 
 
 def test_observability_dashboard_groups_decisions_replay_and_comparison(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     assert create_task_impl(context, task_id="task_sec", goal="Security review", kind="review").ok
     assert assign_task_impl(context, task_id="task_sec").ok
 

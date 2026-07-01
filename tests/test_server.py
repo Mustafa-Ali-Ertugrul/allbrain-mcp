@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from allbrain.server import BrainContext
 from allbrain.server.app import (
     get_git_context_impl,
     get_git_status_impl,
@@ -10,29 +9,7 @@ from allbrain.server.app import (
     save_event_impl,
 )
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
-
-
-def make_context(tmp_path: Path, *, active: bool = True) -> BrainContext:
-    engine = create_engine_for_path(tmp_path / "allbrain.db")
-    init_db(engine)
-    repo = BrainRepository(engine)
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    session = repo.create_session(project_root, "codex") if active else None
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=session,
-    )
-
-
-def make_context_from_repo(repo: BrainRepository, project_root: Path, agent: str) -> BrainContext:
-    session = repo.create_session(project_root, agent)
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=session,
-    )
+from tests._helpers import make_context, make_context_from_repo
 
 
 def test_save_event_binds_active_session_and_audits_tool_call(tmp_path: Path) -> None:

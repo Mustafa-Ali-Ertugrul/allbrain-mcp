@@ -16,22 +16,8 @@ from allbrain.server.app import (
     retrieve_memory_impl,
     save_event_impl,
 )
-from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 from allbrain.ui import GraphExplorer, MetricsDashboard, ReplayViewer, TraceViewer
-
-
-def make_context(tmp_path: Path) -> BrainContext:
-    engine = create_engine_for_path(tmp_path / "allbrain.db")
-    init_db(engine)
-    repo = BrainRepository(engine)
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=repo.create_session(project_root, "codex"),
-        auto_snapshot_threshold=10_000,
-    )
+from tests._helpers import make_context
 
 
 def seed_memory_events(context: BrainContext) -> None:
@@ -90,7 +76,7 @@ def test_semantic_memory_embedding_is_deterministic() -> None:
 
 
 def test_memory_builder_and_retriever_rank_similar_workflows_and_failures(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_memory_events(context)
     items = MemoryBuilder().build(events(context))
     retriever = MemoryRetriever(items)
@@ -106,7 +92,7 @@ def test_memory_builder_and_retriever_rank_similar_workflows_and_failures(tmp_pa
 
 
 def test_policy_is_advisory_and_prefers_successful_fallback_agent(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_memory_events(context)
     memory = MemoryRetriever(MemoryBuilder().build(events(context)))
 
@@ -123,7 +109,7 @@ def test_policy_is_advisory_and_prefers_successful_fallback_agent(tmp_path: Path
 
 
 def test_ui_view_models_are_frontend_ready(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_memory_events(context)
     all_events = events(context)
 
@@ -146,7 +132,7 @@ def test_ui_view_models_are_frontend_ready(tmp_path: Path) -> None:
 
 
 def test_sprint12_mcp_impls_return_stable_json_payloads(tmp_path: Path) -> None:
-    context = make_context(tmp_path)
+    context = make_context(tmp_path, auto_snapshot_threshold=10_000)
     seed_memory_events(context)
 
     memory = build_memory_impl(context)

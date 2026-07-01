@@ -5,7 +5,6 @@ from pathlib import Path
 
 from allbrain.conflict import ConflictDetector, ConflictResolver
 from allbrain.models.entities import Event
-from allbrain.server import BrainContext
 from allbrain.server.app import (
     detect_conflicts_impl,
     resolve_conflicts_impl,
@@ -15,32 +14,14 @@ from allbrain.server.app import (
 from allbrain.storage import (
     BrainRepository,
     SnapshotRepo,
-    create_engine_for_path,
-    init_db,
     open_session,
 )
-
-
-def make_repo(tmp_path: Path) -> tuple[BrainRepository, Path]:
-    engine = create_engine_for_path(tmp_path / "allbrain.db")
-    init_db(engine)
-    repo = BrainRepository(engine)
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    return repo, project_root
-
-
-def make_context(repo: BrainRepository, project_root: Path, agent: str) -> BrainContext:
-    return BrainContext(
-        repository=repo,
-        project_path=str(project_root.resolve()),
-        active_session=repo.create_session(project_root, agent),
-    )
+from tests._helpers import make_context_from_repo, make_repo
 
 
 def test_event_agent_attribution_and_branch_defaults(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
 
     inherited = save_event_impl(context, type="file_modified", payload={}, file_path="auth.py")
     explicit = save_event_impl(
@@ -65,7 +46,7 @@ def test_event_agent_attribution_and_branch_defaults(tmp_path: Path) -> None:
 
 def test_event_graph_caused_by_validation(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
     parent = save_event_impl(context, type="task_started", payload={"task": "JWT"})
     child = save_event_impl(context, type="file_modified", payload={}, file_path="auth.py", caused_by=parent.data["id"])
     invalid = save_event_impl(context, type="file_modified", payload={}, file_path="bad.py", caused_by="missing")
@@ -78,8 +59,8 @@ def test_event_graph_caused_by_validation(tmp_path: Path) -> None:
 
 def test_conflict_scoring_detects_close_file_conflict_but_not_far_or_same_agent(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    codex = make_context(repo, project_root, "codex")
-    claude = make_context(repo, project_root, "claude")
+    codex = make_context_from_repo(repo, project_root, "codex")
+    claude = make_context_from_repo(repo, project_root, "claude")
     save_event_impl(codex, type="file_modified", payload={}, file_path="auth.py")
     save_event_impl(claude, type="file_modified", payload={}, file_path="auth.py")
 
@@ -97,7 +78,7 @@ def test_conflict_scoring_detects_close_file_conflict_but_not_far_or_same_agent(
     far_events = repo.list_events(project_path=project_root, type="file_modified")
     assert ConflictDetector().detect(far_events) == []
 
-    same_agent_context = make_context(repo, project_root, "codex")
+    same_agent_context = make_context_from_repo(repo, project_root, "codex")
     save_event_impl(same_agent_context, type="file_modified", payload={}, file_path="same.py")
     save_event_impl(same_agent_context, type="file_modified", payload={}, file_path="same.py")
     same_agent_events = [
@@ -110,8 +91,8 @@ def test_conflict_scoring_detects_close_file_conflict_but_not_far_or_same_agent(
 
 def test_task_conflict_and_dynamic_resolution(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    codex = make_context(repo, project_root, "codex")
-    claude = make_context(repo, project_root, "claude")
+    codex = make_context_from_repo(repo, project_root, "codex")
+    claude = make_context_from_repo(repo, project_root, "claude")
     save_event_impl(codex, type="task_started", payload={"task": "JWT"}, impact_score=0.2)
     save_event_impl(codex, type="failure", payload={"error": "bad"})
     save_event_impl(claude, type="task_started", payload={"task": "JWT"}, impact_score=0.9)
@@ -132,10 +113,11 @@ def test_task_conflict_and_dynamic_resolution(tmp_path: Path) -> None:
 def test_multi_agent_resume_layered_output_and_conflict_first_decision(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
     for agent in ["codex", "claude", "opencode"]:
-        context = make_context(repo, project_root, agent)
+        context = make_context_from_repo(repo, project_root, agent)
         save_event_impl(context, type="file_modified", payload={}, file_path="auth.py", impact_score=0.5)
 
-    result = resume_project_impl(make_context(repo, project_root, "claude"), include_git=False, use_snapshot=False)
+    claude = make_context_from_repo(repo, project_root, "claude")
+    result = resume_project_impl(claude, include_git=False, use_snapshot=False)
 
     assert result.ok
     data = result.data
@@ -147,9 +129,11 @@ def test_multi_agent_resume_layered_output_and_conflict_first_decision(tmp_path:
 
 def test_conflict_tools_return_detected_and_resolved_conflicts(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    save_event_impl(make_context(repo, project_root, "codex"), type="file_modified", payload={}, file_path="auth.py")
-    save_event_impl(make_context(repo, project_root, "claude"), type="file_modified", payload={}, file_path="auth.py")
-    context = make_context(repo, project_root, "codex")
+    codex = make_context_from_repo(repo, project_root, "codex")
+    claude = make_context_from_repo(repo, project_root, "claude")
+    save_event_impl(codex, type="file_modified", payload={}, file_path="auth.py")
+    save_event_impl(claude, type="file_modified", payload={}, file_path="auth.py")
+    context = make_context_from_repo(repo, project_root, "codex")
 
     detected = detect_conflicts_impl(context)
     resolved = resolve_conflicts_impl(context)
@@ -162,7 +146,7 @@ def test_conflict_tools_return_detected_and_resolved_conflicts(tmp_path: Path) -
 
 def test_v3_snapshot_adapter_maps_legacy_state(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    context = make_context(repo, project_root, "codex")
+    context = make_context_from_repo(repo, project_root, "codex")
     save_event_impl(context, type="task_started", payload={"task": "JWT"})
     project = repo.get_project_by_path(project_root)
     assert project is not None
@@ -195,21 +179,22 @@ def test_v3_snapshot_adapter_maps_legacy_state(tmp_path: Path) -> None:
 def test_resolver_does_not_pretend_to_resolve_low_margin_conflict(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
     save_event_impl(
-        make_context(repo, project_root, "codex"),
+        make_context_from_repo(repo, project_root, "codex"),
         type="file_modified",
         payload={},
         file_path="auth.py",
         impact_score=0.5,
     )
     save_event_impl(
-        make_context(repo, project_root, "claude"),
+        make_context_from_repo(repo, project_root, "claude"),
         type="file_modified",
         payload={},
         file_path="auth.py",
         impact_score=0.5,
     )
 
-    result = resume_project_impl(make_context(repo, project_root, "opencode"), include_git=False, use_snapshot=False)
+    opencode = make_context_from_repo(repo, project_root, "opencode")
+    result = resume_project_impl(opencode, include_git=False, use_snapshot=False)
 
     assert result.ok
     decision = result.data["decision_view"]
@@ -221,13 +206,13 @@ def test_resolver_does_not_pretend_to_resolve_low_margin_conflict(tmp_path: Path
 
 def test_conflict_aware_next_step_overrides_global_resume_next_step(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    codex = make_context(repo, project_root, "codex")
-    claude = make_context(repo, project_root, "claude")
+    codex = make_context_from_repo(repo, project_root, "codex")
+    claude = make_context_from_repo(repo, project_root, "claude")
     save_event_impl(codex, type="failure", payload={"error": "Redis failed"})
     save_event_impl(codex, type="file_modified", payload={}, file_path="auth.py", impact_score=0.8)
     save_event_impl(claude, type="file_modified", payload={}, file_path="auth.py", impact_score=0.8)
 
-    result = resume_project_impl(make_context(repo, project_root, "codex"), include_git=False, use_snapshot=False)
+    result = resume_project_impl(codex, include_git=False, use_snapshot=False)
 
     assert result.ok
     assert result.data["global_view"]["next_step"] == "Investigate the latest failure"
@@ -237,16 +222,16 @@ def test_conflict_aware_next_step_overrides_global_resume_next_step(tmp_path: Pa
 
 def test_agent_switch_keeps_agent_views_and_global_context_aligned(tmp_path: Path) -> None:
     repo, project_root = make_repo(tmp_path)
-    codex = make_context(repo, project_root, "codex")
+    codex = make_context_from_repo(repo, project_root, "codex")
     save_event_impl(codex, type="task_started", payload={"task": "JWT refactor"}, impact_score=0.6)
     save_event_impl(codex, type="file_modified", payload={}, file_path="auth.py", impact_score=0.6)
 
-    claude = make_context(repo, project_root, "claude")
+    claude = make_context_from_repo(repo, project_root, "claude")
     save_event_impl(claude, type="task_started", payload={"task": "middleware fix"}, impact_score=0.6)
     save_event_impl(claude, type="file_modified", payload={}, file_path="middleware.py", impact_score=0.6)
 
     opencode_resume = resume_project_impl(
-        make_context(repo, project_root, "opencode"), include_git=False, use_snapshot=False
+        make_context_from_repo(repo, project_root, "opencode"), include_git=False, use_snapshot=False
     )
 
     assert opencode_resume.ok
