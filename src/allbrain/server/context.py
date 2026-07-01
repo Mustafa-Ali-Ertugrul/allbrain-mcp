@@ -11,8 +11,11 @@ from allbrain.server.constants import DEFAULT_AUTO_SNAPSHOT_THRESHOLD
 class BrainContext:
     """Thread-safe brain execution context.
 
-    ``active_session`` is guarded by ``_session_lock`` (RLock) to prevent
-    concurrent read/write races.  ``repository`` is a read-only property.
+    Every mutable attribute is guarded by ``_session_lock`` (RLock).
+    ``repository`` is read-only.  Immutable-after-init attributes
+    (``project_path``, ``server_instance_id``, ``central_audit_enabled``,
+    ``auto_snapshot_threshold``, ``snapshot_check_interval``) are plain
+    public fields – they are never mutated outside ``__init__``.
     """
 
     def __init__(self: BrainContext, **kwargs: Any) -> None:
@@ -25,21 +28,24 @@ class BrainContext:
         self.__dict__["_repository"] = repo
         self.__dict__["_active_session"] = kwargs.get("active_session")
 
-        # ── plain attributes ──
+        # Immutable-after-init attributes (plain, never mutated outside __init__).
         self.project_path: str = kwargs.get("project_path", "")
-        self.agent_name: str = kwargs.get("agent_name", "unknown")
         self.server_instance_id: str = kwargs.get("server_instance_id", "") or str(uuid7())
-        self.client_name: str | None = kwargs.get("client_name")
-        self.client_version: str | None = kwargs.get("client_version")
         self.central_audit_enabled: bool = kwargs.get("central_audit_enabled", False)
         self.auto_snapshot_threshold: int = kwargs.get("auto_snapshot_threshold", DEFAULT_AUTO_SNAPSHOT_THRESHOLD)
         self.snapshot_check_interval: int = kwargs.get("snapshot_check_interval", DEFAULT_AUTO_SNAPSHOT_THRESHOLD)
-        self._event_count: int = 0
-        self.git_baseline: dict[str, Any] | None = None
+
+        # ── mutable attributes (backed by ``__dict__``, guarded by _session_lock) ──
+        agent_name: str = kwargs.get("agent_name", "unknown")
+        self.__dict__["_agent_name"] = agent_name
+        self.__dict__["_client_name"] = kwargs.get("client_name")
+        self.__dict__["_client_version"] = kwargs.get("client_version")
+        self.__dict__["_git_baseline"]: dict[str, Any] | None = None
+        self.__dict__["_event_count"]: int = 0
 
         # Infer agent_name from an existing session when not explicitly provided.
         if self.__dict__["_active_session"] is not None and "agent_name" not in kwargs:
-            self.agent_name = self.__dict__["_active_session"].agent_name
+            self._agent_name = self.__dict__["_active_session"].agent_name
 
         # Catch any extra kwargs (forward-compat safety net).
         known = {
@@ -79,28 +85,75 @@ class BrainContext:
 
     @property
     def active_session_id(self) -> int | None:
-        session = self.active_session  # uses locked property
-        if session is None:
-            return None
-        return session.id
+        """Session id fetched under a single lock acquisition."""
+        with self._session_lock:
+            session = self._active_session
+            if session is None:
+                return None
+            return session.id
+
+    @property
+    def agent_name(self) -> str:
+        """Agent name (thread-safe)."""
+        with self._session_lock:
+            return self._agent_name
+
+    @agent_name.setter
+    def agent_name(self, value: str) -> None:
+        with self._session_lock:
+            self._agent_name = value
+
+    @property
+    def client_name(self) -> str | None:
+        """Client name (thread-safe)."""
+        with self._session_lock:
+            return self._client_name
+
+    @client_name.setter
+    def client_name(self, value: str | None) -> None:
+        with self._session_lock:
+            self._client_name = value
+
+    @property
+    def client_version(self) -> str | None:
+        """Client version (thread-safe)."""
+        with self._session_lock:
+            return self._client_version
+
+    @client_version.setter
+    def client_version(self, value: str | None) -> None:
+        with self._session_lock:
+            self._client_version = value
+
+    @property
+    def git_baseline(self) -> dict[str, Any] | None:
+        """Git fingerprint baseline (thread-safe)."""
+        with self._session_lock:
+            return self._git_baseline
+
+    @git_baseline.setter
+    def git_baseline(self, value: dict[str, Any] | None) -> None:
+        with self._session_lock:
+            self._git_baseline = value
 
     # ── public methods ──
 
     def set_client_info(self, name: str | None, version: str | None) -> None:
-        if name:
-            self.client_name = name
-        if version:
-            self.client_version = version
+        with self._session_lock:
+            if name:
+                self._client_name = name
+            if version:
+                self._client_version = version
 
     def ensure_active_session(self) -> Any:
         with self._session_lock:
             if self._active_session is None:
                 self._active_session = self._repository.create_session(
                     project_path=self.project_path,
-                    agent_name=self.agent_name,
+                    agent_name=self._agent_name,
                     server_instance_id=self.server_instance_id,
-                    client_name=self.client_name,
-                    client_version=self.client_version,
+                    client_name=self._client_name,
+                    client_version=self._client_version,
                 )
             return self._active_session
 

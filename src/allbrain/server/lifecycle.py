@@ -279,10 +279,12 @@ def create_lifespan(context: BrainContext):
 async def _heartbeat_loop(context: BrainContext) -> None:
     while True:
         await anyio.sleep(HEARTBEAT_INTERVAL_SECONDS)
-        session_id = context.active_session_id
+        # Acquire the lock once for atomic session+id read (avoid TOCTOU).
+        with context._session_lock:
+            session = context._active_session
+            session_id = session.id if session is not None else None
         if session_id is not None:
             try:
-                session = context.active_session
                 if session is not None:
                     await anyio.to_thread.run_sync(record_git_changes, context, session)
                 await anyio.to_thread.run_sync(context.repository.touch_session, session_id)
