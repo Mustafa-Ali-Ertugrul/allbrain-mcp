@@ -2,18 +2,23 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.runtime_core.contracts import EconomicEvaluation, ObjectiveContext, StrategicPlan
+
 
 class StrategicPlanningBridge:
-    def plan(self, objective: dict[str, Any], economic: dict[str, Any]) -> dict[str, Any]:
-        objective_id = str(objective.get("objective_id") or objective.get("task_id") or "objective")
-        return {
-            "plan_id": f"plan:{objective_id}",
-            "objective_id": objective_id,
-            "goal": objective.get("goal") or objective.get("title") or objective_id,
-            "decision": "activate" if economic["decision"] == "invest" else "research",
-            "priority": int(objective.get("priority", 3) or 3),
-            "confidence": float(objective.get("confidence", 0.75) or 0.75),
-        }
+    engine_id = "deterministic-strategy-v1"
+
+    def plan(self, objective: ObjectiveContext, economic: EconomicEvaluation) -> StrategicPlan:
+        objective_id = objective.objective_id or objective.task_id or "objective"
+        return StrategicPlan(
+            plan_id=f"plan:{objective_id}",
+            objective_id=objective_id,
+            goal=objective.goal or objective.title or objective_id,
+            decision="activate" if economic.decision == "invest" else "research",
+            priority=objective.priority,
+            confidence=objective.confidence,
+            engine_id=self.engine_id,
+        )
 
 
 class GoalDecompositionBridge:

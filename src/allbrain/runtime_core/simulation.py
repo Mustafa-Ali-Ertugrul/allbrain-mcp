@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
+from allbrain.runtime_core.contracts import RuntimeContext
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 from allbrain.runtime_core.observability import ObservabilityCollector
 
@@ -14,7 +15,6 @@ if TYPE_CHECKING:
     from allbrain.counterfactual import CounterfactualEngine
     from allbrain.foresight import ForesightEngine
     from allbrain.scenarios import ScenarioEngine
-    from allbrain.server.context import BrainContext
     from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class SimulationOrchestrator:
     def simulation_step(
         self,
         bus: RuntimeEventBus,
-        context: BrainContext,
+        context: RuntimeContext,
         project_path: str | None,
         objective: dict[str, Any],
         caused_by: str,

@@ -197,3 +197,19 @@ def test_payload_version_column_backfilled_on_old_schema(tmp_path: Path) -> None
     assert events[0].id == "legacy-evt-1"
     assert events[0].payload == {"old": True}
     assert events[0].payload_version == current_payload_version()
+
+
+def test_unversioned_sqlite_is_backed_up_and_stamped(tmp_path: Path) -> None:
+    from sqlalchemy import inspect
+    from sqlmodel import SQLModel
+
+    from allbrain.storage import create_engine_for_path, init_db
+
+    path = tmp_path / "pre_alembic.db"
+    engine = create_engine_for_path(path)
+    SQLModel.metadata.create_all(engine)
+
+    init_db(engine)
+
+    assert "alembic_version" in inspect(engine).get_table_names()
+    assert list(tmp_path.glob("pre_alembic.db.bak-*"))
