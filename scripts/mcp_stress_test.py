@@ -40,6 +40,8 @@ from allbrain.storage import create_engine_for_path, init_db
 AGENT_COUNT = 10
 EVENTS_PER_AGENT = 200
 TOTAL_EVENTS = AGENT_COUNT * EVENTS_PER_AGENT
+P95_BUDGET_SECONDS = 0.250
+P99_BUDGET_SECONDS = 1.500
 VALID_TYPES = [
     "file_modified",
     "task_started",
@@ -555,6 +557,11 @@ def main() -> int:
             "p99": round(global_p99, 4),
             "mean": round(global_mean, 4),
         },
+        "service_level": {
+            "p95_budget_seconds": P95_BUDGET_SECONDS,
+            "p99_budget_seconds": P99_BUDGET_SECONDS,
+            "within_budget": global_p95 <= P95_BUDGET_SECONDS and global_p99 <= P99_BUDGET_SECONDS,
+        },
         "per_agent": [
             {
                 "agent": ar["agent"],
@@ -573,7 +580,12 @@ def main() -> int:
     print(f"\n[REPORT] -> {report_path}")
 
     # ── Verdict ───────────────────────────────────────────────
-    verdict = "PASS" if (total_ok == TOTAL_EVENTS and det_matches) else "FAIL"
+    within_budget = global_p95 <= P95_BUDGET_SECONDS and global_p99 <= P99_BUDGET_SECONDS
+    verdict = (
+        "PASS"
+        if total_ok == TOTAL_EVENTS and total_db == 0 and total_err == 0 and det_matches and within_budget
+        else "FAIL"
+    )
     print(f"\n{'=' * 55}")
     print(f"[{verdict}] overall stress_duration={stress_duration:.3f}s")
     print(f"{'=' * 55}")

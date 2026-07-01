@@ -6,6 +6,7 @@ install:
 lint:
 	uv run ruff check --exit-zero src/ tests/
 	uv run ruff format --check src/ tests/ || true
+	uv run python scripts/check_complexity.py
 
 security:
 	uv run bandit -c pyproject.toml -r src/ -ll

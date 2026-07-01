@@ -207,18 +207,7 @@ class LearningOrchestrator:
     ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
         """Emit AGENT_CAPABILITY_DRIFT_DETECTED + TREND_UPDATED + FORECAST_UPDATED events."""
         from allbrain.capabilities import CapabilityManager
-        from allbrain.dynamics import (
-            CapabilityDynamicsManager,
-            make_drift_payload,
-            make_forecast_payload,
-            make_trend_payload,
-        )
-        from allbrain.dynamics.model import (
-            DRIFT_THRESHOLD,
-            FORECAST_DEFAULT_HORIZON,
-            MIN_OBSERVATIONS_FOR_DRIFT,
-            TREND_HYSTERESIS_COUNT,
-        )
+        from allbrain.dynamics import CapabilityDynamicsManager
 
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
 
@@ -240,65 +229,7 @@ class LearningOrchestrator:
         for k in sorted(agent_ids):
             aid, tt = k.split("::", 1)
             result = dynamics_mgr.query(events, agent_id=aid, task_type=tt)
-
-            drift_data = result.get("drift", {})
-            drift_score = float(drift_data.get("drift_score", 0.0))
-            drift_level = str(drift_data.get("drift_level", "low"))
-            obs_count = int(drift_data.get("observation_count", 0))
-
-            if drift_score >= DRIFT_THRESHOLD and obs_count >= MIN_OBSERVATIONS_FOR_DRIFT:
-                de = bus.publish(
-                    type=EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value,
-                    payload=make_drift_payload(
-                        agent_id=aid,
-                        task_type=tt,
-                        drift_score=drift_score,
-                        drift_level=drift_level,
-                        ema_short=float(drift_data.get("ema_short", 0.0)),
-                        ema_long=float(drift_data.get("ema_long", 0.0)),
-                    ),
-                    caused_by=caused_by,
-                )
-                dynamics_events.append(de)
-
-            trend_data = result.get("trend", {})
-            trend_label = str(trend_data.get("label", "stable"))
-            trend_consecutive = int(trend_data.get("consecutive_count", 0))
-
-            if trend_label != "stable" and trend_consecutive >= TREND_HYSTERESIS_COUNT:
-                te = bus.publish(
-                    type=EventType.AGENT_CAPABILITY_TREND_UPDATED.value,
-                    payload=make_trend_payload(
-                        agent_id=aid,
-                        task_type=tt,
-                        slope=float(trend_data.get("slope", 0.0)),
-                        label=trend_label,
-                        momentum=float(trend_data.get("momentum", 0.0)),
-                        consecutive_count=trend_consecutive,
-                    ),
-                    caused_by=caused_by,
-                )
-                dynamics_events.append(te)
-
-            forecast_data = result.get("forecast", {})
-            predicted = float(forecast_data.get("predicted_capability", 0.0))
-            current_cap = float(forecast_data.get("current_capability", 0.0))
-
-            if abs(predicted - current_cap) >= 0.05:
-                fe = bus.publish(
-                    type=EventType.AGENT_CAPABILITY_FORECAST_UPDATED.value,
-                    payload=make_forecast_payload(
-                        agent_id=aid,
-                        task_type=tt,
-                        horizon=int(forecast_data.get("horizon", FORECAST_DEFAULT_HORIZON)),
-                        predicted_capability=predicted,
-                        confidence=float(forecast_data.get("confidence", 0.0)),
-                        current_capability=current_cap,
-                        delta=float(forecast_data.get("delta", 0.0)),
-                    ),
-                    caused_by=caused_by,
-                )
-                dynamics_events.append(fe)
+            dynamics_events.extend(self._publish_dynamics(bus, aid, tt, result, caused_by))
 
         summary = {
             "task_id": task_id,
@@ -320,6 +251,75 @@ class LearningOrchestrator:
             ),
         }
         return summary, caused_by, dynamics_events
+
+    @staticmethod
+    def _publish_dynamics(
+        bus: RuntimeEventBus, aid: str, task_type: str, result: dict[str, Any], caused_by: str
+    ) -> list[EventRead]:
+        from allbrain.dynamics import make_drift_payload, make_forecast_payload, make_trend_payload
+        from allbrain.dynamics.model import (
+            DRIFT_THRESHOLD,
+            FORECAST_DEFAULT_HORIZON,
+            MIN_OBSERVATIONS_FOR_DRIFT,
+            TREND_HYSTERESIS_COUNT,
+        )
+
+        published: list[EventRead] = []
+        drift = result.get("drift", {})
+        drift_score = float(drift.get("drift_score", 0.0))
+        if drift_score >= DRIFT_THRESHOLD and int(drift.get("observation_count", 0)) >= MIN_OBSERVATIONS_FOR_DRIFT:
+            published.append(
+                bus.publish(
+                    type=EventType.AGENT_CAPABILITY_DRIFT_DETECTED.value,
+                    payload=make_drift_payload(
+                        agent_id=aid,
+                        task_type=task_type,
+                        drift_score=drift_score,
+                        drift_level=str(drift.get("drift_level", "low")),
+                        ema_short=float(drift.get("ema_short", 0.0)),
+                        ema_long=float(drift.get("ema_long", 0.0)),
+                    ),
+                    caused_by=caused_by,
+                )
+            )
+        trend = result.get("trend", {})
+        label = str(trend.get("label", "stable"))
+        consecutive = int(trend.get("consecutive_count", 0))
+        if label != "stable" and consecutive >= TREND_HYSTERESIS_COUNT:
+            published.append(
+                bus.publish(
+                    type=EventType.AGENT_CAPABILITY_TREND_UPDATED.value,
+                    payload=make_trend_payload(
+                        agent_id=aid,
+                        task_type=task_type,
+                        slope=float(trend.get("slope", 0.0)),
+                        label=label,
+                        momentum=float(trend.get("momentum", 0.0)),
+                        consecutive_count=consecutive,
+                    ),
+                    caused_by=caused_by,
+                )
+            )
+        forecast = result.get("forecast", {})
+        predicted = float(forecast.get("predicted_capability", 0.0))
+        current = float(forecast.get("current_capability", 0.0))
+        if abs(predicted - current) >= 0.05:
+            published.append(
+                bus.publish(
+                    type=EventType.AGENT_CAPABILITY_FORECAST_UPDATED.value,
+                    payload=make_forecast_payload(
+                        agent_id=aid,
+                        task_type=task_type,
+                        horizon=int(forecast.get("horizon", FORECAST_DEFAULT_HORIZON)),
+                        predicted_capability=predicted,
+                        confidence=float(forecast.get("confidence", 0.0)),
+                        current_capability=current,
+                        delta=float(forecast.get("delta", 0.0)),
+                    ),
+                    caused_by=caused_by,
+                )
+            )
+        return published
 
     def fusion_step(
         self,

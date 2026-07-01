@@ -1,5 +1,6 @@
 from allbrain.storage.database import (
     create_engine_for_path,
+    create_engine_for_url,
     ensure_event_payload_version_column,
     ensure_session_lifecycle_columns,
     init_db,
@@ -11,6 +12,7 @@ __all__ = [
     "BrainRepository",
     "SnapshotRepo",
     "create_engine_for_path",
+    "create_engine_for_url",
     "ensure_event_payload_version_column",
     "ensure_session_lifecycle_columns",
     "init_db",

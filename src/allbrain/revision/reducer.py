@@ -58,117 +58,84 @@ class RevisionReducer:
             return
         if event_id:
             self._seen_ids.add(event_id)
-
         event_type = str(getattr(event, "type", ""))
         payload = getattr(event, "payload", None)
-
-        if event_type == EventType.BELIEF_REVISED.value and isinstance(payload, dict):
-            try:
-                validate_payload(payload)
-            except ValueError:
-                return
-            context_key = payload["context_key"]
-            if not isinstance(context_key, str) or not context_key:
-                context_key = "default"
-            self._contexts[context_key] = {
-                "old_confidence": float(payload["old_confidence"]),
-                "new_confidence": float(payload["new_confidence"]),
-                "reason": str(payload["reason"]),
-                "evidence_count": int(payload["evidence_count"]),
-                "template_version": int(payload.get("template_version", REVISION_TEMPLATE_VERSION)),
-            }
-            self._trailing[context_key] = 0
-            return
-
         if event_type == EventType.CONTRADICTION_DETECTED.value:
             for ctx in self._contexts:
                 self._trailing[ctx] = self._trailing.get(ctx, 0) + 1
             return
+        if not isinstance(payload, dict):
+            return
+        handlers = {
+            EventType.BELIEF_REVISED.value: self._apply_belief_revised,
+            EventType.UNCERTAINTY_COMPUTED.value: self._apply_uncertainty,
+            EventType.TRUST_UPDATED.value: self._apply_trust,
+            EventType.CALIBRATION_UPDATED.value: self._apply_calibration,
+            EventType.BELIEF_DRIFT_DETECTED.value: self._apply_drift,
+        }
+        handler = handlers.get(event_type)
+        if handler is not None:
+            handler(payload)
+            return
+        scalar_targets = {
+            EventType.AGENT_REPUTATION_UPDATED.value: ("reputation_score", "_last_agent_reputation"),
+            EventType.AGENT_CONSENSUS_REACHED.value: ("score", "_last_consensus_score"),
+            EventType.AGENT_RUNTIME_UPDATED.value: ("runtime_score", "_last_runtime_score"),
+            EventType.AGENT_SELECTED.value: ("selection_score", "_last_selected_agent_score"),
+            EventType.CAPABILITY_MATCHED.value: ("match_score", "_last_capability_score"),
+            EventType.AGENT_CAPABILITY_LEARNED.value: ("new_score", "_last_learned_capability"),
+            EventType.AGENT_CAPABILITY_DECAYED.value: ("new_score", "_last_learned_capability"),
+        }
+        target = scalar_targets.get(event_type)
+        if target is not None:
+            self._apply_scalar(payload, *target)
 
-        if event_type == EventType.UNCERTAINTY_COMPUTED.value and isinstance(payload, dict):
-            try:
-                validate_uncertainty_payload(payload)
-            except ValueError:
-                return
-            context_key = payload.get("context_key")
-            if not isinstance(context_key, str) or not context_key:
-                context_key = "default"
-            try:
-                self._last_uncertainty[context_key] = float(payload["uncertainty"])
-            except (KeyError, TypeError, ValueError):
-                return
+    @staticmethod
+    def _context_key(payload: dict[str, Any]) -> str:
+        value = payload.get("context_key", "default")
+        return value if isinstance(value, str) and value else "default"
+
+    def _apply_belief_revised(self, payload: dict[str, Any]) -> None:
+        try:
+            validate_payload(payload)
+        except ValueError:
+            return
+        context_key = self._context_key(payload)
+        self._contexts[context_key] = {
+            "old_confidence": float(payload["old_confidence"]),
+            "new_confidence": float(payload["new_confidence"]),
+            "reason": str(payload["reason"]),
+            "evidence_count": int(payload["evidence_count"]),
+            "template_version": int(payload.get("template_version", REVISION_TEMPLATE_VERSION)),
+        }
+        self._trailing[context_key] = 0
+
+    def _apply_uncertainty(self, payload: dict[str, Any]) -> None:
+        try:
+            validate_uncertainty_payload(payload)
+            self._last_uncertainty[self._context_key(payload)] = float(payload["uncertainty"])
+        except (KeyError, TypeError, ValueError):
             return
 
-        if event_type == EventType.TRUST_UPDATED.value and isinstance(payload, dict):
-            context_key = payload.get("context_key")
-            if not isinstance(context_key, str) or not context_key:
-                context_key = "default"
-            ts = payload.get("trust_score")
-            if isinstance(ts, (int, float)):
-                self._last_trust[context_key] = max(0.0, min(1.0, float(ts)))
-            return
+    def _apply_trust(self, payload: dict[str, Any]) -> None:
+        trust = payload.get("trust_score")
+        if isinstance(trust, (int, float)):
+            self._last_trust[self._context_key(payload)] = max(0.0, min(1.0, float(trust)))
 
-        if event_type == EventType.CALIBRATION_UPDATED.value and isinstance(payload, dict):
-            context_key = payload.get("context_key", "default")
-            if not isinstance(context_key, str) or not context_key:
-                context_key = "default"
-            predicted = payload.get("predicted_confidence")
-            outcome = payload.get("actual_outcome")
-            if not isinstance(predicted, (int, float)):
-                return
-            if not isinstance(outcome, bool):
-                return
-            self._calibration_samples.setdefault(context_key, []).append((float(predicted), bool(outcome)))
-            return
+    def _apply_calibration(self, payload: dict[str, Any]) -> None:
+        predicted = payload.get("predicted_confidence")
+        outcome = payload.get("actual_outcome")
+        if isinstance(predicted, (int, float)) and isinstance(outcome, bool):
+            self._calibration_samples.setdefault(self._context_key(payload), []).append((float(predicted), outcome))
 
-        if event_type == EventType.BELIEF_DRIFT_DETECTED.value and isinstance(payload, dict):
-            context_key = payload.get("context_key", "default")
-            if not isinstance(context_key, str) or not context_key:
-                context_key = "default"
-            self._drift_count[context_key] = self._drift_count.get(context_key, 0) + 1
-            return
+    def _apply_drift(self, payload: dict[str, Any]) -> None:
+        context_key = self._context_key(payload)
+        self._drift_count[context_key] = self._drift_count.get(context_key, 0) + 1
 
-        if event_type == EventType.AGENT_REPUTATION_UPDATED.value and isinstance(payload, dict):
-            rs = payload.get("reputation_score")
-            if isinstance(rs, (int, float)):
-                self._last_agent_reputation = max(0.0, min(1.0, float(rs)))
-            return
-
-        if event_type == EventType.AGENT_CONSENSUS_REACHED.value and isinstance(payload, dict):
-            score = payload.get("score")
-            if isinstance(score, (int, float)):
-                self._last_consensus_score = max(0.0, min(1.0, float(score)))
-            return
-
-        if event_type == EventType.AGENT_RUNTIME_UPDATED.value and isinstance(payload, dict):
-            rs = payload.get("runtime_score")
-            if isinstance(rs, (int, float)):
-                self._last_runtime_score = max(0.0, min(1.0, float(rs)))
-            return
-
-        if event_type == EventType.AGENT_SELECTED.value and isinstance(payload, dict):
-            sc = payload.get("selection_score")
-            if isinstance(sc, (int, float)):
-                self._last_selected_agent_score = max(0.0, min(1.0, float(sc)))
-            return
-
-        if event_type == EventType.CAPABILITY_MATCHED.value and isinstance(payload, dict):
-            ms = payload.get("match_score")
-            if isinstance(ms, (int, float)):
-                self._last_capability_score = max(0.0, min(1.0, float(ms)))
-            return
-
-        if event_type == EventType.AGENT_CAPABILITY_LEARNED.value and isinstance(payload, dict):
-            ns = payload.get("new_score")
-            if isinstance(ns, (int, float)):
-                self._last_learned_capability = max(0.0, min(1.0, float(ns)))
-            return
-
-        if event_type == EventType.AGENT_CAPABILITY_DECAYED.value and isinstance(payload, dict):
-            ns = payload.get("new_score")
-            if isinstance(ns, (int, float)):
-                self._last_learned_capability = max(0.0, min(1.0, float(ns)))
-            return
+    def _apply_scalar(self, payload: dict[str, Any], source: str, target: str) -> None:
+        value = payload.get(source)
+        if isinstance(value, (int, float)):
+            setattr(self, target, max(0.0, min(1.0, float(value))))
 
     def snapshot(self, *, context_key: str = "default") -> RevisionState:
         evidence = sorted(self._seen_ids)

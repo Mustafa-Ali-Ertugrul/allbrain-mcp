@@ -1,4 +1,11 @@
 from allbrain.runtime_core.arbitration import ArbitrationBridge
+from allbrain.runtime_core.contracts import (
+    EconomicEvaluation,
+    EconomicEvaluator,
+    ObjectiveContext,
+    StrategicPlan,
+    StrategicPlanner,
+)
 from allbrain.runtime_core.economics import EconomicEvaluationBridge
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 from allbrain.runtime_core.execution import ExecutionPlanningBridge
@@ -12,15 +19,20 @@ from allbrain.runtime_core.state import RuntimeStateMachine, RuntimeStatus
 __all__ = [
     "ArbitrationBridge",
     "ClosedLoopLearningEngine",
+    "EconomicEvaluation",
+    "EconomicEvaluator",
     "EconomicEvaluationBridge",
     "ExecutionPlanningBridge",
     "GlobalExperienceMemoryBuilder",
     "GoalDecompositionBridge",
+    "ObjectiveContext",
     "RuntimeEventBus",
     "RuntimeCoreMetrics",
     "RuntimeCoreStateBuilder",
     "RuntimeStateMachine",
     "RuntimeStatus",
     "StrategicPlanningBridge",
+    "StrategicPlan",
+    "StrategicPlanner",
     "SystemDecisionPipeline",
 ]

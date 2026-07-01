@@ -35,10 +35,15 @@ def main() -> int:
         if "__pycache__" in str(py_file):
             continue
         try:
-            tree = ast.parse(py_file.read_text(encoding="utf-8"))
-        except Exception as e:
-            print(f"WARNING: Failed to parse {py_file}: {e}")
-            continue
+            source = py_file.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            print(f"ERROR: Failed to read {py_file}: {exc}", file=sys.stderr)
+            return 1
+        try:
+            tree = ast.parse(source, filename=str(py_file))
+        except SyntaxError as exc:
+            print(f"ERROR: Failed to parse {py_file}: {exc}", file=sys.stderr)
+            return 1
 
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):

@@ -70,8 +70,12 @@ class FaultDetector:
 
         if not filtered:
             return faults
+        faults.extend(self._detect_failures(filtered, time))
+        faults.extend(self._detect_anomalies(filtered, time))
+        faults.extend(self._detect_orphans(filtered, time))
+        return faults
 
-        # --- Failure detection ---
+    def _detect_failures(self, events: list[Any], time: int) -> list[FaultRecord]:
         failure_types = {
             "TASK_FAILED",
             "SUBTASK_FAILED",
@@ -80,7 +84,8 @@ class FaultDetector:
             "PIPELINE_RUN_FAILED",
             "RECOVERY_FAILED",
         }
-        for ev in filtered[-self._failure_lookback :]:
+        faults: list[FaultRecord] = []
+        for ev in events[-self._failure_lookback :]:
             et = str(getattr(ev, "type", ""))
             if et in failure_types:
                 payload = getattr(ev, "payload", None) or {}
@@ -94,11 +99,13 @@ class FaultDetector:
                     context=(str(getattr(ev, "id", "")),),
                 )
                 faults.append(fault)
+        return faults
 
-        # --- Anomaly detection (low-confidence decisions) ---
+    def _detect_anomalies(self, events: list[Any], time: int) -> list[FaultRecord]:
         decision_types = {"DECISION_COMPUTED", "AGENT_SELECTION_SCORED"}
+        faults: list[FaultRecord] = []
         low_conf_count = 0
-        for ev in reversed(filtered):
+        for ev in reversed(events):
             et = str(getattr(ev, "type", ""))
             if et not in decision_types:
                 low_conf_count = 0
@@ -123,11 +130,13 @@ class FaultDetector:
                     low_conf_count = 0  # reset after detection
             else:
                 low_conf_count = 0
+        return faults
 
-        # --- Orphan detection (RECOVERY_STARTED without completion) ---
+    @staticmethod
+    def _detect_orphans(events: list[Any], time: int) -> list[FaultRecord]:
         recovery_starts: dict[str, int] = {}
         recovery_ends: set[str] = set()
-        for ev in filtered:
+        for ev in events:
             et = str(getattr(ev, "type", ""))
             eid = str(getattr(ev, "id", ""))
             payload = getattr(ev, "payload", None) or {}
@@ -138,6 +147,7 @@ class FaultDetector:
                 rid = str(payload.get("recovery_id", eid))
                 recovery_ends.add(rid)
 
+        faults: list[FaultRecord] = []
         for rid, count in recovery_starts.items():
             if rid not in recovery_ends and count > 0:
                 fault = FaultRecord(
@@ -149,5 +159,4 @@ class FaultDetector:
                     context=(rid,),
                 )
                 faults.append(fault)
-
         return faults

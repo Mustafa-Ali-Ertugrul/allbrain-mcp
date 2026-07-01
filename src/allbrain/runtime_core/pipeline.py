@@ -8,6 +8,14 @@ from allbrain.events import EventType
 from allbrain.fusion import unified_decision_score
 from allbrain.models.schemas import EventRead
 from allbrain.runtime_core.arbitration import ArbitrationBridge
+from allbrain.runtime_core.bridge_executor import execute_bridge
+from allbrain.runtime_core.contracts import (
+    EconomicEvaluation,
+    EconomicEvaluator,
+    ObjectiveContext,
+    StrategicPlan,
+    StrategicPlanner,
+)
 from allbrain.runtime_core.economics import EconomicEvaluationBridge
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 from allbrain.runtime_core.execution import ExecutionPlanningBridge
@@ -27,7 +35,13 @@ logger = logging.getLogger(__name__)
 
 
 class SystemDecisionPipeline:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        economic_evaluator: EconomicEvaluator | None = None,
+        strategic_planner: StrategicPlanner | None = None,
+        bridge_timeout_ms: int = 500,
+    ) -> None:
         from uuid6 import uuid7
 
         from allbrain.counterfactual import CounterfactualEngine
@@ -41,9 +55,14 @@ class SystemDecisionPipeline:
 
         self._uuid7 = uuid7
 
+        if bridge_timeout_ms <= 0:
+            raise ValueError("bridge_timeout_ms must be positive")
         self.governance = AutonomousGovernanceCoordinator()
-        self.economics = EconomicEvaluationBridge()
-        self.strategy = StrategicPlanningBridge()
+        self._fallback_economics = EconomicEvaluationBridge()
+        self._fallback_strategy = StrategicPlanningBridge()
+        self.economics = economic_evaluator or self._fallback_economics
+        self.strategy = strategic_planner or self._fallback_strategy
+        self.bridge_timeout_ms = bridge_timeout_ms
         self.decomposition = GoalDecompositionBridge()
         self.execution = ExecutionPlanningBridge()
         self.arbitration = ArbitrationBridge()
@@ -169,10 +188,24 @@ class SystemDecisionPipeline:
             last_event_id = self._transition(
                 machine, publish, RuntimeStatus.EVALUATION, "economic_evaluation", last_event_id
             )
-            economic = self.economics.evaluate(objective)
+            objective_context = ObjectiveContext.model_validate(objective)
+            economic = execute_bridge(
+                lambda: self.economics.evaluate(objective_context),
+                fallback=lambda: self._fallback_economics.evaluate(objective_context),
+                model_type=EconomicEvaluation,
+                engine_id=getattr(self.economics, "engine_id", type(self.economics).__name__),
+                timeout_ms=self.bridge_timeout_ms,
+            )
             last_event_id = publish(EventType.ECONOMIC_EVALUATION_COMPLETED.value, economic, caused_by=last_event_id).id
 
-            strategic_plan = self.strategy.plan(objective, economic)
+            economic_model = EconomicEvaluation.model_validate(economic)
+            strategic_plan = execute_bridge(
+                lambda: self.strategy.plan(objective_context, economic_model),
+                fallback=lambda: self._fallback_strategy.plan(objective_context, economic_model),
+                model_type=StrategicPlan,
+                engine_id=getattr(self.strategy, "engine_id", type(self.strategy).__name__),
+                timeout_ms=self.bridge_timeout_ms,
+            )
             last_event_id = publish(EventType.STRATEGIC_PLAN_CREATED.value, strategic_plan, caused_by=last_event_id).id
             decomposition = self.decomposition.decompose(objective, strategic_plan, economic)
             last_event_id = publish(
@@ -2196,86 +2229,23 @@ class SystemDecisionPipeline:
 
         resilience_events: list[EventRead] = []
         last_event_id = caused_by
-
-        # Emit RESILIENCE_ANOMALY_DETECTED for each detected fault
-        for fd in result.get("detected_faults", []):
-            payload = make_anomaly_detected_payload(
-                fault_id=fd["fault_id"],
-                component=fd["component"],
-                severity=fd["severity"],
-                fault_type=fd["fault_type"],
-                detected_at=mgr.stats().get("time", 0),
+        faults, last_event_id = self._publish_resilience_faults(
+            bus, result, mgr.stats().get("time", 0), last_event_id, make_anomaly_detected_payload
+        )
+        resilience_events.extend(faults)
+        plans, last_event_id = self._publish_resilience_plans(bus, result, last_event_id, make_recovery_planned_payload)
+        resilience_events.extend(plans)
+        resilience_events.extend(
+            self._publish_resilience_outcomes(
+                bus,
+                result,
+                mgr.stats().get("time", 0),
+                last_event_id,
+                make_snapshot_created_payload,
+                make_failure_analyzed_payload,
+                make_recovery_cancelled_payload,
             )
-            ev = bus.publish(
-                type=EventType.RESILIENCE_ANOMALY_DETECTED.value,
-                payload=payload,
-                caused_by=last_event_id,
-                impact_score={"low": 0.2, "medium": 0.5, "high": 0.8, "critical": 0.95}.get(fd["severity"], 0.5),
-            )
-            resilience_events.append(ev)
-            last_event_id = ev.id
-
-        # Emit RESILIENCE_RECOVERY_PLANNED + optionally cancelled for each plan
-        for plan in result.get("plans_created", []):
-            payload = make_recovery_planned_payload(
-                plan_id=plan["plan_id"],
-                fault_id=plan["fault_id"],
-                strategy=plan["strategy"],
-                target_component=plan.get("target_component", "unknown"),
-                priority=plan["priority"],
-                reason=plan["reason"],
-            )
-            ev = bus.publish(
-                type=EventType.RESILIENCE_RECOVERY_PLANNED.value,
-                payload=payload,
-                caused_by=last_event_id,
-                impact_score=plan["priority"] / 5.0,
-            )
-            resilience_events.append(ev)
-            last_event_id = ev.id
-
-        # Emit SNAPSHOT_CREATED for any snapshots taken
-        for snap_id in result.get("snapshots_created", []):
-            payload = make_snapshot_created_payload(
-                snapshot_id=snap_id,
-                component="resilience",
-                created_at=mgr.stats().get("time", 0),
-            )
-            ev = bus.publish(
-                type=EventType.RESILIENCE_SNAPSHOT_CREATED.value,
-                payload=payload,
-                caused_by=last_event_id,
-            )
-            resilience_events.append(ev)
-
-        # Emit FAILURE_ANALYZED for successful recoveries
-        for exec_result in result.get("executed", []):
-            if exec_result.get("success"):
-                payload = make_failure_analyzed_payload(
-                    fault_id=exec_result.get("plan_id", "unknown"),
-                    root_cause=exec_result.get("message", "recovered"),
-                    confidence=0.8,
-                )
-                ev = bus.publish(
-                    type=EventType.RESILIENCE_FAILURE_ANALYZED.value,
-                    payload=payload,
-                    caused_by=last_event_id,
-                )
-                resilience_events.append(ev)
-
-        # Emit RECOVERY_CANCELLED for guardrail-blocked plans
-        for exec_result in result.get("executed", []):
-            if not exec_result.get("success") and "guardrail" in exec_result.get("message", ""):
-                payload = make_recovery_cancelled_payload(
-                    plan_id=exec_result.get("plan_id", "unknown"),
-                    reason=exec_result.get("message", "guardrail_blocked"),
-                )
-                ev = bus.publish(
-                    type=EventType.RESILIENCE_RECOVERY_CANCELLED.value,
-                    payload=payload,
-                    caused_by=last_event_id,
-                )
-                resilience_events.append(ev)
+        )
 
         summary: dict[str, Any] = {
             "detected_faults": len(result.get("detected_faults", [])),
@@ -2289,3 +2259,74 @@ class SystemDecisionPipeline:
         }
 
         return summary, last_event_id, resilience_events
+
+    @staticmethod
+    def _publish_resilience_faults(bus, result, detected_at, caused_by, make_payload):
+        published = []
+        for fault in result.get("detected_faults", []):
+            event = bus.publish(
+                type=EventType.RESILIENCE_ANOMALY_DETECTED.value,
+                payload=make_payload(
+                    fault_id=fault["fault_id"],
+                    component=fault["component"],
+                    severity=fault["severity"],
+                    fault_type=fault["fault_type"],
+                    detected_at=detected_at,
+                ),
+                caused_by=caused_by,
+                impact_score={"low": 0.2, "medium": 0.5, "high": 0.8, "critical": 0.95}.get(fault["severity"], 0.5),
+            )
+            published.append(event)
+            caused_by = event.id
+        return published, caused_by
+
+    @staticmethod
+    def _publish_resilience_plans(bus, result, caused_by, make_payload):
+        published = []
+        for plan in result.get("plans_created", []):
+            event = bus.publish(
+                type=EventType.RESILIENCE_RECOVERY_PLANNED.value,
+                payload=make_payload(
+                    plan_id=plan["plan_id"],
+                    fault_id=plan["fault_id"],
+                    strategy=plan["strategy"],
+                    target_component=plan.get("target_component", "unknown"),
+                    priority=plan["priority"],
+                    reason=plan["reason"],
+                ),
+                caused_by=caused_by,
+                impact_score=plan["priority"] / 5.0,
+            )
+            published.append(event)
+            caused_by = event.id
+        return published, caused_by
+
+    @staticmethod
+    def _publish_resilience_outcomes(bus, result, detected_at, caused_by, make_snapshot, make_failure, make_cancelled):
+        published = []
+        for snapshot_id in result.get("snapshots_created", []):
+            published.append(
+                bus.publish(
+                    type=EventType.RESILIENCE_SNAPSHOT_CREATED.value,
+                    payload=make_snapshot(snapshot_id=snapshot_id, component="resilience", created_at=detected_at),
+                    caused_by=caused_by,
+                )
+            )
+        for execution in result.get("executed", []):
+            if execution.get("success"):
+                payload = make_failure(
+                    fault_id=execution.get("plan_id", "unknown"),
+                    root_cause=execution.get("message", "recovered"),
+                    confidence=0.8,
+                )
+                event_type = EventType.RESILIENCE_FAILURE_ANALYZED.value
+            elif "guardrail" in execution.get("message", ""):
+                payload = make_cancelled(
+                    plan_id=execution.get("plan_id", "unknown"),
+                    reason=execution.get("message", "guardrail_blocked"),
+                )
+                event_type = EventType.RESILIENCE_RECOVERY_CANCELLED.value
+            else:
+                continue
+            published.append(bus.publish(type=event_type, payload=payload, caused_by=caused_by))
+        return published

@@ -18,7 +18,7 @@ from allbrain.foundations.versioning import (
 from allbrain.models.entities import Event, Project, QueueItemRecord, Session, SnapshotRecord, utc_now
 from allbrain.models.schemas import EventRead
 from allbrain.security.redaction import sanitize_payload
-from allbrain.storage.database import ensure_event_payload_version_column, open_session
+from allbrain.storage.database import open_session
 
 
 class BrainRepository:
@@ -32,7 +32,6 @@ class BrainRepository:
     def __init__(self, engine: Engine, *, owns_engine: bool = True):
         self.engine = engine
         self.owns_engine = owns_engine
-        ensure_event_payload_version_column(engine)
 
     def close(self) -> None:
         if self.owns_engine:

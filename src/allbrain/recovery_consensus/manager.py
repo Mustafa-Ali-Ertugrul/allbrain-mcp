@@ -64,56 +64,14 @@ class RecoveryConsensusManager:
 
         all_candidates: list[CandidateStrategy] = []
         decisions: list[dict[str, Any]] = []
-
         for fault in faults:
-            fault_id = str(fault.get("fault_id", ""))
-            component = str(fault.get("component", ""))
-            fault_type = str(fault.get("fault_type", ""))
-            severity = str(fault.get("severity", "medium"))
-
-            # 1. Generate candidates
-            candidates = self._generator.generate(
-                fault_id=fault_id,
-                component=component,
-                fault_type=fault_type,
-                severity=severity,
-            )
+            candidates, decision = self._process_fault(fault, recent_failures)
             all_candidates.extend(candidates)
-
-            if not candidates:
-                continue
-
-            # 2. Evaluate
-            scored = self._evaluator.evaluate(
-                candidates,
-                recent_failures=recent_failures,
-                memory=self._memory,
-                bias_weight=self._bias_weight,
-                fault_type=fault_type,
-            )
-
-            # 3. Arbitrate
-            decision = self._arbiter.arbitrate(
-                scored,
-                fault_id=fault_id,
-            )
-
-            decisions.append(
-                {
-                    "decision_id": decision.decision_id,
-                    "fault_id": decision.fault_id,
-                    "selected_strategy": decision.selected_strategy,
-                    "consensus_score": decision.consensus_score,
-                    "rejected_strategies": list(decision.rejected_strategies),
-                    "reason": decision.reason,
-                    "candidate_count": decision.candidate_count,
-                }
-            )
-
+            if decision is not None:
+                decisions.append(decision)
         consensus_reached_count = sum(
             1 for d in decisions if d["consensus_score"] >= self._arbiter._min_consensus_ratio
         )
-
         RecoveryConsensusState(
             candidates=tuple(all_candidates),
             decisions=tuple(self._decision_to_frozen(d) for d in decisions),
@@ -122,6 +80,43 @@ class RecoveryConsensusManager:
             rejected_count=sum(len(d.get("rejected_strategies", [])) for d in decisions),
         )
 
+        return self._build_result(all_candidates, decisions, consensus_reached_count)
+
+    def _process_fault(
+        self, fault: dict[str, Any], recent_failures: int
+    ) -> tuple[list[CandidateStrategy], dict[str, Any] | None]:
+        fault_id = str(fault.get("fault_id", ""))
+        fault_type = str(fault.get("fault_type", ""))
+        candidates = self._generator.generate(
+            fault_id=fault_id,
+            component=str(fault.get("component", "")),
+            fault_type=fault_type,
+            severity=str(fault.get("severity", "medium")),
+        )
+        if not candidates:
+            return candidates, None
+        scored = self._evaluator.evaluate(
+            candidates,
+            recent_failures=recent_failures,
+            memory=self._memory,
+            bias_weight=self._bias_weight,
+            fault_type=fault_type,
+        )
+        decision = self._arbiter.arbitrate(scored, fault_id=fault_id)
+        return candidates, {
+            "decision_id": decision.decision_id,
+            "fault_id": decision.fault_id,
+            "selected_strategy": decision.selected_strategy,
+            "consensus_score": decision.consensus_score,
+            "rejected_strategies": list(decision.rejected_strategies),
+            "reason": decision.reason,
+            "candidate_count": decision.candidate_count,
+        }
+
+    @staticmethod
+    def _build_result(
+        all_candidates: list[CandidateStrategy], decisions: list[dict[str, Any]], consensus_count: int
+    ) -> dict[str, Any]:
         return {
             "candidates_generated": [
                 {
@@ -142,13 +137,13 @@ class RecoveryConsensusManager:
                 for c in all_candidates
             ],
             "decisions": decisions,
-            "consensus_reached": consensus_reached_count,
+            "consensus_reached": consensus_count,
             "total_decisions": len(decisions),
             "state": {
                 "candidates": [(c.strategy, c.fault_id) for c in all_candidates],
                 "decisions": decisions,
                 "total_decisions": len(decisions),
-                "consensus_reached": consensus_reached_count,
+                "consensus_reached": consensus_count,
             },
         }
 
