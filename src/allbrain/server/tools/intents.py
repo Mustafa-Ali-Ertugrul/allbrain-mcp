@@ -74,10 +74,10 @@ def detect_contradictions_impl(context: BrainContext, **kwargs: Any) -> ToolResu
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def extract_intents(limit: int = 5000) -> dict[str, Any]:
-        result = extract_intents_impl(context, project_path=context.project_path, limit=limit)
+        result = extract_intents_impl(context, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def detect_contradictions(limit: int = 5000) -> dict[str, Any]:
-        result = detect_contradictions_impl(context, project_path=context.project_path, limit=limit)
+        result = detect_contradictions_impl(context, limit=limit)
         return result.model_dump(mode="json")

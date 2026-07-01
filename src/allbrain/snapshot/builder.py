@@ -29,7 +29,8 @@ class CoreStateSnapshotBuilder:
         self.state_engine = state_engine or StateEngine()
 
     def build(self, buffer: EventStreamBuffer) -> dict[str, Any]:
-        state = self.state_engine.build_state({"events": buffer.compressed_events, "git": {}})
+        git = _latest_git_fingerprint(buffer.raw_events)
+        state = self.state_engine.build_state({"events": buffer.compressed_events, "git": git})
         state["event_count"] = len(buffer.raw_events)
         state["global_view"] = dict(state)
         return state
@@ -75,7 +76,9 @@ class DerivedLayersBuilder:
         conflicts = ConflictDetector().detect(buffer.compressed_events)
         resolved_conflicts = ConflictResolver().resolve(conflicts, buffer.compressed_events, agent_view)
         merged_events = EventMergeEngine().merge(buffer.compressed_events, resolved_conflicts)
-        merged_state = self.state_engine.build_state({"events": merged_events, "git": {}})
+        merged_state = self.state_engine.build_state(
+            {"events": merged_events, "git": _latest_git_fingerprint(buffer.raw_events)}
+        )
         intents = IntentExtractor().extract(buffer.compressed_events)
         intent_graph = IntentStore().build_graph(intents, buffer.compressed_events)
         contradictions = ContradictionDetector().detect(intents)
@@ -151,3 +154,14 @@ class SnapshotBuilder:
             "intent_graph": {"nodes": {}, "edges": {}},
             "contradiction_view": {"contradictions": [], "count": 0},
         }
+
+
+def _latest_git_fingerprint(events: list[EventRead]) -> dict[str, Any]:
+    """Return the newest content-free Git fingerprint recorded by lifecycle events."""
+    for event in reversed(events):
+        if event.type not in {"session_started", "session_summary"}:
+            continue
+        git = event.payload.get("git")
+        if isinstance(git, dict) and git:
+            return dict(git)
+    return {}

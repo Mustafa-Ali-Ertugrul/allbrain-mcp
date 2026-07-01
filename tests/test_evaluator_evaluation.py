@@ -19,8 +19,9 @@ class TestEvaluatorEvaluation:
         evaluator = MetaEvaluator(store)
         import random
 
+        rng = random.Random(42)
         for _ in range(50):
-            evaluator.evaluate("random", "load", random.uniform(0.1, 0.9), random.uniform(0.1, 0.9))
+            evaluator.evaluate("random", "load", rng.uniform(0.1, 0.9), rng.uniform(0.1, 0.9))
         result = evaluator.evaluate("random", "load", 0.5, 0.5)
         assert abs(result.accuracy) < 0.6
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 HEARTBEAT_INTERVAL_SECONDS = 30
 """Interval for session heartbeat checks."""
 
-STALE_AFTER_SECONDS = 120
+STALE_AFTER_SECONDS = 600
 """Session marked as stale if no heartbeat for this duration."""
 
 # Queue management

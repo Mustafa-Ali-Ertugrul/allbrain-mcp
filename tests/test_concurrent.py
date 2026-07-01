@@ -7,6 +7,7 @@ concurrent reads and limited concurrent writes without
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -157,6 +158,240 @@ def test_timestamp_ordering(tmp_path: Path) -> None:
     event_ids = [e.id for e in events]
     # UUID7 is time-sortable; list_events returns sorted by event.id
     assert event_ids == sorted(event_ids), "event IDs are not monotonically ordered"
+
+
+def test_active_session_ensure_concurrent(tmp_path: Path) -> None:
+    """Concurrent ensure_active_session calls must produce exactly one session.
+
+    Only ensure_active_session is called — no explicit None sets.
+    """
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+
+    context = BrainContext(
+        repository=repo,
+        project_path=str(project_root.resolve()),
+        agent_name="multi",
+    )
+    assert context.active_session is None
+
+    sessions: list[Any] = []
+
+    def _ensure(tid: int) -> None:
+        for _ in range(20):
+            sess = context.ensure_active_session()
+            sessions.append(sess)
+
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        futures = [pool.submit(_ensure, tid) for tid in range(10)]
+        for f in as_completed(futures):
+            f.result()
+
+    # All calls returned the same session object.
+    first = sessions[0]
+    assert first is not None
+    assert all(s is first for s in sessions), "ensure_active_session must return same singleton"
+    assert context.active_session is first
+    assert context.active_session_id == first.id
+
+
+def test_active_session_setter_under_contention(tmp_path: Path) -> None:
+    """active_session setter must be atomic under concurrent writes.
+
+    - 2 threads set active_session to None then restore.
+    - 2 threads read active_session_id concurrently.
+    - Must never crash, and final session must be valid.
+    """
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+
+    context = BrainContext(
+        repository=repo,
+        project_path=str(project_root.resolve()),
+        agent_name="multi",
+    )
+    sess = context.ensure_active_session()
+    assert sess is not None
+
+    errors: list[str] = []
+
+    def _setter(tid: int) -> None:
+        for _ in range(50):
+            old = context.active_session  # locked getter
+            context.active_session = None  # locked setter
+            context.active_session = old  # locked setter
+
+    def _reader(tid: int) -> None:
+        for _ in range(50):
+            try:
+                _sid = context.active_session_id  # locked getter
+            except Exception as exc:
+                errors.append(f"r{tid}: {exc}")
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        setters = [pool.submit(_setter, t) for t in range(2)]
+        readers = [pool.submit(_reader, t) for t in range(2)]
+        for f in as_completed(setters + readers):
+            f.result()
+
+    assert not errors, f"reader errors: {errors[:5]}"
+    # The session must still be valid after all contention.
+    assert context.active_session is not None
+    assert context.active_session_id is not None
+    assert context.active_session_id == sess.id
+
+
+def test_agent_name_concurrent_read_write(tmp_path: Path) -> None:
+    """agent_name property must be thread-safe under concurrent R/W."""
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+
+    context = BrainContext(repository=repo, project_path=str(tmp_path / "project"), agent_name="initial")
+    assert context.agent_name == "initial"
+    errors: list[str] = []
+
+    def _writer(tid: int) -> None:
+        for _ in range(50):
+            context.agent_name = f"writer-{tid}"
+
+    def _reader(tid: int) -> None:
+        for _ in range(50):
+            try:
+                _name = context.agent_name
+                assert isinstance(_name, str)
+            except Exception as exc:
+                errors.append(f"r{tid}: {exc}")
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        writers = [pool.submit(_writer, t) for t in range(3)]
+        readers = [pool.submit(_reader, t) for t in range(3)]
+        for f in as_completed(writers + readers):
+            f.result()
+
+    assert not errors, f"reader errors: {errors[:5]}"
+    # Must be some writer's name, never None.
+    final = context.agent_name
+    assert final.startswith("writer-")
+
+
+def test_client_info_concurrent(tmp_path: Path) -> None:
+    """client_name / client_version must be thread-safe under concurrent writes."""
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+
+    context = BrainContext(repository=repo, project_path=str(tmp_path / "project"))
+    errors: list[str] = []
+
+    def _setter(tid: int) -> None:
+        for i in range(30):
+            context.set_client_info(f"client-{tid}-{i}", f"v{tid}.{i}")
+
+    def _reader(tid: int) -> None:
+        for _ in range(30):
+            try:
+                _cn = context.client_name
+                _cv = context.client_version
+            except Exception as exc:
+                errors.append(f"r{tid}: {exc}")
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        setters = [pool.submit(_setter, t) for t in range(3)]
+        readers = [pool.submit(_reader, t) for t in range(3)]
+        for f in as_completed(setters + readers):
+            f.result()
+
+    assert not errors, f"reader errors: {errors[:5]}"
+    # Must never be None (set_client_info only writes when truthy)
+    assert context.client_name is not None
+    assert context.client_version is not None
+
+
+def test_git_baseline_concurrent(tmp_path: Path) -> None:
+    """git_baseline property must be thread-safe under concurrent R/W."""
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+
+    context = BrainContext(repository=repo, project_path=str(tmp_path / "project"))
+    assert context.git_baseline is None
+    errors: list[str] = []
+
+    def _writer(tid: int) -> None:
+        for i in range(30):
+            context.git_baseline = {"version": f"{tid}.{i}", "files": {f"f{tid}_{i}": "hash"}}
+
+    def _reader(tid: int) -> None:
+        for _ in range(30):
+            try:
+                _gb = context.git_baseline
+            except Exception as exc:
+                errors.append(f"r{tid}: {exc}")
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        writers = [pool.submit(_writer, t) for t in range(3)]
+        readers = [pool.submit(_reader, t) for t in range(3)]
+        for f in as_completed(writers + readers):
+            f.result()
+
+    assert not errors, f"reader errors: {errors[:5]}"
+    # git_baseline must be a valid dict, not corrupted.
+    final = context.git_baseline
+    assert final is not None
+    assert "version" in final
+    assert "files" in final
+
+
+def test_active_session_id_toctou(tmp_path: Path) -> None:
+    """active_session_id must not return stale id after session replaced.
+
+    Single lock acquisition in the property prevents TOCTOU.
+    """
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+
+    context = BrainContext(
+        repository=repo,
+        project_path=str(project_root.resolve()),
+        agent_name="toctou-test",
+    )
+    sess1 = context.ensure_active_session()
+    assert sess1 is not None
+
+    def _swapper() -> None:
+        for _ in range(20):
+            s = context.ensure_active_session()
+            context.active_session = s  # self-set (no-op but exercises setter)
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(_swapper) for _ in range(4)]
+        for f in as_completed(futures):
+            f.result()
+
+    # After all swaps, active_session_id must match the active session.
+    assert context.active_session_id == context.active_session.id
 
 
 def test_concurrent_mixed_operations(tmp_path: Path) -> None:
