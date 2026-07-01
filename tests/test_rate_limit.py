@@ -1,6 +1,7 @@
 """Unit tests for the sliding-window rate limiter."""
 
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pytest
 
@@ -107,3 +108,59 @@ class TestCheckToolRate:
 
         ok, _ = _MINUTE_LIMITER.check("reset_tool")
         assert ok  # reset cleared it
+
+
+class TestRateLimiterConcurrency:
+    """Thread-safety tests for SlidingWindowCounter."""
+
+    def test_check_and_record_is_thread_safe(self) -> None:
+        """Concurrent check_and_record must never exceed max_events."""
+        max_events = 50
+        thread_count = 10
+        attempts_per_thread = 20
+        counter = SlidingWindowCounter(window_seconds=60.0, max_events=max_events)
+
+        barrier = __import__("threading").Barrier(thread_count)
+        results: list[tuple[bool, int]] = []
+
+        def worker() -> list[tuple[bool, int]]:
+            barrier.wait()
+            local: list[tuple[bool, int]] = []
+            for _ in range(attempts_per_thread):
+                local.append(counter.check_and_record("k"))
+            return local
+
+        with ThreadPoolExecutor(max_workers=thread_count) as pool:
+            futs = [pool.submit(worker) for _ in range(thread_count)]
+            for fut in as_completed(futs):
+                results.extend(fut.result())
+
+        allowed = [r for r in results if r[0]]
+        denied = [r for r in results if not r[0]]
+
+        assert len(allowed) == max_events, f"Expected exactly {max_events} allowed, got {len(allowed)}"
+        assert len(denied) == thread_count * attempts_per_thread - max_events
+
+    def test_reset_concurrent_with_record(self) -> None:
+        """Reset while recording must not raise or corrupt state."""
+        counter = SlidingWindowCounter(window_seconds=60.0, max_events=100)
+        errors: list[Exception] = []
+
+        def recorder() -> None:
+            for _ in range(200):
+                try:
+                    counter.check_and_record("k")
+                except Exception as exc:
+                    errors.append(exc)
+
+        def reseter() -> None:
+            for _ in range(50):
+                counter.reset("k")
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            futs = [pool.submit(recorder) for _ in range(4)]
+            futs.append(pool.submit(reseter))
+            for fut in as_completed(futs):
+                fut.result()
+
+        assert not errors, f"Concurrent reset/record raised: {errors}"
