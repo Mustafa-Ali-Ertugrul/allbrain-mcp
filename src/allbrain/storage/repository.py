@@ -184,6 +184,50 @@ class BrainRepository:
                 db.refresh(session)
         return reconciled
 
+    def cleanup_empty_sessions(
+        self,
+        *,
+        project_path: str | Path | None,
+        before: datetime,
+    ) -> int:
+        """Physically delete empty sessions older than *before*.
+
+        Returns the number of deleted sessions.  Runs inside a single
+        transaction to avoid race conditions with concurrent inserts.
+        """
+        with open_session(self.engine) as db:
+            project = self.get_or_create_project(db, project_path)
+            empty_sessions = db.exec(
+                select(Session).where(
+                    Session.project_id == project.id,
+                    Session.status == "empty",
+                )
+            ).all()
+            deleted = 0
+            for session in empty_sessions:
+                started = session.started_at
+                comparable_started = started if started.tzinfo is not None else started.replace(tzinfo=UTC)
+                comparable_before = before if before.tzinfo is not None else before.replace(tzinfo=UTC)
+                if comparable_started >= comparable_before:
+                    continue
+                db.delete(session)
+                deleted += 1
+            db.commit()
+        return deleted
+
+    def count_sessions(
+        self,
+        *,
+        project_path: str | Path | None,
+        status: str | None = None,
+    ) -> int:
+        with open_session(self.engine) as db:
+            project = self.get_or_create_project(db, project_path)
+            statement = select(Session).where(Session.project_id == project.id)
+            if status is not None:
+                statement = statement.where(Session.status == status)
+            return len(db.exec(statement).all())
+
     def count_snapshots(self, *, project_path: str | Path | None) -> int:
         with open_session(self.engine) as db:
             project = self.get_or_create_project(db, project_path)
@@ -252,6 +296,10 @@ class BrainRepository:
             db.commit()
             db.refresh(event)
             return event
+
+    def append_event_read(self, **kwargs: Any) -> EventRead:
+        """Append an event and return its public read model."""
+        return event_to_read(self.append_event(**kwargs))
 
     def _append_event_core(
         self,

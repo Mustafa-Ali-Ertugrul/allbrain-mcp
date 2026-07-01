@@ -4,11 +4,13 @@ from pathlib import Path
 from typing import Any
 
 from allbrain.models.schemas import EventRead
-from allbrain.storage.repository import event_to_read
+from allbrain.runtime_core.contracts import RuntimeContext
 
 
 class RuntimeEventBus:
-    def __init__(self, context: Any, *, project_path: str | Path | None = None, session_id: int | None = None) -> None:
+    def __init__(
+        self, context: RuntimeContext, *, project_path: str | Path | None = None, session_id: int | None = None
+    ) -> None:
         self.context = context
         self.project_path = str(project_path or context.project_path)
         if session_id is None and context.active_session_id is None:
@@ -24,7 +26,7 @@ class RuntimeEventBus:
         importance: int | None = None,
         impact_score: float | None = None,
     ) -> EventRead:
-        event = self.context.repository.append_event(
+        return self.context.repository.append_event_read(
             project_path=self.project_path,
             session_id=self.session_id,
             type=type,
@@ -34,4 +36,3 @@ class RuntimeEventBus:
             importance=importance,
             impact_score=impact_score,
         )
-        return event_to_read(event)

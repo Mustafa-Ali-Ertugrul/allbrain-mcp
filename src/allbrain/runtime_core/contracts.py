@@ -1,8 +1,35 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from allbrain.models.schemas import EventRead
+
+
+@runtime_checkable
+class EventStore(Protocol):
+    def append_event_read(self, **kwargs: Any) -> EventRead: ...
+
+    def list_events(
+        self,
+        *,
+        project_path: str | Path | None,
+        session_id: int | None = None,
+        agent_id: str | None = None,
+        type: str | None = None,
+        limit: int = 50,
+    ) -> list[EventRead]: ...
+
+
+@runtime_checkable
+class RuntimeContext(Protocol):
+    repository: EventStore
+    project_path: str
+
+    @property
+    def active_session_id(self) -> int | None: ...
 
 
 class ObjectiveContext(BaseModel):

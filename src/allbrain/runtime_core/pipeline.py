@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from allbrain.events import EventType
-from allbrain.runtime_core.contracts import EconomicEvaluator, StrategicPlanner
+from allbrain.runtime_core.contracts import EconomicEvaluator, RuntimeContext, StrategicPlanner
 from allbrain.runtime_core.pipeline_models import PipelineRunOptions, PipelineRunState
 from allbrain.runtime_core.pipeline_services import PipelineServices
 from allbrain.runtime_core.pipeline_steps import (
@@ -70,7 +70,7 @@ class SystemDecisionPipeline:
 
     def run(
         self,
-        context: Any,
+        context: RuntimeContext,
         objective: dict[str, Any],
         *,
         execute_mode: str = "event_only",
@@ -125,9 +125,9 @@ class SystemDecisionPipeline:
     @staticmethod
     def _record_failure(state: PipelineRunState, exc: Exception) -> None:
         if state.machine.status != RuntimeStatus.FAILED:
-            state.transition(RuntimeStatus.FAILED, str(exc))
+            state.transition(RuntimeStatus.FAILED, "pipeline_execution_failed")
         state.publish(
             EventType.PIPELINE_RUN_FAILED.value,
-            {"error": str(exc)},
+            {"error": "Pipeline execution failed", "error_type": type(exc).__name__},
             caused_by=state.last_event_id,
         )

@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from allbrain.server.context import BrainContext
+from allbrain.runtime_core.contracts import RuntimeContext
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +68,7 @@ class ObservabilityCollector:
 
     @staticmethod
     def collect_historical_rate(
-        context: BrainContext,
+        context: RuntimeContext,
         project_path: str | None,
         *,
         objective: dict[str, Any] | None = None,

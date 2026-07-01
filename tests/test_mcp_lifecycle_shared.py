@@ -16,6 +16,10 @@ from allbrain.server.lifecycle import (
     reconcile_stale_sessions,
     record_git_changes,
 )
+from allbrain.server.tools.sessions import (
+    cleanup_stale_sessions_impl,
+    close_session_impl,
+)
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
 from allbrain.storage.snapshot_repo import SnapshotRepo
 
@@ -132,3 +136,101 @@ def test_stale_reconciliation_closes_and_summarizes(tmp_path: Path) -> None:
         event.type == EventType.SESSION_SUMMARY.value
         for event in context.repository.list_session_events(session.id or 0)
     )
+
+
+def test_cleanup_deletes_only_empty_sessions(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    # Create an empty session (no events) — should be deleted
+    empty = context.repository.create_session(context.project_path, "codex")
+    # Create a session with events — should NOT be deleted
+    with_events = context.repository.create_session(context.project_path, "claude")
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=with_events.id or 0,
+        type=EventType.GOAL_SET.value,
+        source="test",
+        payload={"description": "has events"},
+    )
+    # Mark both as empty (simulating stale reconciliation)
+    context.repository.close_session(empty.id or 0, status="empty")
+    context.repository.close_session(with_events.id or 0, status="empty")
+
+    # Clean up with a very old cutoff — only truly empty ones get deleted
+    deleted = context.repository.cleanup_empty_sessions(
+        project_path=context.project_path,
+        before=utc_now() + timedelta(hours=1),
+    )
+
+    remaining = context.repository.list_sessions(project_path=context.project_path, limit=100)
+    remaining_ids = {s.id for s in remaining}
+    assert empty.id not in remaining_ids, "Empty session should be deleted"
+    assert with_events.id not in remaining_ids, "Closed session should also be deleted"
+    assert deleted >= 1
+
+
+def test_cleanup_respects_ttl(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    # Create an empty session started now
+    session = context.repository.create_session(context.project_path, "codex")
+    context.repository.close_session(session.id or 0, status="empty")
+
+    # Cleanup with cutoff in the future (session is newer than cutoff)
+    deleted = context.repository.cleanup_empty_sessions(
+        project_path=context.project_path,
+        before=utc_now() - timedelta(hours=1),
+    )
+    assert deleted == 0
+
+    # Cleanup with cutoff in the past (session is older than cutoff)
+    deleted = context.repository.cleanup_empty_sessions(
+        project_path=context.project_path,
+        before=utc_now() + timedelta(hours=1),
+    )
+    assert deleted == 1
+
+
+def test_cleanup_stale_sessions_tool(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    # Create a stale session
+    session = context.repository.create_session(context.project_path, "codex")
+    with open_session(context.repository.engine) as db:
+        stored = db.get(Session, session.id)
+        assert stored is not None
+        stored.last_heartbeat_at = utc_now() - timedelta(minutes=15)
+        db.add(stored)
+        db.commit()
+
+    result = cleanup_stale_sessions_impl(context)
+    assert result.ok
+    assert result.data["reconciled"] >= 1
+
+
+def test_close_session_tool(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    session = context.repository.create_session(context.project_path, "codex")
+
+    result = close_session_impl(context, session_id=session.id, reason="test_close")
+    assert result.ok
+    assert result.data["session_id"] == session.id
+    assert result.data["status"] == "closed"
+
+    # Closing again should be idempotent
+    result2 = close_session_impl(context, session_id=session.id, reason="test_close")
+    assert result2.ok
+    assert result2.data["status"] == "closed"
+
+
+def test_close_session_tool_missing_id(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    result = close_session_impl(context, session_id=999999, reason="test")
+    assert not result.ok
+    assert "not found" in result.error
+
+
+def test_count_sessions(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    assert context.repository.count_sessions(project_path=context.project_path) == 0
+    context.repository.create_session(context.project_path, "codex")
+    context.repository.create_session(context.project_path, "claude")
+    assert context.repository.count_sessions(project_path=context.project_path) == 2
+    assert context.repository.count_sessions(project_path=context.project_path, status="active") == 2

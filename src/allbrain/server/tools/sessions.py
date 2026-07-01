@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import logging
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from allbrain.events import EventType
+from allbrain.models.entities import utc_now
 from allbrain.models.schemas import ToolResult, UserInputError
+from allbrain.server.constants import EMPTY_SESSION_TTL_HOURS
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import audit_tool_call, bind_session_id
+
+logger = logging.getLogger(__name__)
 
 
 def build_session_report(
@@ -96,6 +101,68 @@ def summarize_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error=str(exc))
 
 
+def close_session_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    """Manually close an active session."""
+    try:
+        session_id = kwargs.get("session_id")
+        if session_id is None:
+            raise UserInputError("session_id is required")
+        session_id = int(session_id)
+        reason = str(kwargs.get("reason", "manual"))
+        closed = context.repository.close_session(session_id, status="closed", reason=reason)
+        if closed is None:
+            return ToolResult(ok=False, error=f"Session {session_id} not found")
+        try:
+            audit_tool_call(
+                context,
+                tool_name="close_session",
+                tool_args={"session_id": session_id, "reason": reason},
+                session_id=bind_session_id(context, None),
+            )
+        except UserInputError:
+            pass  # No active session for audit — administrative call
+        return ToolResult(
+            ok=True,
+            data={
+                "session_id": closed.id,
+                "status": closed.status,
+                "ended_at": closed.ended_at.isoformat() if closed.ended_at else None,
+            },
+        )
+    except (UserInputError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
+def cleanup_stale_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    """Reconcile stale sessions and delete old empty ones."""
+    try:
+        from allbrain.server.lifecycle import reconcile_stale_sessions
+
+        reconciled = reconcile_stale_sessions(context)
+        before = utc_now() - timedelta(hours=EMPTY_SESSION_TTL_HOURS)
+        deleted = context.repository.cleanup_empty_sessions(project_path=context.project_path, before=before)
+        if deleted:
+            logger.info("Cleaned up %d empty session(s)", deleted)
+        try:
+            audit_tool_call(
+                context,
+                tool_name="cleanup_stale_sessions",
+                tool_args={"reconciled": len(reconciled), "deleted": deleted},
+                session_id=bind_session_id(context, None),
+            )
+        except UserInputError:
+            pass  # No active session for audit — administrative call
+        return ToolResult(
+            ok=True,
+            data={
+                "reconciled": len(reconciled),
+                "deleted": deleted,
+            },
+        )
+    except (UserInputError, ValueError, TypeError) as exc:
+        return ToolResult(ok=False, error=str(exc))
+
+
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def summarize_sessions(
@@ -109,3 +176,18 @@ def register_tools(mcp, context: BrainContext) -> None:
             include_empty=include_empty,
             detail_limit=detail_limit,
         ).model_dump(mode="json")
+
+    @mcp.tool
+    def close_session(
+        session_id: int,
+        reason: str = "manual",
+    ) -> dict[str, Any]:
+        return close_session_impl(
+            context,
+            session_id=session_id,
+            reason=reason,
+        ).model_dump(mode="json")
+
+    @mcp.tool
+    def cleanup_stale_sessions() -> dict[str, Any]:
+        return cleanup_stale_sessions_impl(context).model_dump(mode="json")

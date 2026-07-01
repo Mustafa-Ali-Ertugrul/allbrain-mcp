@@ -2,7 +2,9 @@ from allbrain.runtime_core.arbitration import ArbitrationBridge
 from allbrain.runtime_core.contracts import (
     EconomicEvaluation,
     EconomicEvaluator,
+    EventStore,
     ObjectiveContext,
+    RuntimeContext,
     StrategicPlan,
     StrategicPlanner,
 )
@@ -23,11 +25,13 @@ __all__ = [
     "ClosedLoopLearningEngine",
     "EconomicEvaluation",
     "EconomicEvaluator",
+    "EventStore",
     "EconomicEvaluationBridge",
     "ExecutionPlanningBridge",
     "GlobalExperienceMemoryBuilder",
     "GoalDecompositionBridge",
     "ObjectiveContext",
+    "RuntimeContext",
     "RuntimeEventBus",
     "RuntimeCoreMetrics",
     "RuntimeCoreStateBuilder",

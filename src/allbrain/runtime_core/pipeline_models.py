@@ -6,6 +6,7 @@ from typing import Any
 
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
+from allbrain.runtime_core.contracts import RuntimeContext
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 from allbrain.runtime_core.state import RuntimeStateMachine, RuntimeStatus
 
@@ -52,7 +53,7 @@ class PipelineRunOptions:
 
 @dataclass
 class PipelineRunState:
-    context: Any
+    context: RuntimeContext
     objective: dict[str, Any]
     options: PipelineRunOptions
     run_id: str
@@ -82,7 +83,11 @@ class PipelineRunState:
 
     @classmethod
     def create(
-        cls, context: Any, objective: dict[str, Any], options: PipelineRunOptions, uuid7_generator: Callable[[], Any]
+        cls,
+        context: RuntimeContext,
+        objective: dict[str, Any],
+        options: PipelineRunOptions,
+        uuid7_generator: Callable[[], Any],
     ) -> PipelineRunState:
         run_id = str(uuid7_generator())
         return cls(

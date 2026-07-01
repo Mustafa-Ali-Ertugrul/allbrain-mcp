@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING, Any
 
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
+from allbrain.runtime_core.contracts import RuntimeContext
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 
 if TYPE_CHECKING:
     from allbrain.runtime_core.learning import ClosedLoopLearningEngine
     from allbrain.runtime_core.memory import GlobalExperienceMemoryBuilder
-    from allbrain.server.context import BrainContext
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class LearningOrchestrator:
     def learning_step(
         self,
         bus: RuntimeEventBus,
-        context: BrainContext,
+        context: RuntimeContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
@@ -114,7 +114,7 @@ class LearningOrchestrator:
     def causal_step(
         self,
         bus: RuntimeEventBus,
-        context: BrainContext,
+        context: RuntimeContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
@@ -199,7 +199,7 @@ class LearningOrchestrator:
     def dynamics_step(
         self,
         bus: RuntimeEventBus,
-        context: BrainContext,
+        context: RuntimeContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,
@@ -324,7 +324,7 @@ class LearningOrchestrator:
     def fusion_step(
         self,
         bus: RuntimeEventBus,
-        context: BrainContext,
+        context: RuntimeContext,
         project_path: str | None,
         scheduler_result: dict[str, Any],
         caused_by: str,

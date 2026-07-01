@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import threading
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from uuid6 import uuid7
 
 from allbrain.server.constants import DEFAULT_AUTO_SNAPSHOT_THRESHOLD
+
+if TYPE_CHECKING:
+    from allbrain.models.entities import Session
+    from allbrain.storage.repository import BrainRepository
 
 
 class BrainContext:
@@ -18,51 +22,42 @@ class BrainContext:
     public fields – they are never mutated outside ``__init__``.
     """
 
-    def __init__(self: BrainContext, **kwargs: Any) -> None:
+    def __init__(
+        self: BrainContext,
+        *,
+        repository: BrainRepository,
+        project_path: str = "",
+        active_session: Session | None = None,
+        agent_name: str | None = None,
+        server_instance_id: str = "",
+        client_name: str | None = None,
+        client_version: str | None = None,
+        central_audit_enabled: bool = False,
+        auto_snapshot_threshold: int = DEFAULT_AUTO_SNAPSHOT_THRESHOLD,
+        snapshot_check_interval: int = DEFAULT_AUTO_SNAPSHOT_THRESHOLD,
+    ) -> None:
         # ── thread synchronisation (must be created first) ──
         self.__dict__["_session_lock"] = threading.RLock()
         self.__dict__["_count_lock"] = threading.Lock()
 
         # ── backing fields for property-backed attributes ──
-        repo = kwargs.get("repository")
-        self.__dict__["_repository"] = repo
-        self.__dict__["_active_session"] = kwargs.get("active_session")
+        self.__dict__["_repository"] = repository
+        self.__dict__["_active_session"] = active_session
 
         # Immutable-after-init attributes (plain, never mutated outside __init__).
-        self.project_path: str = kwargs.get("project_path", "")
-        self.server_instance_id: str = kwargs.get("server_instance_id", "") or str(uuid7())
-        self.central_audit_enabled: bool = kwargs.get("central_audit_enabled", False)
-        self.auto_snapshot_threshold: int = kwargs.get("auto_snapshot_threshold", DEFAULT_AUTO_SNAPSHOT_THRESHOLD)
-        self.snapshot_check_interval: int = kwargs.get("snapshot_check_interval", DEFAULT_AUTO_SNAPSHOT_THRESHOLD)
+        self.project_path = project_path
+        self.server_instance_id = server_instance_id or str(uuid7())
+        self.central_audit_enabled = central_audit_enabled
+        self.auto_snapshot_threshold = auto_snapshot_threshold
+        self.snapshot_check_interval = snapshot_check_interval
 
         # ── mutable attributes (backed by ``__dict__``, guarded by _session_lock) ──
-        agent_name: str = kwargs.get("agent_name", "unknown")
-        self.__dict__["_agent_name"] = agent_name
-        self.__dict__["_client_name"] = kwargs.get("client_name")
-        self.__dict__["_client_version"] = kwargs.get("client_version")
+        resolved_agent_name = agent_name or (active_session.agent_name if active_session is not None else "unknown")
+        self.__dict__["_agent_name"] = resolved_agent_name
+        self.__dict__["_client_name"] = client_name
+        self.__dict__["_client_version"] = client_version
         self.__dict__["_git_baseline"]: dict[str, Any] | None = None
         self.__dict__["_event_count"]: int = 0
-
-        # Infer agent_name from an existing session when not explicitly provided.
-        if self.__dict__["_active_session"] is not None and "agent_name" not in kwargs:
-            self._agent_name = self.__dict__["_active_session"].agent_name
-
-        # Catch any extra kwargs (forward-compat safety net).
-        known = {
-            "repository",
-            "project_path",
-            "active_session",
-            "agent_name",
-            "server_instance_id",
-            "client_name",
-            "client_version",
-            "central_audit_enabled",
-            "auto_snapshot_threshold",
-            "snapshot_check_interval",
-        }
-        for k, v in kwargs.items():
-            if k not in known:
-                self.__dict__[k] = v
 
     # ── properties ──
 

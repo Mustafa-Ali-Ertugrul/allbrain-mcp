@@ -14,7 +14,12 @@ from allbrain.events import EventType, SemanticEventType
 from allbrain.gitbrain.parser import GitBrain
 from allbrain.models.entities import Session, utc_now
 from allbrain.security.redaction import sanitize_text
-from allbrain.server.constants import HEARTBEAT_INTERVAL_SECONDS, STALE_AFTER_SECONDS
+from allbrain.server.constants import (
+    EMPTY_SESSION_TTL_HOURS,
+    HEARTBEAT_INTERVAL_SECONDS,
+    SESSION_CLEANUP_INTERVAL_SECONDS,
+    STALE_AFTER_SECONDS,
+)
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import maybe_auto_snapshot
 
@@ -257,6 +262,7 @@ def create_lifespan(context: BrainContext):
     async def lifespan(_server):
         async with anyio.create_task_group() as task_group:
             task_group.start_soon(_heartbeat_loop, context)
+            task_group.start_soon(_cleanup_loop, context)
             try:
                 yield {"brain_context": context}
             except BaseException:
@@ -290,6 +296,29 @@ async def _heartbeat_loop(context: BrainContext) -> None:
                 await anyio.to_thread.run_sync(context.repository.touch_session, session_id)
             except Exception:
                 logger.exception("Session heartbeat failed")
+
+
+async def _cleanup_loop(context: BrainContext) -> None:
+    """Periodically reconcile stale sessions and delete old empty ones."""
+    while True:
+        await anyio.sleep(SESSION_CLEANUP_INTERVAL_SECONDS)
+        try:
+            reconciled = await anyio.to_thread.run_sync(reconcile_stale_sessions, context)
+            if reconciled:
+                logger.info("Reconciled %d stale session(s)", len(reconciled))
+        except Exception:
+            logger.exception("Session reconciliation failed")
+        try:
+            before = utc_now() - timedelta(hours=EMPTY_SESSION_TTL_HOURS)
+            deleted = await anyio.to_thread.run_sync(
+                context.repository.cleanup_empty_sessions,
+                project_path=context.project_path,
+                before=before,
+            )
+            if deleted:
+                logger.info("Cleaned up %d empty session(s)", deleted)
+        except Exception:
+            logger.exception("Empty session cleanup failed")
 
 
 def record_git_changes(

@@ -9,7 +9,6 @@ from allbrain.orchestrator.task_state import TaskStateReducer
 from allbrain.runtime_core.pipeline_models import PipelineRunState
 from allbrain.runtime_core.pipeline_services import PipelineServices
 from allbrain.runtime_core.state import RuntimeStatus
-from allbrain.storage.repository import event_to_read
 
 
 class ExecutionFeedbackStep:
@@ -70,7 +69,7 @@ class ExecutionFeedbackStep:
             },
             caused_by=state.last_event_id,
         )
-        decision = state.context.repository.append_event(
+        decision = state.context.repository.append_event_read(
             project_path=state.bus.project_path,
             session_id=state.bus.session_id,
             type=EventType.SELECTION_DECISION.value,
@@ -90,12 +89,11 @@ class ExecutionFeedbackStep:
             task_hint=task.get("goal"),
             caused_by=assigned.id,
         )
-        decision_read = event_to_read(decision)
         return {
             "summary": {"task_id": task_id, "assignment": assignment, "decision_event_id": decision.id},
             "assignment": assignment,
             "assigned_event_id": assigned.id,
             "decision_event_id": decision.id,
-            "decision_event": decision_read.model_dump(mode="json"),
+            "decision_event": decision.model_dump(mode="json"),
             "last_event_id": decision.id,
         }
