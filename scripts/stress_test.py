@@ -10,6 +10,8 @@ Usage:
     uv run --extra dev python scripts/stress_test.py
 """
 
+# ruff: noqa: E501
+
 from __future__ import annotations
 
 import json
@@ -64,16 +66,25 @@ def _make_context(db_path: Path, project_root: Path, agent: str) -> BrainContext
 
 
 def _agent_worker(
-    context: BrainContext, agent: str, events: int, seed: int,
+    context: BrainContext,
+    agent: str,
+    events: int,
+    seed: int,
 ) -> AgentResult:
     rng = random.Random(seed)
     result = AgentResult(agent=agent)
     t0 = time.perf_counter()
     for i in range(events):
-        event_type = rng.choice([
-            "file_modified", "task_started", "task_completed",
-            "failure", "task_created", "task_blocked",
-        ])
+        event_type = rng.choice(
+            [
+                "file_modified",
+                "task_started",
+                "task_completed",
+                "failure",
+                "task_created",
+                "task_blocked",
+            ]
+        )
         try:
             r = save_event_impl(
                 context,
@@ -141,7 +152,7 @@ def run_concurrent_stress(db_path: Path, project_root: Path) -> dict[str, Any]:
     # Sequential baseline first
     seq_ctx = _make_context(db_path, project_root, "sequential-baseline")
     _agent_worker(seq_ctx, "sequential-baseline", EVENTS_PER_AGENT * len(AGENT_NAMES), seed=42)
-    seq_hash = _resume_hash(seq_ctx)
+    _resume_hash(seq_ctx)
 
     # Fresh contexts for concurrent run
     contexts = [_make_context(db_path, project_root, a) for a in AGENT_NAMES]
@@ -170,11 +181,13 @@ def run_concurrent_stress(db_path: Path, project_root: Path) -> dict[str, Any]:
         det = _deterministic_key(data)
         ok = det == ref_det
         det_matches = det_matches and ok
-        resume_details.append({
-            "agent": a,
-            "event_count": data.get("event_count", 0),
-            "deterministic_keys_match": ok,
-        })
+        resume_details.append(
+            {
+                "agent": a,
+                "event_count": data.get("event_count", 0),
+                "deterministic_keys_match": ok,
+            }
+        )
     ref_ec = ref.get("event_count", 0)
 
     total_ok = sum(r.ok for r in agent_results)
@@ -193,9 +206,14 @@ def run_concurrent_stress(db_path: Path, project_root: Path) -> dict[str, Any]:
         "total_db_locked": total_db_locked,
         "total_other_errors": total_other,
         "per_agent": [
-            {"agent": r.agent, "ok": r.ok, "rate_limited": r.rate_limited,
-             "db_locked": r.db_locked, "other_errors": r.other_errors,
-             "duration_seconds": round(r.duration, 3)}
+            {
+                "agent": r.agent,
+                "ok": r.ok,
+                "rate_limited": r.rate_limited,
+                "db_locked": r.db_locked,
+                "other_errors": r.other_errors,
+                "duration_seconds": round(r.duration, 3),
+            }
             for r in sorted(agent_results, key=lambda x: x.agent)
         ],
         "resume_hashes_match": det_matches,
@@ -225,6 +243,7 @@ def run_single_agent_baseline(db_path: Path, project_root: Path) -> dict[str, An
 
 def check_journal_mode(db_path: Path) -> str:
     import sqlite3
+
     c = sqlite3.connect(str(db_path))
     mode = c.execute("PRAGMA journal_mode").fetchone()[0]
     c.close()
@@ -233,8 +252,10 @@ def check_journal_mode(db_path: Path) -> str:
 
 def _verdict(s: dict[str, Any]) -> str:
     ok, rl, db, oth, total = (
-        s["total_ok"], s["total_rate_limited"],
-        s["total_db_locked"], s["total_other_errors"],
+        s["total_ok"],
+        s["total_rate_limited"],
+        s["total_db_locked"],
+        s["total_other_errors"],
         s["total_events_attempted"],
     )
     if total == 0:
@@ -253,7 +274,10 @@ def main() -> int:
         os.environ["PYTHONUTF8"] = "1"
     import shutil
     import tempfile
-    work_dir = Path(tempfile.mkdtemp(prefix="allbrain_stress_"))
+
+    # Project path canonicalization defaults to allowing only Path.home().
+    # Keep stress projects under home so the security guard remains enabled.
+    work_dir = Path(tempfile.mkdtemp(prefix="allbrain_stress_", dir=Path.home()))
     print(f"Work dir: {work_dir}")
 
     # ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 1. Journal mode ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
@@ -267,20 +291,22 @@ def main() -> int:
     print()
 
     # ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 2. Baseline ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-    print("ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬"*55)
+    print("=" * 55)
     print("[BASELINE] Single-agent sequential...")
     bd = work_dir / "baseline.db"
     bp = work_dir / "baseline_proj"
     base = run_single_agent_baseline(bd, bp)
-    print(f"  OK={base['ok']}/{base['events_total']}  "
-          f"RL={base['rate_limited']}  DB={base['db_locked']}  "
-          f"Err={len(base['other_errors'])}  "
-          f"({100*base['ok']/base['events_total']:.1f}%)")
+    print(
+        f"  OK={base['ok']}/{base['events_total']}  "
+        f"RL={base['rate_limited']}  DB={base['db_locked']}  "
+        f"Err={len(base['other_errors'])}  "
+        f"({100 * base['ok'] / base['events_total']:.1f}%)"
+    )
     print(f"  Duration: {base['duration_seconds']}s")
     print()
 
     # ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 3. Concurrent stress ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-    print("ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬"*55)
+    print("=" * 55)
     print(f"[STRESS] {len(AGENT_NAMES)} agents x {EVENTS_PER_AGENT} events...")
     sd = work_dir / "stress.db"
     sp = work_dir / "stress_proj"
@@ -291,16 +317,18 @@ def main() -> int:
     rl = stress["total_rate_limited"]
     db = stress["total_db_locked"]
     ot = stress["total_other_errors"]
-    print(f"  OK={ok}/{tot}  RL={rl}  DB={db}  Err={ot}  ({100*ok/tot:.1f}%)")
+    print(f"  OK={ok}/{tot}  RL={rl}  DB={db}  Err={ot}  ({100 * ok / tot:.1f}%)")
     print(f"  Duration: {stress['concurrent_runtime_seconds']}s")
     print(f"  Resume hashes match: {stress['resume_hashes_match']}")
     print(f"  Deterministic fields match: {stress['deterministic_fields_match']}")
 
     print(f"\n  {'Agent':<12} {'OK':>5} {'RL':>4} {'DB':>4} {'Err':>4} {'Dur(s)':>8}")
-    print(f"  {'-'*12} {'-'*5} {'-'*4} {'-'*4} {'-'*4} {'-'*8}")
+    print(f"  {'-' * 12} {'-' * 5} {'-' * 4} {'-' * 4} {'-' * 4} {'-' * 8}")
     for a in stress["per_agent"]:
-        print(f"  {a['agent']:<12} {a['ok']:>5} {a['rate_limited']:>4} "
-              f"{a['db_locked']:>4} {len(a['other_errors']):>4} {a['duration_seconds']:>8.3f}")
+        print(
+            f"  {a['agent']:<12} {a['ok']:>5} {a['rate_limited']:>4} "
+            f"{a['db_locked']:>4} {len(a['other_errors']):>4} {a['duration_seconds']:>8.3f}"
+        )
 
     # ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4. Report ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
     report = StressReport(
@@ -310,9 +338,11 @@ def main() -> int:
             "stress_test": stress,
             "verdict": _verdict(stress),
             "config": {
-                "pool_size": 5, "max_overflow": 10,
+                "pool_size": 5,
+                "max_overflow": 10,
                 "busy_timeout_ms": 5000,
-                "rate_limit_rpm": 100000, "rate_limit_rps": 1000,
+                "rate_limit_rpm": 100000,
+                "rate_limit_rps": 1000,
             },
         },
     )
@@ -328,7 +358,7 @@ def main() -> int:
     if not stress["resume_hashes_match"]:
         print("[FAIL] Resume hashes mismatch — state drift!")
         ec = 1
-    print(f"\n{'='*55}")
+    print(f"\n{'=' * 55}")
     print(f"Exit code: {ec}")
     return ec
 
