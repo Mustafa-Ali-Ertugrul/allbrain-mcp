@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any
 
-from allbrain.events import EventType, SemanticEventType
+from allbrain.events import EventType
 from allbrain.gitbrain.parser import GitBrain
 from allbrain.models.entities import Session, utc_now
 from allbrain.server.constants import STALE_AFTER_SECONDS
