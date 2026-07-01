@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import threading
 import time
 from collections import deque
 from typing import Any
@@ -17,7 +18,7 @@ class SlidingWindowCounter:
     If the total count in the window exceeds *max_events*, the key is
     temporarily denied until the window slides past the oldest events.
 
-    Thread-safe for GIL-guarded operations (single-process MCP use).
+    Thread-safe — all public methods are protected by a per-instance lock.
     Uses ``collections.deque`` for O(expired) prune via ``popleft``.
     """
 
@@ -27,6 +28,7 @@ class SlidingWindowCounter:
         if window_seconds <= 0:
             raise ValueError("window_seconds must be > 0")
 
+        self._lock = threading.Lock()
         self._window = window_seconds
         self._max = max_events
         self._bucket_span = window_seconds / buckets
@@ -45,35 +47,39 @@ class SlidingWindowCounter:
 
     def check(self, key: str) -> tuple[bool, int]:
         """Return ``(allowed, current_count)`` without recording the call."""
-        now = time.monotonic()
-        self._prune(key, now)
-        cur = len(self._buckets.get(key, deque()))
-        return cur < self._max, cur
+        with self._lock:
+            now = time.monotonic()
+            self._prune(key, now)
+            cur = len(self._buckets.get(key, deque()))
+            return cur < self._max, cur
 
     def record(self, key: str) -> None:
         """Record one call for *key*."""
-        now = time.monotonic()
-        self._prune(key, now)
-        self._buckets.setdefault(key, deque()).append(now)
+        with self._lock:
+            now = time.monotonic()
+            self._prune(key, now)
+            self._buckets.setdefault(key, deque()).append(now)
 
     def check_and_record(self, key: str) -> tuple[bool, int]:
         """Atomic check-and-record.  Returns ``(allowed, current_count)``."""
-        now = time.monotonic()
-        self._prune(key, now)
-        ts_list = self._buckets.get(key, deque())
-        cur = len(ts_list)
-        if cur >= self._max:
-            return False, cur
-        ts_list.append(now)
-        self._buckets[key] = ts_list
-        return True, cur + 1
+        with self._lock:
+            now = time.monotonic()
+            self._prune(key, now)
+            ts_list = self._buckets.get(key, deque())
+            cur = len(ts_list)
+            if cur >= self._max:
+                return False, cur
+            ts_list.append(now)
+            self._buckets[key] = ts_list
+            return True, cur + 1
 
     def reset(self, key: str | None = None) -> None:
         """Clear history for one key, or all keys."""
-        if key is None:
-            self._buckets.clear()
-        else:
-            self._buckets.pop(key, None)
+        with self._lock:
+            if key is None:
+                self._buckets.clear()
+            else:
+                self._buckets.pop(key, None)
 
 
 # Rate limit defaults (generous — catch runaway loops, not normal usage).
