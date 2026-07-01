@@ -7,6 +7,7 @@ concurrent reads and limited concurrent writes without
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -157,6 +158,97 @@ def test_timestamp_ordering(tmp_path: Path) -> None:
     event_ids = [e.id for e in events]
     # UUID7 is time-sortable; list_events returns sorted by event.id
     assert event_ids == sorted(event_ids), "event IDs are not monotonically ordered"
+
+
+def test_active_session_ensure_concurrent(tmp_path: Path) -> None:
+    """Concurrent ensure_active_session calls must produce exactly one session.
+
+    Only ensure_active_session is called — no explicit None sets.
+    """
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+
+    context = BrainContext(
+        repository=repo,
+        project_path=str(project_root.resolve()),
+        agent_name="multi",
+    )
+    assert context.active_session is None
+
+    sessions: list[Any] = []
+
+    def _ensure(tid: int) -> None:
+        for _ in range(20):
+            sess = context.ensure_active_session()
+            sessions.append(sess)
+
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        futures = [pool.submit(_ensure, tid) for tid in range(10)]
+        for f in as_completed(futures):
+            f.result()
+
+    # All calls returned the same session object.
+    first = sessions[0]
+    assert first is not None
+    assert all(s is first for s in sessions), "ensure_active_session must return same singleton"
+    assert context.active_session is first
+    assert context.active_session_id == first.id
+
+
+def test_active_session_setter_under_contention(tmp_path: Path) -> None:
+    """active_session setter must be atomic under concurrent writes.
+
+    - 2 threads set active_session to None then restore.
+    - 2 threads read active_session_id concurrently.
+    - Must never crash, and final session must be valid.
+    """
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "brain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+
+    context = BrainContext(
+        repository=repo,
+        project_path=str(project_root.resolve()),
+        agent_name="multi",
+    )
+    sess = context.ensure_active_session()
+    assert sess is not None
+
+    errors: list[str] = []
+
+    def _setter(tid: int) -> None:
+        for _ in range(50):
+            old = context.active_session  # locked getter
+            context.active_session = None  # locked setter
+            context.active_session = old  # locked setter
+
+    def _reader(tid: int) -> None:
+        for _ in range(50):
+            try:
+                _sid = context.active_session_id  # locked getter
+            except Exception as exc:
+                errors.append(f"r{tid}: {exc}")
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        setters = [pool.submit(_setter, t) for t in range(2)]
+        readers = [pool.submit(_reader, t) for t in range(2)]
+        for f in as_completed(setters + readers):
+            f.result()
+
+    assert not errors, f"reader errors: {errors[:5]}"
+    # The session must still be valid after all contention.
+    assert context.active_session is not None
+    assert context.active_session_id is not None
+    assert context.active_session_id == sess.id
 
 
 def test_concurrent_mixed_operations(tmp_path: Path) -> None:
