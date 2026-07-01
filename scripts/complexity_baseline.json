@@ -23,8 +23,6 @@
     "allbrain/replay/event_replay_engine.py::EventReplayEngine.replay": {"complexity": 3, "lines": 265},
     "allbrain/resilience/reducer.py::ResilienceReducer.apply": {"complexity": 19, "lines": 90},
     "allbrain/runtime_core/observability.py::ObservabilityCollector.collect_layer_indicators": {"complexity": 19, "lines": 50},
-    "allbrain/runtime_core/pipeline.py::SystemDecisionPipeline._routing_step": {"complexity": 35, "lines": 520},
-    "allbrain/runtime_core/pipeline.py::SystemDecisionPipeline.run": {"complexity": 53, "lines": 431},
     "allbrain/runtime_core/projections.py::RuntimeCoreStateBuilder.build": {"complexity": 19, "lines": 42},
     "allbrain/self_repair/reducer.py::SelfRepairReducer.apply": {"complexity": 16, "lines": 51},
     "allbrain/server/lifecycle.py::build_session_summary": {"complexity": 22, "lines": 60},
