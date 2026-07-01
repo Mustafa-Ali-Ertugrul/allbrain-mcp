@@ -34,13 +34,19 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from allbrain.storage import create_engine_for_path, init_db
+
 # ── Configuration ────────────────────────────────────────────────
 AGENT_COUNT = 10
 EVENTS_PER_AGENT = 200
 TOTAL_EVENTS = AGENT_COUNT * EVENTS_PER_AGENT
 VALID_TYPES = [
-    "file_modified", "task_started", "task_completed",
-    "failure", "task_created", "task_blocked",
+    "file_modified",
+    "task_started",
+    "task_completed",
+    "failure",
+    "task_created",
+    "task_blocked",
 ]
 SHARED_DB = str(Path.home() / ".allbrain" / "stress_live.db")
 
@@ -100,8 +106,7 @@ class MCPClient:
         self._id_counter += 1
         return i
 
-    def request(self, method: str, params: dict[str, Any] | None = None,
-                timeout: float = 30.0) -> Any:
+    def request(self, method: str, params: dict[str, Any] | None = None, timeout: float = 30.0) -> Any:
         """Send a JSON-RPC request and return the result field."""
         msg_id = self._alloc_id()
         req = {"jsonrpc": "2.0", "id": msg_id, "method": method}
@@ -138,11 +143,15 @@ class MCPClient:
 
     def initialize(self) -> dict[str, Any]:
         """Perform the MCP initialize handshake."""
-        result = self.request("initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "mcp-stress", "version": "1.0.0"},
-        }, timeout=PROCESS_START_TIMEOUT)
+        result = self.request(
+            "initialize",
+            {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "mcp-stress", "version": "1.0.0"},
+            },
+            timeout=PROCESS_START_TIMEOUT,
+        )
         self.notify("notifications/initialized")
         return result
 
@@ -152,9 +161,14 @@ class MCPClient:
 
     # ── tool calls ─────────────────────────────────────────────
 
-    def call_save_event(self, event_type: str, payload: dict[str, Any],
-                        file_path: str | None = None, source: str | None = None,
-                        task_hint: str | None = None) -> CallResult:
+    def call_save_event(
+        self,
+        event_type: str,
+        payload: dict[str, Any],
+        file_path: str | None = None,
+        source: str | None = None,
+        task_hint: str | None = None,
+    ) -> CallResult:
         t0 = time.perf_counter()
         r = CallResult()
         try:
@@ -203,8 +217,7 @@ class MCPClient:
                 r.latency_s = time.perf_counter() - t0
         return r
 
-    def call_resume_project(self, include_git: bool = False,
-                            limit: int = 5000) -> dict[str, Any]:
+    def call_resume_project(self, include_git: bool = False, limit: int = 5000) -> dict[str, Any]:
         try:
             result = self.request(
                 "tools/call",
@@ -239,12 +252,21 @@ class MCPClient:
 # ── Agent worker ─────────────────────────────────────────────────
 def start_server(name: str, db_path: str) -> subprocess.Popen:
     """Start an allbrain MCP server subprocess."""
+    env = os.environ.copy()
+    env["ALLOWED_PROJECT_ROOTS"] = str(PROJECT_DIR)
+    env.setdefault("PYTHONUTF8", "1")
     proc = subprocess.Popen(
         [
-            UV_BIN, "run", "allbrain", "start",
-            "--project", ".",
-            "--agent", name,
-            "--db-path", db_path,
+            UV_BIN,
+            "run",
+            "allbrain",
+            "start",
+            "--project",
+            ".",
+            "--agent",
+            name,
+            "--db-path",
+            db_path,
         ],
         cwd=str(PROJECT_DIR),
         stdin=subprocess.PIPE,
@@ -253,6 +275,7 @@ def start_server(name: str, db_path: str) -> subprocess.Popen:
         text=True,
         encoding="utf-8",
         errors="replace",
+        env=env,
     )
     return proc
 
@@ -368,11 +391,27 @@ def cleanup(clients: list[MCPClient], db_path: str) -> None:
     print("Cleanup done.")
 
 
+def prepare_shared_database(db_path: str) -> None:
+    """Initialize the shared SQLite DB before spawning MCP subprocesses.
+
+    The stress target is concurrent MCP tool traffic, not concurrent schema
+    migration. Pre-initializing avoids flaky startup races where multiple
+    subprocesses try to create/migrate the same SQLite database at once.
+    """
+    path = Path(db_path)
+    for suffix in ("", "-wal", "-shm"):
+        target = Path(str(path) + suffix)
+        if target.exists():
+            target.unlink()
+    engine = create_engine_for_path(path)
+    init_db(engine)
+    engine.dispose()
+
+
 # ── Main ─────────────────────────────────────────────────────────
 def main() -> int:
-    t_start = time.perf_counter()
-
     db_path = SHARED_DB
+    prepare_shared_database(db_path)
     print(f"DB: {db_path}")
     print(f"Processes: {AGENT_COUNT}  Events/agent: {EVENTS_PER_AGENT}  Total: {TOTAL_EVENTS}")
     print("Config: pool_size=5, max_overflow=10, busy_timeout=5000ms, journal_mode=WAL")
@@ -382,25 +421,21 @@ def main() -> int:
     agent_names = [f"agent-{i:02d}" for i in range(AGENT_COUNT)]
     clients: list[MCPClient | None] = [None] * AGENT_COUNT
 
-    with ThreadPoolExecutor(max_workers=AGENT_COUNT) as pool:
-        fut_to_idx = {
-            pool.submit(warm_up_agent, name, db_path): i
-            for i, name in enumerate(agent_names)
-        }
-        for fut in as_completed(fut_to_idx):
-            idx = fut_to_idx[fut]
-            try:
-                client = fut.result()
-                clients[idx] = client
-                if client:
-                    print(f"  {client.agent:12} INIT OK")
-                else:
-                    print(f"  {agent_names[idx]:12} INIT FAILED")
-            except Exception as e:
-                print(f"  {agent_names[idx]:12} INIT EXCEPTION: {e}")
+    # Warm up sequentially to keep the stress signal focused on tool-call
+    # concurrency. Parallel process startup can contend on uv/.venv and DB init
+    # before the actual MCP protocol stress begins.
+    for idx, name in enumerate(agent_names):
+        try:
+            client = warm_up_agent(name, db_path)
+            clients[idx] = client
+            if client:
+                print(f"  {client.agent:12} INIT OK")
+            else:
+                print(f"  {name:12} INIT FAILED")
+        except Exception as e:
+            print(f"  {name:12} INIT EXCEPTION: {e}")
 
     valid_clients = [c for c in clients if c is not None]
-    valid_names = [c.agent for c in valid_clients]
     print(f"\n  Started {len(valid_clients)}/{AGENT_COUNT} agents")
 
     if len(valid_clients) < 2:
@@ -417,7 +452,7 @@ def main() -> int:
     with ThreadPoolExecutor(max_workers=len(valid_clients)) as pool:
         fut_map = {
             pool.submit(agent_worker, client, EVENTS_PER_AGENT, seed): client
-            for client, seed in zip(valid_clients, seeds)
+            for client, seed in zip(valid_clients, seeds, strict=False)
         }
         for fut in as_completed(fut_map):
             try:
@@ -425,17 +460,19 @@ def main() -> int:
             except Exception as e:
                 tb = traceback.format_exc()
                 print(f"  Worker exception: {e}\n{tb}")
-                agent_results.append({
-                    "agent": "UNKNOWN",
-                    "events": 0,
-                    "ok": 0,
-                    "rate_limited": 0,
-                    "db_locked": 0,
-                    "errors": [f"CRASH: {e}"],
-                    "error_count": 1,
-                    "latencies": {"p50": 0, "p95": 0, "p99": 0, "mean": 0, "min": 0, "max": 0},
-                    "deterministic_key": (),
-                })
+                agent_results.append(
+                    {
+                        "agent": "UNKNOWN",
+                        "events": 0,
+                        "ok": 0,
+                        "rate_limited": 0,
+                        "db_locked": 0,
+                        "errors": [f"CRASH: {e}"],
+                        "error_count": 1,
+                        "latencies": {"p50": 0, "p95": 0, "p99": 0, "mean": 0, "min": 0, "max": 0},
+                        "deterministic_key": (),
+                    }
+                )
 
     stress_duration = time.perf_counter() - t_stress
 
@@ -484,16 +521,20 @@ def main() -> int:
     print(f"  Other errors: {total_err}")
     print(f"  Duration: {stress_duration:.3f}s")
     print(f"  Deterministic fields match: {det_matches}")
-    print(f"  Latency (global)  p50={global_p50:.4f}s p95={global_p95:.4f}s p99={global_p99:.4f}s mean={global_mean:.4f}s")
+    print(
+        f"  Latency (global)  p50={global_p50:.4f}s p95={global_p95:.4f}s p99={global_p99:.4f}s mean={global_mean:.4f}s"
+    )
 
     # Per-agent table
     print(f"\n  {'Agent':<12} {'OK':>5} {'RL':>3} {'DB':>3} {'Err':>4} {'p50':>8} {'p95':>8} {'p99':>8}")
-    print(f"  {'-'*12} {'-'*5} {'-'*3} {'-'*3} {'-'*4} {'-'*8} {'-'*8} {'-'*8}")
+    print(f"  {'-' * 12} {'-' * 5} {'-' * 3} {'-' * 3} {'-' * 4} {'-' * 8} {'-' * 8} {'-' * 8}")
     for ar in sorted(agent_results, key=lambda x: x["agent"]):
-        l = ar["latencies"]
-        print(f"  {ar['agent']:<12} {ar['ok']:>5} {ar['rate_limited']:>3} "
-              f"{ar['db_locked']:>3} {ar['error_count']:>4} "
-              f"{l['p50']:>8.4f} {l['p95']:>8.4f} {l['p99']:>8.4f}")
+        lat = ar["latencies"]
+        print(
+            f"  {ar['agent']:<12} {ar['ok']:>5} {ar['rate_limited']:>3} "
+            f"{ar['db_locked']:>3} {ar['error_count']:>4} "
+            f"{lat['p50']:>8.4f} {lat['p95']:>8.4f} {lat['p99']:>8.4f}"
+        )
 
     # ── 5. Report ──────────────────────────────────────────────
     report = {
