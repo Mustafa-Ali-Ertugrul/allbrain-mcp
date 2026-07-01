@@ -95,11 +95,16 @@ _BURST_LIMITER = SlidingWindowCounter(window_seconds=1.0, max_events=_DEFAULT_RP
 _TOOL_MINUTE_RPS = _DEFAULT_RPM
 _TOOL_BURST_RPS = _DEFAULT_RPS
 
+# Cross-limiter lock: serialises burst + minute check-and-record so that
+# the two-phase commit is atomic from the caller's perspective.
+_cross_limiter_lock = threading.Lock()
+
 
 def reset_rate_limits() -> None:
     """Clear all rate-limit counters.  Useful in test teardown."""
-    _MINUTE_LIMITER.reset()
-    _BURST_LIMITER.reset()
+    with _cross_limiter_lock:
+        _MINUTE_LIMITER.reset()
+        _BURST_LIMITER.reset()
 
 
 def check_tool_rate(tool_name: str) -> None:
@@ -109,12 +114,16 @@ def check_tool_rate(tool_name: str) -> None:
     cheaper.  Rolls back burst records when the minute window is
     full.  Raises ``RateLimitError`` if either limit is exceeded.
     Call once per tool invocation.
-    """
-    burst_ok, burst_count = _BURST_LIMITER.check_and_record(tool_name)
-    if not burst_ok:
-        raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {burst_count}/{_TOOL_BURST_RPS} per second")
 
-    minute_ok, minute_count = _MINUTE_LIMITER.check_and_record(tool_name)
-    if not minute_ok:
-        _BURST_LIMITER.reset(tool_name)
-        raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {minute_count}/{_TOOL_MINUTE_RPS} per minute")
+    Thread-safe — burst and minute checks are serialised under a
+    single cross-limiter lock to avoid partial-commit races.
+    """
+    with _cross_limiter_lock:
+        burst_ok, burst_count = _BURST_LIMITER.check_and_record(tool_name)
+        if not burst_ok:
+            raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {burst_count}/{_TOOL_BURST_RPS} per second")
+
+        minute_ok, minute_count = _MINUTE_LIMITER.check_and_record(tool_name)
+        if not minute_ok:
+            _BURST_LIMITER.reset(tool_name)
+            raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {minute_count}/{_TOOL_MINUTE_RPS} per minute")

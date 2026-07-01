@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
+from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -112,15 +113,13 @@ def close_session_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         closed = context.repository.close_session(session_id, status="closed", reason=reason)
         if closed is None:
             return ToolResult(ok=False, error=f"Session {session_id} not found")
-        try:
+        with suppress(UserInputError):
             audit_tool_call(
                 context,
                 tool_name="close_session",
                 tool_args={"session_id": session_id, "reason": reason},
                 session_id=bind_session_id(context, None),
             )
-        except UserInputError:
-            pass  # No active session for audit — administrative call
         return ToolResult(
             ok=True,
             data={
@@ -143,15 +142,13 @@ def cleanup_stale_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolRes
         deleted = context.repository.cleanup_empty_sessions(project_path=context.project_path, before=before)
         if deleted:
             logger.info("Cleaned up %d empty session(s)", deleted)
-        try:
+        with suppress(UserInputError):
             audit_tool_call(
                 context,
                 tool_name="cleanup_stale_sessions",
                 tool_args={"reconciled": len(reconciled), "deleted": deleted},
                 session_id=bind_session_id(context, None),
             )
-        except UserInputError:
-            pass  # No active session for audit — administrative call
         return ToolResult(
             ok=True,
             data={
