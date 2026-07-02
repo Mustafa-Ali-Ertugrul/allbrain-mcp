@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.engine import Engine
 from sqlmodel import Session as DbSession
 from sqlmodel import col, select
@@ -397,6 +398,15 @@ class BrainRepository:
 
     def count_events_after(self, *, project_path: str | Path | None, event_cursor: str | None) -> int:
         return len(self.list_events_after(project_path=project_path, event_cursor=event_cursor))
+
+    def event_type_counts_after(self, *, project_id: int, event_cursor: str | None) -> dict[str, int]:
+        """Count events after a cursor without materializing their payloads."""
+        with open_session(self.engine) as db:
+            statement = select(Event.type, func.count()).where(Event.project_id == project_id)
+            if event_cursor is not None:
+                statement = statement.where(col(Event.id) > event_cursor)
+            rows = db.exec(statement.group_by(Event.type)).all()
+            return {event_type: int(count) for event_type, count in rows}
 
     def get_event(self, event_id: str) -> EventRead | None:
         with open_session(self.engine) as db:
