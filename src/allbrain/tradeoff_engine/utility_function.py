@@ -24,7 +24,7 @@ class UtilityFunction:
                 policy_id=policy_id,
                 strategy=strategy,
                 fault_type=result.fault_type,
-                utility=-1e9,
+                utility=float("-inf"),
                 safety=result.safety,
                 stability=result.stability,
                 success=result.success,
