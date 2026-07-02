@@ -49,6 +49,30 @@ def register_tools(mcp, context: BrainContext) -> None:
         enable_uncertainty: bool = False,
         enable_information_seeking: bool = False,
     ) -> dict[str, Any]:
+        """Run a full decision pipeline with optional reasoning modules.
+
+        Args:
+            objective: The decision objective as a JSON-serializable dict.
+            execute_mode: Pipeline mode ("event_only", "queued_runtime", etc.).
+            limit: Max events to consider.
+            simulate_before_execute: Whether to simulate before executing.
+            risk_threshold: Risk threshold (0-1) for decisions.
+            enable_counterfactual: Enable counterfactual reasoning.
+            counterfactual_limit: Max counterfactual alternatives.
+            regret_threshold: Regret threshold (0-1) for decisions.
+            enable_scenarios: Enable scenario generation.
+            scenarios_limit: Max scenarios to generate.
+            scenario_recommendation_threshold: Threshold for scenario recommendations.
+            enable_foresight: Enable foresight planning.
+            foresight_limit: Max future plans to generate.
+            max_horizon: Max time horizon for plans.
+            enable_meta_reasoning: Enable meta-reasoning over decisions.
+            enable_uncertainty: Enable uncertainty estimation.
+            enable_information_seeking: Enable information-seeking actions.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = run_decision_pipeline_impl(
             context,
             objective=objective,

@@ -112,6 +112,23 @@ def register_tools(mcp, context: BrainContext) -> None:
         caused_by: str | None = None,
         branch: str | None = None,
     ) -> dict[str, Any]:
+        """Append an event to the shared event log.
+
+        Args:
+            type: Event type identifier.
+            payload: Event data payload.
+            file_path: Optional source file path.
+            source: Event source label (default "agent").
+            session_id: Optional session ID to associate.
+            task_hint: Optional task hint string.
+            importance: Optional importance rating.
+            impact_score: Optional impact score.
+            caused_by: Optional causal event reference.
+            branch: Optional branch name.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = save_event_impl(
             context,
             type=type,
@@ -133,6 +150,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         type: str | None = None,
         limit: int = 50,
     ) -> dict[str, Any]:
+        """Query and filter recorded events.
+
+        Args:
+            session_id: Optional session ID to filter by.
+            type: Optional event type to filter by.
+            limit: Maximum number of events to return (default 50).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = list_events_impl(
             context,
             session_id=session_id,

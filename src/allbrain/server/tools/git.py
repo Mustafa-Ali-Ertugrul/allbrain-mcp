@@ -93,15 +93,33 @@ def get_recent_changes_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def get_git_context() -> dict[str, Any]:
+        """Retrieve git branch, remote, and recent commit context.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = get_git_context_impl(context)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def get_git_status() -> dict[str, Any]:
+        """Show working tree status (modified, staged, untracked).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = get_git_status_impl(context)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def get_recent_changes(limit: int = 10) -> dict[str, Any]:
+        """List recent file changes from git log.
+
+        Args:
+            limit: Number of recent changes to return (default 10).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = get_recent_changes_impl(context, limit=limit)
         return result.model_dump(mode="json")

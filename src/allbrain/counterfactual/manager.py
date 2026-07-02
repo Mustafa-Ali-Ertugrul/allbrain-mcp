@@ -18,12 +18,28 @@ class CounterfactualEngine:
         evaluator: CounterfactualEvaluator | None = None,
         ranker: AlternativeRanker | None = None,
     ) -> None:
-        self.generator = generator or AlternativeGenerator()
-        self.evaluator = evaluator or CounterfactualEvaluator(_default_simulator())
+        sim = _default_simulator()
+        self.generator = generator or AlternativeGenerator(simulator=sim)
+        self.evaluator = evaluator or CounterfactualEvaluator(sim)
         self.ranker = ranker or AlternativeRanker()
 
-    def analyze(self, state, action: str, *, limit: int | None = None) -> list[CounterfactualResult]:
-        alternatives = self.generator.generate(action)
+    def analyze(
+        self,
+        state,
+        action: str,
+        *,
+        limit: int | None = None,
+        risk_threshold: float = 1.0,
+        confidence_threshold: float = 0.0,
+        cost_threshold: float = 1.0,
+    ) -> list[CounterfactualResult]:
+        alternatives = self.generator.generate_with_pruning(
+            action,
+            state,
+            risk_threshold=risk_threshold,
+            confidence_threshold=confidence_threshold,
+            cost_threshold=cost_threshold,
+        )
         if limit is not None and limit >= 0:
             alternatives = alternatives[:limit]
         results: list[CounterfactualResult] = []

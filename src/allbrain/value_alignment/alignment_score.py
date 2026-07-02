@@ -11,6 +11,9 @@ from allbrain.value_alignment.model import (
 class AlignmentScoreTracker:
     """Tracks alignment over time. Detects when alignment drifts below threshold."""
 
+    #: Minimum history length required for oscillation detection.
+    _OSCILLATION_WINDOW = 6
+
     def __init__(self) -> None:
         self._history: dict[str, list[float]] = {}
         self._cycle_counter: int = 0
@@ -29,6 +32,26 @@ class AlignmentScoreTracker:
             return True
         avg = sum(buf[-5:]) / 5
         return avg >= ALIGNMENT_THRESHOLD
+
+    def detect_oscillation(self, fault_type: str) -> bool:
+        """Detect if the last N scores alternate between high and low (oscillation).
+
+        Oscillation is defined as at least 3 direction changes in the last
+        ``_OSCILLATION_WINDOW`` scores, indicating the constraint keeps flipping
+        between pass and fail — a hallmark of live-lock.
+        """
+        buf = self._history.get(fault_type, [])
+        if len(buf) < self._OSCILLATION_WINDOW:
+            return False
+        recent = buf[-self._OSCILLATION_WINDOW :]
+        # Count direction changes: number of times diff flips sign
+        changes = 0
+        for i in range(1, len(recent) - 1):
+            d1 = recent[i] - recent[i - 1]
+            d2 = recent[i + 1] - recent[i]
+            if d1 * d2 < 0:  # opposite signs → direction change
+                changes += 1
+        return changes >= 3
 
     def should_recheck(self) -> bool:
         return self._cycle_counter % ALIGNMENT_CHECK_INTERVAL == 0

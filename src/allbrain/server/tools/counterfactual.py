@@ -147,6 +147,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         counterfactual_limit: int = 3,
     ) -> dict[str, Any]:
+        """Generate counterfactual alternatives for an action.
+
+        Args:
+            action: The action to generate counterfactuals for.
+            limit: Max events to consider.
+            counterfactual_limit: Max number of counterfactual alternatives to generate.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = generate_counterfactual_impl(
             context,
             action=action,
@@ -160,5 +170,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         actions: list[str],
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Rank alternative actions by predicted outcome.
+
+        Args:
+            actions: List of action strings to rank.
+            limit: Max events to consider.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = rank_alternatives_impl(context, actions=actions, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

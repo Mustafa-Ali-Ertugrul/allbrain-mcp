@@ -167,6 +167,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_empty: bool = False,
         detail_limit: int = 20,
     ) -> dict[str, Any]:
+        """Summarize recent agent sessions.
+
+        Args:
+            limit: Maximum number of sessions to include.
+            include_empty: Whether to include empty sessions.
+            detail_limit: Maximum number of session details to return.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         return summarize_sessions_impl(
             context,
             limit=limit,
@@ -179,6 +189,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         session_id: int,
         reason: str = "manual",
     ) -> dict[str, Any]:
+        """Close an active session.
+
+        Args:
+            session_id: ID of the session to close.
+            reason: Reason for closing the session.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         return close_session_impl(
             context,
             session_id=session_id,
@@ -187,4 +206,9 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def cleanup_stale_sessions() -> dict[str, Any]:
+        """Clean up stale/expired sessions.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         return cleanup_stale_sessions_impl(context).model_dump(mode="json")

@@ -2,88 +2,157 @@
 
 One brain. Many agents. One shared memory.
 
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Python](https://img.shields.io/badge/python-3.12%20|%203.13-blue)
+![Tests](https://img.shields.io/badge/tests-2116%20passed-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-80%25-yellowgreen)
+
 ![AllBrain MCP banner](docs/images/banner.svg)
 
-AllBrain MCP is an event-sourced memory and orchestration server for multi-agent work. It captures what each agent did, replays the shared state, and helps the next agent pick up cleanly.
+**Languages:** [English](#english) · [Türkçe](#türkçe)
 
-## What it gives you
+---
 
-- FastMCP stdio server
-- append-only event log on SQLite
-- stable UUIDv7 event ordering
-- session-bound agent attribution
-- `save_event()`, `list_events()`, `resume_project()`
-- conflict detection and resolution
-- semantic intent extraction
-- world, counterfactual, and scenario reasoning
-- deterministic replay from raw events
+## English
 
-## Visuals
+AllBrain MCP is an event-sourced memory and orchestration server for multi-agent work. It records what each agent did, reconstructs shared state, and helps the next agent continue with the right context.
+
+### Features
+
+- FastMCP server over stdio
+- Append-only SQLite event log with stable UUIDv7 ordering
+- Session-bound agent attribution
+- Shared memory through `save_event()`, `list_events()`, and `resume_project()`
+- Conflict detection and resolution
+- Semantic intent extraction
+- World, counterfactual, and scenario reasoning
+- Causal graph with automatic cycle detection and weakest-edge pruning
+- Counterfactual alternative generation with risk/confidence/cost pruning
+- Governance pipeline with live-lock protection, escalation, and oscillation detection
+- Deterministic replay from raw events
+- **2077+ tests passing · 80%+ coverage**
+
+### Architecture
 
 ![Architecture](docs/images/architecture.svg)
 
 ![Multi-agent flow](docs/images/multi-agent-flow.svg)
 
-## Quick start
+### Quick start
 
 ```powershell
 uv run allbrain start --project . --agent codex
 ```
 
-For the easiest MCP setup after cloning:
+Install or refresh the MCP configuration for Codex, Claude Code, OpenCode, and Antigravity:
 
 ```powershell
 .\scripts\install-mcp.ps1 -All          # Windows
-./scripts/install-mcp.sh --all            # macOS / Linux
+./scripts/install-mcp.sh --all           # macOS / Linux
 ```
 
-That installs or refreshes the client configs for Codex, Claude Code, OpenCode, and Antigravity.
-
-For per-agent databases (isolated mode), add `--isolate`:
+For isolated per-agent databases, add `--isolate`:
 
 ```powershell
-.\scripts\install-mcp.ps1 -All -Isolate  # Windows
-./scripts/install-mcp.sh --all --isolate  # macOS / Linux
+.\scripts\install-mcp.ps1 -All -Isolate # Windows
+./scripts/install-mcp.sh --all --isolate # macOS / Linux
 ```
 
-If you want a clean local setup:
+See the [complete setup and troubleshooting guide](docs/setup.md) for client-specific verification and shared-memory configuration.
 
-1. create a venv
-2. install the project
-3. start the server with `allbrain start`
-4. connect your MCP client to the stdio command
+### How it works
 
-See the [complete installation and troubleshooting guide](docs/setup.md) for Windows, macOS, Linux, client-specific verification, and shared-memory configuration.
-
-## Example flow
-
-1. Agent A writes an event.
+1. Agent A records an event.
 2. Agent B writes to the same project.
-3. Agent C opens the project and gets the merged view.
-4. Conflicts are surfaced instead of being hidden.
+3. Agent C opens the project and receives the merged state.
+4. Conflicts are surfaced instead of hidden.
 
-## Why this repo is useful
+### Reality check
 
-- Good for shared agent memory
-- Good for cross-client MCP testing
-- Good for deterministic orchestration experiments
-- Good for debugging multi-agent state drift
+AllBrain is a real MCP server with real tool calls and deterministic state replay. It does not make a model magically autonomous; some reasoning pipelines simulate execution instead of performing live actions in the outside world.
 
-## Reality check
+### Repository layout
 
-This is a real MCP server with real tool calls and real state replay.
+- `src/allbrain/` — server, runtime, reducers, and tools
+- `tests/` — tests for event-sourced workflows
+- `docs/` — setup and architecture documentation
+- `docs/images/` — GitHub-friendly diagrams
 
-It still does not make the model magically autonomous. Some pipelines simulate execution rather than performing live world actions.
+---
 
-## Repo layout
+## Türkçe
 
-- `src/allbrain/` - server, runtime, reducers, and tools
-- `tests/` - coverage for the event-sourced flows
-- `docs/` - setup notes and architecture writeups
-- `docs/images/` - GitHub-friendly visuals
+AllBrain MCP, çoklu ajan çalışmaları için event-sourcing tabanlı bir ortak hafıza ve orkestrasyon sunucusudur. Her ajanın yaptığı işlemleri kaydeder, ortak durumu yeniden oluşturur ve sonraki ajanın doğru bağlamla devam etmesini sağlar.
 
-## Status
+### Özellikler
 
-- 1745 tests passing
-- stdio MCP handshake verified
-- multi-agent write/read/conflict flows verified
+- Stdio üzerinden çalışan FastMCP sunucusu
+- Kararlı UUIDv7 sıralamasına sahip, yalnızca eklemeli SQLite olay günlüğü
+- Oturuma bağlı ajan kimliklendirmesi
+- `save_event()`, `list_events()` ve `resume_project()` ile ortak hafıza
+- Çakışma tespiti ve çözümü
+- Anlamsal niyet çıkarımı
+- Dünya modeli, karşı-olgusal ve senaryo tabanlı akıl yürütme
+- Otomatik döngü tespiti ve en zayıf kenar budamasıyla nedensellik grafiği
+- Risk/güven/maliyet eşiklerine göre karşı-olgusal alternatif budama
+- Canlı kilit koruması, yükseltme ve salınım tespiti ile yönetişim hattı
+- Ham olaylardan deterministik durum yeniden oynatma
+- **2077+ test başarılı · %80+ kapsama**
+
+### Mimari
+
+![Mimari](docs/images/architecture.svg)
+
+![Çoklu ajan akışı](docs/images/multi-agent-flow.svg)
+
+### Hızlı başlangıç
+
+```powershell
+uv run allbrain start --project . --agent codex
+```
+
+Codex, Claude Code, OpenCode ve Antigravity için MCP yapılandırmasını kurmak veya yenilemek için:
+
+```powershell
+.\scripts\install-mcp.ps1 -All          # Windows
+./scripts/install-mcp.sh --all           # macOS / Linux
+```
+
+Her ajan için ayrı veritabanı kullanmak isterseniz `--isolate` seçeneğini ekleyin:
+
+```powershell
+.\scripts\install-mcp.ps1 -All -Isolate # Windows
+./scripts/install-mcp.sh --all --isolate # macOS / Linux
+```
+
+İstemciye özel doğrulama, ortak hafıza ayarları ve sorun giderme adımları için [ayrıntılı kurulum rehberine](docs/setup.md) bakın.
+
+### Nasıl çalışır?
+
+1. Ajan A bir olay kaydeder.
+2. Ajan B aynı projeye yazar.
+3. Ajan C projeyi açar ve birleştirilmiş durumu alır.
+4. Çakışmalar gizlenmek yerine görünür hale getirilir.
+
+### Gerçekçi kapsam
+
+AllBrain, gerçek araç çağrıları ve deterministik durum yeniden oynatma özelliği bulunan gerçek bir MCP sunucusudur. Bir modeli sihirli biçimde otonom hale getirmez; bazı akıl yürütme hatları dış dünyada canlı işlem yapmak yerine yürütmeyi simüle eder.
+
+### Depo yapısı
+
+- `src/allbrain/` — sunucu, çalışma zamanı, reducer bileşenleri ve araçlar
+- `tests/` — event-sourcing iş akışlarının testleri
+- `docs/` — kurulum ve mimari belgeleri
+- `docs/images/` — GitHub uyumlu diyagramlar
+
+---
+
+## Project status / Proje durumu
+
+- **2077+** tests passing / **2077+** test başarılı
+- **80%+** code coverage / **%80+** kod kapsama
+- **MIT License**
+- Stdio MCP handshake verified / Stdio MCP el sıkışması doğrulandı
+- Multi-agent write, read, and conflict flows verified / Çoklu ajan yazma, okuma ve çakışma akışları doğrulandı
+- Causal cycle detection + counterfactual pruning + live-lock protection active / Nedensellik döngü tespiti, karşı-olgusal budama ve canlı kilit koruması aktif

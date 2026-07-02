@@ -74,10 +74,26 @@ def detect_contradictions_impl(context: BrainContext, **kwargs: Any) -> ToolResu
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def extract_intents(limit: int = 5000) -> dict[str, Any]:
+        """Extract semantic intents from agent actions in the event log.
+
+        Args:
+            limit: Maximum number of events to analyze (default 5000).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = extract_intents_impl(context, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def detect_contradictions(limit: int = 5000) -> dict[str, Any]:
+        """Identify contradictory statements across events.
+
+        Args:
+            limit: Maximum number of events to analyze (default 5000).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = detect_contradictions_impl(context, limit=limit)
         return result.model_dump(mode="json")

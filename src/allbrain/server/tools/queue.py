@@ -22,6 +22,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         workflow_id: str | None = None,
         lease_ttl_seconds: int = 120,
     ) -> dict[str, Any]:
+        """Claim a task from the distributed queue.
+
+        Args:
+            workflow_id: Optional workflow ID to claim a task for.
+            lease_ttl_seconds: Lease time-to-live in seconds (default 120).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         coordinator = QueueCoordinator(context)
         return _run(
             context,
@@ -38,6 +47,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         lease_id: str,
         lease_ttl_seconds: int = 120,
     ) -> dict[str, Any]:
+        """Extend lease on a claimed task.
+
+        Args:
+            queue_item_id: ID of the queue item to renew.
+            lease_id: Current lease ID for authentication.
+            lease_ttl_seconds: Extended lease time-to-live in seconds (default 120).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         coordinator = QueueCoordinator(context)
         return _run(
             context,
@@ -55,6 +74,17 @@ def register_tools(mcp, context: BrainContext) -> None:
         output: str,
         artifacts: list[str] | None = None,
     ) -> dict[str, Any]:
+        """Mark a task as completed.
+
+        Args:
+            queue_item_id: ID of the queue item to complete.
+            lease_id: Current lease ID for authentication.
+            output: Task output string.
+            artifacts: Optional list of artifact paths.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         coordinator = QueueCoordinator(context)
         return _run(
             context,
@@ -73,6 +103,17 @@ def register_tools(mcp, context: BrainContext) -> None:
         reason: str,
         requeue: bool = True,
     ) -> dict[str, Any]:
+        """Mark a task as failed, optionally requeue.
+
+        Args:
+            queue_item_id: ID of the queue item to fail.
+            lease_id: Current lease ID for authentication.
+            reason: Failure reason description.
+            requeue: Whether to requeue the task (default True).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         coordinator = QueueCoordinator(context)
         return _run(
             context,

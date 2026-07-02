@@ -54,6 +54,65 @@ def test_generate_alternatives() -> None:
     assert generator.generate("") == []
 
 
+def test_pruning_fallback_without_simulator() -> None:
+    generator = AlternativeGenerator()
+    state = WorldState(timestamp=datetime.now(UTC))
+    result = generator.generate_with_pruning(
+        "deploy", state, risk_threshold=0.3, confidence_threshold=0.5, cost_threshold=0.4
+    )
+    assert result == ACTION_MAP["deploy"]  # no simulator → raw fallback
+
+
+def test_pruning_fallback_without_state() -> None:
+    sim = SimulationBridge(StateTransitionBridge(), PredictionBridge())
+    generator = AlternativeGenerator(simulator=sim)
+    result = generator.generate_with_pruning("deploy", risk_threshold=0.3, confidence_threshold=0.5, cost_threshold=0.4)
+    assert result == ACTION_MAP["deploy"]  # no state → raw fallback
+
+
+def test_pruning_risk_threshold() -> None:
+    state = WorldState(timestamp=datetime.now(UTC))
+    sim = SimulationBridge(StateTransitionBridge(), PredictionBridge())
+    generator = AlternativeGenerator(simulator=sim)
+    result = generator.generate_with_pruning("deploy", state, risk_threshold=0.5)
+    assert len(result) <= len(ACTION_MAP["deploy"])
+    assert all(isinstance(a, str) for a in result)
+
+
+def test_pruning_confidence_threshold() -> None:
+    state = WorldState(timestamp=datetime.now(UTC), environment_state={"tests": "passed"})
+    sim = SimulationBridge(StateTransitionBridge(), PredictionBridge())
+    generator = AlternativeGenerator(simulator=sim)
+    result = generator.generate_with_pruning("deploy", state, confidence_threshold=0.9)
+    assert len(result) <= len(ACTION_MAP["deploy"])
+    assert all(isinstance(a, str) for a in result)
+
+
+def test_pruning_cost_threshold() -> None:
+    state = WorldState(timestamp=datetime.now(UTC))
+    sim = SimulationBridge(StateTransitionBridge(), PredictionBridge())
+    generator = AlternativeGenerator(simulator=sim)
+    result = generator.generate_with_pruning("deploy", state, cost_threshold=0.3)
+    assert len(result) <= len(ACTION_MAP["deploy"])
+
+
+def test_engine_analyze_with_pruning() -> None:
+    state = WorldState(timestamp=datetime.now(UTC))
+    engine = CounterfactualEngine()
+    results = engine.analyze(state, "deploy", risk_threshold=0.5)
+    assert len(results) <= len(ACTION_MAP["deploy"])
+    for r in results:
+        assert isinstance(r, CounterfactualResult)
+        assert r.actual_action == "deploy"
+
+
+def test_engine_analyze_pruning_all_filtered() -> None:
+    state = WorldState(timestamp=datetime.now(UTC))
+    engine = CounterfactualEngine()
+    results = engine.analyze(state, "deploy", risk_threshold=0.0)
+    assert len(results) == 0  # everyone exceeds 0 risk
+
+
 def test_counterfactual_improvement() -> None:
     state = WorldState(timestamp=datetime.now(UTC), environment_state={"tests": "passed"})
     simulator = SimulationBridge(StateTransitionBridge(), PredictionBridge())

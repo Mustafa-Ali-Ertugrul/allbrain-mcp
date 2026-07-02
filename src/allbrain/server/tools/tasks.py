@@ -316,6 +316,18 @@ def register_tools(mcp, context: BrainContext) -> None:
         priority: int = 3,
         task_id: str | None = None,
     ) -> dict[str, Any]:
+        """Create a new task with goal and priority.
+
+        Args:
+            goal: The task objective.
+            kind: Type of task (e.g. "implementation").
+            related_files: Optional list of related file paths.
+            priority: Priority level (higher = more important).
+            task_id: Optional explicit task ID.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = create_task_impl(
             context,
             goal=goal,
@@ -332,6 +344,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         agent_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Assign a task to the best-fit agent.
+
+        Args:
+            task_id: ID of the task to assign.
+            agent_id: Optional explicit agent ID; auto-selects best agent if None.
+            limit: Max events to consider for state building.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = assign_task_impl(
             context,
             task_id=task_id,
@@ -346,6 +368,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str,
         depends_on: str,
     ) -> dict[str, Any]:
+        """Declare a dependency between two tasks.
+
+        Args:
+            task_id: ID of the dependent task.
+            depends_on: ID of the task it depends on.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = add_task_dependency_impl(
             context, task_id=task_id, depends_on=depends_on, project_path=context.project_path
         )
@@ -357,6 +388,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         new: int,
         old: int | None = None,
     ) -> dict[str, Any]:
+        """Change a task's priority level.
+
+        Args:
+            task_id: ID of the task to update.
+            new: New priority value.
+            old: Previous priority value (optional, for audit trail).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = change_task_priority_impl(
             context, task_id=task_id, old=old, new=new, project_path=context.project_path
         )
@@ -370,6 +411,18 @@ def register_tools(mcp, context: BrainContext) -> None:
         reason: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Hand off a task to another agent.
+
+        Args:
+            task_id: ID of the task to hand off.
+            from_agent: Current agent handling the task.
+            to_agent: Target agent to hand off to (auto-selected if None).
+            reason: Optional reason for the handoff.
+            limit: Max events to consider for state building.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = handoff_task_impl(
             context,
             task_id=task_id,
@@ -382,5 +435,13 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def get_task_graph(limit: int = 5000) -> dict[str, Any]:
+        """Build and return the full task dependency graph.
+
+        Args:
+            limit: Max events to consider when building the graph.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = get_task_graph_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

@@ -46,14 +46,14 @@ function Get-DbPath([string]$AgentName) {
     return "$dbDir/allbrain.db"
 }
 
-Write-Host "AllBrain MCP — installing MCP client configurations"
+Write-Host "AllBrain MCP - installing MCP client configurations"
 Write-Host "  Repository: $repoRoot"
 Write-Host "  Database:   $env:USERPROFILE\.allbrain\"
 Write-Host "  Isolate:    $Isolate"
 Write-Host ""
 
 if ($Codex) {
-    Write-Host "  [1/4] Codex …"
+    Write-Host "  [1/4] Codex ..."
     $codexPath = Join-Path $repoRoot '.codex\config.toml'
     $dbPath = Get-DbPath "codex"
     Write-Text $codexPath @"
@@ -79,7 +79,7 @@ required = true
 }
 
 if ($Claude) {
-    Write-Host "  [2/4] Claude Code …"
+    Write-Host "  [2/4] Claude Code ..."
     $claudePath = Join-Path $repoRoot '.mcp.json'
     $dbPath = Get-DbPath "claude-code"
     Write-Text $claudePath @"
@@ -108,7 +108,7 @@ if ($Claude) {
 }
 
 if ($OpenCode) {
-    Write-Host "  [3/4] OpenCode …"
+    Write-Host "  [3/4] OpenCode ..."
     $openCodePath = Join-Path $repoRoot '.opencode\opencode.json'
     $dbPath = Get-DbPath "opencode"
     Write-Text $openCodePath @"
@@ -139,7 +139,7 @@ if ($OpenCode) {
 }
 
 if ($Antigravity) {
-    Write-Host "  [4/4] Antigravity (global) …"
+    Write-Host "  [4/4] Antigravity (global) ..."
     $antigravityPath = Join-Path $env:USERPROFILE '.gemini\antigravity\mcp_config.json'
     Ensure-Dir $antigravityPath
     if (Test-Path $antigravityPath) {
@@ -176,5 +176,5 @@ if ($Antigravity) {
 }
 
 Write-Host ""
-Write-Host "Done — restart your MCP clients to apply the new configuration."
+Write-Host "Done - restart your MCP clients to apply the new configuration."
 Write-Host "Run without -Isolate to revert to the shared database."

@@ -197,6 +197,41 @@ def test_learning_receives_strategy_metrics(tmp_path) -> None:
     assert 0.0 <= foresight["horizon_risk"] <= 1.0
 
 
+def test_confidence_decay_per_step() -> None:
+    state = WorldState(
+        timestamp=datetime.now(UTC),
+        environment_state={"tests": "passed"},
+    )
+    simulator = MultiStepSimulator(SimulationBridge(StateTransitionBridge(), PredictionBridge()), confidence_decay=0.90)
+
+    final_state, predictions, step_states = simulator.simulate(state, ["deploy", "run_tests"])
+
+    # First step: 0.95 * 0.90^1 = 0.855
+    assert predictions[0].confidence == pytest.approx(0.855, abs=0.01)
+    # Second step: 0.95 * 0.90^2 = 0.7695
+    assert predictions[1].confidence == pytest.approx(0.7695, abs=0.01)
+
+
+def test_projection_stops_below_threshold() -> None:
+    # Hardcoded confidence values: deploy=0.95, run_tests=0.95
+    # With decay=0.90 and threshold=0.35:
+    # After 10 steps: 0.95 * 0.90^10 ≈ 0.330 < 0.35
+    # So should stop after 10 steps
+    state = WorldState(
+        timestamp=datetime.now(UTC),
+        environment_state={"tests": "passed"},
+    )
+    simulator = MultiStepSimulator(SimulationBridge(StateTransitionBridge(), PredictionBridge()), confidence_decay=0.90)
+    actions = ["deploy"] * 11
+
+    final_state, predictions, step_states = simulator.simulate(state, actions)
+
+    # Should stop before completing all 11 actions (after 10 steps, confidence < 0.35)
+    assert len(predictions) == 9  # Steps 1-9: confidence 0.368 > 0.35, step 10: 0.331 < 0.35 → break
+    # Last prediction (step 9) should be just above threshold
+    assert predictions[-1].confidence > 0.35
+
+
 def test_max_horizon_rejects_long_plan() -> None:
     state = WorldState(timestamp=datetime.now(UTC))
     simulator = MultiStepSimulator(SimulationBridge(StateTransitionBridge(), PredictionBridge()))

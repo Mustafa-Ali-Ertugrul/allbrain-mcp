@@ -17,6 +17,7 @@ import numpy as np
 @dataclass
 class SimulationConfig:
     """Simulation parameters."""
+
     steps: int = 1000
     learning_rate: float = 0.10
     init_weight: float = 0.50
@@ -32,6 +33,7 @@ class SimulationConfig:
 @dataclass
 class SimulationResult:
     """Simulation results."""
+
     final_weight: float
     max_weight: float
     min_weight: float
@@ -125,16 +127,13 @@ def run_parameter_sweep():
     for lr in learning_rates:
         print(f"\n--- Learning Rate: {lr} ---")
         for init_w in init_weights:
-            config = SimulationConfig(
-                steps=500,
-                learning_rate=lr,
-                init_weight=init_w,
-                seed=42
-            )
+            config = SimulationConfig(steps=500, learning_rate=lr, init_weight=init_w, seed=42)
             result = simulate_gradient_dynamics(config)
-            print(f"  init={init_w:.2f} -> final={result.final_weight:.4f} "
-                  f"[mu={result.mean_weight:.3f}, sigma={result.std_weight:.3f}] "
-                  f"clamp={result.clamping_events} osc={result.oscillation_count}")
+            print(
+                f"  init={init_w:.2f} -> final={result.final_weight:.4f} "
+                f"[mu={result.mean_weight:.3f}, sigma={result.std_weight:.3f}] "
+                f"clamp={result.clamping_events} osc={result.oscillation_count}"
+            )
 
 
 def run_detailed_simulation():
@@ -181,8 +180,10 @@ def analyze_edge_cases():
     for init_w in [1.0, 1.1, 1.15, 1.19, 1.2, 1.25]:
         config = SimulationConfig(steps=100, learning_rate=0.10, init_weight=init_w, seed=123)
         result = simulate_gradient_dynamics(config)
-        print(f"init={init_w:.2f} -> final={result.final_weight:.4f} "
-              f"(clamp={result.clamping_events}, osc={result.oscillation_count})")
+        print(
+            f"init={init_w:.2f} -> final={result.final_weight:.4f} "
+            f"(clamp={result.clamping_events}, osc={result.oscillation_count})"
+        )
 
     # Negative feedback test: weight > 1.2 start
     print("\n--- current_weight > 1.2 start (negative feedback) ---")

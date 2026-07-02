@@ -249,6 +249,14 @@ def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def get_observability_dashboard(limit: int = 5000) -> dict[str, Any]:
+        """Get observability dashboard data.
+
+        Args:
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = get_observability_dashboard_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
@@ -258,6 +266,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Trace an execution workflow step by step.
+
+        Args:
+            workflow_id: Optional workflow ID to filter by.
+            task_id: Optional task ID to filter by.
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = get_workflow_trace_impl(
             context,
             workflow_id=workflow_id,
@@ -268,11 +286,27 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def get_system_metrics(limit: int = 5000) -> dict[str, Any]:
+        """Get system performance metrics.
+
+        Args:
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = get_system_metrics_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def get_reliability_status(limit: int = 5000) -> dict[str, Any]:
+        """Get system reliability/health status.
+
+        Args:
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = get_reliability_status_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
@@ -285,6 +319,19 @@ def register_tools(mcp, context: BrainContext) -> None:
         deterministic: bool = True,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Deterministically replay a workflow.
+
+        Args:
+            workflow_id: Optional workflow ID to filter by.
+            task_id: Optional task ID to filter by.
+            cursor: Starting cursor position for replay.
+            step_count: Number of steps to replay (None for all).
+            deterministic: Whether to enforce deterministic replay.
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = replay_workflow_impl(
             context,
             workflow_id=workflow_id,
@@ -302,6 +349,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Get workflow graph with task dependencies.
+
+        Args:
+            workflow_id: Optional workflow ID to filter by.
+            task_id: Optional task ID to filter by.
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = get_workflow_graph_impl(
             context,
             workflow_id=workflow_id,
@@ -312,5 +369,13 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def compare_agents(limit: int = 5000) -> dict[str, Any]:
+        """Compare agent performance metrics side by side.
+
+        Args:
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = compare_agents_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

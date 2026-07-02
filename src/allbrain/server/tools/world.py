@@ -110,6 +110,14 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def observe_world(limit: int = 5000) -> dict[str, Any]:
+        """Observe current world/state context.
+
+        Args:
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = observe_world_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
@@ -118,5 +126,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         action: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Simulate the outcome of an action before executing.
+
+        Args:
+            action: Description of the action to simulate.
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = simulate_action_impl(context, action=action, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

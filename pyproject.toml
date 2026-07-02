@@ -1,8 +1,22 @@
 [project]
 name = "allbrain-mcp"
-version = "0.1.1"
-description = "One Brain. Multiple Agents."
+version = "0.2.0"
+description = "Event-sourced memory and orchestration server for multi-agent AI systems"
+authors = [{ name = "Ali GÖREN", email = "ali.goren@example.com" }]
+keywords = ["mcp", "agent", "multi-agent", "orchestration", "memory", "event-sourcing", "ai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.16.0,<2.0",

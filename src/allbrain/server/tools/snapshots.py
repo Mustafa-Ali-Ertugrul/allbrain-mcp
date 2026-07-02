@@ -186,6 +186,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
+        """Resume project state from the latest snapshot.
+
+        Args:
+            limit: Maximum number of events to process.
+            include_git: Whether to include git context in the resume.
+            use_snapshot: Whether to use snapshot-based fast resume.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = resume_project_impl(
             context,
             limit=limit,
@@ -200,6 +210,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         force: bool = False,
         include_derived: bool = False,
     ) -> dict[str, Any]:
+        """Create a point-in-time snapshot of project state.
+
+        Args:
+            limit: Maximum number of events to include.
+            force: Whether to force creation even if no new events exist.
+            include_derived: Whether to include derived/computed state.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = create_snapshot_impl(
             context,
             limit=limit,
@@ -214,6 +234,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
+        """Resume project with intent-enriched context.
+
+        Args:
+            limit: Maximum number of events to process.
+            include_git: Whether to include git context.
+            use_snapshot: Whether to use snapshot-based fast resume.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = resume_with_intent_impl(
             context,
             limit=limit,

@@ -317,6 +317,17 @@ def register_tools(mcp, context: BrainContext) -> None:
         foresight_limit: int = 5,
         max_horizon: int = 5,
     ) -> dict[str, Any]:
+        """Generate future plans branching from an action.
+
+        Args:
+            action: The action to branch future plans from.
+            limit: Max events to consider.
+            foresight_limit: Max number of future plans to generate.
+            max_horizon: Max number of steps into the future.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = generate_future_plans_impl(
             context,
             action=action,
@@ -332,6 +343,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         max_horizon: int = 5,
     ) -> dict[str, Any]:
+        """Evaluate a sequence of actions over a time horizon.
+
+        Args:
+            actions: Ordered list of actions to evaluate.
+            limit: Max events to consider.
+            max_horizon: Max number of steps into the future.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = evaluate_plan_impl(
             context,
             actions=actions,
@@ -345,6 +366,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         plan_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Explain why a decision was made for a given plan.
+
+        Args:
+            plan_id: ID of the plan to explain.
+            limit: Max events to consider.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = explain_decision_impl(
             context,
             plan_id=plan_id,
@@ -357,6 +387,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         plan_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Estimate confidence in a given plan.
+
+        Args:
+            plan_id: ID of the plan to estimate confidence for.
+            limit: Max events to consider.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = estimate_confidence_impl(
             context,
             plan_id=plan_id,

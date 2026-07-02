@@ -161,6 +161,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         scenarios_limit: int = 4,
     ) -> dict[str, Any]:
+        """Generate possible future scenarios for an action.
+
+        Args:
+            action: The action to generate scenarios for.
+            limit: Max events to consider.
+            scenarios_limit: Max number of scenarios to generate.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = generate_scenarios_impl(
             context,
             action=action,
@@ -175,6 +185,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         scenarios: list[dict[str, Any]],
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Evaluate a set of scenarios against criteria.
+
+        Args:
+            action: The action the scenarios relate to.
+            scenarios: List of scenario dicts to evaluate.
+            limit: Max events to consider.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = evaluate_scenarios_impl(
             context,
             action=action,

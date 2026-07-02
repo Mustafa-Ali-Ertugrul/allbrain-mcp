@@ -318,6 +318,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         decision_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Estimate uncertainty around a decision.
+
+        Args:
+            decision_id: ID of the decision to analyze.
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = estimate_uncertainty_impl(
             context,
             decision_id=decision_id,
@@ -330,6 +339,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         decision_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Identify knowledge gaps in the decision context.
+
+        Args:
+            decision_id: ID of the decision to analyze.
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = detect_knowledge_gaps_impl(
             context,
             decision_id=decision_id,
@@ -342,6 +360,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         decision_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Identify what information is needed for a decision.
+
+        Args:
+            decision_id: ID of the decision to analyze.
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = identify_information_needs_impl(
             context,
             decision_id=decision_id,
@@ -354,6 +381,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         action: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Estimate information gain from an action.
+
+        Args:
+            action: The action to evaluate for information gain.
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = estimate_information_gain_impl(
             context,
             action=action,
@@ -366,5 +402,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         task: dict[str, Any],
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Recommend a policy based on task and memory.
+
+        Args:
+            task: The task definition as a dict.
+            limit: Maximum number of events to process.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = recommend_policy_impl(context, task=task, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

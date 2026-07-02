@@ -74,10 +74,28 @@ def resolve_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def detect_conflicts(limit: int = 5000, threshold: float = 0.7) -> dict[str, Any]:
+        """Find contradictory states between agents.
+
+        Args:
+            limit: Maximum number of events to scan (default 5000).
+            threshold: Similarity threshold for conflict detection (default 0.7).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = detect_conflicts_impl(context, project_path=context.project_path, limit=limit, threshold=threshold)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def resolve_conflicts(limit: int = 5000, threshold: float = 0.7) -> dict[str, Any]:
+        """Resolve detected conflicts automatically.
+
+        Args:
+            limit: Maximum number of events to scan (default 5000).
+            threshold: Similarity threshold for conflict resolution (default 0.7).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = resolve_conflicts_impl(context, project_path=context.project_path, limit=limit, threshold=threshold)
         return result.model_dump(mode="json")

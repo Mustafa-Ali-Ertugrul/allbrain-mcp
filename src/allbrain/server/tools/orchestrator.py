@@ -166,6 +166,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
+        """Get full project orchestration view with tasks, agents, and state.
+
+        Args:
+            limit: Maximum number of events to process.
+            include_git: Whether to include git context.
+            use_snapshot: Whether to use snapshot-based fast resume.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = orchestrate_project_impl(
             context,
             limit=limit,
@@ -194,6 +204,30 @@ def register_tools(mcp, context: BrainContext) -> None:
         enable_uncertainty: bool = False,
         enable_information_seeking: bool = False,
     ) -> dict[str, Any]:
+        """Run a full decision pipeline with counterfactual/scenario/foresight reasoning.
+
+        Args:
+            objective: The decision objective as a dict.
+            execute_mode: Execution mode ('event_only', 'queued_runtime', etc.).
+            limit: Maximum number of events to process.
+            simulate_before_execute: Whether to simulate before executing.
+            risk_threshold: Risk threshold for decision acceptance.
+            enable_counterfactual: Whether to enable counterfactual reasoning.
+            counterfactual_limit: Maximum counterfactual alternatives.
+            regret_threshold: Regret threshold for counterfactual evaluation.
+            enable_scenarios: Whether to enable scenario planning.
+            scenarios_limit: Maximum number of scenarios to generate.
+            scenario_recommendation_threshold: Threshold for scenario recommendations.
+            enable_foresight: Whether to enable foresight reasoning.
+            foresight_limit: Maximum foresight horizon steps.
+            max_horizon: Maximum planning horizon depth.
+            enable_meta_reasoning: Whether to enable meta-reasoning.
+            enable_uncertainty: Whether to enable uncertainty estimation.
+            enable_information_seeking: Whether to enable information seeking.
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = run_decision_pipeline_impl(
             context,
             objective=objective,

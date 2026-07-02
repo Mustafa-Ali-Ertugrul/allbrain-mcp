@@ -38,11 +38,12 @@ class ForesightEngine:
         ranker: PlanRanker | None = None,
         *,
         max_horizon: int = 5,
+        confidence_decay: float = 0.90,
     ) -> None:
         self.planner = planner or ActionPlanner()
-        sim = simulator or MultiStepSimulator(_default_simulator())
+        sim = simulator or MultiStepSimulator(_default_simulator(), confidence_decay=confidence_decay)
         self.simulator = sim
-        self.evaluator = evaluator or PlanEvaluator(sim, max_horizon=max_horizon)
+        self.evaluator = evaluator or PlanEvaluator(sim, max_horizon=max_horizon, confidence_decay=confidence_decay)
         self.ranker = ranker or PlanRanker()
         self.max_horizon = max_horizon
 

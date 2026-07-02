@@ -84,6 +84,14 @@ def retrieve_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def build_memory(limit: int = 5000) -> dict[str, Any]:
+        """Build a semantic memory index from project events.
+
+        Args:
+            limit: Maximum number of events to index (default 5000).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = build_memory_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
@@ -93,5 +101,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         top_k: int = 5,
     ) -> dict[str, Any]:
+        """Semantic search over stored memories.
+
+        Args:
+            query: Search query string.
+            limit: Maximum number of events to scan (default 5000).
+            top_k: Number of top results to return (default 5).
+
+        Returns:
+            Tool result as a JSON-serializable dict.
+        """
         result = retrieve_memory_impl(context, query=query, project_path=context.project_path, limit=limit, top_k=top_k)
         return result.model_dump(mode="json")
