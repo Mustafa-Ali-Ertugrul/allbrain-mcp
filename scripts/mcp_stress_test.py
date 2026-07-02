@@ -37,11 +37,13 @@ from typing import Any
 from allbrain.storage import create_engine_for_path, init_db
 
 # ── Configuration ────────────────────────────────────────────────
-AGENT_COUNT = 10
-EVENTS_PER_AGENT = 200
+AGENT_COUNT = int(os.getenv("MCP_STRESS_AGENT_COUNT", "10"))
+EVENTS_PER_AGENT = int(os.getenv("MCP_STRESS_EVENTS_PER_AGENT", "200"))
 TOTAL_EVENTS = AGENT_COUNT * EVENTS_PER_AGENT
-P95_BUDGET_SECONDS = 0.250
-P99_BUDGET_SECONDS = 1.500
+# Keep stress dimensions and budgets configurable for focused local runs while
+# retaining the nightly quality gate defaults.
+P95_BUDGET_SECONDS = float(os.getenv("MCP_STRESS_P95_BUDGET_SECONDS", "0.250"))
+P99_BUDGET_SECONDS = float(os.getenv("MCP_STRESS_P99_BUDGET_SECONDS", "1.5"))
 VALID_TYPES = [
     "file_modified",
     "task_started",
@@ -581,6 +583,19 @@ def main() -> int:
 
     # ── Verdict ───────────────────────────────────────────────
     within_budget = global_p95 <= P95_BUDGET_SECONDS and global_p99 <= P99_BUDGET_SECONDS
+    failed_checks = []
+    if total_ok != TOTAL_EVENTS:
+        failed_checks.append(f"successful calls {total_ok}/{TOTAL_EVENTS}")
+    if total_db:
+        failed_checks.append(f"database locks {total_db}")
+    if total_err:
+        failed_checks.append(f"other errors {total_err}")
+    if not det_matches:
+        failed_checks.append("deterministic state drift")
+    if global_p95 > P95_BUDGET_SECONDS:
+        failed_checks.append(f"p95 {global_p95:.3f}s > {P95_BUDGET_SECONDS:.3f}s budget")
+    if global_p99 > P99_BUDGET_SECONDS:
+        failed_checks.append(f"p99 {global_p99:.3f}s > {P99_BUDGET_SECONDS:.3f}s budget")
     verdict = (
         "PASS"
         if total_ok == TOTAL_EVENTS and total_db == 0 and total_err == 0 and det_matches and within_budget
@@ -588,6 +603,8 @@ def main() -> int:
     )
     print(f"\n{'=' * 55}")
     print(f"[{verdict}] overall stress_duration={stress_duration:.3f}s")
+    if failed_checks:
+        print(f"Failed checks: {'; '.join(failed_checks)}")
     print(f"{'=' * 55}")
 
     # ── Cleanup ────────────────────────────────────────────────
