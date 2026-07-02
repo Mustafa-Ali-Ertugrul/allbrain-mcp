@@ -43,11 +43,7 @@ class ParetoAnalyzer:
                 r.stability <= max_stability
                 and r.success <= max_success
                 and r.efficiency <= max_efficiency
-                and (
-                    r.stability < max_stability
-                    or r.success < max_success
-                    or r.efficiency < max_efficiency
-                )
+                and (r.stability < max_stability or r.success < max_success or r.efficiency < max_efficiency)
             ):
                 r.dominated = True
                 pre_pruned.append(r)

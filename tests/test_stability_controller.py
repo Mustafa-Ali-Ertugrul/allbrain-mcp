@@ -168,6 +168,6 @@ class TestStabilityControllerEdgeCases:
         controller = StabilityController()
 
         # Different stability scores for different fault types
-        assert controller.allow_update(0.55) is True   # timeout
+        assert controller.allow_update(0.55) is True  # timeout
         assert controller.allow_update(0.30) is False  # overload
-        assert controller.allow_update(0.60) is True   # drift
+        assert controller.allow_update(0.60) is True  # drift
