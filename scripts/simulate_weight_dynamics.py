@@ -8,9 +8,10 @@ from gradient_estimator.py and weight_optimizer.py.
 Formula: gradient = lr * (delta / max_delta) * (1.2 - current_weight)
 """
 
-import numpy as np
 from dataclasses import dataclass
 from typing import Optional
+
+import numpy as np
 
 
 @dataclass
@@ -42,7 +43,7 @@ class SimulationResult:
     gradient_history: list[float]
 
 
-def simulate_gradient_dynamics(config: Optional[SimulationConfig] = None) -> SimulationResult:
+def simulate_gradient_dynamics(config: SimulationConfig | None = None) -> SimulationResult:
     """
     Simulates weight evolution based on GradientEstimator + WeightOptimizer dynamics.
     """
@@ -63,22 +64,19 @@ def simulate_gradient_dynamics(config: Optional[SimulationConfig] = None) -> Sim
     deltas = np.random.normal(loc=config.delta_loc, scale=config.delta_scale, size=config.steps)
     max_deltas = np.abs(deltas) + np.random.uniform(0.05, config.max_delta_noise, size=config.steps)
 
-    for i in range(config.steps):
-        delta = deltas[i]
-        max_delta = max_deltas[i]
+    for step_num in range(config.steps):
+        delta = deltas[step_num]
+        max_delta = max_deltas[step_num]
 
         # Max delta guardrail (gradient_estimator.py logic)
-        if max_delta < 1e-6:
-            norm_delta = 0.0
-        else:
-            norm_delta = delta / max_delta
+        norm_delta = 0.0 if max_delta < 1e-06 else delta / max_delta
 
         # Dampening formula: gradient = lr * norm_delta * (1.2 - current_weight)
         gradient = config.learning_rate * norm_delta * (1.2 - current_weight)
         gradients.append(gradient)
 
         # WeightOptimizer step logic: update every N steps
-        cycle_counter += 1
+        cycle_counter = step_num + 1
         if cycle_counter % config.update_interval == 0:
             next_weight = current_weight + gradient
 
@@ -91,7 +89,8 @@ def simulate_gradient_dynamics(config: Optional[SimulationConfig] = None) -> Sim
                 clamping_events += 1
 
             # Oscillation direction check
-            direction = 1 if (next_weight - current_weight) > 1e-10 else (-1 if (next_weight - current_weight) < -1e-10 else 0)
+            diff = next_weight - current_weight
+            direction = 1 if diff > 1e-10 else (-1 if diff < -1e-10 else 0)
             if direction != 0 and prev_direction != 0 and direction != prev_direction:
                 oscillation_count += 1
             if direction != 0:
@@ -157,13 +156,13 @@ def run_detailed_simulation():
 
     # Steady-state analysis (last 200 steps)
     steady = result.weight_history[-200:]
-    print(f"\n--- Steady-State (last 200 steps) ---")
+    print("\n--- Steady-State (last 200 steps) ---")
     print(f"Mean: {np.mean(steady):.4f} +/- {np.std(steady):.4f}")
     print(f"Range:    [{min(steady):.4f}, {max(steady):.4f}]")
 
     # Gradient statistics
     grads = np.array(result.gradient_history)
-    print(f"\n--- Gradient Statistics ---")
+    print("\n--- Gradient Statistics ---")
     print(f"Mean: {np.mean(grads):.6f}")
     print(f"Std:  {np.std(grads):.6f}")
     print(f"Max:  {np.max(grads):.6f}")
