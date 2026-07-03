@@ -7,14 +7,13 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from allbrain.conflict.detector import ConflictDetector
-from allbrain.conflict.resolver import ConflictResolver
-from allbrain.context.parallel_builder import ParallelContextBuilder
+from allbrain.conflict import ConflictDetector, ConflictResolver
 from allbrain.models.schemas import (
     ConflictInput,
     ToolResult,
     UserInputError,
 )
+from allbrain.resume.parallel_context_builder import ParallelContextBuilder
 from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
@@ -74,10 +73,28 @@ def resolve_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def detect_conflicts(limit: int = 5000, threshold: float = 0.7) -> dict[str, Any]:
+        """Find memory states that contradict each other in the project event log.
+
+        Compares semantic event groups using cosine similarity and flags pairs
+        whose distance exceeds the threshold. Conflicts indicate agent plans,
+        decisions, or facts that disagree.
+
+        When to use: after multi-agent work to surface contradictory decisions.
+        Use detect_contradictions instead for logical/statement-level contradiction
+        detection from the intents module.
+        """
         result = detect_conflicts_impl(context, project_path=context.project_path, limit=limit, threshold=threshold)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def resolve_conflicts(limit: int = 5000, threshold: float = 0.7) -> dict[str, Any]:
+        """Resolve detected conflicts using stored resolution strategies.
+
+        Applies the arbitration and consensus mechanisms to mitigate each
+        conflict's impact on downstream replay.
+
+        When to use: after detect_conflicts has identified issues that need
+        resolution. Does NOT modify events — produces a resolution plan.
+        """
         result = resolve_conflicts_impl(context, project_path=context.project_path, limit=limit, threshold=threshold)
         return result.model_dump(mode="json")

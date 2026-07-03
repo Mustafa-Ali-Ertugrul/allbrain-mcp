@@ -144,6 +144,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Return trace data formatted for the UI timeline view.
+
+        Structures workflow execution trace into a timeline-ready format with
+        step-by-step agent actions and decisions.
+
+        When to use: when rendering workflow execution history in a UI context.
+        For raw trace data without UI formatting, use get_workflow_trace.
+        """
         result = get_ui_trace_view_impl(
             context, project_path=context.project_path, workflow_id=workflow_id, task_id=task_id, limit=limit
         )
@@ -157,6 +165,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         step_count: int | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Return replay data formatted for the UI step-through view.
+
+        Supports cursor-based pagination for stepping through a workflow
+        execution one segment at a time.
+
+        When to use: when displaying a replay player in a UI that lets users
+        step forward/backward through workflow execution.
+        """
         result = get_ui_replay_view_impl(
             context,
             workflow_id=workflow_id,
@@ -173,6 +189,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Return workflow graph data formatted for the UI graph view.
+
+        Structures node-edge relationships for rendering as an interactive
+        directed graph in the UI.
+
+        When to use: when rendering workflow dependency diagrams in a UI
+        context. For the raw structural graph without UI formatting,
+        use get_workflow_graph.
+        """
         result = get_ui_graph_view_impl(
             context, project_path=context.project_path, workflow_id=workflow_id, task_id=task_id, limit=limit
         )
@@ -180,5 +205,13 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def get_ui_metrics_view(limit: int = 5000) -> dict[str, Any]:
+        """Return system metrics formatted for the UI dashboard view.
+
+        Aggregates agent performance and system health metrics into a
+        presentation-ready format for dashboard rendering.
+
+        When to use: when populating a UI metrics dashboard. For raw metrics
+        without UI formatting, use get_system_metrics or compare_agents.
+        """
         result = get_ui_metrics_view_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

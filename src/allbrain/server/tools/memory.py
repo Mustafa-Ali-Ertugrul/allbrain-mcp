@@ -84,6 +84,14 @@ def retrieve_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def build_memory(limit: int = 5000) -> dict[str, Any]:
+        """Build and index shared memory from the project event log.
+
+        Processes events through memory encoders, producing retrievable
+        memory embeddings that capture agent decisions and observations.
+
+        When to use: after saving events, to make them searchable via
+        retrieve_memory. Call periodically or after batch event ingestion.
+        """
         result = build_memory_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
@@ -93,5 +101,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         top_k: int = 5,
     ) -> dict[str, Any]:
+        """Semantic search across the project's built memory store.
+
+        Returns the top_k most relevant memory entries matching the query,
+        ranked by cosine similarity on learned embeddings.
+
+        When to use: to find past decisions, agent observations, or contextual
+        information related to a topic. Requires build_memory to have been
+        called at least once.
+        """
         result = retrieve_memory_impl(context, query=query, project_path=context.project_path, limit=limit, top_k=top_k)
         return result.model_dump(mode="json")

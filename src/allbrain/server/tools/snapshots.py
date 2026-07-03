@@ -186,6 +186,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
+        """Rebuild the project state from stored events (with optional snapshot).
+
+        Reconstructs the full shared-memory projection (agents, tasks, decisions,
+        conflicts, etc.) by replaying events since the last snapshot. Optionally
+        includes git context.
+
+        When to use: when starting a new session, after another agent has worked,
+        or when the in-memory state may be stale. This is the primary recovery tool.
+        """
         result = resume_project_impl(
             context,
             limit=limit,
@@ -200,6 +209,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         force: bool = False,
         include_derived: bool = False,
     ) -> dict[str, Any]:
+        """Create a project state snapshot for faster future recovery.
+
+        Serializes the current replay state into a persistent checkpoint.
+        Future resume_project calls load the snapshot instead of replaying
+        every event. Auto-snapshots are also triggered by event thresholds.
+
+        When to use: after significant milestones to reduce recovery time.
+        Use force=True to override the snapshot interval check.
+        """
         result = create_snapshot_impl(
             context,
             limit=limit,
@@ -214,6 +232,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
+        """Like resume_project, but enriches the rebuilt state with intent extraction.
+
+        After rebuilding the project state, also runs intent extraction to
+        surface agent goals, contradictions, and information needs automatically.
+
+        When to use: when resuming a project where understanding of agent
+        intent is important. Provides richer state than resume_project but
+        may be slower due to additional analysis.
+        """
         result = resume_with_intent_impl(
             context,
             limit=limit,

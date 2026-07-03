@@ -74,10 +74,27 @@ def detect_contradictions_impl(context: BrainContext, **kwargs: Any) -> ToolResu
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def extract_intents(limit: int = 5000) -> dict[str, Any]:
+        """Extract agent intents and goals from the project event log.
+
+        Analyzes semantic events to identify what each agent was trying to
+        achieve, surfacing goals, sub-goals, and intent drift over time.
+
+        When to use: to understand why agents made certain decisions, or to
+        detect when agent behavior deviated from stated objectives.
+        """
         result = extract_intents_impl(context, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def detect_contradictions(limit: int = 5000) -> dict[str, Any]:
+        """Find logical contradictions in agent statements and decisions.
+
+        Analyzes the event log for pairs of statements or decisions that
+        cannot both be true. Unlike detect_conflicts (which finds overlapping
+        memory states), this focuses on statement-level logical inconsistency.
+
+        When to use: to find logical holes in multi-agent planning, or to audit
+        an agent's stated goals against its actual decisions.
+        """
         result = detect_contradictions_impl(context, limit=limit)
         return result.model_dump(mode="json")

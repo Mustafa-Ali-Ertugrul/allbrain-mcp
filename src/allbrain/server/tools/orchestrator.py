@@ -166,6 +166,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
+        """Run the full project orchestration pipeline: build state, resolve goals.
+
+        Loads events, builds task state and agent metrics, then applies
+        the deterministic scheduler to match pending tasks with capable agents.
+        Optionally includes git context and snapshot loading.
+
+        When to use: as the main project coordination entry point. Call this
+        to advance the project's task completion state by assigning agents.
+        """
         result = orchestrate_project_impl(
             context,
             limit=limit,
@@ -194,6 +203,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         enable_uncertainty: bool = False,
         enable_information_seeking: bool = False,
     ) -> dict[str, Any]:
+        """Run a fully parameterized decision pipeline on an objective.
+
+        Orchestrates counterfactual reasoning, scenario generation, foresight
+        planning, uncertainty estimation, and information-seeking in a
+        configurable sequence. Returns a ranked recommendation with evidence.
+
+        When to use: for complex, high-stakes decisions that benefit from
+        multi-perspective analysis. For simpler decisions, individual tools
+        (evaluate_plan, generate_counterfactual) may suffice.
+        """
         result = run_decision_pipeline_impl(
             context,
             objective=objective,
