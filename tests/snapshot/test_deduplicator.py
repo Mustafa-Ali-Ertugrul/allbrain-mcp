@@ -21,7 +21,7 @@ def _event(
         project_id=1,
         session_id=1,
         type=event_type,
-        source='test',
+        source="test",
         file_path=file_path,
         payload=payload or {},
         task_hint=None,
@@ -33,33 +33,33 @@ def _event(
 
 class TestEventDeduplicator:
     def test_collapse_keeps_last_file_event(self) -> None:
-        e1 = _event(EventType.FILE_MODIFIED.value, event_id='e1', file_path='a.py')
-        e2 = _event(EventType.FILE_MODIFIED.value, event_id='e2', file_path='a.py')
+        e1 = _event(EventType.FILE_MODIFIED.value, event_id="e1", file_path="a.py")
+        e2 = _event(EventType.FILE_MODIFIED.value, event_id="e2", file_path="a.py")
         dedup = EventDeduplicator()
         result = dedup.collapse_file_churn([e1, e2])
         assert len(result) == 1
-        assert result[0].id == 'e2'
+        assert result[0].id == "e2"
 
     def test_collapse_passthrough_non_file_events(self) -> None:
-        e1 = _event(EventType.TASK_CREATED.value, event_id='e1')
-        e2 = _event(EventType.TASK_ASSIGNED.value, event_id='e2')
+        e1 = _event(EventType.TASK_CREATED.value, event_id="e1")
+        e2 = _event(EventType.TASK_ASSIGNED.value, event_id="e2")
         dedup = EventDeduplicator()
         result = dedup.collapse_file_churn([e1, e2])
         assert len(result) == 2
 
     def test_collapse_multiple_files(self) -> None:
         events = [
-            _event(EventType.FILE_MODIFIED.value, event_id='e1', file_path='a.py'),
-            _event(EventType.FILE_MODIFIED.value, event_id='e2', file_path='b.py'),
-            _event(EventType.FILE_MODIFIED.value, event_id='e3', file_path='a.py'),
+            _event(EventType.FILE_MODIFIED.value, event_id="e1", file_path="a.py"),
+            _event(EventType.FILE_MODIFIED.value, event_id="e2", file_path="b.py"),
+            _event(EventType.FILE_MODIFIED.value, event_id="e3", file_path="a.py"),
         ]
         dedup = EventDeduplicator()
         result = dedup.collapse_file_churn(events)
         assert len(result) == 2
         ids = {e.id for e in result}
-        assert 'e2' in ids
-        assert 'e3' in ids
-        assert 'e1' not in ids
+        assert "e2" in ids
+        assert "e3" in ids
+        assert "e1" not in ids
 
     def test_collapse_empty(self) -> None:
         dedup = EventDeduplicator()

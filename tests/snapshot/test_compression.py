@@ -21,7 +21,7 @@ def _event(
         project_id=1,
         session_id=1,
         type=event_type,
-        source='test',
+        source="test",
         file_path=file_path,
         payload=payload or {},
         task_hint=None,
@@ -34,8 +34,8 @@ def _event(
 class TestEventCompressor:
     def test_compress_delegates_to_deduplicator(self) -> None:
         events = [
-            _event(EventType.FILE_MODIFIED.value, file_path='a.py'),
-            _event(EventType.FILE_MODIFIED.value, file_path='a.py'),
+            _event(EventType.FILE_MODIFIED.value, file_path="a.py"),
+            _event(EventType.FILE_MODIFIED.value, file_path="a.py"),
         ]
         compressor = EventCompressor()
         result = compressor.compress(events)
@@ -57,35 +57,35 @@ class TestEventCompressor:
 
     def test_metadata_counts(self) -> None:
         raw = [
-            _event(EventType.FILE_MODIFIED.value, file_path='a.py'),
-            _event(EventType.FILE_MODIFIED.value, file_path='a.py'),
+            _event(EventType.FILE_MODIFIED.value, file_path="a.py"),
+            _event(EventType.FILE_MODIFIED.value, file_path="a.py"),
             _event(EventType.TASK_CREATED.value),
         ]
-        compressed = [_event(EventType.FILE_MODIFIED.value, file_path='a.py'), _event(EventType.TASK_CREATED.value)]
+        compressed = [_event(EventType.FILE_MODIFIED.value, file_path="a.py"), _event(EventType.TASK_CREATED.value)]
         compressor = EventCompressor()
         meta = compressor.metadata(raw, compressed)
-        assert meta['raw_event_count'] == 3
-        assert meta['compressed_event_count'] == 2
-        assert meta['dropped_file_churn_count'] == 1
+        assert meta["raw_event_count"] == 3
+        assert meta["compressed_event_count"] == 2
+        assert meta["dropped_file_churn_count"] == 1
 
     def test_metadata_repeated_failures(self) -> None:
         raw = [
-            _event(EventType.FAILURE.value, payload={'error': 'timeout'}),
-            _event(EventType.FAILURE.value, payload={'error': 'timeout'}),
-            _event(EventType.FAILURE.value, payload={'error': 'oom'}),
+            _event(EventType.FAILURE.value, payload={"error": "timeout"}),
+            _event(EventType.FAILURE.value, payload={"error": "timeout"}),
+            _event(EventType.FAILURE.value, payload={"error": "oom"}),
         ]
         compressor = EventCompressor()
         meta = compressor.metadata(raw, raw)
-        assert len(meta['repeated_failures']) == 1
-        assert meta['repeated_failures'][0]['payload']['error'] == 'timeout'
-        assert meta['repeated_failures'][0]['count'] == 2
+        assert len(meta["repeated_failures"]) == 1
+        assert meta["repeated_failures"][0]["payload"]["error"] == "timeout"
+        assert meta["repeated_failures"][0]["count"] == 2
 
     def test_metadata_no_repeated_failures(self) -> None:
         raw = [
-            _event(EventType.FAILURE.value, payload={'error': 'timeout'}),
-            _event(EventType.FAILURE.value, payload={'error': 'oom'}),
+            _event(EventType.FAILURE.value, payload={"error": "timeout"}),
+            _event(EventType.FAILURE.value, payload={"error": "oom"}),
             _event(EventType.TASK_CREATED.value),
         ]
         compressor = EventCompressor()
         meta = compressor.metadata(raw, raw)
-        assert meta['repeated_failures'] == []
+        assert meta["repeated_failures"] == []
