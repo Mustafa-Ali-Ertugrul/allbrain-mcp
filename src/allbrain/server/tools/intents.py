@@ -76,24 +76,40 @@ def register_tools(mcp, context: BrainContext) -> None:
     def extract_intents(limit: int = 5000) -> dict[str, Any]:
         """Extract semantic intents from agent actions in the event log.
 
+        Use this to understand what goals, constraints, and decisions agents were
+        pursuing. Intents are extracted from events like TASK_CREATED, TOOL_CALLED,
+        and DECISION_MADE.
+
+        Side effects: Read-only operation; analyzes events without modification.
+
         Args:
             limit: Maximum number of events to analyze (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            List of extracted intents with goal, constraints, and context from each
+            agent's actions.
         """
         result = extract_intents_impl(context, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def detect_contradictions(limit: int = 5000) -> dict[str, Any]:
-        """Identify contradictory statements across events.
+        """Identify logical contradictions in extracted agent intents.
+
+        Use this to find when agents have contradictory goals, constraints, or
+        decisions. Unlike `detect_conflicts` (which finds conflicting outputs),
+        this finds logical inconsistencies in what agents were trying to achieve.
+
+        Use `detect_conflicts` for semantic state contradictions between agents.
+
+        Side effects: Read-only operation; analyzes extracted intents.
 
         Args:
             limit: Maximum number of events to analyze (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            List of detected contradictions with the conflicting intent elements,
+            agent IDs involved, and suggested resolutions.
         """
         result = detect_contradictions_impl(context, limit=limit)
         return result.model_dump(mode="json")

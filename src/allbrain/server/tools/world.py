@@ -110,13 +110,24 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def observe_world(limit: int = 5000) -> dict[str, Any]:
-        """Observe current world/state context.
+        """Return the current environment state built from the event log.
+
+        Observes the project's world model — the learned transition model derived from
+        past agent actions and events. Returns the predicted current state based on all
+        stored observations.
+
+        Use this before making state-dependent decisions or to understand the environment
+        context for agent actions.
+
+        Side effects: Appends a WORLD_STATE_OBSERVED event to the log. Read-only on
+        the world model itself.
 
         Args:
-            limit: Maximum number of events to process.
+            limit: Maximum number of events to process for state reconstruction (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Current world state dict with environment context, recent observations,
+            and the associated event record.
         """
         result = observe_world_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
@@ -126,14 +137,27 @@ def register_tools(mcp, context: BrainContext) -> None:
         action: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Simulate the outcome of an action before executing.
+        """Simulate the effect of an action using the learned world model.
+
+        Predicts how the environment state would change if the described action were
+        taken. Uses the world model's transition function learned from past observations.
+        Complements `generate_counterfactual` and `generate_scenarios` by focusing
+        on environment state changes rather than agent decisions.
+
+        Use this to preview likely outcomes before executing a real action — especially
+        useful for high-risk or irreversible actions.
+
+        Side effects: Appends both a WORLD_STATE_OBSERVED and a WORLD_SIMULATION_RUN
+        event to the log. Does not modify real environment state.
 
         Args:
-            action: Description of the action to simulate.
-            limit: Maximum number of events to process.
+            action: Description of the action to simulate (e.g., "deploy to production",
+                   "grant admin role to user X").
+            limit: Maximum number of events to process (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Simulation result with predicted state changes, risk score, and
+            the recorded observation and simulation events.
         """
         result = simulate_action_impl(context, action=action, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

@@ -22,14 +22,21 @@ def register_tools(mcp, context: BrainContext) -> None:
         workflow_id: str | None = None,
         lease_ttl_seconds: int = 120,
     ) -> dict[str, Any]:
-        """Claim a task from the distributed queue.
+        """Claim a task from the distributed queue for exclusive processing.
+
+        Use this in worker/actor patterns where multiple agents compete for tasks.
+        Only one agent can successfully claim a given queue_item at a time.
+
+        Side effects: Marks a task as "claimed" with a lease that expires after
+        lease_ttl_seconds. Creates a TASK_CLAIMED event.
 
         Args:
-            workflow_id: Optional workflow ID to claim a task for.
-            lease_ttl_seconds: Lease time-to-live in seconds (default 120).
+            workflow_id: Optional workflow ID to claim a task for (allows scoping).
+            lease_ttl_seconds: Lease duration in seconds (default 120). The task will
+                be automatically released if not completed or renewed within this time.
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Claim result with queue_item_id, lease_id, and task details if successful.
         """
         coordinator = QueueCoordinator(context)
         return _run(
@@ -47,15 +54,20 @@ def register_tools(mcp, context: BrainContext) -> None:
         lease_id: str,
         lease_ttl_seconds: int = 120,
     ) -> dict[str, Any]:
-        """Extend lease on a claimed task.
+        """Extend the lease on a claimed task to prevent automatic release.
+
+        Use this when a task is taking longer than expected. Call periodically
+        during long-running operations to keep the task "claimed" by your agent.
+
+        Side effects: Updates the lease expiry timestamp for the queue item.
 
         Args:
             queue_item_id: ID of the queue item to renew.
-            lease_id: Current lease ID for authentication.
-            lease_ttl_seconds: Extended lease time-to-live in seconds (default 120).
+            lease_id: Current lease ID (obtained from claim_task).
+            lease_ttl_seconds: Extended lease duration (default 120).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Updated lease information with new expiry timestamp.
         """
         coordinator = QueueCoordinator(context)
         return _run(
@@ -74,16 +86,22 @@ def register_tools(mcp, context: BrainContext) -> None:
         output: str,
         artifacts: list[str] | None = None,
     ) -> dict[str, Any]:
-        """Mark a task as completed.
+        """Mark a claimed task as completed with output and optional artifacts.
+
+        Use this to finalize a task after successful completion. This is the final
+        step in the worker pattern: claim -> process -> complete.
+
+        Side effects: Creates a TASK_COMPLETED event, releases the lease, and
+        makes the task unavailable for other workers. Output is sanitized for safety.
 
         Args:
             queue_item_id: ID of the queue item to complete.
-            lease_id: Current lease ID for authentication.
-            output: Task output string.
-            artifacts: Optional list of artifact paths.
+            lease_id: Current lease ID (must match the claiming agent).
+            output: Task output/result string (will be sanitized for safety).
+            artifacts: Optional list of artifact file paths produced by the task.
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Completion confirmation with task_id, output, and artifacts list.
         """
         coordinator = QueueCoordinator(context)
         return _run(
@@ -103,16 +121,24 @@ def register_tools(mcp, context: BrainContext) -> None:
         reason: str,
         requeue: bool = True,
     ) -> dict[str, Any]:
-        """Mark a task as failed, optionally requeue.
+        """Mark a claimed task as failed with a reason, optionally requeuing it.
+
+        Use this when a task cannot be completed due to errors, timeouts, or
+        unexpected conditions. If requeue=True, the task returns to the queue
+        for another worker to attempt.
+
+        Side effects: Creates a TASK_FAILED event in the event log. If requeue=True,
+        the task becomes available for other workers. Output is sanitized for safety.
 
         Args:
             queue_item_id: ID of the queue item to fail.
-            lease_id: Current lease ID for authentication.
-            reason: Failure reason description.
-            requeue: Whether to requeue the task (default True).
+            lease_id: Current lease ID (must match the claiming agent).
+            reason: Failure reason description (will be sanitized; helpful for debugging).
+            requeue: Whether to make the task available for other workers (default True).
+                Set to False for permanent failure/cancellation.
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Failure confirmation with task_id, reason, and requeue status.
         """
         coordinator = QueueCoordinator(context)
         return _run(

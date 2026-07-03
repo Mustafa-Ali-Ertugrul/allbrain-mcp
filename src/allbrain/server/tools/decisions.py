@@ -49,29 +49,43 @@ def register_tools(mcp, context: BrainContext) -> None:
         enable_uncertainty: bool = False,
         enable_information_seeking: bool = False,
     ) -> dict[str, Any]:
-        """Run a full decision pipeline with optional reasoning modules.
+        """Run a multi-stage decision pipeline with configurable reasoning stages.
+
+        Orchestrates counterfactual reasoning, scenario generation, foresight planning,
+        meta-reasoning, uncertainty estimation, and information-need detection into a
+        single pipeline. Evaluates the provided objective and returns a ranked
+        recommendation with evidence.
+
+        Use this for high-stakes decisions where multiple perspectives add value.
+        For simpler individual analyses (e.g., just scenario generation), use the
+        standalone tools instead. This is the canonical implementation re-exported
+        from orchestrator.py.
+
+        Side effects: Records pipeline events; may enqueue follow-up tasks in
+        'queued_runtime' mode.
 
         Args:
-            objective: The decision objective as a JSON-serializable dict.
-            execute_mode: Pipeline mode ("event_only", "queued_runtime", etc.).
-            limit: Max events to consider.
-            simulate_before_execute: Whether to simulate before executing.
-            risk_threshold: Risk threshold (0-1) for decisions.
-            enable_counterfactual: Enable counterfactual reasoning.
-            counterfactual_limit: Max counterfactual alternatives.
-            regret_threshold: Regret threshold (0-1) for decisions.
-            enable_scenarios: Enable scenario generation.
-            scenarios_limit: Max scenarios to generate.
-            scenario_recommendation_threshold: Threshold for scenario recommendations.
-            enable_foresight: Enable foresight planning.
-            foresight_limit: Max future plans to generate.
-            max_horizon: Max time horizon for plans.
-            enable_meta_reasoning: Enable meta-reasoning over decisions.
-            enable_uncertainty: Enable uncertainty estimation.
-            enable_information_seeking: Enable information-seeking actions.
+            objective: The decision objective dict describing what to decide.
+            execute_mode: 'event_only' (record), 'queued_runtime' (queue tasks),
+                          'simulate', or 'validate' (default 'event_only').
+            limit: Max events to consider (default 10000).
+            simulate_before_execute: Simulate effects before committing (default False).
+            risk_threshold: Max acceptable risk score 0-1 (default 0.7).
+            enable_counterfactual: Run counterfactual what-if analysis (default False).
+            counterfactual_limit: Max alternative outcomes (default 3).
+            regret_threshold: Regret threshold 0-1 for filtering (default 0.2).
+            enable_scenarios: Run scenario generation (default False).
+            scenarios_limit: Max scenarios to generate (default 4).
+            scenario_recommendation_threshold: Min score 0-1 (default 0.5).
+            enable_foresight: Run foresight planning (default False).
+            foresight_limit: Max action chains per branch (default 5).
+            max_horizon: Max planning depth (default 5).
+            enable_meta_reasoning: Apply meta-reasoning (default False).
+            enable_uncertainty: Estimate uncertainty (default False).
+            enable_information_seeking: Identify information gaps (default False).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Pipeline results with ranked recommendation, evaluations, and evidence.
         """
         result = run_decision_pipeline_impl(
             context,

@@ -16,6 +16,8 @@ class EventType(StrEnum):
     TASK_BLOCKED = "task_blocked"
     TASK_DEPENDENCY_ADDED = "task_dependency_added"
     TASK_PRIORITY_CHANGED = "task_priority_changed"
+    TASK_UPDATED = "task_updated"
+    TASK_DELETED = "task_deleted"
     HANDOFF_CREATED = "handoff_created"
     TOOL_CALL = "tool_call"
     TOOL_CALL_OUTCOME = "tool_call_outcome"
@@ -260,6 +262,8 @@ SemanticEventType = {
     EventType.TASK_BLOCKED,
     EventType.TASK_DEPENDENCY_ADDED,
     EventType.TASK_PRIORITY_CHANGED,
+    EventType.TASK_UPDATED,
+    EventType.TASK_DELETED,
     EventType.HANDOFF_CREATED,
     EventType.SUBTASK_CREATED,
     EventType.SUBTASK_STARTED,

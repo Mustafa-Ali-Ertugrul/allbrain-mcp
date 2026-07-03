@@ -161,15 +161,28 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         scenarios_limit: int = 4,
     ) -> dict[str, Any]:
-        """Generate possible future scenarios for an action.
+        """Generate possible future scenarios branching from an action.
+
+        Each scenario describes a plausible future outcome with probability estimates,
+        impact assessment, and key assumptions. Scenarios are richer than counterfactuals
+        — they include external context and branching assumptions (best-case, expected,
+        worst-case).
+
+        Use this for exploring the range of possible futures before committing to a
+        decision. Use `evaluate_scenarios` when you already have specific scenarios to
+        test, or `run_decision_pipeline` to chain all reasoning stages.
+
+        Side effects: Records WORLD_STATE_OBSERVED, SCENARIO_GENERATED, SCENARIO_EVALUATED,
+        and SCENARIO_RECOMMENDED events.
 
         Args:
-            action: The action to generate scenarios for.
-            limit: Max events to consider.
-            scenarios_limit: Max number of scenarios to generate.
+            action: The action to generate possible future scenarios for.
+            limit: Max events to consider (default 5000).
+            scenarios_limit: Max number of scenarios to generate (default 4).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Scenario analysis with best-case, expected-case, worst-case projections,
+            prediction spread, confidence scores, and a recommendation rationale.
         """
         result = generate_scenarios_impl(
             context,
@@ -185,15 +198,28 @@ def register_tools(mcp, context: BrainContext) -> None:
         scenarios: list[dict[str, Any]],
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Evaluate a set of scenarios against criteria.
+        """Score a set of custom scenarios for a given action.
+
+        Accepts user-defined scenarios (each with a description, context, and outcome
+        details) and returns estimated probabilities and risk scores for each. Unlike
+        `generate_scenarios` which auto-generates scenarios, this lets you test your
+        own hypotheses.
+
+        Use this when you have specific scenario hypotheses you want to evaluate.
+        Use `generate_scenarios` first if you need default scenario candidates.
+
+        Side effects: Same event recording as `generate_scenarios` (WORLD_STATE_OBSERVED,
+        SCENARIO_GENERATED, SCENARIO_EVALUATED, SCENARIO_RECOMMENDED).
 
         Args:
             action: The action the scenarios relate to.
-            scenarios: List of scenario dicts to evaluate.
-            limit: Max events to consider.
+            scenarios: List of custom scenario dicts to evaluate, each containing at
+                      minimum 'description' and optionally 'context' and 'outcome'.
+            limit: Max events to consider (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Scenario analysis with predictions for each custom scenario, including
+            probability, risk score, and uncertainty estimates.
         """
         result = evaluate_scenarios_impl(
             context,

@@ -92,34 +92,40 @@ def get_recent_changes_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
-    def get_git_context() -> dict[str, Any]:
-        """Retrieve git branch, remote, and recent commit context.
+    def git_info(
+        info_type: str = "all",
+        limit: int = 10,
+    ) -> dict[str, Any]:
+        """Retrieve git repository context, working tree status, or recent changes.
 
-        Returns:
-            Tool result as a JSON-serializable dict.
-        """
-        result = get_git_context_impl(context)
-        return result.model_dump(mode="json")
+        Consolidated tool replacing the previous `get_git_context`, `get_git_status`,
+        and `get_recent_changes` tools. Use `info_type` to select what subset to return.
 
-    @mcp.tool
-    def get_git_status() -> dict[str, Any]:
-        """Show working tree status (modified, staged, untracked).
+        "all" returns branch, remote, recent commits, working tree status, and staged/
+        modified/untracked file lists in a single response. Use this when you need the
+        full picture before making changes.
 
-        Returns:
-            Tool result as a JSON-serializable dict.
-        """
-        result = get_git_status_impl(context)
-        return result.model_dump(mode="json")
-
-    @mcp.tool
-    def get_recent_changes(limit: int = 10) -> dict[str, Any]:
-        """List recent file changes from git log.
+        Side effects: Read-only operation; queries git repository.
 
         Args:
-            limit: Number of recent changes to return (default 10).
+            info_type: What git information to return:
+                - "all": branch, remote, commits, and working tree status (default)
+                - "context": branch name, remote URL, list of recent commits
+                - "status": working tree status with staged/modified/untracked files
+                - "changes": file-level diff from git log
+            limit: Max recent changes to return when info_type is "changes" or "all"
+                (default 10).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Git information dict with keys depending on info_type. "all" returns
+            branch, remote, commits, status, and changes data.
         """
-        result = get_recent_changes_impl(context, limit=limit)
-        return result.model_dump(mode="json")
+        info_type_lower = info_type.lower()
+        result: dict[str, Any] = {}
+        if info_type_lower in ("all", "context"):
+            result["context"] = get_git_context_impl(context).data
+        if info_type_lower in ("all", "status"):
+            result["status"] = get_git_status_impl(context).data
+        if info_type_lower in ("all", "changes"):
+            result["changes"] = get_recent_changes_impl(context, limit=limit).data
+        return ToolResult(ok=True, data=result).model_dump(mode="json")

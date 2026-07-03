@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-03
+
+### Added
+
+- `update_task` and `delete_task` tools for complete CRUD on task objects.
+- `TASK_UPDATED` and `TASK_DELETED` event types with stable event-sourcing.
+- TaskStateReducer now handles `TASK_UPDATED` (goal/kind/files) and `TASK_DELETED` (soft-delete + exclusions).
+- Glama MCP server profile (`glama.json`) for improved discovery.
+
+### Changed
+
+- **Consolidated tools** for better Glama Server Coherence: Git 3→1 (`git_info`), Workflow 3→1 (`workflow_info`), UI 4→1 (`ui_view`). Total tools: 50.
+- All 50+ tool docstrings enriched with TDQS-quality descriptions (goal, contract, errors, examples, edge cases, relations).
+- `SemanticEventType` expanded to include `TASK_UPDATED` and `TASK_DELETED`.
+
+### Fixed
+
+- Pre-commit test constant fixture now uses `tqdm.write()` to avoid pytest stdout capturing deadlock.
+
 ## [0.2.0] - 2026-07-03
 
 ### Added

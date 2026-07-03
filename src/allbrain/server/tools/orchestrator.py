@@ -166,15 +166,22 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
-        """Get full project orchestration view with tasks, agents, and state.
+        """Build a complete orchestration view of the project with tasks, agents, and state.
+
+        Use this to get a holistic view of the project's current state, including all tasks,
+        agent assignments, performance metrics, and session information. More comprehensive
+        than `get_task_graph` which focuses only on task dependencies.
+
+        Side effects: Read-only operation; uses snapshot resume for efficiency.
 
         Args:
-            limit: Maximum number of events to process.
-            include_git: Whether to include git context.
-            use_snapshot: Whether to use snapshot-based fast resume.
+            limit: Maximum number of events to process (default 10000).
+            include_git: Whether to include git context in the view (default True).
+            use_snapshot: Whether to use snapshot-based fast resume (default True).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Orchestration view with task_view, agent_queue, agent_state, global_view,
+            sessions, memory, and git context (if available).
         """
         result = orchestrate_project_impl(
             context,
@@ -204,29 +211,43 @@ def register_tools(mcp, context: BrainContext) -> None:
         enable_uncertainty: bool = False,
         enable_information_seeking: bool = False,
     ) -> dict[str, Any]:
-        """Run a full decision pipeline with counterfactual/scenario/foresight reasoning.
+        """Run a multi-stage decision pipeline with configurable reasoning stages.
+
+        Orchestrates counterfactual reasoning, scenario generation, foresight planning,
+        meta-reasoning, uncertainty estimation, and information-need detection into a
+        single pipeline run. The pipeline evaluates the provided objective and returns
+        a ranked recommendation with evidence.
+
+        Use this for high-stakes decisions where multiple perspectives add value. For
+        simpler individual analyses, use the standalone tools (evaluate_plan,
+        generate_scenarios, etc.) instead.
+
+        Side effects: Records decision events; if execute_mode='queued_runtime', may
+        enqueue follow-up tasks for runtime execution.
 
         Args:
-            objective: The decision objective as a dict.
-            execute_mode: Execution mode ('event_only', 'queued_runtime', etc.).
-            limit: Maximum number of events to process.
-            simulate_before_execute: Whether to simulate before executing.
-            risk_threshold: Risk threshold for decision acceptance.
-            enable_counterfactual: Whether to enable counterfactual reasoning.
-            counterfactual_limit: Maximum counterfactual alternatives.
-            regret_threshold: Regret threshold for counterfactual evaluation.
-            enable_scenarios: Whether to enable scenario planning.
-            scenarios_limit: Maximum number of scenarios to generate.
-            scenario_recommendation_threshold: Threshold for scenario recommendations.
-            enable_foresight: Whether to enable foresight reasoning.
-            foresight_limit: Maximum foresight horizon steps.
-            max_horizon: Maximum planning horizon depth.
-            enable_meta_reasoning: Whether to enable meta-reasoning.
-            enable_uncertainty: Whether to enable uncertainty estimation.
-            enable_information_seeking: Whether to enable information seeking.
+            objective: The decision objective dict describing what to decide.
+            execute_mode: 'event_only' (record only), 'queued_runtime' (queue tasks),
+                          'simulate', or 'validate' (default 'event_only').
+            limit: Maximum events to process (default 10000).
+            simulate_before_execute: Simulate effects before committing (default False).
+            risk_threshold: Maximum acceptable risk score 0-1 (default 0.7).
+            enable_counterfactual: Run counterfactual what-if analysis (default False).
+            counterfactual_limit: Max alternative outcomes to generate (default 3).
+            regret_threshold: Regret threshold 0-1 for counterfactual filtering (default 0.2).
+            enable_scenarios: Run scenario generation (default False).
+            scenarios_limit: Max scenarios to generate (default 4).
+            scenario_recommendation_threshold: Min score 0-1 for scenario inclusion (default 0.5).
+            enable_foresight: Run foresight planning (default False).
+            foresight_limit: Max action chains per branch (default 5).
+            max_horizon: Max planning depth (default 5).
+            enable_meta_reasoning: Apply meta-reasoning over results (default False).
+            enable_uncertainty: Estimate epistemic/aleatoric uncertainty (default False).
+            enable_information_seeking: Identify information gaps (default False).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Pipeline results with ranked recommendation, scenario evaluations,
+            counterfactual analysis, foresight plans, and evidence summary.
         """
         result = run_decision_pipeline_impl(
             context,

@@ -28,8 +28,8 @@ def test_architecture_import_boundaries() -> None:
 
 def test_event_domain_registry_is_exhaustive_and_legacy_semantics_are_stable() -> None:
     assert set(EVENT_DOMAINS) == set(EventType)
-    assert len(EVENT_DOMAINS) == 240
-    assert len(SemanticEventType) == 224
+    assert len(EVENT_DOMAINS) == 242
+    assert len(SemanticEventType) == 226
     assert event_domain(EventType.PIPELINE_RUN_STARTED) is EventDomain.DECISION
     assert event_domain("recovery_started") is EventDomain.RECOVERY
     with pytest.raises(ValueError):

@@ -186,15 +186,23 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
-        """Resume project state from the latest snapshot.
+        """Resume project state from the latest snapshot or event history.
+
+        Use this to reconstruct the full project state including tasks, sessions,
+        and memory after a restart or for multi-agent collaboration.
+
+        Side effects: Reads from the event log and/or snapshot store. Does not modify data.
 
         Args:
-            limit: Maximum number of events to process.
-            include_git: Whether to include git context in the resume.
-            use_snapshot: Whether to use snapshot-based fast resume.
+            limit: Maximum number of events to process (default 5000).
+            include_git: Whether to include git context in the resume (default True).
+                Requires git repository access.
+            use_snapshot: Whether to use snapshot-based fast resume (default True).
+                Set to False to always replay from raw events.
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Full project state including task_view, task_graph, agent_state, sessions,
+            memory, and git context (if available).
         """
         result = resume_project_impl(
             context,
@@ -210,15 +218,25 @@ def register_tools(mcp, context: BrainContext) -> None:
         force: bool = False,
         include_derived: bool = False,
     ) -> dict[str, Any]:
-        """Create a point-in-time snapshot of project state.
+        """Create a point-in-time snapshot of project state for fast resume.
+
+        Use this to explicitly create a checkpoint before major operations or
+        for backup purposes. Snapshots enable fast project reconstruction via
+        resume_project with use_snapshot=True.
+
+        Side effects: Creates a snapshot entry in the snapshot repository. This is
+        a write operation that stores a compressed representation of current state.
 
         Args:
-            limit: Maximum number of events to include.
-            force: Whether to force creation even if no new events exist.
-            include_derived: Whether to include derived/computed state.
+            limit: Maximum number of events to include (default 5000).
+            force: Whether to force creation even if no new events exist since last
+                snapshot (default False).
+            include_derived: Whether to include derived/computed state in addition to
+                raw events (default False). Increases snapshot size.
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Snapshot data with event_cursor, metadata, and reused flag indicating if
+            an existing snapshot was returned.
         """
         result = create_snapshot_impl(
             context,
@@ -234,15 +252,26 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_git: bool = True,
         use_snapshot: bool = True,
     ) -> dict[str, Any]:
-        """Resume project with intent-enriched context.
+        """Resume project with intent-enriched context for better decision making.
+
+        Use this when you need semantic understanding of past decisions, not just
+        raw events. The intent resume engine extracts and reconstructs agent
+        intentions from events, providing richer context for the resuming agent.
+
+        Unlike `resume_project` which provides raw state, this tool adds semantic
+        layers: intent extraction, contradiction detection, and memory consolidation.
+
+        Side effects: Reads events, builds semantic memory, and extracts intents.
+        Does not modify any data.
 
         Args:
-            limit: Maximum number of events to process.
-            include_git: Whether to include git context.
-            use_snapshot: Whether to use snapshot-based fast resume.
+            limit: Maximum number of events to process (default 5000).
+            include_git: Whether to include git context (default True).
+            use_snapshot: Whether to use snapshot-based fast resume (default True).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Project state enriched with extracted intents, memory context, and
+            semantic understanding of past decisions.
         """
         result = resume_with_intent_impl(
             context,

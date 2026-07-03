@@ -84,13 +84,21 @@ def retrieve_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def build_memory(limit: int = 5000) -> dict[str, Any]:
-        """Build a semantic memory index from project events.
+        """Build a semantic memory index from project events for similarity search.
+
+        Use this to create a queryable memory store that can find similar workflows,
+        patterns, and outcomes across the project's event history.
+
+        Side effects: Reads events from the project's event log and builds an in-memory
+        semantic store. Does not modify any data.
 
         Args:
-            limit: Maximum number of events to index (default 5000).
+            limit: Maximum number of events to index (default 5000). Increase for
+                projects with extensive history, but note this may affect performance.
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Semantic memory store as a JSON-serializable dict containing similar_workflows
+            and failure_patterns indices.
         """
         result = build_memory_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
@@ -101,15 +109,23 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         top_k: int = 5,
     ) -> dict[str, Any]:
-        """Semantic search over stored memories.
+        """Semantic search over stored memories to find similar workflows and patterns.
+
+        Use this to discover relevant past work when facing a new task. Returns both
+        similar workflows and common failure patterns that match the query.
+
+        Side effects: Reads from the semantic memory store built by `build_memory`.
+        Use `build_memory` first to ensure the index is up-to-date.
 
         Args:
-            query: Search query string.
-            limit: Maximum number of events to scan (default 5000).
-            top_k: Number of top results to return (default 5).
+            query: Search query string describing the problem or goal.
+                Use natural language; the semantic retriever handles embedding.
+            limit: Maximum number of events to scan for similarity (default 5000).
+            top_k: Number of top results to return (default 5, max 50).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Dict with similar_workflows and failure_patterns lists, each containing
+            matched items with similarity scores and metadata.
         """
         result = retrieve_memory_impl(context, query=query, project_path=context.project_path, limit=limit, top_k=top_k)
         return result.model_dump(mode="json")

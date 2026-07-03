@@ -112,22 +112,34 @@ def register_tools(mcp, context: BrainContext) -> None:
         caused_by: str | None = None,
         branch: str | None = None,
     ) -> dict[str, Any]:
-        """Append an event to the shared event log.
+        """Append an event to the shared event log with optional metadata.
+
+        Use this to record agent actions, decisions, and state changes. All events
+        are append-only with stable UUIDv7 ordering, enabling deterministic replay.
+
+        Side effects: Creates a new event in the SQLite event log. Triggers an
+        automatic snapshot when the event threshold is reached. This is the primary
+        write operation for the event-sourced architecture.
 
         Args:
-            type: Event type identifier.
-            payload: Event data payload.
-            file_path: Optional source file path.
-            source: Event source label (default "agent").
-            session_id: Optional session ID to associate.
-            task_hint: Optional task hint string.
-            importance: Optional importance rating.
-            impact_score: Optional impact score.
-            caused_by: Optional causal event reference.
-            branch: Optional branch name.
+            type: Event type identifier (e.g., "TASK_CREATED", "TASK_ASSIGNED",
+                "TOOL_CALLED", "DECISION_MADE").
+            payload: Event data as a JSON-serializable dict. Should contain the
+                relevant state or information being recorded.
+            file_path: Optional source file path (for code-related events).
+            source: Event source label (default "agent"). Use "allbrain" for
+                system-generated events, or the agent name for agent actions.
+            session_id: Optional session ID to associate with (for multi-agent tracing).
+            task_hint: Optional task hint string (helps with memory building).
+            importance: Optional importance rating (1-5); higher values may trigger
+                more frequent snapshots.
+            impact_score: Optional impact score for decision events.
+            caused_by: Optional causal event reference (creates event provenance).
+            branch: Optional branch name (for git-based project tracking).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            The created event as a JSON-serializable dict with id, type, timestamp,
+            payload, and all metadata fields.
         """
         result = save_event_impl(
             context,
@@ -150,15 +162,24 @@ def register_tools(mcp, context: BrainContext) -> None:
         type: str | None = None,
         limit: int = 50,
     ) -> dict[str, Any]:
-        """Query and filter recorded events.
+        """Query and filter recorded events from the append-only event log.
+
+        Use this to inspect the history of agent actions and system state changes.
+        Events are ordered by stable UUIDv7 timestamps for consistent replay.
+
+        Side effects: Read-only operation; no data is modified.
 
         Args:
-            session_id: Optional session ID to filter by.
-            type: Optional event type to filter by.
-            limit: Maximum number of events to return (default 50).
+            session_id: Optional session ID to filter by (useful for multi-agent
+                debugging and isolation).
+            type: Optional event type to filter by (e.g., "TASK_CREATED",
+                "TASK_ASSIGNED", "TOOL_CALLED").
+            limit: Maximum number of events to return (default 50). Increase for
+                broader history inspection.
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            List of events as JSON-serializable dicts, each containing id, type,
+            timestamp, source, payload, and optional metadata fields.
         """
         result = list_events_impl(
             context,

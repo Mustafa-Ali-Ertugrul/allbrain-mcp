@@ -249,69 +249,31 @@ def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def get_observability_dashboard(limit: int = 5000) -> dict[str, Any]:
-        """Get observability dashboard data.
+        """Return an observability summary dashboard for the project.
+
+        Aggregates agent selection decisions, workflow replay metrics, and agent
+        comparison data into a single overview. Shows recent execution patterns,
+        agent performance balance, and workflow activity at a glance.
+
+        Use this as a starting point for understanding project health. For deeper
+        analysis, use individual tools: `compare_agents`, `get_system_metrics`,
+        `get_reliability_status`.
+
+        Side effects: Read-only operation; builds view from event log.
 
         Args:
-            limit: Maximum number of events to process.
+            limit: Maximum number of events to process (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Dashboard with agent performance summary, recent workflow metrics,
+            and high-level system state.
         """
         result = get_observability_dashboard_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
-    def get_workflow_trace(
-        workflow_id: str | None = None,
-        task_id: str | None = None,
-        limit: int = 5000,
-    ) -> dict[str, Any]:
-        """Trace an execution workflow step by step.
-
-        Args:
-            workflow_id: Optional workflow ID to filter by.
-            task_id: Optional task ID to filter by.
-            limit: Maximum number of events to process.
-
-        Returns:
-            Tool result as a JSON-serializable dict.
-        """
-        result = get_workflow_trace_impl(
-            context,
-            workflow_id=workflow_id,
-            task_id=task_id,
-            limit=limit,
-        )
-        return result.model_dump(mode="json")
-
-    @mcp.tool
-    def get_system_metrics(limit: int = 5000) -> dict[str, Any]:
-        """Get system performance metrics.
-
-        Args:
-            limit: Maximum number of events to process.
-
-        Returns:
-            Tool result as a JSON-serializable dict.
-        """
-        result = get_system_metrics_impl(context, project_path=context.project_path, limit=limit)
-        return result.model_dump(mode="json")
-
-    @mcp.tool
-    def get_reliability_status(limit: int = 5000) -> dict[str, Any]:
-        """Get system reliability/health status.
-
-        Args:
-            limit: Maximum number of events to process.
-
-        Returns:
-            Tool result as a JSON-serializable dict.
-        """
-        result = get_reliability_status_impl(context, project_path=context.project_path, limit=limit)
-        return result.model_dump(mode="json")
-
-    @mcp.tool
-    def replay_workflow(
+    def workflow_info(
+        view: str = "trace",
         workflow_id: str | None = None,
         task_id: str | None = None,
         cursor: int = 0,
@@ -319,63 +281,121 @@ def register_tools(mcp, context: BrainContext) -> None:
         deterministic: bool = True,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Deterministically replay a workflow.
+        """Retrieve workflow execution data: trace, graph, or replay.
+
+        Consolidated tool replacing `get_workflow_trace`, `get_workflow_graph`, and
+        `replay_workflow`. Use the `view` parameter to select the representation.
+
+        Side effects: Read-only operation. Does not modify event state.
 
         Args:
+            view: Type of workflow data to return:
+                - "trace": chronological execution trace with timestamps, agent
+                  assignments, decisions, and state transitions (default)
+                - "graph": structural DAG showing task dependencies and relationships
+                - "replay": deterministic step-by-step replay from stored events
             workflow_id: Optional workflow ID to filter by.
             task_id: Optional task ID to filter by.
-            cursor: Starting cursor position for replay.
-            step_count: Number of steps to replay (None for all).
-            deterministic: Whether to enforce deterministic replay.
-            limit: Maximum number of events to process.
+            cursor: Starting cursor position for replay (default 0). Only used when
+                view is "replay".
+            step_count: Number of steps to replay (None = all). Only used when view
+                is "replay".
+            deterministic: Whether to enforce seeded deterministic replay (default
+                True). Only used when view is "replay".
+            limit: Max events to process (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Workflow data in the requested view format: execution trace steps,
+            graph nodes/edges, or replayed state transitions.
         """
-        result = replay_workflow_impl(
-            context,
-            workflow_id=workflow_id,
-            task_id=task_id,
-            cursor=cursor,
-            step_count=step_count,
-            deterministic=deterministic,
-            limit=limit,
-        )
+        view_lower = view.lower()
+        if view_lower == "graph":
+            result = get_workflow_graph_impl(
+                context, workflow_id=workflow_id, task_id=task_id, limit=limit
+            )
+        elif view_lower == "replay":
+            result = replay_workflow_impl(
+                context,
+                workflow_id=workflow_id,
+                task_id=task_id,
+                cursor=cursor,
+                step_count=step_count,
+                deterministic=deterministic,
+                limit=limit,
+            )
+        else:
+            result = get_workflow_trace_impl(
+                context, workflow_id=workflow_id, task_id=task_id, limit=limit
+            )
         return result.model_dump(mode="json")
 
     @mcp.tool
-    def get_workflow_graph(
-        workflow_id: str | None = None,
-        task_id: str | None = None,
-        limit: int = 5000,
-    ) -> dict[str, Any]:
-        """Get workflow graph with task dependencies.
+    def get_system_metrics(limit: int = 5000) -> dict[str, Any]:
+        """Return system-level performance metrics (CPU, memory, event rates).
+
+        Collects resource usage statistics, event throughput rates, and tool call
+        frequency data. Includes reliability metrics like lease recovery rates and
+        duplicate detection counts.
+
+        Use this for monitoring server health, detecting resource bottlenecks, or
+        performance tuning. `get_reliability_status` provides deeper durability and
+        consistency indicators.
+
+        Side effects: Read-only operation. Aggregates psutil-based resource usage
+        and event processing rates.
 
         Args:
-            workflow_id: Optional workflow ID to filter by.
-            task_id: Optional task ID to filter by.
-            limit: Maximum number of events to process.
+            limit: Maximum number of events to analyze (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            System metrics with CPU, memory, event throughput, tool call frequency,
+            and reliability indicators.
         """
-        result = get_workflow_graph_impl(
-            context,
-            workflow_id=workflow_id,
-            task_id=task_id,
-            limit=limit,
-        )
+        result = get_system_metrics_impl(context, project_path=context.project_path, limit=limit)
+        return result.model_dump(mode="json")
+
+    @mcp.tool
+    def get_reliability_status(limit: int = 5000) -> dict[str, Any]:
+        """Return reliability and durability metrics for the system.
+
+        Aggregates lease recovery rates, duplicate detection counts, failure tallies,
+        and session health data. Also computes memory coverage rates from semantic
+        events versus total events.
+
+        Use this to assess system health, investigate whether any events or leases
+        have been lost or duplicated, and verify persistent storage consistency.
+
+        Side effects: Read-only operation. Builds reliability report from event log.
+
+        Args:
+            limit: Maximum number of events to analyze (default 5000).
+
+        Returns:
+            Reliability report with lease statistics, failure counts, session
+            summaries, memory coverage rates, and category breakdowns.
+        """
+        result = get_reliability_status_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def compare_agents(limit: int = 5000) -> dict[str, Any]:
-        """Compare agent performance metrics side by side.
+        """Compare agent performance metrics side-by-side.
+
+        Returns success rates, failure counts, blocked counts, assigned tasks,
+        and confidence scores for each agent in the project. Builds an agent
+        comparison matrix from event history.
+
+        Use this to evaluate which agents are performing well, detect underperforming
+        agents, or balance workload distribution across multi-agent systems.
+
+        Side effects: Read-only operation. Aggregates from event log.
 
         Args:
-            limit: Maximum number of events to process.
+            limit: Maximum number of events to process (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Agent comparison data with per-agent success rates, failure counts,
+            task assignments, confidence scores, and performance rankings.
         """
         result = compare_agents_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

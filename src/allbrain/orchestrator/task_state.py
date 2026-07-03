@@ -17,6 +17,8 @@ TASK_EVENT_TYPES = {
     EventType.TASK_FAILED.value,
     EventType.TASK_DEPENDENCY_ADDED.value,
     EventType.TASK_PRIORITY_CHANGED.value,
+    EventType.TASK_UPDATED.value,
+    EventType.TASK_DELETED.value,
     EventType.HANDOFF_CREATED.value,
     EventType.SUBTASK_CREATED.value,
     EventType.SUBTASK_STARTED.value,
@@ -61,6 +63,8 @@ class TaskStateReducer:
             EventType.TASK_COMPLETED.value: self._handle_task_completed,
             EventType.TASK_FAILED.value: self._handle_task_failed,
             EventType.TASK_PRIORITY_CHANGED.value: self._handle_priority_changed,
+            EventType.TASK_UPDATED.value: self._handle_task_updated,
+            EventType.TASK_DELETED.value: self._handle_task_deleted,
             EventType.TASK_DEPENDENCY_ADDED.value: self._handle_dependency_added,
             EventType.HANDOFF_CREATED.value: self._handle_handoff_created,
             EventType.SUBTASK_CREATED.value: self._handle_subtask,
@@ -203,6 +207,25 @@ class TaskStateReducer:
     ) -> None:
         """Handle TASK_PRIORITY_CHANGED event - update task priority."""
         task["priority"] = event.payload.get("new", task["priority"])
+
+    def _handle_task_updated(
+        self, task: dict[str, Any], event: EventRead, deps: list[dict[str, str]], handoffs: list[dict[str, Any]]
+    ) -> None:
+        """Handle TASK_UPDATED event - update task goal, kind, or related_files."""
+        payload = event.payload
+        if "goal" in payload and payload["goal"] is not None:
+            task["goal"] = payload["goal"]
+        if "kind" in payload and payload["kind"] is not None:
+            task["kind"] = payload["kind"]
+        if "related_files" in payload and payload["related_files"] is not None:
+            task["related_files"] = list(dict.fromkeys(payload["related_files"]))
+
+    def _handle_task_deleted(
+        self, task: dict[str, Any], event: EventRead, deps: list[dict[str, str]], handoffs: list[dict[str, Any]]
+    ) -> None:
+        """Handle TASK_DELETED event - mark task as deleted."""
+        task["status"] = "deleted"
+        task["deleted_reason"] = event.payload.get("reason")
 
     def _handle_dependency_added(
         self, task: dict[str, Any], event: EventRead, deps: list[dict[str, str]], handoffs: list[dict[str, Any]]
@@ -384,7 +407,8 @@ class TaskStateReducer:
             "handoffs": handoffs,
             "agent_queue": queue,
             "open_task_ids": [
-                task_id for task_id, task in tasks.items() if task["status"] not in {"completed", "failed"}
+                task_id for task_id, task in tasks.items() if task["status"] not in {"completed", "failed", "deleted"}
             ],
             "completed_task_ids": [task_id for task_id, task in tasks.items() if task["status"] == "completed"],
+            "deleted_task_ids": [task_id for task_id, task in tasks.items() if task["status"] == "deleted"],
         }

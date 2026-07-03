@@ -167,15 +167,21 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_empty: bool = False,
         detail_limit: int = 20,
     ) -> dict[str, Any]:
-        """Summarize recent agent sessions.
+        """Summarize recent agent sessions for observability and debugging.
+
+        Use this to analyze agent activity, detect rapid reconnects, and monitor
+        session health across the project. Useful for operational oversight.
+
+        Side effects: Read-only operation; no data is modified.
 
         Args:
-            limit: Maximum number of sessions to include.
-            include_empty: Whether to include empty sessions.
-            detail_limit: Maximum number of session details to return.
+            limit: Maximum number of sessions to include (default 150).
+            include_empty: Whether to include empty sessions in the report (default False).
+            detail_limit: Maximum number of session details to return (default 20).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Session report with session_count, eventful_sessions, event_coverage_rate,
+            agent activity breakdown, rapid_reconnects count, and session details.
         """
         return summarize_sessions_impl(
             context,
@@ -189,14 +195,21 @@ def register_tools(mcp, context: BrainContext) -> None:
         session_id: int,
         reason: str = "manual",
     ) -> dict[str, Any]:
-        """Close an active session.
+        """Manually close an active session with a reason.
+
+        Use this to explicitly end a session when an agent is done working.
+        Sessions are also auto-closed based on timeout policies.
+
+        Side effects: Marks the session as closed and records the close reason.
+        Creates a SESSION_CLOSED event in the event log.
 
         Args:
-            session_id: ID of the session to close.
-            reason: Reason for closing the session.
+            session_id: ID of the session to close (must be currently active).
+            reason: Reason for closing (default "manual"). Other values include
+                "timeout", "error", "completed", etc.
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Closed session info with session_id, status, and ended_at timestamp.
         """
         return close_session_impl(
             context,
@@ -206,9 +219,15 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def cleanup_stale_sessions() -> dict[str, Any]:
-        """Clean up stale/expired sessions.
+        """Clean up stale/expired sessions and delete old empty ones.
+
+        Use this for maintenance to remove abandoned sessions and reclaim storage.
+        Empty sessions with no events are automatically deleted if older than
+        EMPTY_SESSION_TTL_HOURS.
+
+        Side effects: Deletes stale sessions from the database. This is a write operation.
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Count of reconciled sessions and number of deleted empty sessions.
         """
         return cleanup_stale_sessions_impl(context).model_dump(mode="json")

@@ -317,16 +317,28 @@ def register_tools(mcp, context: BrainContext) -> None:
         foresight_limit: int = 5,
         max_horizon: int = 5,
     ) -> dict[str, Any]:
-        """Generate future plans branching from an action.
+        """Generate possible future plan branches starting from an action.
+
+        Uses recursive foresight to explore multi-step action chains. Each branch
+        includes expected outcomes, risk estimates, and resource costs. Scenarios
+        are grouped into best-plan, expected-plan, and safest-plan categories.
+
+        Use this for strategic planning where you need to see multi-step consequences
+        before committing. Use `evaluate_plan` when you already have a concrete action
+        list and want it scored. Use `run_decision_pipeline` to chain all reasoning.
+
+        Side effects: Records WORLD_STATE_OBSERVED, FORESIGHT_GENERATED,
+        FORESIGHT_EVALUATED, and FORESIGHT_RECOMMENDED events.
 
         Args:
-            action: The action to branch future plans from.
-            limit: Max events to consider.
-            foresight_limit: Max number of future plans to generate.
-            max_horizon: Max number of steps into the future.
+            action: The action to branch future plans from (starting point).
+            limit: Max events to consider (default 5000).
+            foresight_limit: Max number of plan branches to generate (default 5).
+            max_horizon: Max steps deep into the future per plan (default 5).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Foresight analysis with multiple plans, best/expected/safest plan
+            assignments, plan spreads, strategy uncertainty, and horizon risk.
         """
         result = generate_future_plans_impl(
             context,
@@ -343,15 +355,27 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         max_horizon: int = 5,
     ) -> dict[str, Any]:
-        """Evaluate a sequence of actions over a time horizon.
+        """Score an existing plan represented as a list of action descriptions.
+
+        Estimates success probability per step, identifies risk inflection points,
+        and computes an overall confidence score. Unlike `generate_future_plans`, this
+        evaluates a fixed plan you already have rather than exploring branches.
+
+        Use this when you have a concrete multi-step plan and need it scored against
+        the world model. For open-ended plan exploration, use `generate_future_plans`.
+
+        Side effects: Records WORLD_STATE_OBSERVED, FORESIGHT_GENERATED,
+        FORESIGHT_EVALUATED, and FORESIGHT_RECOMMENDED events.
 
         Args:
-            actions: Ordered list of actions to evaluate.
-            limit: Max events to consider.
-            max_horizon: Max number of steps into the future.
+            actions: Ordered list of action descriptions forming the plan (e.g.,
+                    ["analyze requirements", "design API", "implement", "test"]).
+            limit: Max events to consider (default 5000).
+            max_horizon: Max planning depth (default 5).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Plan evaluation with per-step predictions, cumulative risk,
+            predicted success probability, and recommended modifications.
         """
         result = evaluate_plan_impl(
             context,
@@ -366,14 +390,25 @@ def register_tools(mcp, context: BrainContext) -> None:
         plan_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Explain why a decision was made for a given plan.
+        """Return a human-readable explanation of a past decision pipeline run.
+
+        Retrieves the decision's inputs, reasoning trace, scenario evaluations,
+        tradeoffs considered, and the final selection. Uses meta-reasoning to compare
+        the selected plan against alternatives.
+
+        Call this after `run_decision_pipeline` to audit why a decision was made.
+        Provides the full audit trail for non-repudiation.
+
+        Side effects: Read-only operation; does not modify state. Requires a valid
+        plan_id from a previous FORESIGHT_EVALUATED event.
 
         Args:
-            plan_id: ID of the plan to explain.
-            limit: Max events to consider.
+            plan_id: The plan ID from a previous foresight or decision pipeline run
+                    (found in FORESIGHT_EVALUATED event payloads).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Decision explanation with selected plan, alternative plans compared,
+            tradeoffs considered, rationale, and confidence level.
         """
         result = explain_decision_impl(
             context,
@@ -387,14 +422,26 @@ def register_tools(mcp, context: BrainContext) -> None:
         plan_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Estimate confidence in a given plan.
+        """Estimate the confidence level of a prior decision pipeline plan.
+
+        Returns calibration error, sample count, and drift metrics that indicate
+        how reliable the decision's recommendation is. Combines historical success
+        rates from past events with model-based uncertainty estimates.
+
+        Call this after `run_decision_pipeline` or `evaluate_plan` to assess how
+        much to trust the results. High confidence = low uncertainty, strong
+        historical support.
+
+        Side effects: Read-only operation. Requires a valid plan_id from a previous
+        FORESIGHT_EVALUATED event.
 
         Args:
-            plan_id: ID of the plan to estimate confidence for.
-            limit: Max events to consider.
+            plan_id: The plan ID from a previous foresight or decision pipeline run.
+            limit: Max events to consider for historical analysis (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Confidence estimate with calibration error, support sample count,
+            drift indicators, and overall trust score.
         """
         result = estimate_confidence_impl(
             context,

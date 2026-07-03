@@ -318,14 +318,24 @@ def register_tools(mcp, context: BrainContext) -> None:
         decision_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Estimate uncertainty around a decision.
+        """Estimate epistemic and aleatoric uncertainty around a prior decision.
+
+        Returns calibrated uncertainty scores — separate epistemic (model knowledge)
+        and aleatoric (inherent randomness) components — along with drift metrics.
+        High uncertainty suggests more information gathering before acting.
+
+        Call this after `run_decision_pipeline` to understand reliability of outputs.
+        Use `detect_knowledge_gaps` to identify what specific information is missing.
+
+        Side effects: Read-only operation. Analyzes calibration events from the log.
 
         Args:
-            decision_id: ID of the decision to analyze.
-            limit: Maximum number of events to process.
+            decision_id: ID of the decision to analyze for uncertainty.
+            limit: Max events to consider for calibration (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Uncertainty estimate with epistemic and aleatoric scores,
+            calibration error, sample count, and drift indicators.
         """
         result = estimate_uncertainty_impl(
             context,
@@ -339,14 +349,25 @@ def register_tools(mcp, context: BrainContext) -> None:
         decision_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Identify knowledge gaps in the decision context.
+        """Identify missing information that would improve a decision's quality.
+
+        Analyzes the decision context and flags specific information items that, if
+        gathered, would most reduce uncertainty. Returns actionable knowledge gaps
+        with prioritization scores.
+
+        Use this when uncertainty is high and you need concrete suggestions for what
+        additional data to collect. Less detailed than `identify_information_needs`
+        which produces a structured investigation plan from these gaps.
+
+        Side effects: Read-only operation.
 
         Args:
-            decision_id: ID of the decision to analyze.
-            limit: Maximum number of events to process.
+            decision_id: ID of the decision to analyze for knowledge gaps.
+            limit: Max events to consider (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            List of knowledge gaps with descriptions, priority scores, and
+            recommended information sources for each gap.
         """
         result = detect_knowledge_gaps_impl(
             context,
@@ -360,14 +381,25 @@ def register_tools(mcp, context: BrainContext) -> None:
         decision_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Identify what information is needed for a decision.
+        """List specific information items needed to make a well-informed decision.
+
+        Returns actionable questions to resolve, data sources to consult, and analyses
+        to run — structured as an investigation plan. Builds on knowledge gaps found
+        by `detect_knowledge_gaps` and prioritizes by expected information gain.
+
+        Use during decision preparation to systematically enumerate what must be
+        learned before committing to a course of action. Call after
+        `detect_knowledge_gaps` for a deeper investigation plan.
+
+        Side effects: Read-only operation. Requires prior detected knowledge gaps.
 
         Args:
-            decision_id: ID of the decision to analyze.
-            limit: Maximum number of events to process.
+            decision_id: ID of the decision whose information needs to analyze.
+            limit: Max events to consider (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Investigation plan with prioritized information needs, recommended data
+            sources, expected information gains, and investigation costs.
         """
         result = identify_information_needs_impl(
             context,
@@ -381,14 +413,26 @@ def register_tools(mcp, context: BrainContext) -> None:
         action: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Estimate information gain from an action.
+        """Predict how much new information a proposed investigation action would yield.
+
+        Models the expected information gain from performing the specified action,
+        based on the Value of Information (VOI) table. Returns gain, cost, and net
+        value of information.
+
+        Use this to prioritize actions by their learning value. High-gain actions
+        are worth taking early in exploration. For a belief-aware version that
+        considers posterior distributions, use `estimate_information_gain_v2`.
+
+        Side effects: Read-only operation. Uses static VOI table lookup.
 
         Args:
-            action: The action to evaluate for information gain.
-            limit: Maximum number of events to process.
+            action: The investigation action to evaluate (e.g., "run_experiment",
+                   "query_database", "interview_stakeholder").
+            limit: Max events to consider (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Information gain estimate with expected gain, cost, net VOI,
+            and baseline rationale.
         """
         result = estimate_information_gain_impl(
             context,
@@ -402,14 +446,26 @@ def register_tools(mcp, context: BrainContext) -> None:
         task: dict[str, Any],
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Recommend a policy based on task and memory.
+        """Recommend an action policy for a given task based on past experience.
+
+        Considers agent capabilities, task requirements, historical success rates,
+        and learned strategies from similar past tasks. Uses the RoutingEngine with
+        memory retrieval to find relevant precedents.
+
+        Use this when planning a new task and you want a data-driven suggestion for
+        which approach or agent is likely to succeed. Particularly useful in
+        multi-agent systems for task routing decisions.
+
+        Side effects: Read-only operation. Builds memory from event log.
 
         Args:
-            task: The task definition as a dict.
-            limit: Maximum number of events to process.
+            task: The task definition dict with at minimum a description, and
+                 optionally required capabilities, priority, and constraints.
+            limit: Max events to consider (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Policy recommendation with suggested agent, approach, success
+            probability estimate, and relevant historical precedents.
         """
         result = recommend_policy_impl(context, task=task, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

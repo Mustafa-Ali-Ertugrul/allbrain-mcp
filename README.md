@@ -2,11 +2,12 @@
 
 One brain. Many agents. One shared memory.
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.12%20|%203.13-blue)
-![Tests](https://img.shields.io/badge/tests-2116%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-2108%20passed-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-80%25-yellowgreen)
+[![Glama Score](https://glama.ai/api/mcp/servers/@aligoren/allbrain-mcp/badge)](https://glama.ai/mcp/servers/@aligoren/allbrain-mcp)
 
 ![AllBrain MCP banner](docs/images/banner.svg)
 
@@ -31,7 +32,7 @@ AllBrain MCP is an event-sourced memory and orchestration server for multi-agent
 - Counterfactual alternative generation with risk/confidence/cost pruning
 - Governance pipeline with live-lock protection, escalation, and oscillation detection
 - Deterministic replay from raw events
-- **2077+ tests passing · 80%+ coverage**
+- **2108+ tests passing · 80%+ coverage**
 
 ### Architecture
 
@@ -72,6 +73,23 @@ See the [complete setup and troubleshooting guide](docs/setup.md) for client-spe
 
 AllBrain is a real MCP server with real tool calls and deterministic state replay. It does not make a model magically autonomous; some reasoning pipelines simulate execution instead of performing live actions in the outside world.
 
+### Glama score
+
+[![Glama Score](https://glama.ai/api/mcp/servers/@aligoren/allbrain-mcp/badge)](https://glama.ai/mcp/servers/@aligoren/allbrain-mcp)
+[![Glama Server](https://img.shields.io/badge/Glama-MCP%20Server-blue)](https://glama.ai/mcp/servers/@aligoren/allbrain-mcp)
+
+Check the [Glama profile](https://glama.ai/mcp/servers/@aligoren/allbrain-mcp) for MCP server score, tool descriptions, and compatibility report.
+
+### Related MCP servers
+
+AllBrain integrates with the broader MCP ecosystem. Here are related servers for complementary functionality:
+
+| Server | Purpose |
+|---|---|
+| [Memory](https://glama.ai/mcp/servers/...) | Lightweight knowledge graph memory |
+| [Sequential Thinking](https://glama.ai/mcp/servers/...) | Structured reasoning chains |
+| [Context Manager](https://glama.ai/mcp/servers/...) | Session context persistence |
+
 ### Repository layout
 
 - `src/allbrain/` — server, runtime, reducers, and tools
@@ -98,7 +116,7 @@ AllBrain MCP, çoklu ajan çalışmaları için event-sourcing tabanlı bir orta
 - Risk/güven/maliyet eşiklerine göre karşı-olgusal alternatif budama
 - Canlı kilit koruması, yükseltme ve salınım tespiti ile yönetişim hattı
 - Ham olaylardan deterministik durum yeniden oynatma
-- **2077+ test başarılı · %80+ kapsama**
+- **2108+ test başarılı · %80+ kapsama**
 
 ### Mimari
 
@@ -150,7 +168,7 @@ AllBrain, gerçek araç çağrıları ve deterministik durum yeniden oynatma öz
 
 ## Project status / Proje durumu
 
-- **2077+** tests passing / **2077+** test başarılı
+- **2108+** tests passing / **2108+** test başarılı
 - **80%+** code coverage / **%80+** kod kapsama
 - **MIT License**
 - Stdio MCP handshake verified / Stdio MCP el sıkışması doğrulandı

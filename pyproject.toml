@@ -1,6 +1,6 @@
 [project]
 name = "allbrain-mcp"
-version = "0.2.0"
+version = "0.2.1"
 description = "Event-sourced memory and orchestration server for multi-agent AI systems"
 authors = [{ name = "Ali GÖREN", email = "ali.goren@example.com" }]
 keywords = ["mcp", "agent", "multi-agent", "orchestration", "memory", "event-sourcing", "ai"]

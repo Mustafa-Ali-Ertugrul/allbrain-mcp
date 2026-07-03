@@ -147,15 +147,29 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         counterfactual_limit: int = 3,
     ) -> dict[str, Any]:
-        """Generate counterfactual alternatives for an action.
+        """Generate alternative outcomes for a given action via counterfactual reasoning.
+
+        Explores what-if scenarios that branch from the specified action. Each
+        counterfactual includes a probability estimate, improvement score, and regret
+        score. Use this to evaluate what might happen if a different choice were made.
+
+        Use before high-stakes decisions to explore alternative choices. Less
+        comprehensive than `generate_scenarios` which includes richer external context.
+        Use `run_decision_pipeline` to chain counterfactual + scenarios + foresight
+        in a single pipeline.
+
+        Side effects: Records WORLD_STATE_OBSERVED, COUNTERFACTUAL_GENERATED, and
+        COUNTERFACTUAL_EVALUATED events. If improvement exceeds threshold, also records
+        COUNTERFACTUAL_RECOMMENDATION.
 
         Args:
-            action: The action to generate counterfactuals for.
-            limit: Max events to consider.
-            counterfactual_limit: Max number of counterfactual alternatives to generate.
+            action: The action description to generate counterfactual alternatives for.
+            limit: Max events to consider (default 5000).
+            counterfactual_limit: Max number of alternative outcomes to generate (default 3).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Counterfactual results with alternatives, success probabilities, regret
+            scores, improvement metrics, and any recommendation above threshold.
         """
         result = generate_counterfactual_impl(
             context,
@@ -170,14 +184,26 @@ def register_tools(mcp, context: BrainContext) -> None:
         actions: list[str],
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Rank alternative actions by predicted outcome.
+        """Rank multiple action alternatives by predicted success probability.
+
+        Accepts a list of action descriptions and returns them ordered by expected
+        outcome quality, with confidence intervals and supporting evidence. Uses the
+        AlternativeRanker which considers past event patterns and current world state.
+
+        Use this when you have a discrete set of possible actions and need data-driven
+        ordering. For deeper per-action what-if analysis, use `generate_counterfactual`
+        instead.
+
+        Side effects: Read-only operation. Observes world state but does not modify it.
 
         Args:
-            actions: List of action strings to rank.
-            limit: Max events to consider.
+            actions: List of action descriptions to rank (e.g., ["deploy v2", "rollback",
+                    "keep current"]).
+            limit: Max events to consider (default 5000).
 
         Returns:
-            Tool result as a JSON-serializable dict.
+            Ranked alternatives with success probabilities, confidence intervals,
+            and current world state.
         """
         result = rank_alternatives_impl(context, actions=actions, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
