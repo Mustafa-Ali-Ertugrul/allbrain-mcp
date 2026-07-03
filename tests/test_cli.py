@@ -8,7 +8,7 @@ from allbrain.cli import main
 def test_start_passes_options_to_runner(monkeypatch, tmp_path: Path) -> None:
     captured = {}
 
-    def fake_run_mcp_server(project: Path, agent: str, db_path: Path | None) -> None:
+    def fake_run_mcp_server(project: Path, agent: str, db_path: Path | None, **kwargs: object) -> None:
         captured["project"] = project
         captured["agent"] = agent
         captured["db_path"] = db_path
