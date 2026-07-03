@@ -27,9 +27,9 @@ logger = logging.getLogger(__name__)
 def create_lifespan(context: BrainContext):
     @asynccontextmanager
     async def lifespan(_server):
-        async with anyio.create_task_group() as task_group:
-            task_group.start_soon(_heartbeat_loop, context)
-            task_group.start_soon(_cleanup_loop, context)
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(_heartbeat_loop, context)
+            tg.start_soon(_cleanup_loop, context)
             try:
                 yield {"brain_context": context}
             except BaseException:
@@ -44,7 +44,7 @@ def create_lifespan(context: BrainContext):
                 except Exception:
                     logger.exception("Session finalization failed")
             finally:
-                task_group.cancel_scope.cancel()
+                tg.cancel_scope.cancel()
 
     return lifespan
 
