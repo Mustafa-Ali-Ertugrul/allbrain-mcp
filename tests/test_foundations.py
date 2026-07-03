@@ -395,6 +395,7 @@ def test_upcaster_fires_on_read(tmp_path) -> None:
             row = Event(
                 id="01900000-0000-7000-8000-000000000001",
                 project_id=1,
+                stream_position=1,
                 session_id=session.id or 0,
                 type="legacy_v1_event",
                 source="legacy",

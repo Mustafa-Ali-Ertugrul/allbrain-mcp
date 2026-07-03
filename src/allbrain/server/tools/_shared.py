@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC
+import tempfile
+from contextlib import contextmanager
+from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
+from time import time
 from typing import Any
 
 from allbrain.models.schemas import UserInputError
+from allbrain.profiling import profile_stage
 from allbrain.server.context import BrainContext
 
 # NOTE: Circular-safe imports — SnapshotRepo, SnapshotBuilder etc. are
@@ -15,11 +20,10 @@ from allbrain.server.context import BrainContext
 # the cyclic chain through allbrain.storage.snapshot_repo -> ... -> resume.
 
 logger = logging.getLogger(__name__)
+_SNAPSHOT_LEASE_STALE_SECONDS = 300
 
 
 def datetime_now_iso() -> str:
-    from datetime import datetime, timezone
-
     return datetime.now(UTC).isoformat()
 
 
@@ -79,10 +83,25 @@ def maybe_auto_snapshot(
     project_path: str | Path,
     force_baseline: bool = False,
 ) -> None:
-    """Periodically create snapshots based on persistent event progress."""
+    """Create snapshots from persistent event progress, not process-local counters."""
     if not force_baseline and not context.increment_and_check_event_count():
         return
-    project = context.repository.get_project_by_path(project_path)
+    with profile_stage("snapshot.lease"):
+        lease = _snapshot_lease(context.project_path)
+    with lease as acquired:
+        if not acquired:
+            return
+        _build_snapshot_if_due(context, project_path=project_path, force_baseline=force_baseline)
+
+
+def _build_snapshot_if_due(
+    context: BrainContext,
+    *,
+    project_path: str | Path,
+    force_baseline: bool,
+) -> None:
+    with profile_stage("snapshot.project_lookup"):
+        project = context.repository.get_project_by_path(project_path)
     if project is None or project.id is None:
         return
     from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
@@ -95,7 +114,14 @@ def maybe_auto_snapshot(
     from allbrain.storage.snapshot_repo import SnapshotRepo
 
     snapshot_repo = SnapshotRepo(context.repository.engine)
-    latest = snapshot_repo.get_latest(project.id)
+    with profile_stage("snapshot.cursor_lookup"):
+        latest = snapshot_repo.get_latest(project.id)
+    if (
+        latest is not None
+        and not force_baseline
+        and _snapshot_age_seconds(latest.created_at) < context.snapshot_min_interval_seconds
+    ):
+        return
     event_cursor = latest.event_cursor if latest is not None else None
     event_counts = context.repository.event_type_counts_after(project_id=project.id, event_cursor=event_cursor)
     has_semantic_events = any(
@@ -107,10 +133,48 @@ def maybe_auto_snapshot(
     baseline_due = latest is None and force_baseline and has_semantic_events
     if not baseline_due and weight < context.auto_snapshot_threshold:
         return
-    all_events = context.repository.list_events(project_path=context.project_path, limit=MAX_SNAPSHOT_EVENT_COUNT)
-    SnapshotEngine(SnapshotBuilder(include_derived=False), snapshot_repo).build_snapshot(
-        project_id=project.id, events=all_events
-    )
+    with profile_stage("snapshot.build"):
+        all_events = context.repository.list_events(project_path=context.project_path, limit=MAX_SNAPSHOT_EVENT_COUNT)
+        SnapshotEngine(SnapshotBuilder(include_derived=False), snapshot_repo).build_snapshot(
+            project_id=project.id, events=all_events
+        )
+
+
+@contextmanager
+def _snapshot_lease(project_path: str | Path):
+    digest = sha256(str(Path(project_path).resolve()).encode("utf-8")).hexdigest()[:20]
+    lease_path = Path(tempfile.gettempdir()) / f"allbrain-snapshot-{digest}.lock"
+    acquired = _try_create_lease(lease_path)
+    try:
+        yield acquired
+    finally:
+        if acquired:
+            try:
+                lease_path.rmdir()
+            except OSError:
+                logger.warning("Snapshot lease cleanup failed: %s", lease_path.name)
+
+
+def _try_create_lease(lease_path: Path) -> bool:
+    try:
+        lease_path.mkdir()
+        return True
+    except FileExistsError:
+        try:
+            stale = time() - lease_path.stat().st_mtime > _SNAPSHOT_LEASE_STALE_SECONDS
+            if stale:
+                lease_path.rmdir()
+                lease_path.mkdir()
+                return True
+        except OSError:
+            pass
+        return False
+
+
+def _snapshot_age_seconds(created_at: datetime) -> float:
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=UTC)
+    return max(0.0, (datetime.now(UTC) - created_at).total_seconds())
 
 
 def get_task_or_raise(task_state: dict[str, Any], task_id: str) -> dict[str, Any]:

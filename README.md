@@ -7,80 +7,185 @@ One brain. Many agents. One shared memory.
 ![Python](https://img.shields.io/badge/python-3.12%20|%203.13-blue)
 ![Tests](https://img.shields.io/badge/tests-2108%20passed-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-80%25-yellowgreen)
-[![Glama Score](https://glama.ai/api/mcp/servers/@aligoren/allbrain-mcp/badge)](https://glama.ai/mcp/servers/@aligoren/allbrain-mcp)
+[![Glama Score](https://glama.ai/api/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp/badge)](https://glama.ai/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp)
 
 ![AllBrain MCP banner](docs/images/banner.svg)
 
-**Languages:** [English](#english) · [Türkçe](#türkçe)
+AllBrain MCP is an event-sourced memory and orchestration server for multi-agent work. It captures what each agent did, replays the shared state, and helps the next agent pick up cleanly.
 
----
+## What it gives you
 
-## English
+- FastMCP stdio server
+- append-only event log on SQLite
+- UUIDv7 event identities with database-authoritative stream ordering
+- session-bound agent attribution
+- `save_event()`, `list_events()`, `resume_project()`
+- conflict detection and resolution
+- semantic intent extraction
+- world, counterfactual, and scenario reasoning
+- deterministic replay from raw events
 
-AllBrain MCP is an event-sourced memory and orchestration server for multi-agent work. It records what each agent did, reconstructs shared state, and helps the next agent continue with the right context.
+## Architecture
 
-### Features
+```mermaid
+flowchart LR
+    subgraph Clients["MCP clients"]
+        C["Codex"]
+        CL["Claude Code"]
+        O["OpenCode / Antigravity"]
+    end
 
-- FastMCP server over stdio
-- Append-only SQLite event log with stable UUIDv7 ordering
-- Session-bound agent attribution
-- Shared memory through `save_event()`, `list_events()`, and `resume_project()`
-- Conflict detection and resolution
-- Semantic intent extraction
-- World, counterfactual, and scenario reasoning
-- Causal graph with automatic cycle detection and weakest-edge pruning
-- Counterfactual alternative generation with risk/confidence/cost pruning
-- Governance pipeline with live-lock protection, escalation, and oscillation detection
-- Deterministic replay from raw events
-- **2108+ tests passing · 80%+ coverage**
+    C & CL & O -->|"JSON-RPC over stdio"| M["FastMCP server"]
+    M --> T["Validated MCP tools"]
+    T -->|"append immutable event"| L[("Event store<br/>SQLite / PostgreSQL")]
+    L -->|"ordered replay"| R["Deterministic reducers"]
+    R --> P["Shared-memory projections"]
+    P -->|"list_events / resume_project"| M
+```
 
-### Architecture
+Each client starts a local stdio server process. In shared mode those processes point at the same SQLite database, so an event appended by one agent is visible to the others on their next tool call. Reducers rebuild derived state in the project-local order assigned atomically by the database; UUIDv7 remains the stable event identity. AllBrain does not push-wake or autonomously run another agent.
 
-![Architecture](docs/images/architecture.svg)
+See the [detailed architecture](docs/ARCHITECTURE.md) and [multi-agent flow](docs/images/multi-agent-flow.svg).
 
-![Multi-agent flow](docs/images/multi-agent-flow.svg)
+## Quick start
 
-### Quick start
+Prerequisites: Git, Python 3.12+, and [uv](https://docs.astral.sh/uv/).
+
+```powershell
+git clone https://github.com/Mustafa-Ali-Ertugrul/allbrain-mcp.git
+cd allbrain-mcp
+uv sync
+.\scripts\install-mcp.ps1 -All -Isolate
+uv run allbrain doctor --project .
+```
+
+On macOS or Linux, replace the installer command with:
+
+```bash
+./scripts/install-mcp.sh --all --isolate
+```
+
+Restart the configured MCP clients after installation. The installer creates or refreshes configs for Codex, Claude Code, OpenCode, and Antigravity. To configure only one client, use `-Codex` on Windows or `--codex` on macOS/Linux (equivalent flags exist for the other clients).
+
+To run the stdio server directly instead of installing client configs:
 
 ```powershell
 uv run allbrain start --project . --agent codex
 ```
 
-Install or refresh the MCP configuration for Codex, Claude Code, OpenCode, and Antigravity:
+### Shared or isolated memory
+
+| Mode | Installer | Database | Use when |
+|---|---|---|---|
+| Isolated | `-Isolate` / `--isolate` | One file per client, such as `~/.allbrain/codex.db` | You need fault, test, or privacy boundaries between agents. |
+| Shared (default) | Omit the isolation flag | `~/.allbrain/allbrain.db` | Agents must read and continue one another's work. |
+
+Isolation prevents cross-agent memory by design. It is useful for independent client runs, but it disables the shared-memory workflow unless histories are merged later. Re-run the installer without the isolation flag to switch generated configs back to shared mode.
+
+See the [complete installation and troubleshooting guide](docs/setup.md) for Windows, macOS, Linux, client-specific verification, and shared-memory configuration.
+
+## Storage backends
+
+The runtime depends on the minimal `EventStore` append/list protocol rather than a database-specific API. `BrainRepository` is the SQLAlchemy-backed implementation, with Alembic migrations and project-local stream positions shared by SQLite and PostgreSQL.
+
+| Backend | Status | Intended use |
+|---|---|---|
+| SQLite | Default | Zero-config local development and moderate single-host workloads |
+| PostgreSQL | CI-validated scale-out target | Write-heavy or multi-host deployments |
+| Redis / RabbitMQ | Experimental queue adapters | Task delivery only; they are not authoritative event stores |
+
+Install the PostgreSQL driver and supply one database setting:
 
 ```powershell
-.\scripts\install-mcp.ps1 -All          # Windows
-./scripts/install-mcp.sh --all           # macOS / Linux
+uv sync --extra postgres
+$env:ALLBRAIN_DATABASE_URL = "postgresql+psycopg://allbrain:secret@localhost/allbrain"
+uv run allbrain start --project . --agent codex
 ```
 
-For isolated per-agent databases, add `--isolate`:
+`--database-url` is also accepted, but the environment variable avoids placing credentials in shell history and process arguments. It is mutually exclusive with `--db-path`. Run `allbrain doctor` with the same environment to validate migrations, connectivity, and the MCP handshake.
 
-```powershell
-.\scripts\install-mcp.ps1 -All -Isolate # Windows
-./scripts/install-mcp.sh --all --isolate # macOS / Linux
-```
+## Example flow
 
-See the [complete setup and troubleshooting guide](docs/setup.md) for client-specific verification and shared-memory configuration.
-
-### How it works
-
-1. Agent A records an event.
+1. Agent A writes an event.
 2. Agent B writes to the same project.
-3. Agent C opens the project and receives the merged state.
-4. Conflicts are surfaced instead of hidden.
+3. Agent C opens the project and gets the merged view.
+4. Conflicts are surfaced instead of being hidden.
 
-### Reality check
+## Why this repo is useful
 
-AllBrain is a real MCP server with real tool calls and deterministic state replay. It does not make a model magically autonomous; some reasoning pipelines simulate execution instead of performing live actions in the outside world.
+- Good for shared agent memory
+- Good for cross-client MCP testing
+- Good for deterministic orchestration experiments
+- Good for debugging multi-agent state drift
 
-### Glama score
+## Reality check
 
-[![Glama Score](https://glama.ai/api/mcp/servers/@aligoren/allbrain-mcp/badge)](https://glama.ai/mcp/servers/@aligoren/allbrain-mcp)
-[![Glama Server](https://img.shields.io/badge/Glama-MCP%20Server-blue)](https://glama.ai/mcp/servers/@aligoren/allbrain-mcp)
+This is a real MCP server with real tool calls and real state replay.
 
-Check the [Glama profile](https://glama.ai/mcp/servers/@aligoren/allbrain-mcp) for MCP server score, tool descriptions, and compatibility report.
+It still does not make the model magically autonomous. Decision pipelines support `event_only`, `mock_runtime`, and queue-backed `queued_runtime`; none implies arbitrary live-world execution.
 
-### Related MCP servers
+## Operational boundaries
+
+- SQLite is the default local, single-host backend. WAL mode and bounded retries support concurrent local clients, but its single-writer model remains the ceiling.
+- Treat 10 or more concurrent write-heavy agents, or a sustained target near 100 events/second, as the point to prefer PostgreSQL and benchmark the intended deployment. This is a conservative planning threshold, not a portable SQLite capacity guarantee.
+- SQLite acceptance requires zero lock/write errors, p95 <= 250 ms, and p99 <= 1,500 ms. The checked-in 10-agent/2,000-event MCP run recorded one lock error and missed both latency budgets, demonstrating the transition signal. See the [database scaling policy](docs/database_scaling_policy.md).
+- Tool rate limits are per tool and per server process: 1,000 calls/second burst and 100,000 calls/minute by default. Override them before startup with `ALLBRAIN_RATE_LIMIT_RPS` and `ALLBRAIN_RATE_LIMIT_RPM`.
+- Review the [security policy](SECURITY.md) before exposing tools beyond a trusted local development environment.
+
+## Custom agents
+
+AllBrain speaks standard MCP over stdio, so a custom Python or Node.js agent can use an existing MCP client without an AllBrain-specific SDK. The [custom-agent integration guide](docs/custom-agent-integration.md) contains short, complete examples for `save_event` and `resume_project`, plus the request and response contracts.
+
+## Python SDK (experimental)
+
+The repository now includes a separate, thin [`allbrain-sdk`](packages/allbrain-sdk/README.md) package. It provides an async `AllBrainClient`, Pydantic response models, typed tool errors, and stdio lifecycle management without moving business logic out of the server.
+
+```powershell
+uv pip install -e ./packages/allbrain-sdk
+```
+
+```python
+import asyncio
+from allbrain_sdk import AllBrainClient
+
+async def main():
+    async with AllBrainClient(project=".", agent="code-agent", db_path=".allbrain.db") as client:
+        await client.save_event("task_started", {"task": "implement auth"})
+        return await client.resume_project(include_git=False)
+
+state = asyncio.run(main())
+```
+
+The next SDK milestone is a matching TypeScript client after the Python API and MCP contracts have settled through real multi-agent runs.
+
+## Two-agent pilot
+
+[`examples/two_agent_sqlite_pilot.py`](examples/two_agent_sqlite_pilot.py) runs a code agent and a security agent against one shared SQLite stream. It verifies event retention, agent attribution, handoff visibility, conflict detection, and replay agreement. See the [pilot notes and extracted SDK patterns](docs/two-agent-pilot.md).
+
+## Repo layout
+
+- `src/allbrain/` - server, runtime, reducers, and tools
+- `tests/` - coverage for the event-sourced flows
+- `docs/` - [setup notes](docs/setup.md), [custom-agent integration](docs/custom-agent-integration.md), [two-agent pilot](docs/two-agent-pilot.md), [architecture overview](docs/ARCHITECTURE.md), [code-quality audit](docs/code-quality-audit.md), and [docs index](docs/index.md)
+- `docs/images/` - GitHub-friendly visuals
+
+## Status
+
+- 2108 tests passing; 0 failures in the latest full local run
+- stdio MCP handshake verified
+- multi-agent write/read/conflict flows verified
+- 50 consolidated tools across 18 domain tool modules
+- Python 3.13 CI; measured coverage 80.79% (enforced threshold: 80%)
+- MIT License
+
+## Glama score
+
+[![Glama Score](https://glama.ai/api/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp/badge)](https://glama.ai/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp)
+[![Glama Server](https://img.shields.io/badge/Glama-MCP%20Server-blue)](https://glama.ai/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp)
+
+Check the [Glama profile](https://glama.ai/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp) for MCP server score, tool descriptions, and compatibility report.
+
+## Related MCP servers
 
 AllBrain integrates with the broader MCP ecosystem. Here are related servers for complementary functionality:
 
@@ -90,87 +195,10 @@ AllBrain integrates with the broader MCP ecosystem. Here are related servers for
 | [Sequential Thinking](https://glama.ai/mcp/servers/...) | Structured reasoning chains |
 | [Context Manager](https://glama.ai/mcp/servers/...) | Session context persistence |
 
-### Repository layout
-
-- `src/allbrain/` — server, runtime, reducers, and tools
-- `tests/` — tests for event-sourced workflows
-- `docs/` — setup and architecture documentation
-- `docs/images/` — GitHub-friendly diagrams
-
----
-
 ## Türkçe
 
 AllBrain MCP, çoklu ajan çalışmaları için event-sourcing tabanlı bir ortak hafıza ve orkestrasyon sunucusudur. Her ajanın yaptığı işlemleri kaydeder, ortak durumu yeniden oluşturur ve sonraki ajanın doğru bağlamla devam etmesini sağlar.
 
-### Özellikler
-
-- Stdio üzerinden çalışan FastMCP sunucusu
-- Kararlı UUIDv7 sıralamasına sahip, yalnızca eklemeli SQLite olay günlüğü
-- Oturuma bağlı ajan kimliklendirmesi
-- `save_event()`, `list_events()` ve `resume_project()` ile ortak hafıza
-- Çakışma tespiti ve çözümü
-- Anlamsal niyet çıkarımı
-- Dünya modeli, karşı-olgusal ve senaryo tabanlı akıl yürütme
-- Otomatik döngü tespiti ve en zayıf kenar budamasıyla nedensellik grafiği
-- Risk/güven/maliyet eşiklerine göre karşı-olgusal alternatif budama
-- Canlı kilit koruması, yükseltme ve salınım tespiti ile yönetişim hattı
-- Ham olaylardan deterministik durum yeniden oynatma
-- **2108+ test başarılı · %80+ kapsama**
-
-### Mimari
-
-![Mimari](docs/images/architecture.svg)
-
-![Çoklu ajan akışı](docs/images/multi-agent-flow.svg)
-
-### Hızlı başlangıç
-
-```powershell
-uv run allbrain start --project . --agent codex
-```
-
-Codex, Claude Code, OpenCode ve Antigravity için MCP yapılandırmasını kurmak veya yenilemek için:
-
-```powershell
-.\scripts\install-mcp.ps1 -All          # Windows
-./scripts/install-mcp.sh --all           # macOS / Linux
-```
-
-Her ajan için ayrı veritabanı kullanmak isterseniz `--isolate` seçeneğini ekleyin:
-
-```powershell
-.\scripts\install-mcp.ps1 -All -Isolate # Windows
-./scripts/install-mcp.sh --all --isolate # macOS / Linux
-```
-
-İstemciye özel doğrulama, ortak hafıza ayarları ve sorun giderme adımları için [ayrıntılı kurulum rehberine](docs/setup.md) bakın.
-
-### Nasıl çalışır?
-
-1. Ajan A bir olay kaydeder.
-2. Ajan B aynı projeye yazar.
-3. Ajan C projeyi açar ve birleştirilmiş durumu alır.
-4. Çakışmalar gizlenmek yerine görünür hale getirilir.
-
-### Gerçekçi kapsam
-
-AllBrain, gerçek araç çağrıları ve deterministik durum yeniden oynatma özelliği bulunan gerçek bir MCP sunucusudur. Bir modeli sihirli biçimde otonom hale getirmez; bazı akıl yürütme hatları dış dünyada canlı işlem yapmak yerine yürütmeyi simüle eder.
-
-### Depo yapısı
-
-- `src/allbrain/` — sunucu, çalışma zamanı, reducer bileşenleri ve araçlar
-- `tests/` — event-sourcing iş akışlarının testleri
-- `docs/` — kurulum ve mimari belgeleri
-- `docs/images/` — GitHub uyumlu diyagramlar
-
----
-
-## Project status / Proje durumu
-
-- **2108+** tests passing / **2108+** test başarılı
-- **80%+** code coverage / **%80+** kod kapsama
-- **MIT License**
-- Stdio MCP handshake verified / Stdio MCP el sıkışması doğrulandı
-- Multi-agent write, read, and conflict flows verified / Çoklu ajan yazma, okuma ve çakışma akışları doğrulandı
-- Causal cycle detection + counterfactual pruning + live-lock protection active / Nedensellik döngü tespiti, karşı-olgusal budama ve canlı kilit koruması aktif
+- **2108+ test başarılı · %80+ kod kapsama**
+- **50 araç** — 18 domain modülünde
+- MIT Lisansı
