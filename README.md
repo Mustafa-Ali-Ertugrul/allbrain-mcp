@@ -168,4 +168,4 @@ The next SDK milestone is a matching TypeScript client after the Python API and 
 - stdio MCP handshake verified
 - multi-agent write/read/conflict flows verified
 - 55 tools in the full MCP profile across 18 domain tool modules
-- Python 3.12 compatibility plus Python 3.13 coverage CI; coverage fail-under is 75%
+- Python 3.12 compatibility plus Python 3.13 coverage CI; measured coverage 75.3% (enforced threshold: 75%)
