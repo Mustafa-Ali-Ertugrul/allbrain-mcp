@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from uuid6 import uuid7
 
-from allbrain.server.constants import DEFAULT_AUTO_SNAPSHOT_THRESHOLD
+from allbrain.server.constants import DEFAULT_AUTO_SNAPSHOT_THRESHOLD, DEFAULT_SNAPSHOT_MIN_INTERVAL_SECONDS
 
 if TYPE_CHECKING:
     from allbrain.models.entities import Session
@@ -18,7 +18,8 @@ class BrainContext:
     Every mutable attribute is guarded by ``_session_lock`` (RLock).
     ``repository`` is read-only.  Immutable-after-init attributes
     (``project_path``, ``server_instance_id``, ``central_audit_enabled``,
-    ``auto_snapshot_threshold``, ``snapshot_check_interval``) are plain
+    ``auto_snapshot_threshold``, ``snapshot_check_interval``,
+    ``snapshot_min_interval_seconds``) are plain
     public fields – they are never mutated outside ``__init__``.
     """
 
@@ -35,6 +36,7 @@ class BrainContext:
         central_audit_enabled: bool = False,
         auto_snapshot_threshold: int = DEFAULT_AUTO_SNAPSHOT_THRESHOLD,
         snapshot_check_interval: int = DEFAULT_AUTO_SNAPSHOT_THRESHOLD,
+        snapshot_min_interval_seconds: float = DEFAULT_SNAPSHOT_MIN_INTERVAL_SECONDS,
     ) -> None:
         # ── thread synchronisation (must be created first) ──
         self.__dict__["_session_lock"] = threading.RLock()
@@ -50,6 +52,7 @@ class BrainContext:
         self.central_audit_enabled = central_audit_enabled
         self.auto_snapshot_threshold = auto_snapshot_threshold
         self.snapshot_check_interval = snapshot_check_interval
+        self.snapshot_min_interval_seconds = snapshot_min_interval_seconds
 
         # ── mutable attributes (backed by ``__dict__``, guarded by _session_lock) ──
         resolved_agent_name = agent_name or (active_session.agent_name if active_session is not None else "unknown")

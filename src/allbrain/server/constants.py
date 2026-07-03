@@ -33,5 +33,8 @@ DEFAULT_AUTO_SNAPSHOT_THRESHOLD = 50
 Lower threshold (50 vs 100) ensures snapshots are created more frequently,
 improving observability and reducing snapshot-build latency."""
 
+DEFAULT_SNAPSHOT_MIN_INTERVAL_SECONDS = 5.0
+"""Minimum delay between automatic snapshots for the same project."""
+
 MIN_SNAPSHOT_EVENT_COUNT = 10
 """Minimum semantic events required before considering snapshot."""
