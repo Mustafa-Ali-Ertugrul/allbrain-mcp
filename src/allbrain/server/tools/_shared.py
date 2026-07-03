@@ -105,8 +105,12 @@ def _build_snapshot_if_due(
     if project is None or project.id is None:
         return
     from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
-    from allbrain.snapshot.constants import MAX_SNAPSHOT_EVENT_COUNT, NON_SEMANTIC_EVENT_TYPES
-    from allbrain.snapshot.trigger import snapshot_weight
+    from allbrain.snapshot.constants import (
+        DEFAULT_EVENT_WEIGHT,
+        EVENT_WEIGHTS,
+        MAX_SNAPSHOT_EVENT_COUNT,
+        NON_SEMANTIC_EVENT_TYPES,
+    )
     from allbrain.storage.snapshot_repo import SnapshotRepo
 
     snapshot_repo = SnapshotRepo(context.repository.engine)
@@ -119,11 +123,15 @@ def _build_snapshot_if_due(
     ):
         return
     event_cursor = latest.event_cursor if latest is not None else None
-    with profile_stage("snapshot.delta_load"):
-        events = context.repository.list_events_after(project_path=context.project_path, event_cursor=event_cursor)
-    semantic_events = [event for event in events if event.type not in NON_SEMANTIC_EVENT_TYPES]
-    baseline_due = latest is None and force_baseline and bool(semantic_events)
-    if not baseline_due and snapshot_weight(events) < context.auto_snapshot_threshold:
+    event_counts = context.repository.event_type_counts_after(project_id=project.id, event_cursor=event_cursor)
+    has_semantic_events = any(
+        count and event_type not in NON_SEMANTIC_EVENT_TYPES for event_type, count in event_counts.items()
+    )
+    weight = sum(
+        EVENT_WEIGHTS.get(event_type, DEFAULT_EVENT_WEIGHT) * count for event_type, count in event_counts.items()
+    )
+    baseline_due = latest is None and force_baseline and has_semantic_events
+    if not baseline_due and weight < context.auto_snapshot_threshold:
         return
     with profile_stage("snapshot.build"):
         all_events = context.repository.list_events(project_path=context.project_path, limit=MAX_SNAPSHOT_EVENT_COUNT)

@@ -11,7 +11,7 @@ from allbrain.governance.constitution import ConstitutionalReasoner
 from allbrain.governance.identity import IdentityConsistencyChecker
 from allbrain.governance.objectives import LongHorizonObjectiveSynthesizer
 from allbrain.governance.policy import GovernancePolicySynthesizer
-from allbrain.governance.self_modification import SelfModificationAuthorityEngine
+from allbrain.governance.self_modification import SelfModificationAuthorityEngine, SelfModificationGuard
 from allbrain.governance.trajectory import SystemTrajectoryForecaster
 
 
@@ -26,6 +26,7 @@ class AutonomousGovernanceCoordinator:
         self.authority = SelfModificationAuthorityEngine()
         self.trajectory = SystemTrajectoryForecaster()
         self.policy = GovernancePolicySynthesizer()
+        self.guard = SelfModificationGuard()
 
     def review(self, context: dict[str, Any], proposals: list[dict[str, Any]]) -> dict[str, Any]:
         alignment_report = self.alignment.evaluate(context, proposals)
@@ -43,6 +44,18 @@ class AutonomousGovernanceCoordinator:
             autonomy_assessment=autonomy_action,
             constitutional=constitutional,
         )
+        agent_id: str = context.get("agent_id", "system")
+        rejection_decisions = {"reject_expansion", "require_restructuring", "delay_expansion"}
+        if decision["decision"] in rejection_decisions:
+            self.guard.record_rejection(agent_id, decision["reasoning"])
+        elif decision["decision"] in {"approve_expansion", "approve_with_constraints"}:
+            self.guard.clear_history(agent_id)
+        can_propose, guard_reason = self.guard.can_propose(agent_id)
+        if not can_propose:
+            decision["decision"] = "escalate_to_supervision"
+            decision["reasoning"] = guard_reason
+            decision["risk_level"] = "high"
+        guard_summary = self.guard.get_rejection_summary(agent_id)
         policy = self.policy.synthesize(
             decision["decision"], alignment_report, trajectory, autonomy_action, constitutional
         )
@@ -82,5 +95,6 @@ class AutonomousGovernanceCoordinator:
                 "long_horizon_objectives": long_horizon,
                 "constitutional_reasoning": constitutional,
                 "system_trajectory": trajectory,
+                "self_modification_guard": guard_summary,
             },
         }

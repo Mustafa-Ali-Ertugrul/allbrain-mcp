@@ -1,4 +1,4 @@
-.PHONY: install lint security test stress stress-mcp ci-local
+.PHONY: install lint security test stress stress-mcp bump-patch ci-local
 
 install:
 	uv sync --extra dev
@@ -13,13 +13,16 @@ security:
 	uv run bandit -c pyproject.toml -r src/ -ll
 
 test:
-	uv run pytest --cov --cov-report=term-missing --cov-fail-under=60 -n auto --dist=worksteal
+	uv run pytest --cov --cov-report=term-missing --cov-fail-under=80 -n auto --dist=worksteal
 
 stress:
 	uv run python scripts/stress_test.py
 
 stress-mcp:
 	uv run python scripts/mcp_stress_test.py
+
+bump-patch:
+	uv run bump-my-version bump patch --dry-run --verbose --allow-dirty
 
 ci-local: install lint security test
 	@echo "=== CI pipeline passed locally ==="

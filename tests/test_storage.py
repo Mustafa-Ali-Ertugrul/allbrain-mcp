@@ -70,6 +70,47 @@ def test_events_are_listed_in_stable_order(tmp_path: Path) -> None:
     assert first.id < second.id
 
 
+def test_event_type_counts_after_uses_project_and_cursor(tmp_path: Path) -> None:
+    repo = make_repository(tmp_path)
+    first_root = tmp_path / "first"
+    second_root = tmp_path / "second"
+    first_root.mkdir()
+    second_root.mkdir()
+    first_session = repo.create_session(first_root, "codex")
+    second_session = repo.create_session(second_root, "codex")
+
+    cursor = repo.append_event(
+        project_path=first_root,
+        session_id=first_session.id or 0,
+        type="file_modified",
+        source="agent",
+        payload={},
+    )
+    for event_type in ("failure", "failure", "task_completed"):
+        repo.append_event(
+            project_path=first_root,
+            session_id=first_session.id or 0,
+            type=event_type,
+            source="agent",
+            payload={},
+        )
+    repo.append_event(
+        project_path=second_root,
+        session_id=second_session.id or 0,
+        type="failure",
+        source="agent",
+        payload={},
+    )
+
+    with open_session(repo.engine) as db:
+        project = repo.get_or_create_project(db, first_root)
+
+    assert repo.event_type_counts_after(project_id=project.id or 0, event_cursor=cursor.id) == {
+        "failure": 2,
+        "task_completed": 1,
+    }
+
+
 def test_list_events_returns_latest_limit_in_chronological_order(tmp_path: Path) -> None:
     repo = make_repository(tmp_path)
     project_root = tmp_path / "project"

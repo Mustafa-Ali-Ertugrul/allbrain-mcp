@@ -53,7 +53,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --extra dev
-      - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=60 -n auto --dist=worksteal
+      - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=80 -n auto --dist=worksteal
 
   postgres-contract:
     name: PostgreSQL storage contract

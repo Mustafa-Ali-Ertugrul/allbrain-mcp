@@ -24,6 +24,8 @@ def _check_float(v, label, lo=0.0, hi=1.0):
     if not isinstance(v, (int, float)):
         raise ValueError(f"{label} must be numeric")
     f = float(v)
+    if f == float("-inf"):
+        return f  # allow -inf for safety-fail utility
     if not (lo <= f <= hi):
         raise ValueError(f"{label} in [{lo},{hi}], got {f}")
     return f
@@ -37,7 +39,11 @@ def validate_tradeoff_analyzed(p: dict[str, Any]) -> None:
 def validate_utility_computed(p: dict[str, Any]) -> None:
     _check_keys(p, UTILITY_COMPUTED_KEYS, "utility_computed")
     _check_str(p["policy_id"], "policy_id")
-    _check_float(p["utility"], "utility", -2.0, 2.0)
+    safety_pass = p["safety_pass"]
+    if safety_pass:
+        _check_float(p["utility"], "utility", -2.0, 2.0)
+    else:
+        _check_float(p["utility"], "utility", float("-inf"), 2.0)
 
 
 def make_tradeoff_analyzed_payload(

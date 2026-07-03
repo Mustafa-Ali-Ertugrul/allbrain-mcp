@@ -44,10 +44,12 @@ _BENCH_DIR.mkdir(exist_ok=True)
 # helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_context(tmp_path: Path) -> Any:
     """Build a minimal BrainContext for V7/V8."""
     from allbrain.server import BrainContext
     from allbrain.storage import BrainRepository, create_engine_for_path, init_db
+
     dbp = tmp_path / "bench.db"
     engine = create_engine_for_path(dbp)
     init_db(engine)
@@ -67,6 +69,7 @@ def _make_context(tmp_path: Path) -> Any:
 # Layer implementations
 # ---------------------------------------------------------------------------
 
+
 def v1_raw_json(rows: list[dict[str, Any]]) -> float:
     t0 = time.perf_counter()
     for r in rows:
@@ -83,6 +86,7 @@ def v2_dict_plus_json(rows: list[dict[str, Any]]) -> float:
 
 def v3_raw_sqlite(rows: list[dict[str, Any]]) -> float:
     import sqlite3
+
     dbp = Path(tempfile.mkdtemp(prefix="bv3_")) / "db.sqlite"
     dbp.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(dbp))
@@ -90,8 +94,7 @@ def v3_raw_sqlite(rows: list[dict[str, Any]]) -> float:
     t0 = time.perf_counter()
     conn.execute("BEGIN")
     for r in rows:
-        conn.execute("INSERT OR IGNORE INTO t (id, payload) VALUES (?, ?)",
-                     (r["id"], json.dumps(r, sort_keys=True)))
+        conn.execute("INSERT OR IGNORE INTO t (id, payload) VALUES (?, ?)", (r["id"], json.dumps(r, sort_keys=True)))
     conn.commit()
     el = time.perf_counter() - t0
     conn.close()
@@ -102,6 +105,7 @@ def v4_orm_single_session(rows: list[dict[str, Any]]) -> float:
     from allbrain.models.entities import Event, utc_now
     from allbrain.storage import create_engine_for_path, init_db
     from allbrain.storage.database import open_session
+
     dbp = Path(tempfile.mkdtemp(prefix="bv4_")) / "db.sqlite"
     engine = create_engine_for_path(dbp)
     init_db(engine)
@@ -127,49 +131,65 @@ def v4_orm_single_session(rows: list[dict[str, Any]]) -> float:
 
 
 def v5_repo_per_call(rows: list[dict[str, Any]]) -> float:
+    from allbrain.models.entities import Project, Session
     from allbrain.storage import BrainRepository, create_engine_for_path, init_db
     from allbrain.storage.database import open_session
-    from allbrain.models.entities import Project, Session
+
     tmp = Path(tempfile.mkdtemp(prefix="bv5_"))
     engine = create_engine_for_path(tmp / "db.sqlite")
     init_db(engine)
     repo = BrainRepository(engine)
     with open_session(engine) as s:
         p = Project(canonical_project_path=str(tmp / "proj"), name="v5")
-        s.add(p); s.commit(); s.refresh(p)
+        s.add(p)
+        s.commit()
+        s.refresh(p)
         sess = Session(project_id=p.id, agent_name="bench")
-        s.add(sess); s.commit(); s.refresh(sess)
+        s.add(sess)
+        s.commit()
+        s.refresh(sess)
         sid = sess.id
     t0 = time.perf_counter()
     for r in rows:
-        repo.append_event(project_path=str(tmp / "proj"), session_id=sid,
-                          type="file_modified", source="bench", payload={"i": r["id"]})
+        repo.append_event(
+            project_path=str(tmp / "proj"), session_id=sid, type="file_modified", source="bench", payload={"i": r["id"]}
+        )
     el = time.perf_counter() - t0
     engine.dispose()
     return len(rows) / el
 
 
 def v6_repo_plus_audit(rows: list[dict[str, Any]]) -> float:
+    from allbrain.models.entities import Project, Session
     from allbrain.storage import BrainRepository, create_engine_for_path, init_db
     from allbrain.storage.database import open_session
-    from allbrain.models.entities import Project, Session
+
     tmp = Path(tempfile.mkdtemp(prefix="bv6_"))
     engine = create_engine_for_path(tmp / "db.sqlite")
     init_db(engine)
     repo = BrainRepository(engine)
     with open_session(engine) as s:
         p = Project(canonical_project_path=str(tmp / "proj"), name="v6")
-        s.add(p); s.commit(); s.refresh(p)
+        s.add(p)
+        s.commit()
+        s.refresh(p)
         sess = Session(project_id=p.id, agent_name="bench")
-        s.add(sess); s.commit(); s.refresh(sess)
+        s.add(sess)
+        s.commit()
+        s.refresh(sess)
         sid = sess.id
     t0 = time.perf_counter()
     for r in rows:
-        repo.append_event(project_path=str(tmp / "proj"), session_id=sid,
-                          type="file_modified", source="bench", payload={"i": r["id"]})
-        repo.append_event(project_path=str(tmp / "proj"), session_id=sid,
-                          type="tool_call", source="allbrain",
-                          payload={"tool_name": "save_event", "args": {}, "session_id": sid})
+        repo.append_event(
+            project_path=str(tmp / "proj"), session_id=sid, type="file_modified", source="bench", payload={"i": r["id"]}
+        )
+        repo.append_event(
+            project_path=str(tmp / "proj"),
+            session_id=sid,
+            type="tool_call",
+            source="allbrain",
+            payload={"tool_name": "save_event", "args": {}, "session_id": sid},
+        )
     el = time.perf_counter() - t0
     engine.dispose()
     return len(rows) / el
@@ -178,6 +198,7 @@ def v6_repo_plus_audit(rows: list[dict[str, Any]]) -> float:
 def v7_full_save_event(rows: list[dict[str, Any]]) -> float:
     ctx, engine = _make_context(Path(tempfile.mkdtemp(prefix="bv7_")))
     from allbrain.server.app import save_event_impl
+
     t0 = time.perf_counter()
     for r in rows:
         save_event_impl(ctx, type="file_modified", payload={"i": r["id"]})
@@ -190,8 +211,9 @@ def v8_with_snapshot(rows: list[dict[str, Any]]) -> float:
     # V8 = save_event_impl with auto_snapshot_threshold=100 so
     # maybe_auto_snapshot fires every ~100 calls.
     from allbrain.server import BrainContext
-    from allbrain.storage import BrainRepository, create_engine_for_path, init_db
     from allbrain.server.app import save_event_impl
+    from allbrain.storage import BrainRepository, create_engine_for_path, init_db
+
     tmp = Path(tempfile.mkdtemp(prefix="bv8_"))
     dbp = tmp / "db.sqlite"
     engine = create_engine_for_path(dbp)
@@ -201,8 +223,10 @@ def v8_with_snapshot(rows: list[dict[str, Any]]) -> float:
     proot.mkdir(exist_ok=True)
     session = repo.create_session(proot, "bench")
     ctx = BrainContext(
-        repository=repo, project_path=str(proot.resolve()),
-        active_session=session, auto_snapshot_threshold=100,
+        repository=repo,
+        project_path=str(proot.resolve()),
+        active_session=session,
+        auto_snapshot_threshold=100,
     )
     t0 = time.perf_counter()
     for r in rows:
@@ -215,6 +239,7 @@ def v8_with_snapshot(rows: list[dict[str, Any]]) -> float:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def run_all() -> dict[str, float]:
     rows = [{"id": f"e{i:06d}"} for i in range(ROW_COUNT)]

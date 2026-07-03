@@ -7,7 +7,7 @@ from allbrain.governance.identity import IdentityConsistencyChecker
 from allbrain.governance.metrics import GovernanceMetrics
 from allbrain.governance.objectives import LongHorizonObjectiveSynthesizer
 from allbrain.governance.policy import GovernancePolicySynthesizer
-from allbrain.governance.self_modification import SelfModificationAuthorityEngine
+from allbrain.governance.self_modification import SelfModificationAuthorityEngine, SelfModificationGuard
 from allbrain.governance.state import GovernanceStateBuilder
 from allbrain.governance.trajectory import SystemTrajectoryForecaster
 
@@ -23,5 +23,6 @@ __all__ = [
     "IdentityConsistencyChecker",
     "LongHorizonObjectiveSynthesizer",
     "SelfModificationAuthorityEngine",
+    "SelfModificationGuard",
     "SystemTrajectoryForecaster",
 ]

@@ -28,4 +28,5 @@ class ConstitutionalReasoner:
             "principles": list(self.PRINCIPLES),
             "violations": unique([str(violation) for violation in violations]),
             "has_explicit_violation": bool(violations),
+            "supervisor_required": bool(violations),
         }

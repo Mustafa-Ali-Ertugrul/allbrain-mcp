@@ -9,6 +9,10 @@ from allbrain.causal.graph import (
     build_causal_graph,
     causal_chain_types,
     count_edges,
+    detect_cycles,
+    is_dag,
+    resolve_graph_cycles,
+    tarjan_scc,
     transitive_closure,
 )
 from allbrain.causal.intervention import _diverse_top_k, simulate_intervention, top_alternatives
@@ -48,6 +52,10 @@ __all__ = [
     "build_causal_graph",
     "causal_chain_types",
     "count_edges",
+    "detect_cycles",
+    "is_dag",
+    "resolve_graph_cycles",
+    "tarjan_scc",
     "estimate_treatment_effect",
     "make_counterfactual_payload",
     "make_impact_payload",

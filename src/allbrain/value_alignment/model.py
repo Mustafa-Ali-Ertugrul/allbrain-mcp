@@ -44,3 +44,6 @@ class AlignmentResult:
     score: AlignmentScore
     blocked: bool
     reason: str = ""
+    consecutive_failures: int = 0
+    escalation_level: int = 0
+    oscillation_detected: bool = False
