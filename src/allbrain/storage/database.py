@@ -80,6 +80,7 @@ def init_db(engine: Engine) -> None:
         _backup_legacy_sqlite(engine)
         ensure_event_payload_version_column(engine)
         ensure_session_lifecycle_columns(engine)
+        ensure_stream_position_columns(engine)
         event_columns = {column["name"] for column in inspect(engine).get_columns("event")}
         project_columns = {column["name"] for column in inspect(engine).get_columns("project")}
         if "stream_position" in event_columns and "next_event_position" in project_columns:
@@ -124,6 +125,58 @@ def ensure_session_lifecycle_columns(engine: Engine) -> None:
                 conn.exec_driver_sql(f"ALTER TABLE session ADD COLUMN {name} {sql_type}")
         conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_session_server_instance_id ON session (server_instance_id)")
         conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_session_last_heartbeat_at ON session (last_heartbeat_at)")
+
+
+def ensure_stream_position_columns(engine: Engine) -> None:
+    """Upgrade pre-Alembic SQLite event and project tables with stream_position."""
+    if engine.dialect.name != "sqlite":
+        return
+
+    # Add next_event_position to project table
+    if "project" in inspect(engine).get_table_names():
+        project_columns = {column["name"] for column in inspect(engine).get_columns("project")}
+        if "next_event_position" not in project_columns:
+            with engine.begin() as conn:
+                conn.exec_driver_sql("ALTER TABLE project ADD COLUMN next_event_position INTEGER NOT NULL DEFAULT 1")
+
+    # Add stream_position to event table
+    if "event" in inspect(engine).get_table_names():
+        event_columns = {column["name"] for column in inspect(engine).get_columns("event")}
+        if "stream_position" not in event_columns:
+            with engine.begin() as conn:
+                conn.exec_driver_sql("ALTER TABLE event ADD COLUMN stream_position INTEGER")
+                # Backfill contiguous 1..N positions per project (ordered by event
+                # id) and advance each project's counter past the backfilled range,
+                # mirroring the Alembic migration so the next append cannot reuse an
+                # existing position.
+                project_ids = conn.exec_driver_sql(
+                    "SELECT DISTINCT project_id FROM event WHERE project_id IS NOT NULL ORDER BY project_id"
+                ).fetchall()
+                for (project_id,) in project_ids:
+                    events = conn.exec_driver_sql(
+                        "SELECT id FROM event WHERE project_id = ? ORDER BY id",
+                        (project_id,),
+                    ).fetchall()
+                    for position, (event_id,) in enumerate(events, start=1):
+                        conn.exec_driver_sql(
+                            "UPDATE event SET stream_position = ? WHERE id = ?",
+                            (position, event_id),
+                        )
+                    conn.exec_driver_sql(
+                        "UPDATE project SET next_event_position = ? WHERE id = ?",
+                        (len(events) + 1, project_id),
+                    )
+
+                # Safety net for any parentless events (NULL project_id).
+                conn.exec_driver_sql("UPDATE event SET stream_position = 0 WHERE stream_position IS NULL")
+
+                # Enforce (project_id, stream_position) uniqueness like the migration
+                # does, so duplicate positions cannot slip in on this upgrade path.
+                conn.exec_driver_sql(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS uq_event_project_stream_position "
+                    "ON event (project_id, stream_position)"
+                )
+                conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_event_stream_position ON event (stream_position)")
 
 
 def open_session(engine: Engine) -> Session:

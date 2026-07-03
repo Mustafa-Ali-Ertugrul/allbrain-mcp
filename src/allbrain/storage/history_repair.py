@@ -63,10 +63,20 @@ class HistoryRepairer:
     def _merge_sources(self, sources: list[Path]) -> dict[str, int]:
         imported_sessions = 0
         imported_events = 0
+        position_counters: dict[int, int] = {}
         with open_session(self.engine) as target:
             known_event_ids = {
                 str(value[0] if isinstance(value, tuple) else value) for value in target.exec(select(Event.id)).all()
             }
+
+            def _claim_stream_position(project_id: int) -> int:
+                if project_id not in position_counters:
+                    project = target.get(Project, project_id)
+                    position_counters[project_id] = project.next_event_position if project is not None else 1
+                position = position_counters[project_id]
+                position_counters[project_id] = position + 1
+                return position
+
             for source_path in sources:
                 if not source_path.exists() or source_path.resolve() == self.target_path.resolve():
                     continue
@@ -148,12 +158,18 @@ class HistoryRepairer:
                                 caused_by=row["caused_by"],
                                 branch=row["branch"],
                                 created_at=_datetime(row["created_at"]),
+                                stream_position=_claim_stream_position(project_map[int(row["project_id"])]),
                             )
                         )
                         known_event_ids.add(row["id"])
                         imported_events += 1
                 finally:
                     source.close()
+            for project_id, next_position in position_counters.items():
+                project = target.get(Project, project_id)
+                if project is not None:
+                    project.next_event_position = next_position
+                    target.add(project)
             target.commit()
         return {"sessions": imported_sessions, "events": imported_events}
 

@@ -422,6 +422,7 @@ class EventRead(BaseModel):
     branch: str | None = None
     created_at: datetime
     payload_version: int = Field(default=1, ge=1)
+    stream_position: int | None = None
 
 
 class ToolResult(BaseModel):
