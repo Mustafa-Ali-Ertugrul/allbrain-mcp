@@ -11,11 +11,11 @@ Verified on 2026-07-03 against the working tree. Counts are snapshots, not perma
 | Test files | 242 | 242 |
 | Test lines | 26,213 | 26,311 |
 | Top-level `allbrain` packages | 82 | 82 |
-| Collected tests | 2,090 | 2,093 |
+| Collected tests | 2,090 | 2,053 |
 | Full-profile MCP tools | 55 | 55 |
 | MCP domain tool modules | 18 | 18 |
 
-The pre-remediation full suite completed with 2,086 passed and 4 broker/PostgreSQL tests skipped because their service URLs were not configured. The current-tree result is recorded after the implementation verification below.
+The pre-remediation full suite completed with 2,086 passed and 4 broker/PostgreSQL tests skipped because their service URLs were not configured. The current-tree result is recorded after the implementation verification below. The latest CI run shows 2,053 collected, 2,050 passed, 3 skipped, and 80.79% branch coverage.
 
 ## Reproducible checks
 
@@ -33,7 +33,7 @@ uv run python scripts/audit_dependencies.py
 - Ruff includes `BLE`; all broad-exception findings must be narrowed or explicitly justified at an extension/process boundary.
 - Before remediation there were 72 textual `except Exception` matches but only 15 actionable BLE001 findings. After remediation there are 68 textual matches and 13 explicit, logged BLE001 boundary waivers.
 - Bandit reported no medium/high findings. Dependency audit reported no known vulnerabilities on the verification date; the local package itself is skipped because version 0.1.0 is not published on PyPI.
-- The configured branch-coverage fail-under is 75%. A local coverage run exceeded its five-minute command budget, so this audit does not invent or report an uncompleted coverage percentage; CI must supply the completed measurement.
+- The configured branch-coverage fail-under is 80%. CI measures 80.79% branch coverage in the latest successful run.
 
 ## Corrected architectural findings
 
@@ -48,6 +48,6 @@ uv run python scripts/audit_dependencies.py
 ## Quality policy
 
 - Python 3.12 is the minimum supported interpreter and receives a full compatibility run; Python 3.13 runs coverage.
-- Coverage policy is defined once in `pyproject.toml` at 75%.
+- Coverage policy is defined once in `pyproject.toml` at 80%.
 - Complexity debt is ratcheted: existing baseline entries may improve or disappear, but new/worsened entries fail CI.
 - Event IDs remain stable public UUIDs. `EventRead.stream_position` is additive, and UUID cursors are resolved to their database position without changing the external cursor shape.
