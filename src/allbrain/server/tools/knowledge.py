@@ -44,7 +44,8 @@ logger = logging.getLogger(__name__)
 def _uncertainty_manager(context: BrainContext, project_path: str) -> UncertaintyManager:
     try:
         events = context.repository.list_events(project_path=context.project_path, limit=5000)
-    except Exception:
+    except Exception as exc:  # noqa: BLE001 - EventStore implementations are extension boundaries
+        logger.debug("Calibration history lookup failed: %s", exc, exc_info=True)
         events = []
     return UncertaintyManager(calibration_events=events)
 
@@ -196,7 +197,8 @@ def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             events = context.repository.list_events(
                 project_path=context.project_path, limit=data.limit, session_id=bound_session_id
             )
-        except Exception:
+        except Exception as exc:  # noqa: BLE001 - belief history is optional
+            logger.debug("Belief history lookup failed: %s", exc, exc_info=True)
             events = []
         manager = BeliefManager(prior_alpha=data.prior_alpha, prior_beta=data.prior_beta)
         belief = manager.query(events, context_key=data.context_key)
@@ -244,7 +246,8 @@ def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> T
             events = context.repository.list_events(
                 project_path=context.project_path, limit=data.limit, session_id=bound_session_id
             )
-        except Exception:
+        except Exception as exc:  # noqa: BLE001 - belief history is optional
+            logger.debug("Belief history lookup failed: %s", exc, exc_info=True)
             events = []
         manager = BeliefManager(prior_alpha=data.prior_alpha, prior_beta=data.prior_beta)
         belief = manager.query(events, context_key=data.context_key)
@@ -318,6 +321,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         decision_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Estimate the uncertainty level associated with a prior decision.
+
+        Returns epistemic and aleatoric uncertainty scores, calibrated against
+        historical prediction accuracy.
+
+        When to use: after a decision pipeline run to understand how reliable
+        the outputs are. High uncertainty suggests more information gathering
+        may be needed before acting.
+        """
         result = estimate_uncertainty_impl(
             context,
             decision_id=decision_id,
@@ -330,6 +342,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         decision_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Identify missing information that would improve a decision's quality.
+
+        Analyzes the decision context and flags information that, if gathered,
+        would most reduce uncertainty.
+
+        When to use: when uncertainty is high and you need concrete suggestions
+        for what additional data to collect before making a final decision.
+        """
         result = detect_knowledge_gaps_impl(
             context,
             decision_id=decision_id,
@@ -342,6 +362,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         decision_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """List specific information items needed to make a well-informed decision.
+
+        Returns actionable questions to resolve, data sources to consult, and
+        analyses to run before committing to a course of action.
+
+        When to use: during decision preparation to systematically enumerate
+        what must be learned before proceeding.
+        """
         result = identify_information_needs_impl(
             context,
             decision_id=decision_id,
@@ -354,6 +382,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         action: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Predict how much new information a proposed action would yield.
+
+        Models the expected information gain from performing the specified
+        action, based on current knowledge state and uncertainty.
+
+        When to use: to prioritize actions by their learning value. High-gain
+        actions are worth taking early in exploration.
+        """
         result = estimate_information_gain_impl(
             context,
             action=action,
@@ -366,5 +402,13 @@ def register_tools(mcp, context: BrainContext) -> None:
         task: dict[str, Any],
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Recommend an action policy for a given task based on past experience.
+
+        Considers agent capabilities, task requirements, historical success
+        rates, and learned strategies to produce a ranked policy suggestion.
+
+        When to use: when planning a new task and you want a data-driven
+        suggestion for which approach or agent is likely to succeed.
+        """
         result = recommend_policy_impl(context, task=task, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

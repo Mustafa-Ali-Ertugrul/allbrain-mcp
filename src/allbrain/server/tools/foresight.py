@@ -268,7 +268,8 @@ def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         try:
             events = context.repository.list_events(project_path=context.project_path, limit=5000)
             historical = observed_success_rate(events)
-        except Exception:
+        except Exception as exc:  # noqa: BLE001 - historical confidence is an optional fallback input
+            logger.debug("Historical confidence lookup failed; using default: %s", exc, exc_info=True)
             historical = 0.7
         engine = ConfidenceEngine()
         estimate = engine.estimate(
@@ -317,6 +318,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         foresight_limit: int = 5,
         max_horizon: int = 5,
     ) -> dict[str, Any]:
+        """Generate possible future plan branches starting from an action.
+
+        Uses recursive foresight to explore action chains up to max_horizon depth.
+        Each branch includes expected outcomes, risk estimates, and resource costs.
+
+        When to use: for strategic planning where you need to see multi-step
+        consequences before committing. Use evaluate_plan when you already have
+        a concrete action list and want it scored.
+        """
         result = generate_future_plans_impl(
             context,
             action=action,
@@ -332,6 +342,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         max_horizon: int = 5,
     ) -> dict[str, Any]:
+        """Score an existing plan represented as a list of action descriptions.
+
+        Estimates success probability per step, identifies risk inflection
+        points, and computes an overall confidence score for the plan.
+
+        When to use: when you have a concrete multi-step plan and need it
+        scored. For plan generation from scratch, use generate_future_plans.
+        """
         result = evaluate_plan_impl(
             context,
             actions=actions,
@@ -345,6 +363,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         plan_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Return a human-readable explanation of a previous decision pipeline run.
+
+        Retrieves the decision's inputs, reasoning trace, scenario evaluations,
+        tradeoffs considered, and the final selection.
+
+        When to use: after a run_decision_pipeline call to understand why a
+        particular decision was made. Provides audit trail for decisions.
+        """
         result = explain_decision_impl(
             context,
             plan_id=plan_id,
@@ -357,6 +383,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         plan_id: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Estimate the confidence level of a previous decision pipeline run.
+
+        Returns calibration error, sample count, and drift metrics that
+        indicate how reliable the decision's recommendation is.
+
+        When to use: to evaluate whether a past decision's recommendation can
+        be trusted, especially for high-stakes or unfamiliar domains.
+        """
         result = estimate_confidence_impl(
             context,
             plan_id=plan_id,

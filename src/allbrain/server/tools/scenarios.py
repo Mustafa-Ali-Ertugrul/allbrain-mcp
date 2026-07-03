@@ -161,6 +161,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         scenarios_limit: int = 4,
     ) -> dict[str, Any]:
+        """Generate possible future scenarios branching from an action.
+
+        Each scenario describes a plausible future outcome with probability,
+        impact assessment, and key assumptions.
+
+        When to use: for exploring the range of possible outcomes before
+        making a decision. Scenarios are richer than counterfactuals —
+        they include external context and branching assumptions.
+        """
         result = generate_scenarios_impl(
             context,
             action=action,
@@ -175,6 +184,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         scenarios: list[dict[str, Any]],
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Score a set of custom scenarios for a given action.
+
+        Accepts user-defined scenarios (rich context + outcome descriptions)
+        and returns estimated probabilities and risk scores for each.
+
+        When to use: when you have specific scenario hypotheses to test.
+        Use generate_scenarios first if you need default scenario candidates.
+        """
         result = evaluate_scenarios_impl(
             context,
             action=action,

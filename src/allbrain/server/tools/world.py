@@ -110,6 +110,14 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def observe_world(limit: int = 5000) -> dict[str, Any]:
+        """Return the current world/environment state from the event log.
+
+        Observes the environment history and learned transition model,
+        returning the predicted current state based on past observations.
+
+        When to use: to understand the current environment state before
+        taking action. The world model is built from past observations.
+        """
         result = observe_world_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
@@ -118,5 +126,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         action: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Simulate the effect of an action using the learned world model.
+
+        Predicts how the environment state would change if the action were
+        taken, based on the learned transition model.
+
+        When to use: before executing a real action, to preview likely
+        outcomes. Complements generate_counterfactual and generate_scenarios
+        by focusing on environment effects rather than agent decisions.
+        """
         result = simulate_action_impl(context, action=action, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

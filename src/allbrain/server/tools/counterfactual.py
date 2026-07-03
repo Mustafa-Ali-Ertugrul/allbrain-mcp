@@ -147,6 +147,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         counterfactual_limit: int = 3,
     ) -> dict[str, Any]:
+        """Generate alternative outcomes for a given action via counterfactual reasoning.
+
+        Explores what-if scenarios branching from the specified action. Each
+        counterfactual includes a success probability estimate and regret score.
+
+        When to use: before making a high-stakes decision, to evaluate alternative
+        choices. Use evaluate_scenarios for richer multi-dimensional scenario
+        comparison, or evaluate_plan for sequential action plans.
+        """
         result = generate_counterfactual_impl(
             context,
             action=action,
@@ -160,5 +169,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         actions: list[str],
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Rank multiple action alternatives by predicted success probability.
+
+        Accepts a list of action descriptions and returns a ranked order with
+        scores, confidence intervals, and supporting evidence from past events.
+
+        When to use: when you have a discrete set of possible actions and need
+        an ordering by expected outcome quality. Use generate_counterfactual
+        for deeper per-action what-if analysis.
+        """
         result = rank_alternatives_impl(context, actions=actions, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")

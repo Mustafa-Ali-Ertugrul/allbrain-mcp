@@ -16,12 +16,21 @@ def _run(context: BrainContext, operation, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error=str(exc))
 
 
-def register_tools(mcp, context: BrainContext) -> None:
+def _register_queue_claim_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def claim_task(
         workflow_id: str | None = None,
         lease_ttl_seconds: int = 120,
     ) -> dict[str, Any]:
+        """Claim the next available task from the distributed queue.
+
+        Atomically dequeues a task assigned to this agent, establishing a
+        lease that prevents other workers from claiming it for lease_ttl_seconds.
+        The lease must be periodically renewed or the task reclaimed.
+
+        When to use: in multi-worker deployments where agents pull tasks from
+        a shared queue. Call before starting work on a queued task.
+        """
         coordinator = QueueCoordinator(context)
         return _run(
             context,
@@ -38,6 +47,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         lease_id: str,
         lease_ttl_seconds: int = 120,
     ) -> dict[str, Any]:
+        """Extend the lease on a claimed task to prevent reclamation.
+
+        Resets the lease expiry timer, allowing the current worker to continue
+        processing without losing the claim.
+
+        When to use: periodically during long-running task execution to prevent
+        other workers from claiming the task before it completes.
+        """
         coordinator = QueueCoordinator(context)
         return _run(
             context,
@@ -48,6 +65,8 @@ def register_tools(mcp, context: BrainContext) -> None:
             lease_ttl_seconds=lease_ttl_seconds,
         ).model_dump(mode="json")
 
+
+def _register_queue_result_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def complete_task(
         queue_item_id: str,
@@ -55,6 +74,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         output: str,
         artifacts: list[str] | None = None,
     ) -> dict[str, Any]:
+        """Mark a claimed task as completed with output and artifacts.
+
+        Releases the lease and records the task result in the event store.
+        Sanitizes output text to prevent sensitive data leakage.
+
+        When to use: after finishing work on a claimed task. Must provide the
+        lease_id obtained from claim_task. Do NOT use for failure cases — use
+        fail_task instead.
+        """
         coordinator = QueueCoordinator(context)
         return _run(
             context,
@@ -73,6 +101,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         reason: str,
         requeue: bool = True,
     ) -> dict[str, Any]:
+        """Mark a claimed task as failed with an error reason.
+
+        Releases the lease optionally requeues the task for retry. The reason
+        text is sanitized to prevent sensitive data leakage.
+
+        When to use: when work on a claimed task cannot continue due to an
+        error. Set requeue=True for transient failures that may succeed on
+        retry, False for permanent failures.
+        """
         coordinator = QueueCoordinator(context)
         return _run(
             context,
@@ -83,3 +120,8 @@ def register_tools(mcp, context: BrainContext) -> None:
             reason=sanitize_text(reason),
             requeue=requeue,
         ).model_dump(mode="json")
+
+
+def register_tools(mcp, context: BrainContext) -> None:
+    _register_queue_claim_tools(mcp, context)
+    _register_queue_result_tools(mcp, context)

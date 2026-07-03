@@ -64,9 +64,12 @@ def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             step_count=kwargs.get("step_count"),
             deterministic=bool(kwargs.get("deterministic", True)),
         )
+        workflow_replay = replay["visualization"]["workflow_replay"]
+        engine_replay = {key: replay[key] for key in ("cursor", "has_more", "frames", "final_state")}
         replay = replay | {
-            "tasks": replay["visualization"]["tasks"],
-            "task_count": replay["visualization"]["task_count"],
+            "replay": engine_replay,
+            "tasks": workflow_replay["tasks"],
+            "task_count": workflow_replay["task_count"],
         }
         audit_tool_call(
             context,
@@ -168,7 +171,8 @@ def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolRes
                 from collections import Counter
 
                 memory_categories = dict(sorted(Counter(item.tags.get("kind", "other") for item in items).items()))
-            except Exception:
+            except Exception as exc:  # noqa: BLE001 - custom memory stores are extension boundaries
+                logger.debug("Memory coverage lookup failed: %s", exc, exc_info=True)
                 memory_items = 0
         result["memory_coverage"] = {
             "total_events": len(events),
@@ -246,9 +250,17 @@ def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
-def register_tools(mcp, context: BrainContext) -> None:
+def _register_observability_overview_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def get_observability_dashboard(limit: int = 5000) -> dict[str, Any]:
+        """Return an observability summary dashboard for the project.
+
+        Aggregates agent selection decisions, workflow replay metrics, and
+        agent comparison data into a single overview.
+
+        When to use: to get a quick status of project health, agent performance
+        balance, and recent workflow activity at a glance.
+        """
         result = get_observability_dashboard_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
@@ -258,6 +270,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Return the full execution trace of a workflow or task.
+
+        Lists every step executed as part of the workflow, with timestamps,
+        agent assignments, decisions made, and state transitions.
+
+        When to use: for debugging multi-agent workflows or understanding the
+        sequence of operations that led to a particular outcome. Use
+        get_workflow_graph for the structural view instead.
+        """
         result = get_workflow_trace_impl(
             context,
             workflow_id=workflow_id,
@@ -268,14 +289,32 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def get_system_metrics(limit: int = 5000) -> dict[str, Any]:
+        """Return system-level performance metrics (CPU, memory, event rates).
+
+        Collects psutil-based resource usage, event throughput, and tool call
+        frequency from the current server process.
+
+        When to use: for monitoring server health, detecting resource
+        bottlenecks, or performance tuning.
+        """
         result = get_system_metrics_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
     def get_reliability_status(limit: int = 5000) -> dict[str, Any]:
+        """Return reliability metrics: lease recovery, duplicate detection, failure counts.
+
+        Aggregates durability and consistency indicators from the event store,
+        queue, and coordinator subsystems.
+
+        When to use: to assess system health or investigate whether any events
+        or leases have been lost or duplicated.
+        """
         result = get_reliability_status_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
+
+def _register_observability_replay_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def replay_workflow(
         workflow_id: str | None = None,
@@ -285,6 +324,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         deterministic: bool = True,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Deterministic replay of a workflow from stored events.
+
+        Reconstructs the exact state transitions for a workflow or task,
+        optionally starting from a cursor position. In deterministic mode,
+        random elements are seeded for reproducible results.
+
+        When to use: to reproduce a previous execution for debugging, audit,
+        or investigation. Use get_workflow_trace for the original execution
+        record without replay.
+        """
         result = replay_workflow_impl(
             context,
             workflow_id=workflow_id,
@@ -302,6 +351,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Return the structural graph representation of a workflow.
+
+        Shows how tasks, agents, and decisions connect — nodes and edges with
+        state transitions, dependencies, and branching points.
+
+        When to use: to understand the architecture and dependencies of a
+        workflow. For execution order (not structure), use get_workflow_trace.
+        For UI-focused rendering, prefer get_ui_graph_view.
+        """
         result = get_workflow_graph_impl(
             context,
             workflow_id=workflow_id,
@@ -312,5 +370,18 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def compare_agents(limit: int = 5000) -> dict[str, Any]:
+        """Compare agent performance metrics side-by-side.
+
+        Returns success rates, failure rates, blocked counts, assigned tasks,
+        and confidence scores for each agent in the project.
+
+        When to use: to evaluate which agents are performing well, detect
+        underperforming agents, or balance workload distribution.
+        """
         result = compare_agents_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
+
+
+def register_tools(mcp, context: BrainContext) -> None:
+    _register_observability_overview_tools(mcp, context)
+    _register_observability_replay_tools(mcp, context)

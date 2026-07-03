@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
+from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -112,15 +113,13 @@ def close_session_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         closed = context.repository.close_session(session_id, status="closed", reason=reason)
         if closed is None:
             return ToolResult(ok=False, error=f"Session {session_id} not found")
-        try:
+        with suppress(UserInputError):
             audit_tool_call(
                 context,
                 tool_name="close_session",
                 tool_args={"session_id": session_id, "reason": reason},
                 session_id=bind_session_id(context, None),
             )
-        except UserInputError:
-            pass  # No active session for audit — administrative call
         return ToolResult(
             ok=True,
             data={
@@ -143,15 +142,13 @@ def cleanup_stale_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolRes
         deleted = context.repository.cleanup_empty_sessions(project_path=context.project_path, before=before)
         if deleted:
             logger.info("Cleaned up %d empty session(s)", deleted)
-        try:
+        with suppress(UserInputError):
             audit_tool_call(
                 context,
                 tool_name="cleanup_stale_sessions",
                 tool_args={"reconciled": len(reconciled), "deleted": deleted},
                 session_id=bind_session_id(context, None),
             )
-        except UserInputError:
-            pass  # No active session for audit — administrative call
         return ToolResult(
             ok=True,
             data={
@@ -170,6 +167,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         include_empty: bool = False,
         detail_limit: int = 20,
     ) -> dict[str, Any]:
+        """List and summarize recent agent sessions in the project.
+
+        Returns each session's agent name, event count, duration, and last
+        activity. Can include empty sessions and control per-session detail.
+
+        When to use: to see who has been working on the project, when, and
+        how much work each session produced.
+        """
         return summarize_sessions_impl(
             context,
             limit=limit,
@@ -182,6 +187,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         session_id: int,
         reason: str = "manual",
     ) -> dict[str, Any]:
+        """Close an active agent session with an optional reason.
+
+        Marks the session as closed, which excludes it from the active
+        session pool and logs the closure reason.
+
+        When to use: when an agent finishes its work and no longer needs
+        an active session. Always close sessions that were explicitly opened.
+        """
         return close_session_impl(
             context,
             session_id=session_id,
@@ -190,4 +203,12 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def cleanup_stale_sessions() -> dict[str, Any]:
+        """Close all sessions that have exceeded the stale timeout.
+
+        Automatically closes sessions whose last activity timestamp is
+        older than the configured stale threshold.
+
+        When to use: periodic maintenance to prevent session table bloat
+        from abandoned or crashed agent processes.
+        """
         return cleanup_stale_sessions_impl(context).model_dump(mode="json")

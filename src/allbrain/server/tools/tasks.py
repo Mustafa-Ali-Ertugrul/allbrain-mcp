@@ -307,7 +307,7 @@ def get_task_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
-def register_tools(mcp, context: BrainContext) -> None:
+def _register_task_creation_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def create_task(
         goal: str,
@@ -316,6 +316,14 @@ def register_tools(mcp, context: BrainContext) -> None:
         priority: int = 3,
         task_id: str | None = None,
     ) -> dict[str, Any]:
+        """Create a new task in the project task graph.
+
+        Registers a task with a goal, kind, priority, and optional task_id
+        and related_files. Emits a TASK_CREATED event and triggers auto-snapshot.
+
+        When to use: to define new work items for agent assignment. Use before
+        assign_task to create the task, or let orchestrate_project auto-create tasks.
+        """
         result = create_task_impl(
             context,
             goal=goal,
@@ -332,6 +340,15 @@ def register_tools(mcp, context: BrainContext) -> None:
         agent_id: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Assign a task to an agent (auto-selects if agent_id is None).
+
+        Uses the DeterministicScheduler to select the best agent based on
+        task requirements, agent capabilities, and historical performance.
+        Emits both assignment and selection-decision events.
+
+        When to use: to delegate a task to a specific agent. If agent_id is
+        omitted, the system will auto-assign based on capability matching.
+        """
         result = assign_task_impl(
             context,
             task_id=task_id,
@@ -346,17 +363,35 @@ def register_tools(mcp, context: BrainContext) -> None:
         task_id: str,
         depends_on: str,
     ) -> dict[str, Any]:
+        """Add a dependency between two tasks (task_id depends_on depends_on).
+
+        Creates an edge in the task graph. The dependent task will not be
+        scheduled until the dependency is completed.
+
+        When to use: to enforce ordering constraints between tasks. Use before
+        assign_task to ensure proper execution sequence.
+        """
         result = add_task_dependency_impl(
             context, task_id=task_id, depends_on=depends_on, project_path=context.project_path
         )
         return result.model_dump(mode="json")
 
+
+def _register_task_management_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def change_task_priority(
         task_id: str,
         new: int,
         old: int | None = None,
     ) -> dict[str, Any]:
+        """Change the priority of an existing task.
+
+        Updates the task's priority value (1-5 scale, higher = more important).
+        Emits a TASK_PRIORITY_CHANGED event. If old is not specified, the
+        current priority is retrieved automatically.
+
+        When to use: to re-prioritize work items as project needs change.
+        """
         result = change_task_priority_impl(
             context, task_id=task_id, old=old, new=new, project_path=context.project_path
         )
@@ -370,6 +405,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         reason: str | None = None,
         limit: int = 5000,
     ) -> dict[str, Any]:
+        """Hand off a task from one agent to another (or auto-recommend).
+
+        Uses HandoffEngine to recommend the best receiving agent based on
+        task state and agent performance. Emits both handoff and assignment
+        events with the recommendation reasoning.
+
+        When to use: when the current agent cannot complete a task and it
+        needs to be transferred. If to_agent is omitted, the system recommends
+        the best alternative.
+        """
         result = handoff_task_impl(
             context,
             task_id=task_id,
@@ -382,5 +427,20 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def get_task_graph(limit: int = 5000) -> dict[str, Any]:
+        """Return the full task dependency graph and agent state.
+
+        Builds task view, dependency graph edges, and agent state (metrics,
+        capabilities) from event history. Shows which tasks are pending,
+        in-progress, or completed.
+
+        When to use: to understand the current project structure — what tasks
+        exist, their dependencies, and which agents are working on what.
+        Use orchestrate_project if you also want task scheduling.
+        """
         result = get_task_graph_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
+
+
+def register_tools(mcp, context: BrainContext) -> None:
+    _register_task_creation_tools(mcp, context)
+    _register_task_management_tools(mcp, context)

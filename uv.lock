@@ -95,6 +95,16 @@ postgres = [
     { name = "psycopg", extra = ["binary"] },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "anyio" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aio-pika", marker = "extra == 'distributed'", specifier = ">=9.0.0,<10.0" },
@@ -119,6 +129,16 @@ requires-dist = [
     { name = "uuid6", specifier = ">=2024.7.10,<2025.0" },
 ]
 provides-extras = ["postgres", "distributed", "dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "anyio", specifier = ">=4.14.1" },
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-asyncio", specifier = ">=1.4.0" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+    { name = "ruff", specifier = ">=0.15.20" },
+]
 
 [[package]]
 name = "annotated-doc"
