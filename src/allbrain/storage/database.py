@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import random
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import event, inspect
 from sqlalchemy.engine import Engine, make_url
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import QueuePool
 from sqlmodel import Session, create_engine
 
@@ -14,21 +20,25 @@ def _set_sqlite_pragmas(dbapi_conn, _connection_record) -> None:
     cursor = dbapi_conn.cursor()
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA synchronous=NORMAL")
-    cursor.execute("PRAGMA busy_timeout=5000")
+    cursor.execute("PRAGMA busy_timeout=30000")
+    cursor.execute("PRAGMA wal_autocheckpoint=1000")
     cursor.close()
 
 
 def create_engine_for_url(database_url: str) -> Engine:
     """Create a pooled engine, applying SQLite-only connection policy locally."""
     url = make_url(database_url)
-    kwargs: dict[str, object] = {
-        "poolclass": QueuePool,
-        "pool_size": 5,
-        "max_overflow": 10,
-        "pool_pre_ping": True,
-    }
+    kwargs: dict[str, object] = {"poolclass": QueuePool, "pool_pre_ping": True}
     if url.get_backend_name() == "sqlite":
-        kwargs["connect_args"] = {"check_same_thread": False}
+        kwargs.update(
+            {
+                "pool_size": 2,
+                "max_overflow": 0,
+                "connect_args": {"check_same_thread": False, "timeout": 30},
+            }
+        )
+    else:
+        kwargs.update({"pool_size": 5, "max_overflow": 10})
     engine = create_engine(database_url, **kwargs)
     if url.get_backend_name() == "sqlite":
         event.listen(engine, "connect", _set_sqlite_pragmas)
@@ -70,8 +80,19 @@ def init_db(engine: Engine) -> None:
         _backup_legacy_sqlite(engine)
         ensure_event_payload_version_column(engine)
         ensure_session_lifecycle_columns(engine)
-        command.stamp(config, "head")
+        event_columns = {column["name"] for column in inspect(engine).get_columns("event")}
+        project_columns = {column["name"] for column in inspect(engine).get_columns("project")}
+        if "stream_position" in event_columns and "next_event_position" in project_columns:
+            command.stamp(config, "head")
+            return
+        command.stamp(config, "0001_initial")
+        command.upgrade(config, "head")
         return
+    if engine.dialect.name == "sqlite" and "alembic_version" in tables:
+        with engine.connect() as connection:
+            current_revision = connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar_one()
+        if current_revision != ScriptDirectory.from_config(config).get_current_head():
+            _backup_legacy_sqlite(engine)
     command.upgrade(config, "head")
 
 
@@ -107,3 +128,55 @@ def ensure_session_lifecycle_columns(engine: Engine) -> None:
 
 def open_session(engine: Engine) -> Session:
     return Session(engine)
+
+
+def _is_sqlite_busy(exc: OperationalError) -> bool:
+    message = str(exc).lower()
+    return "locked" in message or "busy" in message
+
+
+@contextmanager
+def open_write_session(engine: Engine, *, attempts: int = 5) -> Iterator[Session]:
+    """Open a write transaction after acquiring SQLite's single-writer lock.
+
+    Lock acquisition is retried before domain mutations begin, so a retry never
+    needs to reconstruct partially mutated ORM objects.
+    """
+
+    db: Session | None = None
+    for attempt in range(attempts):
+        candidate = Session(engine)
+        try:
+            if engine.dialect.name == "sqlite":
+                candidate.connection().exec_driver_sql("BEGIN IMMEDIATE")
+            db = candidate
+            break
+        except OperationalError as exc:
+            candidate.rollback()
+            candidate.close()
+            if not _is_sqlite_busy(exc) or attempt + 1 >= attempts:
+                raise
+            delay = min(0.05 * (2**attempt), 0.8) + random.uniform(0, 0.025)
+            time.sleep(delay)
+    if db is None:  # pragma: no cover - defensive; loop either assigns or raises
+        raise RuntimeError("Unable to open database write session")
+    try:
+        yield db
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def checkpoint_sqlite(engine: Engine, *, mode: str = "PASSIVE") -> tuple[int, int, int] | None:
+    """Run a non-blocking SQLite WAL checkpoint and return SQLite counters."""
+
+    if engine.dialect.name != "sqlite":
+        return None
+    normalized = mode.upper()
+    if normalized not in {"PASSIVE", "FULL", "RESTART", "TRUNCATE"}:
+        raise ValueError(f"Unsupported WAL checkpoint mode: {mode}")
+    with engine.connect() as connection:
+        row = connection.exec_driver_sql(f"PRAGMA wal_checkpoint({normalized})").one()
+    return int(row[0]), int(row[1]), int(row[2])
