@@ -311,9 +311,7 @@ def register_tools(mcp, context: BrainContext) -> None:
         """
         view_lower = view.lower()
         if view_lower == "graph":
-            result = get_workflow_graph_impl(
-                context, workflow_id=workflow_id, task_id=task_id, limit=limit
-            )
+            result = get_workflow_graph_impl(context, workflow_id=workflow_id, task_id=task_id, limit=limit)
         elif view_lower == "replay":
             result = replay_workflow_impl(
                 context,
@@ -325,9 +323,7 @@ def register_tools(mcp, context: BrainContext) -> None:
                 limit=limit,
             )
         else:
-            result = get_workflow_trace_impl(
-                context, workflow_id=workflow_id, task_id=task_id, limit=limit
-            )
+            result = get_workflow_trace_impl(context, workflow_id=workflow_id, task_id=task_id, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
