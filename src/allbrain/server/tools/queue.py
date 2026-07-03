@@ -16,7 +16,7 @@ def _run(context: BrainContext, operation, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error=str(exc))
 
 
-def register_tools(mcp, context: BrainContext) -> None:
+def _register_queue_claim_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def claim_task(
         workflow_id: str | None = None,
@@ -65,6 +65,8 @@ def register_tools(mcp, context: BrainContext) -> None:
             lease_ttl_seconds=lease_ttl_seconds,
         ).model_dump(mode="json")
 
+
+def _register_queue_result_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def complete_task(
         queue_item_id: str,
@@ -118,3 +120,8 @@ def register_tools(mcp, context: BrainContext) -> None:
             reason=sanitize_text(reason),
             requeue=requeue,
         ).model_dump(mode="json")
+
+
+def register_tools(mcp, context: BrainContext) -> None:
+    _register_queue_claim_tools(mcp, context)
+    _register_queue_result_tools(mcp, context)

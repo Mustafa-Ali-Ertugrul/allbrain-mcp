@@ -250,7 +250,7 @@ def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
-def register_tools(mcp, context: BrainContext) -> None:
+def _register_observability_overview_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def get_observability_dashboard(limit: int = 5000) -> dict[str, Any]:
         """Return an observability summary dashboard for the project.
@@ -313,6 +313,8 @@ def register_tools(mcp, context: BrainContext) -> None:
         result = get_reliability_status_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
 
+
+def _register_observability_replay_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def replay_workflow(
         workflow_id: str | None = None,
@@ -378,3 +380,8 @@ def register_tools(mcp, context: BrainContext) -> None:
         """
         result = compare_agents_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
+
+
+def register_tools(mcp, context: BrainContext) -> None:
+    _register_observability_overview_tools(mcp, context)
+    _register_observability_replay_tools(mcp, context)

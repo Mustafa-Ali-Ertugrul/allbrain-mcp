@@ -307,7 +307,7 @@ def get_task_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
-def register_tools(mcp, context: BrainContext) -> None:
+def _register_task_creation_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def create_task(
         goal: str,
@@ -376,6 +376,8 @@ def register_tools(mcp, context: BrainContext) -> None:
         )
         return result.model_dump(mode="json")
 
+
+def _register_task_management_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def change_task_priority(
         task_id: str,
@@ -437,3 +439,8 @@ def register_tools(mcp, context: BrainContext) -> None:
         """
         result = get_task_graph_impl(context, project_path=context.project_path, limit=limit)
         return result.model_dump(mode="json")
+
+
+def register_tools(mcp, context: BrainContext) -> None:
+    _register_task_creation_tools(mcp, context)
+    _register_task_management_tools(mcp, context)
