@@ -12,6 +12,11 @@ htmlcov/
 .allbrain-*.db*
 .allbrain.db*
 .allbrain.db.bak*
+ABMCP.allbrain.db.bak*
+*.db
+stress_run.log
+*.diff
+scripts/mcp_latency_profiles/
 
 # Benchmark results (generated; committed baselines use git add -f)
 benchmarks/results/

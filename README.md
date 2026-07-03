@@ -2,13 +2,6 @@
 
 One brain. Many agents. One shared memory.
 
-![Version](https://img.shields.io/badge/version-0.2.1-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Python](https://img.shields.io/badge/python-3.12%20|%203.13-blue)
-![Tests](https://img.shields.io/badge/tests-2108%20passed-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-80%25-yellowgreen)
-[![Glama Score](https://glama.ai/api/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp/badge)](https://glama.ai/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp)
-
 ![AllBrain MCP banner](docs/images/banner.svg)
 
 AllBrain MCP is an event-sourced memory and orchestration server for multi-agent work. It captures what each agent did, replays the shared state, and helps the next agent pick up cleanly.
@@ -171,34 +164,10 @@ The next SDK milestone is a matching TypeScript client after the Python API and 
 
 ## Status
 
-- 2108 tests passing; 0 failures in the latest full local run
+- 2297 tests collected; (pass rate varies by environment) in the latest successful CI run
 - stdio MCP handshake verified
 - multi-agent write/read/conflict flows verified
-- 50 consolidated tools across 18 domain tool modules
-- Python 3.13 CI; measured coverage 80.79% (enforced threshold: 80%)
-- MIT License
+- 55 tools in the full MCP profile across 18 domain tool modules
+- Python 3.13 coverage CI; measured coverage 73.98% in the latest successful run (enforced threshold: 73%)
 
-## Glama score
 
-[![Glama Score](https://glama.ai/api/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp/badge)](https://glama.ai/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp)
-[![Glama Server](https://img.shields.io/badge/Glama-MCP%20Server-blue)](https://glama.ai/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp)
-
-Check the [Glama profile](https://glama.ai/mcp/servers/@Mustafa-Ali-Ertugrul/allbrain-mcp) for MCP server score, tool descriptions, and compatibility report.
-
-## Related MCP servers
-
-AllBrain integrates with the broader MCP ecosystem. Here are related servers for complementary functionality:
-
-| Server | Purpose |
-|---|---|
-| [Memory](https://glama.ai/mcp/servers/...) | Lightweight knowledge graph memory |
-| [Sequential Thinking](https://glama.ai/mcp/servers/...) | Structured reasoning chains |
-| [Context Manager](https://glama.ai/mcp/servers/...) | Session context persistence |
-
-## Türkçe
-
-AllBrain MCP, çoklu ajan çalışmaları için event-sourcing tabanlı bir ortak hafıza ve orkestrasyon sunucusudur. Her ajanın yaptığı işlemleri kaydeder, ortak durumu yeniden oluşturur ve sonraki ajanın doğru bağlamla devam etmesini sağlar.
-
-- **2108+ test başarılı · %80+ kod kapsama**
-- **50 araç** — 18 domain modülünde
-- MIT Lisansı

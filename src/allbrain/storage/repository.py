@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlalchemy.engine import Engine
 from sqlmodel import Session as DbSession
 from sqlmodel import col, select
@@ -147,7 +147,7 @@ class BrainRepository:
 
     def list_session_events(self, session_id: int) -> list[EventRead]:
         with open_session(self.engine) as db:
-            statement = select(Event).where(Event.session_id == session_id).order_by(col(Event.id))
+            statement = select(Event).where(Event.session_id == session_id).order_by(col(Event.stream_position))
             return [event_to_read(event) for event in db.exec(statement).all()]
 
     def reconcile_stale_sessions(
@@ -333,6 +333,19 @@ class BrainRepository:
         payload = sanitize_payload(payload)
 
         bound_agent_id = agent_id or session.agent_name
+        # Atomically claim the next stream position: a single UPDATE ... RETURNING
+        # both advances the per-project counter and yields the value to assign, so
+        # concurrent appends can never observe the same position.
+        next_position = (
+            db.execute(
+                update(Project)
+                .where(Project.id == project.id)
+                .values(next_event_position=Project.next_event_position + 1)
+                .returning(Project.next_event_position)
+            ).scalar_one()
+            - 1
+        )
+
         event = Event(
             id=str(uuid7()),
             project_id=project.id or 0,
@@ -349,6 +362,7 @@ class BrainRepository:
             caused_by=caused_by,
             branch=branch or bound_agent_id,
             created_at=utc_now(),
+            stream_position=next_position,
         )
         db.add(event)
         return event
@@ -371,7 +385,7 @@ class BrainRepository:
                 statement = statement.where(Event.agent_id == agent_id)
             if type is not None:
                 statement = statement.where(Event.type == type)
-            statement = statement.order_by(col(Event.id).desc()).limit(limit)
+            statement = statement.order_by(col(Event.stream_position).desc()).limit(limit)
             events = db.exec(statement).all()
             events = sorted(events, key=lambda event: event.id)
             return [event_to_read(event) for event in events]
@@ -390,7 +404,7 @@ class BrainRepository:
                 if db.get(Event, event_cursor) is None:
                     raise ValueError(f"event_cursor {event_cursor} does not exist")
                 statement = statement.where(col(Event.id) > event_cursor)
-            statement = statement.order_by(col(Event.id))
+            statement = statement.order_by(col(Event.stream_position))
             if limit is not None:
                 statement = statement.limit(limit)
             events = db.exec(statement).all()
@@ -447,4 +461,5 @@ def event_to_read(event: Event) -> EventRead:
         caused_by=event.caused_by,
         branch=event.branch,
         created_at=event.created_at,
+        stream_position=event.stream_position,
     )

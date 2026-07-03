@@ -3,6 +3,7 @@ from allbrain.storage.database import (
     create_engine_for_url,
     ensure_event_payload_version_column,
     ensure_session_lifecycle_columns,
+    ensure_stream_position_columns,
     init_db,
     open_session,
 )
@@ -15,6 +16,7 @@ __all__ = [
     "create_engine_for_url",
     "ensure_event_payload_version_column",
     "ensure_session_lifecycle_columns",
+    "ensure_stream_position_columns",
     "init_db",
     "open_session",
 ]

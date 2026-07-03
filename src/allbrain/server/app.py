@@ -90,11 +90,11 @@ from allbrain.server.tools.world import (
 logger = logging.getLogger(__name__)
 
 
-def create_mcp_server(context: BrainContext) -> FastMCP:
+def create_mcp_server(context: BrainContext, *, tool_profile: str = "full") -> FastMCP:
     mcp = FastMCP(
         "AllBrain MCP",
         middleware=[AllBrainMiddleware(context)],
         lifespan=create_lifespan(context),
     )
-    register_all_tools(mcp, context)
+    register_all_tools(mcp, context, tool_profile=tool_profile)
     return mcp

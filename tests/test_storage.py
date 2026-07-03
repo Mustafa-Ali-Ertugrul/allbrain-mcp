@@ -180,6 +180,7 @@ def test_payload_version_column_backfilled_on_old_schema(tmp_path: Path) -> None
         BrainRepository,
         create_engine_for_path,
         ensure_event_payload_version_column,
+        ensure_stream_position_columns,
         open_session,
     )
 
@@ -226,11 +227,12 @@ def test_payload_version_column_backfilled_on_old_schema(tmp_path: Path) -> None
 
     ensure_event_payload_version_column(engine)
     ensure_event_payload_version_column(engine)
+    ensure_stream_position_columns(engine)
 
     with open_session(engine) as db:
         row = db.get(Event, "legacy-evt-1")
-        assert row is not None
-        assert row.payload_version == 1
+    assert row is not None
+    assert row.payload_version == 1
 
     repo = BrainRepository(engine)
     events = repo.list_events(project_path=tmp_path / "legacy", session_id=1)
@@ -244,11 +246,12 @@ def test_unversioned_sqlite_is_backed_up_and_stamped(tmp_path: Path) -> None:
     from sqlalchemy import inspect
     from sqlmodel import SQLModel
 
-    from allbrain.storage import create_engine_for_path, init_db
+    from allbrain.storage import create_engine_for_path, ensure_stream_position_columns, init_db
 
     path = tmp_path / "pre_alembic.db"
     engine = create_engine_for_path(path)
     SQLModel.metadata.create_all(engine)
+    ensure_stream_position_columns(engine)
 
     init_db(engine)
 

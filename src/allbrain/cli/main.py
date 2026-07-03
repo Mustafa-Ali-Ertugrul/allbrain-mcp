@@ -33,11 +33,15 @@ def start(
         Path | None,
         typer.Option("--db-path", help="SQLite DB path. Defaults to ~/.allbrain/allbrain.db."),
     ] = None,
+    tool_profile: Annotated[
+        str | None,
+        typer.Option("--tool-profile", help="Tool profile: 'full' or 'core'."),
+    ] = None,
 ) -> None:
-    run_mcp_server(project=project, agent=agent, db_path=db_path)
+    run_mcp_server(project=project, agent=agent, db_path=db_path, tool_profile=tool_profile or "full")
 
 
-def run_mcp_server(project: Path, agent: str, db_path: Path | None) -> None:
+def run_mcp_server(project: Path, agent: str, db_path: Path | None, tool_profile: str = "full") -> None:
     resolved_db_path = db_path or default_db_path()
     project_path = canonicalize_project_path(project)
     engine = create_engine_for_path(resolved_db_path)
@@ -54,7 +58,7 @@ def run_mcp_server(project: Path, agent: str, db_path: Path | None) -> None:
     if reconciled:
         console.log(f"Reconciled {len(reconciled)} stale AllBrain session(s)")
     console.log(f"AllBrain MCP started for {project_path}")
-    server = create_mcp_server(context)
+    server = create_mcp_server(context, tool_profile=tool_profile)
     _patch_stdio_newlines_for_windows()
     try:
         server.run(transport="stdio", show_banner=False)

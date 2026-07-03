@@ -121,3 +121,81 @@ def _report_write_error_once() -> None:
 
 def _milliseconds(duration_ns: int) -> float:
     return round(duration_ns / 1_000_000, 6)
+
+
+def _percentile(values: list[float], p: float) -> float:
+    sorted_vals = sorted(values)
+    if not sorted_vals:
+        return 0.0
+    idx = max(0, min(len(sorted_vals) - 1, int(len(sorted_vals) * p / 100)))
+    return sorted_vals[idx]
+
+
+def aggregate_latency_profiles(
+    profile_dir: Path,
+    agent_results: list[dict],
+    expected_samples: int,
+) -> dict:
+    """Aggregate latency profile files from a directory into a summary report.
+
+    Args:
+        profile_dir: Directory containing latency-*.jsonl files.
+        agent_results: List of per-agent result dicts with '_all_latencies' key.
+        expected_samples: Expected total number of sample records.
+
+    Returns:
+        Report dict with sample_count, malformed_records, dropped_samples,
+        stage_percentiles_ms, estimated_transport_ms, and complete flag.
+    """
+    sample_count = 0
+    malformed_records = 0
+    stage_self_ms: dict[str, list[float]] = {}
+    transport_values: list[float] = []
+
+    for profile_path in sorted(profile_dir.glob("latency-*.jsonl")):
+        for line in profile_path.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                record = json.loads(stripped)
+            except (json.JSONDecodeError, ValueError):
+                malformed_records += 1
+                continue
+            sample_count += 1
+            total_ms = float(record.get("total_ms", 0.0))
+            top_self_ms = float(record.get("self_ms", 0.0))
+            span_sum = sum(float(s.get("self_ms", 0.0)) for s in record.get("spans", []))
+            transport_values.append(total_ms - span_sum - top_self_ms)
+            for span in record.get("spans", []):
+                name = span.get("name", "unknown")
+                self_ms = span.get("self_ms", 0.0)
+                stage_self_ms.setdefault(name, []).append(float(self_ms))
+
+    expected = max(expected_samples, 1)
+    dropped = max(0, expected - sample_count) + malformed_records
+    stage_percentiles: dict[str, dict[str, float]] = {}
+    for stage_name, values in sorted(stage_self_ms.items()):
+        stage_percentiles[stage_name] = {
+            "p50": _percentile(values, 50),
+            "p95": _percentile(values, 95),
+            "p99": _percentile(values, 99),
+        }
+    transport = (
+        {
+            "p50": _percentile(transport_values, 50),
+            "p95": _percentile(transport_values, 95),
+            "p99": _percentile(transport_values, 99),
+        }
+        if transport_values
+        else {"p50": 0.0, "p95": 0.0, "p99": 0.0}
+    )
+
+    return {
+        "complete": sample_count >= expected,
+        "sample_count": sample_count,
+        "malformed_records": malformed_records,
+        "dropped_samples": max(0, dropped),
+        "stage_percentiles_ms": stage_percentiles,
+        "estimated_transport_ms": transport,
+    }

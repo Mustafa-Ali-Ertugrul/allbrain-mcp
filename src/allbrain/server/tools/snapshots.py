@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
+        kwargs.pop("project_path", None)  # backward compat
         data = ResumeProjectInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
         project = context.repository.get_project_by_path(context.project_path)
@@ -89,6 +90,7 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 
 def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
+        kwargs.pop("project_path", None)  # backward compat
         data = CreateSnapshotInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
         project_path = context.project_path
@@ -138,6 +140,7 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 
 def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
+        kwargs.pop("project_path", None)  # backward compat
         data = IntentInput.model_validate(kwargs)
         bound_session_id = bind_session_id(context, None)
         project_path = context.project_path

@@ -16,6 +16,7 @@ class Project(SQLModel, table=True):
     name: str
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
+    next_event_position: int = Field(default=1)
 
 
 class Session(SQLModel, table=True):
@@ -33,7 +34,10 @@ class Session(SQLModel, table=True):
 
 
 class Event(SQLModel, table=True):
-    __table_args__ = (Index("ix_event_project_id_id", "project_id", "id"),)
+    __table_args__ = (
+        Index("ix_event_project_id_id", "project_id", "id"),
+        Index("ix_event_stream_position", "stream_position"),
+    )
 
     id: str = Field(primary_key=True)
     project_id: int = Field(foreign_key="project.id", index=True)
@@ -50,6 +54,7 @@ class Event(SQLModel, table=True):
     caused_by: str | None = Field(default=None, foreign_key="event.id")
     branch: str | None = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=utc_now, index=True)
+    stream_position: int | None = Field(default=None)
 
 
 class SnapshotRecord(SQLModel, table=True):
