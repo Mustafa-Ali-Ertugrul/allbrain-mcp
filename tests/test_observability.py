@@ -35,10 +35,11 @@ def test_workflow_replay_attaches_selection_decision_to_assignment(tmp_path: Pat
     replay = replay_workflow_impl(context)
 
     assert replay.ok
-    timeline = replay.data["tasks"]["task_sec"]["timeline"]
+    replay_data = replay.data.get("replay", replay.data)
+    timeline = replay_data["tasks"]["task_sec"]["timeline"]
     assignment_step = next(step for step in timeline if step["type"] == EventType.TASK_ASSIGNED.value)
-    assert assignment_step["selection_decision"]["task_id"] == "task_sec"
-    assert "breakdown" in assignment_step["selection_decision"]
+    assert assignment_step.get("selection_decision", {}).get("task_id") == "task_sec"
+    assert "breakdown" in assignment_step.get("selection_decision", {})
 
 
 def test_agent_comparison_counts_decisions_and_outcomes(tmp_path: Path) -> None:

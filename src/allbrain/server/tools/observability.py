@@ -64,9 +64,10 @@ def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             step_count=kwargs.get("step_count"),
             deterministic=bool(kwargs.get("deterministic", True)),
         )
+        viz = replay.get("visualization", {})
         replay = replay | {
-            "tasks": replay["visualization"]["tasks"],
-            "task_count": replay["visualization"]["task_count"],
+            "tasks": viz.get("workflow_replay", {}).get("tasks", {}),
+            "task_count": viz.get("workflow_replay", {}).get("task_count", 0),
         }
         audit_tool_call(
             context,
@@ -82,7 +83,7 @@ def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             },
             session_id=bound_session_id,
         )
-        return ToolResult(ok=True, data=replay)
+        return ToolResult(ok=True, data={"replay": replay})
     except (ValidationError, ValueError, TypeError) as exc:
         return ToolResult(ok=False, error=str(exc))
 
