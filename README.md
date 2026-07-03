@@ -164,10 +164,10 @@ The next SDK milestone is a matching TypeScript client after the Python API and 
 
 ## Status
 
-- 2244 tests collected; (pass rate varies by environment) in the latest successful CI run
+- 2297 tests collected; (pass rate varies by environment) in the latest successful CI run
 - stdio MCP handshake verified
 - multi-agent write/read/conflict flows verified
 - 55 tools in the full MCP profile across 18 domain tool modules
-- Python 3.13 coverage CI; measured coverage 73.43% in the latest successful run (enforced threshold: 73%)
+- Python 3.13 coverage CI; measured coverage 73.98% in the latest successful run (enforced threshold: 73%)
 
 
