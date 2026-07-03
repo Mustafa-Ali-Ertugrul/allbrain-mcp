@@ -165,7 +165,12 @@ class PredictiveFailureManager:
             return
         stability_score = stability.stability_score if stability is not None else 0.5
         gate = StabilityController()
-        if gate.allow_update(stability_score) and stats is not None:
+        allowed = gate.allow_update(
+            stability_score,
+            oscillation_detector=self._oscillation_detector,
+            fault_type=fault_type,
+        )
+        if allowed and stats is not None:
             updated = self._weight_optimizer.step(
                 fault_type=fault_type,
                 delta_success=stats.success_rate,
@@ -188,12 +193,15 @@ class PredictiveFailureManager:
                     }
                 )
         elif stats is not None:
+            reason = "stability_below_threshold"
+            if self._oscillation_detector is not None and self._oscillation_detector.is_oscillating(fault_type):
+                reason = "oscillation_detected"
             events.append(
                 {
                     "event_type": EventType.META_OPTIMIZER_GUARDED.value,
                     **make_meta_optimizer_guarded_payload(
                         fault_type=fault_type,
-                        reason="stability_below_threshold",
+                        reason=reason,
                         stability_score=stability_score,
                     ),
                 }
