@@ -61,6 +61,7 @@ def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult
     Raises:
         ValueError: If project does not exist or base resume fails.
     """
+    kwargs.pop("project_path", None)  # backward compat: old clients may send project_path
     data = OrchestratorInput.model_validate(kwargs)
     bound_session_id = bind_session_id(context, None)
     project_path = context.project_path
