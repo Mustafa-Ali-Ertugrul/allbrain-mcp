@@ -1,7 +1,7 @@
 {
   "name": "AllBrain MCP",
   "description": "Event-sourced memory and orchestration server for multi-agent AI systems. Shared state, conflict resolution, deterministic replay, counterfactual reasoning, scenario planning, and foresight analysis for agent workflows.",
-  "author": "Ali G\u00d6REN",
+  "author": "Mustafa Ali Ertu\u011frul",
   "categories": [
     "agent-orchestration",
     "memory",
