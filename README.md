@@ -114,6 +114,14 @@ uv sync
 ./scripts/install-mcp.sh --all --isolate --verify
 ```
 
+Or run the guided onboarding wizard:
+
+```shell
+uv run allbrain onboard
+```
+
+It walks you through client selection, install, verification, and your first event step by step.
+
 See the [full setup guide](docs/setup.md) for manual config, troubleshooting, and shared-vs-isolated databases.
 
 ## First memory save
