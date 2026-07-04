@@ -133,6 +133,34 @@
       "complexity": 18,
       "lines": 56
     },
+    "allbrain/server/tools/foresight.py::register_tools": {
+      "complexity": 1,
+      "lines": 139
+    },
+    "allbrain/server/tools/knowledge.py::register_tools": {
+      "complexity": 1,
+      "lines": 156
+    },
+    "allbrain/server/tools/observability.py::register_tools": {
+      "complexity": 1,
+      "lines": 148
+    },
+    "allbrain/server/tools/orchestrator.py::register_tools": {
+      "complexity": 1,
+      "lines": 110
+    },
+    "allbrain/server/tools/queue.py::register_tools": {
+      "complexity": 1,
+      "lines": 133
+    },
+    "allbrain/server/tools/tasks.py::register_tools": {
+      "complexity": 1,
+      "lines": 259
+    },
+    "allbrain/storage/history_repair.py::HistoryRepairer._merge_sources": {
+      "complexity": 16,
+      "lines": 111
+    },
     "allbrain/ui/graph_explorer.py::_node_ids_for_event": {
       "complexity": 21,
       "lines": 28
@@ -148,10 +176,6 @@
     "allbrain/world/prediction_learner.py::BetaPredictor.learn_from_events": {
       "complexity": 19,
       "lines": 82
-    },
-    "allbrain/storage/history_repair.py::HistoryRepairer._merge_sources": {
-      "complexity": 16,
-      "lines": 111
     }
   }
 }
