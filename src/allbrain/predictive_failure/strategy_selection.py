@@ -7,9 +7,9 @@ import allbrain.predictive_failure.mitigation_planner as mitigation_planner
 from allbrain.events.schemas import EventType
 from allbrain.meta_meta_scoring import make_evaluator_profile_updated_payload
 from allbrain.objective_system.events import make_objective_updated_payload
+from allbrain.objective_system.model import FAULT_TYPE_SAFETY_THRESHOLDS
 from allbrain.objective_system.objective import Objective
 from allbrain.objective_system.objective_store import ObjectiveStore
-from allbrain.objective_system.model import FAULT_TYPE_SAFETY_THRESHOLDS
 from allbrain.policy_competition import PolicyCandidate
 from allbrain.predictive_failure.model import STRATEGY_URGENCY, MitigationPlan
 from allbrain.tradeoff_engine import (

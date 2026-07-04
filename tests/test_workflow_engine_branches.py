@@ -1,7 +1,7 @@
 """Deep coverage: workflow/engine.py uncovered branches."""
 
-from allbrain.workflow.models import TaskGraph, TaskNode, TaskEdge, WorkflowStatus, EdgeType, SubtaskResult
 from allbrain.workflow.engine import WorkflowEngine
+from allbrain.workflow.models import EdgeType, SubtaskResult, TaskEdge, TaskGraph, TaskNode, WorkflowStatus
 
 
 def _node(nid, status=WorkflowStatus.PENDING):
@@ -40,7 +40,10 @@ def test_step_skip_missing_node_on_completion():
     """L145 branch: completion for non-existent node is skipped."""
     graph = _one_node_graph()
     engine = WorkflowEngine()
-    result = engine.step(graph, candidate_agents=["agent1"], metrics={}, completions={"nonexistent": SubtaskResult(node_id="n", agent_id="a", output="")})
+    result = engine.step(
+        graph, candidate_agents=["agent1"], metrics={},
+        completions={"nonexistent": SubtaskResult(node_id="n", agent_id="a", output="")},
+    )
     assert "nonexistent" not in result.completed
 
 
@@ -48,7 +51,10 @@ def test_step_completion_non_running_skips_transition():
     """L148 branch: completion for non-RUNNING node skips transition."""
     graph = _one_node_graph(WorkflowStatus.PENDING)
     engine = WorkflowEngine()
-    result = engine.step(graph, candidate_agents=["agent1"], metrics={}, completions={"a": SubtaskResult(node_id="a", agent_id="a", output="")})
+    result = engine.step(
+        graph, candidate_agents=["agent1"], metrics={},
+        completions={"a": SubtaskResult(node_id="a", agent_id="a", output="")},
+    )
     assert "a" not in result.completed
 
 

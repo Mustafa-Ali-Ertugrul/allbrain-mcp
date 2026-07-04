@@ -1,8 +1,9 @@
 ﻿from __future__ import annotations
 
 import pytest
-from tests.reducers.conftest import make_event
+
 from allbrain.events.schemas import EventType
+from tests.reducers.conftest import make_event
 
 
 class TestPolicyCompetitionReducer:

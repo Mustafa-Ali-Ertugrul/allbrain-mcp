@@ -2,14 +2,14 @@
 
 import pytest
 
-from tests.reducers.conftest import make_event
 from allbrain.events.schemas import EventType
+from tests.reducers.conftest import make_event
 
 
 class TestArbitrationReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.reducers.governance import ArbitrationReducer
         from allbrain.arbitration.model import ArbitrationState
+        from allbrain.reducers.governance import ArbitrationReducer
 
         reducer = ArbitrationReducer()
         snap = reducer.snapshot(context_key="test_ctx")
@@ -64,8 +64,8 @@ class TestArbitrationReducer:
 
 class TestBeliefReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.reducers.governance import BeliefReducer
         from allbrain.belief.models import BeliefState
+        from allbrain.reducers.governance import BeliefReducer
 
         reducer = BeliefReducer()
         snap = reducer.snapshot(context_key="test_ctx")
@@ -96,8 +96,8 @@ class TestBeliefReducer:
 
 class TestCalibrationReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.reducers.governance import CalibrationReducer
         from allbrain.calibration.model import CalibrationState
+        from allbrain.reducers.governance import CalibrationReducer
 
         reducer = CalibrationReducer()
         snap = reducer.snapshot(context_key="test_ctx")
@@ -125,8 +125,8 @@ class TestCalibrationReducer:
 
 class TestContradictionReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.reducers.governance import ContradictionReducer
         from allbrain.contradiction.models import ContradictionState
+        from allbrain.reducers.governance import ContradictionReducer
 
         reducer = ContradictionReducer()
         snap = reducer.snapshot(context_key="test_ctx")

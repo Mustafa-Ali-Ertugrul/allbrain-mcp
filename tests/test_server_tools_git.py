@@ -1,9 +1,9 @@
 """Tests for allbrain.server.tools.git — error branches + register_tools."""
 
 from unittest.mock import MagicMock, patch
-from pydantic import BaseModel, ValidationError
 
 import pytest
+from pydantic import BaseModel, ValidationError
 
 from allbrain.models.schemas import ToolResult, UserInputError
 from allbrain.server.context import BrainContext
