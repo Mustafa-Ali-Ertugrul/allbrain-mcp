@@ -204,15 +204,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
             seen[name] = seen.get(name, 0) + 1
         for name, count in sorted(seen.items(), key=lambda x: -x[1]):
             leaderboard.append({"agent": name, "events": count})
-        self._send_json({
-            "event_count": event_count,
-            "session_count": session_count,
-            "conflict_count": sum(1 for e in events if e.get("type", "").startswith("conflict")),
-            "agent_count": len(agent_names),
-            "agents": [{"name": n, "status": "active"} for n in sorted(agent_names)],
-            "leaderboard": leaderboard,
-            "db_size_mb": round(db_size, 2),
-        })
+        self._send_json(
+            {
+                "event_count": event_count,
+                "session_count": session_count,
+                "conflict_count": sum(1 for e in events if e.get("type", "").startswith("conflict")),
+                "agent_count": len(agent_names),
+                "agents": [{"name": n, "status": "active"} for n in sorted(agent_names)],
+                "leaderboard": leaderboard,
+                "db_size_mb": round(db_size, 2),
+            }
+        )
 
     def _events(self) -> None:
         import urllib.parse
@@ -231,12 +233,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
         parsed = [EventRead(**e) for e in events]
         graph = GraphExplorer().build(parsed)
-        self._send_json({
-            "node_count": len(graph.get("nodes", [])),
-            "edge_count": len(graph.get("edges", [])),
-            "has_cycle": graph.get("has_cycle", False),
-            "failed_paths": graph.get("path_traces", {}).get("failed", []),
-        })
+        self._send_json(
+            {
+                "node_count": len(graph.get("nodes", [])),
+                "edge_count": len(graph.get("edges", [])),
+                "has_cycle": graph.get("has_cycle", False),
+                "failed_paths": graph.get("path_traces", {}).get("failed", []),
+            }
+        )
 
     def _metrics(self) -> None:
         events = self._get_events(limit=200)

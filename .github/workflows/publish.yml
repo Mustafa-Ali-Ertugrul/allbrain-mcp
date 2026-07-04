@@ -33,6 +33,7 @@ jobs:
           enable-cache: true
       - run: uv sync --group dev
       - run: uv run ruff check src/ tests/
+      - run: uv run ruff format --check src/ tests/
       - run: uv run pytest -q tests/test_merge_server_regression.py tests/test_sdist_contents.py
 
   build-and-publish:
