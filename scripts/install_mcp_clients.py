@@ -184,13 +184,59 @@ def verify(repo: Path, project: Path) -> None:
     ]
     probe = f"""
 import asyncio
+import sys
 from fastmcp import Client
 from fastmcp.client.transports import StdioTransport
 
-async def main():
+async def main() -> None:
     transport = StdioTransport("uv", {server_args!r}, cwd={str(project)!r})
     async with Client(transport, timeout=30) as client:
-        print("MCP handshake OK:", len(await client.list_tools()), "tools")
+        results: list[tuple[str, str, bool, str]] = []
+
+        # Check 1 — tool listing
+        try:
+            tools = await client.list_tools()
+            ok = len(tools) > 0
+            results.append(("tools", "list_tools", ok, f"{{len(tools)}} tool(s)"))
+        except Exception as exc:
+            results.append(("tools", "list_tools", False, str(exc)))
+
+        # Check 2 — save_event
+        try:
+            r = await client.call_tool("save_event", {{"type": "verify_test", "payload": {{"check": "product_verify"}}}})
+            has_error = getattr(r, "isError", False)
+            results.append(("events", "save_event", not has_error, "ok" if not has_error else str(r)))
+        except Exception as exc:
+            results.append(("events", "save_event", False, str(exc)))
+
+        # Check 3 — list_events (shared memory roundtrip)
+        try:
+            r = await client.call_tool("list_events", {{}})
+            has_error = getattr(r, "isError", False)
+            results.append(("events", "list_events", not has_error, "ok" if not has_error else str(r)))
+        except Exception as exc:
+            results.append(("events", "list_events", False, str(exc)))
+
+        # Check 4 — resume_project
+        try:
+            r = await client.call_tool("resume_project", {{}})
+            has_error = getattr(r, "isError", False)
+            results.append(("session", "resume_project", not has_error, "ok" if not has_error else str(r)))
+        except Exception as exc:
+            results.append(("session", "resume_project", False, str(exc)))
+
+        # Print summary table
+        print(f"{{'Component':<12}} {{'Check':<18}} {{'Result':<6}} Detail")
+        print("-" * 60)
+        failed = 0
+        for component, check, ok, detail in results:
+            status = "PASS" if ok else "FAIL"
+            if not ok:
+                failed += 1
+            print(f"{{component:<12}} {{check:<18}} {{status:<6}} {{detail}}")
+        print(f"\\n{{'PASS' if failed == 0 else 'FAIL'}}: {{len(results) - failed}}/{{len(results)}} checks passed")
+        if failed:
+            sys.exit(1)
 
 asyncio.run(main())
 """
@@ -205,7 +251,7 @@ asyncio.run(main())
     ]
     result = subprocess.run(command, check=False)
     if result.returncode:
-        raise SystemExit("MCP verification failed")
+        raise SystemExit("VERIFY FAILED — one or more product checks failed")
 
 
 def main() -> None:
