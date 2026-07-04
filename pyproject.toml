@@ -2,7 +2,7 @@
 name = "allbrain-mcp"
 version = "0.2.1"
 description = "Event-sourced memory and orchestration server for multi-agent AI systems"
-authors = [{ name = "Ali GÖREN", email = "mustafali1230@hotmail.com" }]
+authors = [{ name = "Mustafa Ali Ertuğrul", email = "mustafali1230@hotmail.com" }]
 keywords = ["mcp", "agent", "multi-agent", "orchestration", "memory", "event-sourcing", "ai"]
 classifiers = [
     "Development Status :: 4 - Beta",

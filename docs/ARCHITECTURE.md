@@ -187,7 +187,7 @@ See [SUMMARY.md](../SUMMARY.md) for the current security hardening coverage stat
 - MCP stdio handshake and tool execution
 - Multi-agent write/read/conflict flows
 - Integrated CI pipeline: ruff → bandit → complexity → architecture → pytest + coverage
-- Coverage fail-under 75%, defined once in `pyproject.toml`
+- Coverage fail-under 80%, defined once in `pyproject.toml`
 - Python 3.12 compatibility CI and Python 3.13 coverage CI
 
 ### Experimental / Not production-ready
