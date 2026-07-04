@@ -9,33 +9,38 @@ class TestArbitrationDeep:
 
     def setup_method(self):
         from allbrain.reducers.governance import ArbitrationReducer
+
         self.reducer = ArbitrationReducer()
 
-
-
     def test_consensus_reached_branch(self):
-        ev = make_event(EventType.AGENT_CONSENSUS_REACHED.value, payload={
-            "context_key": "ctx1",
-            "winner_candidate": "c1",
-            "score": 0.95,
-            "agreement_ratio": 0.88,
-            "method": "majority",
-            "template_version": 1,
-        })
+        ev = make_event(
+            EventType.AGENT_CONSENSUS_REACHED.value,
+            payload={
+                "context_key": "ctx1",
+                "winner_candidate": "c1",
+                "score": 0.95,
+                "agreement_ratio": 0.88,
+                "method": "majority",
+                "template_version": 1,
+            },
+        )
         self.reducer.apply(ev)
         snap = self.reducer.snapshot(context_key="ctx1")
         assert snap.winner_candidate == "c1"
         assert snap.agreement_ratio == 0.88
 
     def test_arbitration_decision_branch(self):
-        ev = make_event(EventType.AGENT_ARBITRATION_DECISION.value, payload={
-            "context_key": "ctx1",
-            "winner_candidate": "c1",
-            "method": "weighted",
-            "vote_count": 3,
-            "candidate_scores": {"c1": 0.9, "c2": 0.7},
-            "template_version": 1,
-        })
+        ev = make_event(
+            EventType.AGENT_ARBITRATION_DECISION.value,
+            payload={
+                "context_key": "ctx1",
+                "winner_candidate": "c1",
+                "method": "weighted",
+                "vote_count": 3,
+                "candidate_scores": {"c1": 0.9, "c2": 0.7},
+                "template_version": 1,
+            },
+        )
         self.reducer.apply(ev)
         snap = self.reducer.snapshot(context_key="ctx1")
         assert snap.vote_count == 0
@@ -43,15 +48,18 @@ class TestArbitrationDeep:
         assert ctx["decision"]["winner_candidate"] == "c1"
 
     def test_idempotent_skipped(self):
-        ev = make_event(EventType.AGENT_VOTE_CAST.value, payload={
-            "context_key": "ctx1",
-            "agent_id": "a1",
-            "candidate_id": "c1",
-            "confidence": 0.8,
-            "reputation": 0.9,
-            "calibrated_trust": 0.85,
-            "template_version": 1,
-        })
+        ev = make_event(
+            EventType.AGENT_VOTE_CAST.value,
+            payload={
+                "context_key": "ctx1",
+                "agent_id": "a1",
+                "candidate_id": "c1",
+                "confidence": 0.8,
+                "reputation": 0.9,
+                "calibrated_trust": 0.85,
+                "template_version": 1,
+            },
+        )
         self.reducer.apply(ev)
         self.reducer.apply(ev)
         assert self.reducer.snapshot(context_key="ctx1").vote_count == 1
@@ -62,9 +70,8 @@ class TestBeliefDeep:
 
     def setup_method(self):
         from allbrain.reducers.governance import BeliefReducer
+
         self.reducer = BeliefReducer()
-
-
 
     def test_belief_computed_non_dict_payload_skipped(self):
         ev = make_event(EventType.BELIEF_COMPUTED.value, payload={"bad": "data"})
@@ -77,6 +84,7 @@ class TestCalibrationDeep:
 
     def setup_method(self):
         from allbrain.reducers.governance import CalibrationReducer
+
         self.reducer = CalibrationReducer()
 
     def test_non_matching_event_skipped(self):
@@ -84,9 +92,14 @@ class TestCalibrationDeep:
         assert self.reducer.snapshot(context_key="ctx1").sample_count == 0
 
     def test_invalid_payload_skipped(self):
-        self.reducer.apply(make_event(EventType.CALIBRATION_UPDATED.value, payload={
-            "context_key": "ctx1",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.CALIBRATION_UPDATED.value,
+                payload={
+                    "context_key": "ctx1",
+                },
+            )
+        )
         assert self.reducer.snapshot(context_key="ctx1").sample_count == 0
 
 
@@ -95,6 +108,7 @@ class TestContradictionDeep:
 
     def setup_method(self):
         from allbrain.reducers.governance import ContradictionReducer
+
         self.reducer = ContradictionReducer()
 
     def test_non_matching_event_skipped(self):
@@ -111,6 +125,7 @@ class TestDecisionDeep:
 
     def setup_method(self):
         from allbrain.reducers.governance import DecisionReducer
+
         self.reducer = DecisionReducer()
 
     def test_non_dict_payload_skipped(self):
@@ -118,22 +133,32 @@ class TestDecisionDeep:
         assert self.reducer.snapshot(agent_id="a1", task_type="t1")["score"] == {}
 
     def test_invalid_decision_skipped(self):
-        self.reducer.apply(make_event(EventType.DECISION_COMPUTED.value, payload={
-            "agent_id": "a1",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.DECISION_COMPUTED.value,
+                payload={
+                    "agent_id": "a1",
+                },
+            )
+        )
         assert self.reducer.snapshot(agent_id="a1", task_type="classify")["score"] == {}
 
     def test_all_snapshots_multi_key(self):
         for i in range(3):
-            self.reducer.apply(make_event(EventType.DECISION_COMPUTED.value, payload={
-                "agent_id": f"agent_{i}",
-                "task_type": "classify",
-                "score": 0.5 + i * 0.1,
-                "mode": "weighted",
-                "contributors": {"reasoning": 1.0},
-                "backend_trace": [],
-                "template_version": 1,
-            }))
+            self.reducer.apply(
+                make_event(
+                    EventType.DECISION_COMPUTED.value,
+                    payload={
+                        "agent_id": f"agent_{i}",
+                        "task_type": "classify",
+                        "score": 0.5 + i * 0.1,
+                        "mode": "weighted",
+                        "contributors": {"reasoning": 1.0},
+                        "backend_trace": [],
+                        "template_version": 1,
+                    },
+                )
+            )
         result = self.reducer.all_snapshots()
         assert len(result) == 3
         assert all("::" in k for k in result)
@@ -145,18 +170,24 @@ class TestObjectiveSystemDeep:
 
     def setup_method(self):
         from allbrain.reducers.governance import ObjectiveSystemReducer
+
         self.reducer = ObjectiveSystemReducer()
 
     def test_rebalanced_branch(self):
-        self.reducer.apply(make_event(EventType.OBJECTIVE_REBALANCED.value, payload={
-            "fault_type": "drift",
-            "safety": 0.95,
-            "stability": 0.85,
-            "success": 0.75,
-            "efficiency": 0.65,
-            "version": 2,
-            "template_version": 1,
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.OBJECTIVE_REBALANCED.value,
+                payload={
+                    "fault_type": "drift",
+                    "safety": 0.95,
+                    "stability": 0.85,
+                    "success": 0.75,
+                    "efficiency": 0.65,
+                    "version": 2,
+                    "template_version": 1,
+                },
+            )
+        )
         snap = self.reducer.snapshot()
         assert snap["total_rebalances"] == 1
         assert snap["total_objectives"] == 0
@@ -171,12 +202,18 @@ class TestValueAlignmentDeep:
 
     def setup_method(self):
         from allbrain.reducers.governance import ValueAlignmentReducer
+
         self.reducer = ValueAlignmentReducer()
 
     def test_invalid_payload_skipped(self):
-        self.reducer.apply(make_event(EventType.ALIGNMENT_FAILED.value, payload={
-            "fault_type": "mismatch",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.ALIGNMENT_FAILED.value,
+                payload={
+                    "fault_type": "mismatch",
+                },
+            )
+        )
         assert self.reducer.snapshot()["total_failures"] == 0
 
     def test_non_dict_payload_skipped(self):
@@ -189,6 +226,7 @@ class TestCausalDeep:
 
     def setup_method(self):
         from allbrain.reducers.world import CausalReducer
+
         self.reducer = CausalReducer()
 
     def test_non_dict_payload_skipped(self):
@@ -197,10 +235,15 @@ class TestCausalDeep:
         assert snap["counterfactuals"] == {}
 
     def test_invalid_counterfactual_skipped(self):
-        self.reducer.apply(make_event(EventType.AGENT_COUNTERFACTUAL_RUN.value, payload={
-            "agent_id": "a1",
-            "task_type": "t1",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.AGENT_COUNTERFACTUAL_RUN.value,
+                payload={
+                    "agent_id": "a1",
+                    "task_type": "t1",
+                },
+            )
+        )
         snap = self.reducer.snapshot(agent_id="a1", task_type="t1")
         assert snap["counterfactuals"] == {}
 
@@ -210,20 +253,33 @@ class TestEvidenceDeep:
 
     def setup_method(self):
         from allbrain.reducers.world import EvidenceReducer
+
         self.reducer = EvidenceReducer()
 
     def test_non_numeric_weight_skipped(self):
-        self.reducer.apply(make_event(EventType.EVIDENCE_RECORDED.value, payload={
-            "context_key": "ctx1", "weight": "bad",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.EVIDENCE_RECORDED.value,
+                payload={
+                    "context_key": "ctx1",
+                    "weight": "bad",
+                },
+            )
+        )
         snap = self.reducer.snapshot(context_key="ctx1")
         assert snap.evidence_count == 0
         assert snap.average_weight == 0.0
 
     def test_non_numeric_trust_skipped(self):
-        self.reducer.apply(make_event(EventType.TRUST_UPDATED.value, payload={
-            "context_key": "ctx1", "trust_score": "bad",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.TRUST_UPDATED.value,
+                payload={
+                    "context_key": "ctx1",
+                    "trust_score": "bad",
+                },
+            )
+        )
         snap = self.reducer.snapshot(context_key="ctx1")
         assert snap.trust_score == 1.0
 
@@ -238,25 +294,46 @@ class TestEpisodicDeep:
 
     def setup_method(self):
         from allbrain.reducers.world import EpisodicReducer
+
         self.reducer = EpisodicReducer()
 
     def test_forgotten_removes_episode(self):
-        self.reducer.apply(make_event(EventType.EPISODE_CREATED.value, payload={
-            "episode_id": "ep1", "importance": 0.9, "reward": 1.0,
-            "timestamp": 1000, "workspace_items": ["x"], "decision_id": "dec1",
-        }))
-        self.reducer.apply(make_event(EventType.EPISODE_FORGOTTEN.value, payload={
-            "episode_id": "ep1", "reason": "decay",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.EPISODE_CREATED.value,
+                payload={
+                    "episode_id": "ep1",
+                    "importance": 0.9,
+                    "reward": 1.0,
+                    "timestamp": 1000,
+                    "workspace_items": ["x"],
+                    "decision_id": "dec1",
+                },
+            )
+        )
+        self.reducer.apply(
+            make_event(
+                EventType.EPISODE_FORGOTTEN.value,
+                payload={
+                    "episode_id": "ep1",
+                    "reason": "decay",
+                },
+            )
+        )
         snap = self.reducer.snapshot()
         assert snap["total"] == 1
         assert snap["retained"] == 0
         assert snap["forgotten"] == 1
 
     def test_retrieved_validation_failure_skipped(self):
-        self.reducer.apply(make_event(EventType.EPISODE_RETRIEVED.value, payload={
-            "retrieved": "invalid",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.EPISODE_RETRIEVED.value,
+                payload={
+                    "retrieved": "invalid",
+                },
+            )
+        )
         assert self.reducer.snapshot()["total"] == 0
 
 
@@ -265,33 +342,66 @@ class TestSemanticDeep:
 
     def setup_method(self):
         from allbrain.reducers.world import SemanticReducer
+
         self.reducer = SemanticReducer()
 
     def test_concept_updated_replaces_confidence(self):
-        self.reducer.apply(make_event(EventType.SEMANTIC_CONCEPT_CREATED.value, payload={
-            "concept_id": "c1", "pattern_signature": ["sig1"], "confidence": 0.8,
-        }))
-        self.reducer.apply(make_event(EventType.SEMANTIC_CONCEPT_UPDATED.value, payload={
-            "concept_id": "c1", "confidence": 0.95,
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.SEMANTIC_CONCEPT_CREATED.value,
+                payload={
+                    "concept_id": "c1",
+                    "pattern_signature": ["sig1"],
+                    "confidence": 0.8,
+                },
+            )
+        )
+        self.reducer.apply(
+            make_event(
+                EventType.SEMANTIC_CONCEPT_UPDATED.value,
+                payload={
+                    "concept_id": "c1",
+                    "confidence": 0.95,
+                },
+            )
+        )
         assert self.reducer.snapshot()["concepts"][0].confidence == 0.95
 
     def test_concept_forgotten_removes_concept(self):
-        self.reducer.apply(make_event(EventType.SEMANTIC_CONCEPT_CREATED.value, payload={
-            "concept_id": "c1", "pattern_signature": ["sig1"], "confidence": 0.8,
-        }))
-        self.reducer.apply(make_event(EventType.SEMANTIC_CONCEPT_FORGOTTEN.value, payload={
-            "concept_id": "c1", "reason": "stale",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.SEMANTIC_CONCEPT_CREATED.value,
+                payload={
+                    "concept_id": "c1",
+                    "pattern_signature": ["sig1"],
+                    "confidence": 0.8,
+                },
+            )
+        )
+        self.reducer.apply(
+            make_event(
+                EventType.SEMANTIC_CONCEPT_FORGOTTEN.value,
+                payload={
+                    "concept_id": "c1",
+                    "reason": "stale",
+                },
+            )
+        )
         snap = self.reducer.snapshot()
         assert snap["total"] == 1
         assert snap["retained"] == 0
         assert snap["forgotten"] == 1
 
     def test_concept_updated_nonexistent_noop(self):
-        self.reducer.apply(make_event(EventType.SEMANTIC_CONCEPT_UPDATED.value, payload={
-            "concept_id": "nonexistent", "confidence": 0.5,
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.SEMANTIC_CONCEPT_UPDATED.value,
+                payload={
+                    "concept_id": "nonexistent",
+                    "confidence": 0.5,
+                },
+            )
+        )
         assert self.reducer.snapshot()["total"] == 0
 
 
@@ -300,23 +410,43 @@ class TestWorkspaceDeep:
 
     def setup_method(self):
         from allbrain.reducers.world import WorkspaceReducer
+
         self.reducer = WorkspaceReducer()
 
     def test_item_removed_evicts(self):
-        self.reducer.apply(make_event(EventType.WORKSPACE_ITEM_ADDED.value, payload={
-            "item_id": "item1", "activation": 0.5, "source": "user",
-        }))
-        self.reducer.apply(make_event(EventType.WORKSPACE_ITEM_REMOVED.value, payload={
-            "item_id": "item1", "reason": "expired",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.WORKSPACE_ITEM_ADDED.value,
+                payload={
+                    "item_id": "item1",
+                    "activation": 0.5,
+                    "source": "user",
+                },
+            )
+        )
+        self.reducer.apply(
+            make_event(
+                EventType.WORKSPACE_ITEM_REMOVED.value,
+                payload={
+                    "item_id": "item1",
+                    "reason": "expired",
+                },
+            )
+        )
         snap = self.reducer.snapshot()
         assert "item1" not in snap["active"]
         assert snap["evicted"] == 1
 
     def test_remove_nonexistent_no_error(self):
-        self.reducer.apply(make_event(EventType.WORKSPACE_ITEM_REMOVED.value, payload={
-            "item_id": "ghost", "reason": "cleanup",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.WORKSPACE_ITEM_REMOVED.value,
+                payload={
+                    "item_id": "ghost",
+                    "reason": "cleanup",
+                },
+            )
+        )
         assert self.reducer.snapshot()["evicted"] == 1
 
 
@@ -325,12 +455,18 @@ class TestTelemetryDeep:
 
     def setup_method(self):
         from allbrain.reducers.world import TelemetryReducer
+
         self.reducer = TelemetryReducer()
 
     def test_validation_failure_skipped(self):
-        self.reducer.apply(make_event(EventType.TOOL_EXECUTION_COMPLETED.value, payload={
-            "agent_id": "bot1",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.TOOL_EXECUTION_COMPLETED.value,
+                payload={
+                    "agent_id": "bot1",
+                },
+            )
+        )
         snap = self.reducer.snapshot(agent_id="bot1")
         assert snap.execution_count == 0
         assert snap.success_rate == 0.0
@@ -345,16 +481,31 @@ class TestTradeoffDeep:
 
     def setup_method(self):
         from allbrain.reducers.world import TradeoffReducer
+
         self.reducer = TradeoffReducer()
 
     def test_both_event_types(self):
-        self.reducer.apply(make_event(EventType.TRADEOFF_ANALYZED.value, payload={
-            "fault_type": "latency", "frontier_size": 5, "dominated_count": 2,
-        }))
-        self.reducer.apply(make_event(EventType.UTILITY_COMPUTED.value, payload={
-            "policy_id": "p1", "fault_type": "latency",
-            "utility": 0.8, "safety_pass": True,
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.TRADEOFF_ANALYZED.value,
+                payload={
+                    "fault_type": "latency",
+                    "frontier_size": 5,
+                    "dominated_count": 2,
+                },
+            )
+        )
+        self.reducer.apply(
+            make_event(
+                EventType.UTILITY_COMPUTED.value,
+                payload={
+                    "policy_id": "p1",
+                    "fault_type": "latency",
+                    "utility": 0.8,
+                    "safety_pass": True,
+                },
+            )
+        )
         snap = self.reducer.snapshot()
         assert snap["total_tradeoffs"] == 1
         assert snap["total_utilities"] == 1
@@ -365,6 +516,7 @@ class TestReputationDeep:
 
     def setup_method(self):
         from allbrain.reducers.world import ReputationReducer
+
         self.reducer = ReputationReducer()
 
     def test_non_matching_event_skipped(self):
@@ -376,14 +528,28 @@ class TestReputationDeep:
         assert self.reducer.snapshot(agent_id="a1").task_count == 0
 
     def test_empty_agent_id_skipped(self):
-        self.reducer.apply(make_event(EventType.AGENT_REPUTATION_UPDATED.value, payload={
-            "agent_id": "", "task_id": "t1", "success": True,
-            "confidence": 0.9, "duration_ms": 200.0, "retry_count": 0,
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                payload={
+                    "agent_id": "",
+                    "task_id": "t1",
+                    "success": True,
+                    "confidence": 0.9,
+                    "duration_ms": 200.0,
+                    "retry_count": 0,
+                },
+            )
+        )
         assert self.reducer.snapshot(agent_id="").task_count == 0
 
     def test_invalid_payload_skipped(self):
-        self.reducer.apply(make_event(EventType.AGENT_REPUTATION_UPDATED.value, payload={
-            "agent_id": "a1",
-        }))
+        self.reducer.apply(
+            make_event(
+                EventType.AGENT_REPUTATION_UPDATED.value,
+                payload={
+                    "agent_id": "a1",
+                },
+            )
+        )
         assert self.reducer.snapshot(agent_id="a1").task_count == 0

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import pytest
 
@@ -43,17 +43,19 @@ class TestPolicyCompetitionReducer:
 
         r = PolicyCompetitionReducer()
         for i in range(3):
-            r.apply(make_event(
-                EventType.COMPETITION_HELD.value,
-                payload={
-                    "fault_type": "overfit",
-                    "winner_policy_id": f"p_{i}",
-                    "winner_strategy": "default",
-                    "winner_score": 1.0,
-                    "confidence": 0.8,
-                    "candidate_count": 2,
-                },
-            ))
+            r.apply(
+                make_event(
+                    EventType.COMPETITION_HELD.value,
+                    payload={
+                        "fault_type": "overfit",
+                        "winner_policy_id": f"p_{i}",
+                        "winner_strategy": "default",
+                        "winner_score": 1.0,
+                        "confidence": 0.8,
+                        "candidate_count": 2,
+                    },
+                )
+            )
         s = r.snapshot()
         assert s["total_competitions"] == 3
         assert len(s["competitions"]) == 3
@@ -168,27 +170,43 @@ class TestRoutingReducer:
         from allbrain.reducers.policy import RoutingReducer
 
         r = RoutingReducer()
-        r.apply(make_event(
-            EventType.AGENT_SELECTION_SCORED.value,
-            payload={
-                "agent_id": "a1", "task_type": "t", "selection_score": 0.7,
-                "reputation": 0.8, "runtime_score": 0.6, "calibrated_trust": 0.5,
-            },
-        ))
-        r.apply(make_event(
-            EventType.AGENT_SELECTION_SCORED.value,
-            payload={
-                "agent_id": "a2", "task_type": "t", "selection_score": 0.9,
-                "reputation": 0.9, "runtime_score": 0.8, "calibrated_trust": 0.7,
-            },
-        ))
-        r.apply(make_event(
-            EventType.AGENT_SELECTED.value,
-            payload={
-                "task_id": "t_001", "task_type": "t", "agent_id": "a2",
-                "selection_score": 0.9,
-            },
-        ))
+        r.apply(
+            make_event(
+                EventType.AGENT_SELECTION_SCORED.value,
+                payload={
+                    "agent_id": "a1",
+                    "task_type": "t",
+                    "selection_score": 0.7,
+                    "reputation": 0.8,
+                    "runtime_score": 0.6,
+                    "calibrated_trust": 0.5,
+                },
+            )
+        )
+        r.apply(
+            make_event(
+                EventType.AGENT_SELECTION_SCORED.value,
+                payload={
+                    "agent_id": "a2",
+                    "task_type": "t",
+                    "selection_score": 0.9,
+                    "reputation": 0.9,
+                    "runtime_score": 0.8,
+                    "calibrated_trust": 0.7,
+                },
+            )
+        )
+        r.apply(
+            make_event(
+                EventType.AGENT_SELECTED.value,
+                payload={
+                    "task_id": "t_001",
+                    "task_type": "t",
+                    "agent_id": "a2",
+                    "selection_score": 0.9,
+                },
+            )
+        )
         s = r.snapshot(task_type="t")
         assert s.selected_agent == "a2"
         assert s.candidate_count == 2

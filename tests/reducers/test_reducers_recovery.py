@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from allbrain.events.schemas import EventType
 from tests.reducers.conftest import make_event
@@ -40,25 +40,29 @@ class TestAdaptiveRecoveryReducer:
         from allbrain.reducers.recovery import AdaptiveRecoveryReducer
 
         r = AdaptiveRecoveryReducer()
-        r.apply(make_event(
-            EventType.RECOVERY_CHAIN_CREATED.value,
-            payload={
-                "chain_id": "chain2",
-                "fault_id": "f2",
-                "fault_type": "crash",
-                "steps_count": 1,
-                "strategies": ["repair"],
-            },
-        ))
-        r.apply(make_event(
-            EventType.ADAPTIVE_RECOVERY_COMPLETED.value,
-            payload={
-                "chain_id": "chain2",
-                "fault_id": "f2",
-                "outcome": "success",
-                "steps_taken": 1,
-            },
-        ))
+        r.apply(
+            make_event(
+                EventType.RECOVERY_CHAIN_CREATED.value,
+                payload={
+                    "chain_id": "chain2",
+                    "fault_id": "f2",
+                    "fault_type": "crash",
+                    "steps_count": 1,
+                    "strategies": ["repair"],
+                },
+            )
+        )
+        r.apply(
+            make_event(
+                EventType.ADAPTIVE_RECOVERY_COMPLETED.value,
+                payload={
+                    "chain_id": "chain2",
+                    "fault_id": "f2",
+                    "outcome": "success",
+                    "steps_taken": 1,
+                },
+            )
+        )
         s = r.snapshot()
         assert s["total_completed"] == 1
         assert len(s["completed_chains"]) == 1
@@ -255,23 +259,27 @@ class TestResilienceReducer:
         from allbrain.reducers.recovery import ResilienceReducer
 
         r = ResilienceReducer()
-        r.apply(make_event(
-            EventType.RESILIENCE_RECOVERY_PLANNED.value,
-            payload={
-                "plan_id": "p1",
-                "fault_id": "f1",
-                "strategy": "retry",
-                "target_component": "db",
-                "priority": 2,
-                "reason": "high severity",
-            },
-        ))
+        r.apply(
+            make_event(
+                EventType.RESILIENCE_RECOVERY_PLANNED.value,
+                payload={
+                    "plan_id": "p1",
+                    "fault_id": "f1",
+                    "strategy": "retry",
+                    "target_component": "db",
+                    "priority": 2,
+                    "reason": "high severity",
+                },
+            )
+        )
         s1 = r.snapshot()
         assert len(s1["plans"]) == 1
-        r.apply(make_event(
-            EventType.RESILIENCE_RECOVERY_CANCELLED.value,
-            payload={"plan_id": "p1", "reason": "manual"},
-        ))
+        r.apply(
+            make_event(
+                EventType.RESILIENCE_RECOVERY_CANCELLED.value,
+                payload={"plan_id": "p1", "reason": "manual"},
+            )
+        )
         s2 = r.snapshot()
         assert len(s2["plans"]) == 0
 
