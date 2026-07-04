@@ -86,6 +86,8 @@ jobs:
           enable-cache: true
       - run: uv sync --group dev --extra postgres
       - run: uv run pytest -q -n 0 tests/integration/test_postgres_storage.py
+      - run: uv run pytest -q -n 0 tests/test_merge_server_regression.py
+      - run: uv run pytest -q -n 0 tests/test_sdist_contents.py
 
   installer-smoke:
     name: Installer smoke test
