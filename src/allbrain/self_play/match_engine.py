@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.self_play.model import (
     SELF_PLAY_MATCHES_PER_CYCLE,

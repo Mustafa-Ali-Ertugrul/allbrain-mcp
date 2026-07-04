@@ -21,11 +21,11 @@ from allbrain.meta_reasoning import (
 )
 from allbrain.replay import EventReplayEngine
 from allbrain.runtime_core import SystemDecisionPipeline
-from allbrain.server.app import (
+from allbrain.server.tools.foresight import (
     estimate_confidence_impl,
     explain_decision_impl,
-    run_decision_pipeline_impl,
 )
+from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
 from allbrain.world import WorldState
 from tests.test_sprint12_memory_policy_ui import events, make_context
 

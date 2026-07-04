@@ -5,7 +5,8 @@ from allbrain.models.schemas import (
     SaveEventInput,
     UserInputError,
 )
-from allbrain.server.app import create_task_impl, save_event_impl
+from allbrain.server.tools.events import save_event_impl
+from allbrain.server.tools.tasks import create_task_impl
 from tests._helpers import make_context
 
 # --- Validation errors are user-visible ---

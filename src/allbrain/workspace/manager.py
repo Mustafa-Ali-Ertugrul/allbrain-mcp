@@ -3,17 +3,14 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
 from allbrain.workspace.activation import compute_activation
 from allbrain.workspace.decay import apply_decay
 from allbrain.workspace.model import (
     DEFAULT_CAPACITY,
     EVICTION_REASON_BELOW_MIN,
     EVICTION_REASON_CAPACITY,
-    MIN_ACTIVATION,
     SOURCE_DECISION,
     WorkspaceItem,
-    WorkspaceState,
 )
 from allbrain.workspace.selector import select_workspace_items
 

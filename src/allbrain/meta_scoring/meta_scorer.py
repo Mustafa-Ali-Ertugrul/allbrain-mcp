@@ -5,7 +5,6 @@ from typing import Any
 from allbrain.meta_scoring.model import (
     META_SCORING_OVERRIDE_CONFIDENCE,
     MetaScoreResult,
-    ScoringProfile,
 )
 from allbrain.meta_scoring.profile_store import ProfileStore
 

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from allbrain.agents.adapter import AgentAdapter, ExecutionContext, RetryPolicy
+from allbrain.agents.adapter import ExecutionContext, RetryPolicy
 from allbrain.agents.learner import CapabilityLearner
 from allbrain.agents.metrics import ExecutionMetrics, MetricsCollector
 from allbrain.agents.registry import AgentRegistry

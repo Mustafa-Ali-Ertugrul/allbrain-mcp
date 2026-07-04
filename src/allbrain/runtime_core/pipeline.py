@@ -50,23 +50,6 @@ class SystemDecisionPipeline:
                 LearningCompletionStep(),
             )
         )
-        self._expose_legacy_service_attributes()
-
-    def _expose_legacy_service_attributes(self) -> None:
-        """Keep historically observable service attributes available."""
-        self._uuid7 = self.services.uuid7_generator
-        self.governance = self.services.governance
-        self.economics = self.services.economics
-        self.strategy = self.services.strategy
-        self.decomposition = self.services.decomposition
-        self.execution = self.services.execution
-        self.arbitration = self.services.arbitration
-        self.learning = self.services.learning
-        self.simulation = self.services.simulation
-        self.meta_reasoning = self.services.meta_reasoning
-        self.uncertainty = self.services.uncertainty
-        self.information_seeking = self.services.information_seeking
-        self.bridge_timeout_ms = self.services.bridge_timeout_ms
 
     def run(
         self,

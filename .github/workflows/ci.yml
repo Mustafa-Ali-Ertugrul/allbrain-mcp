@@ -22,7 +22,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
-      - run: uv sync --extra dev
+      - run: uv sync --group dev
       - run: uv run ruff check src/ tests/
       - run: uv run ruff format --check src/ tests/
       - run: uv run python scripts/check_complexity.py
@@ -38,7 +38,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
-      - run: uv sync --extra dev
+      - run: uv sync --group dev
       - run: uv run bandit -c pyproject.toml -r src/ -ll
 
   test:
@@ -52,7 +52,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
-      - run: uv sync --extra dev
+      - run: uv sync --group dev
       - run: uv pip install -e packages/allbrain-sdk
       - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=80 -n auto --dist=worksteal
 
@@ -83,7 +83,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
-      - run: uv sync --extra dev --extra postgres
+      - run: uv sync --group dev --extra postgres
       - run: uv run pytest -q -n 0 tests/integration/test_postgres_storage.py
 
   broker-contracts:
@@ -119,5 +119,5 @@ jobs:
           version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
-      - run: uv sync --extra dev --extra distributed
+      - run: uv sync --group dev --extra distributed
       - run: uv run pytest -q -n 0 tests/integration/test_distributed_brokers.py

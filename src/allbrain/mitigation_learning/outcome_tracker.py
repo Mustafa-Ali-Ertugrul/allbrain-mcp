@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable
-from typing import Any
 
 from allbrain.mitigation_learning.model import (
     STRATEGY_BASE_EFFECTIVENESS,

@@ -7,15 +7,13 @@ from allbrain.adaptive_recovery.model import (
     CHAIN_OUTCOME_FAILED,
     CHAIN_OUTCOME_SUCCESS,
     DEFAULT_MAX_CHAIN_LENGTH,
-    RecoveryChain,
 )
 from allbrain.adaptive_recovery.strategy_chain import StrategyChain
 from allbrain.adaptive_recovery.switch_policy import LinearSwitchPolicy
 from allbrain.events.schemas import EventType
 
 if TYPE_CHECKING:
-    from allbrain.failure_memory.manager import FailureMemoryManager
-    from allbrain.recovery_consensus.model import CandidateStrategy
+    pass
 
 
 class AdaptiveRecoveryManager:

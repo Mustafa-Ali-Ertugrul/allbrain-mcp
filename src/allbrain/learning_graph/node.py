@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from allbrain.learning_graph.model import LearningNode
-
 
 class NodeRegistry:
     """Fixed registry of node types. No runtime code generation.

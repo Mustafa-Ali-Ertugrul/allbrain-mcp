@@ -4,14 +4,11 @@ from typing import Any
 
 from allbrain.arbitration.events import validate_consensus_payload, validate_vote_payload
 from allbrain.arbitration.model import (
-    ARBITRATION_METHODS,
     ArbitrationState,
     VoteRecord,
 )
 from allbrain.arbitration.scorer import (
     _stable_arbitration_id,
-    agreement_ratio,
-    majority_resolve,
     weighted_resolve,
 )
 from allbrain.events.schemas import EventType

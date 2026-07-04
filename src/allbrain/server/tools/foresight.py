@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from allbrain.events import EventType
 from allbrain.foresight import ForesightEngine
-from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis, FuturePlan
+from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis
 from allbrain.meta_reasoning import ConfidenceEngine, MetaReasoningManager
 from allbrain.models.schemas import (
     EstimateConfidenceInput,

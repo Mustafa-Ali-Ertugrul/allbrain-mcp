@@ -9,7 +9,6 @@ from allbrain.resilience.model import (
     FaultRecord,
     RecoveryPlan,
 )
-from allbrain.resilience.recovery_planner import RecoveryPlanner
 from allbrain.resilience.state_snapshot import StateSnapshotManager
 
 

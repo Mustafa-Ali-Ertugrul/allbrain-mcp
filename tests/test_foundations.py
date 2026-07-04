@@ -16,11 +16,11 @@ from allbrain.foundations import (
 )
 from allbrain.models.schemas import EventRead
 from allbrain.replay import EventReplayEngine
-from allbrain.server.app import (
+from allbrain.server.tools.knowledge import (
     detect_knowledge_gaps_impl,
     estimate_uncertainty_impl,
-    generate_scenarios_impl,
 )
+from allbrain.server.tools.scenarios import generate_scenarios_impl
 from tests.test_sprint12_memory_policy_ui import events as context_events
 from tests.test_sprint12_memory_policy_ui import make_context
 

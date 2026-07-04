@@ -7,7 +7,7 @@ Measures:
   3. State drift - resume_project consistency after concurrent load
 
 Usage:
-    uv run --extra dev python scripts/stress_test.py
+    uv run --group dev python scripts/stress_test.py
 """
 
 # ruff: noqa: E501
@@ -18,7 +18,6 @@ import json
 import os
 import random
 import sys
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
@@ -27,7 +26,8 @@ from typing import Any
 
 from allbrain.security.rate_limit import reset_rate_limits
 from allbrain.server import BrainContext
-from allbrain.server.app import resume_project_impl, save_event_impl
+from allbrain.server.tools.events import save_event_impl
+from allbrain.server.tools.snapshots import resume_project_impl
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 
 AGENT_NAMES = [f"agent-{i:02d}" for i in range(10)]

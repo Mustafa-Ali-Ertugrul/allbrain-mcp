@@ -5,7 +5,6 @@ from allbrain.learning_graph.model import (
     LEARNING_GRAPH_MIN_DELTA,
     LEARNING_GRAPH_PARAM_BOUND,
     LEARNING_GRAPH_REWRITE_INTERVAL,
-    LearningNode,
     RewriteRecord,
 )
 from allbrain.learning_graph.node import NodeRegistry

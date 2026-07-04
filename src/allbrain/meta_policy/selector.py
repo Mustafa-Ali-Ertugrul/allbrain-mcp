@@ -5,8 +5,6 @@ import random as _random
 from hashlib import sha256
 
 from allbrain.meta_policy.model import (
-    META_POLICY_EXPLORATION_MIN,
-    META_POLICY_TEMPERATURE_INIT,
     PolicyMode,
     PolicyState,
 )

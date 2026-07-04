@@ -13,7 +13,6 @@ from allbrain.governance import GovernanceStateBuilder
 from allbrain.information_seeking import InformationSeekingProjection
 from allbrain.meta_reasoning import MetaReasoningProjection
 from allbrain.models.schemas import EventRead
-from allbrain.replay.diff_utils import _copy_state
 from allbrain.replay.event_classifiers import (
     _build_knowledge_gap_projection,
     _is_collaboration_event,

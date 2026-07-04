@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import hashlib
 from typing import Any
 
 from allbrain.belief.estimator import (
     _context_key_of,
     _outcome_of,
     _stable_analysis_id,
-    list_known_context_keys,
-    tally_outcomes,
 )
 from allbrain.belief.models import BeliefState, OutcomeKind
 from allbrain.belief.updater import update_state

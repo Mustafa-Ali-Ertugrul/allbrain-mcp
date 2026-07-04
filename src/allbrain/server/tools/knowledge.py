@@ -32,11 +32,9 @@ from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
-    maybe_auto_snapshot,
     observability_project_and_limit,
 )
 from allbrain.uncertainty import UncertaintyManager, observed_success_rate
-from allbrain.uncertainty.models import KnowledgeGap
 
 logger = logging.getLogger(__name__)
 

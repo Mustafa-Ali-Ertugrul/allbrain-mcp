@@ -4,7 +4,6 @@ from typing import Any
 
 from allbrain.adaptive_recovery.model import (
     ADAPTIVE_RECOVERY_TEMPLATE_VERSION,
-    PATTERN_MOVE_THRESHOLD,
 )
 
 CHAIN_CREATED_KEYS: frozenset[str] = frozenset(

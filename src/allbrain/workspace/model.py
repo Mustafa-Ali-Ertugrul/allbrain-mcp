@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 DEFAULT_CAPACITY = 7
 MAX_CAPACITY = 15

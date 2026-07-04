@@ -9,7 +9,6 @@ Formula: gradient = lr * (delta / max_delta) * (1.2 - current_weight)
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 

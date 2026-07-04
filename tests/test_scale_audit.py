@@ -8,7 +8,11 @@ from typing import Any
 
 from allbrain.events import EventType
 from allbrain.server import BrainContext
-from allbrain.server.app import create_snapshot_impl, orchestrate_project_impl, resume_project_impl
+from allbrain.server.tools.orchestrator import orchestrate_project_impl
+from allbrain.server.tools.snapshots import (
+    create_snapshot_impl,
+    resume_project_impl,
+)
 from tests._helpers import make_context
 
 

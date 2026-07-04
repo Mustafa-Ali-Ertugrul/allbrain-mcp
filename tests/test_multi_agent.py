@@ -5,12 +5,12 @@ from pathlib import Path
 
 from allbrain.conflict import ConflictDetector, ConflictResolver
 from allbrain.models.entities import Event
-from allbrain.server.app import (
+from allbrain.server.tools.conflicts import (
     detect_conflicts_impl,
     resolve_conflicts_impl,
-    resume_project_impl,
-    save_event_impl,
 )
+from allbrain.server.tools.events import save_event_impl
+from allbrain.server.tools.snapshots import resume_project_impl
 from allbrain.storage import (
     BrainRepository,
     SnapshotRepo,

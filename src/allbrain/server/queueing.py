@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, timedelta, timezone
+from datetime import UTC, timedelta
 from typing import Any
 
 from sqlalchemy import update

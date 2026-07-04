@@ -6,15 +6,17 @@ from allbrain.events import EventType
 from allbrain.memory import MemoryBuilder, MemoryRetriever, SemanticMemory
 from allbrain.policy import RoutingEngine
 from allbrain.server import BrainContext
-from allbrain.server.app import (
+from allbrain.server.tools.events import save_event_impl
+from allbrain.server.tools.knowledge import recommend_policy_impl
+from allbrain.server.tools.memory import (
     build_memory_impl,
+    retrieve_memory_impl,
+)
+from allbrain.server.tools.ui import (
     get_ui_graph_view_impl,
     get_ui_metrics_view_impl,
     get_ui_replay_view_impl,
     get_ui_trace_view_impl,
-    recommend_policy_impl,
-    retrieve_memory_impl,
-    save_event_impl,
 )
 from allbrain.ui import GraphExplorer, MetricsDashboard, ReplayViewer, TraceViewer
 from tests._helpers import make_context

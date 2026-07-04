@@ -5,8 +5,6 @@ from typing import Any
 from allbrain.arbitration.model import ArbitrationState, VoteRecord
 from allbrain.arbitration.scorer import (
     _stable_arbitration_id,
-    agreement_ratio,
-    majority_resolve,
     weighted_resolve,
 )
 from allbrain.events.schemas import EventType

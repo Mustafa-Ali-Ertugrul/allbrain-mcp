@@ -8,7 +8,7 @@ from allbrain.semantic.events import (
     validate_concept_forgotten,
     validate_concept_updated,
 )
-from allbrain.semantic.model import SemanticConcept, SemanticState
+from allbrain.semantic.model import SemanticConcept
 
 
 class SemanticReducer:

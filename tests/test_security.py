@@ -18,11 +18,13 @@ from allbrain.models.schemas import (
     ListEventsInput,
     SaveEventInput,
 )
-from allbrain.server.app import (
-    assign_task_impl,
-    create_task_impl,
+from allbrain.server.tools.events import (
     list_events_impl,
     save_event_impl,
+)
+from allbrain.server.tools.tasks import (
+    assign_task_impl,
+    create_task_impl,
 )
 from tests._helpers import make_context
 

@@ -1,13 +1,15 @@
 from pathlib import Path
 
-from allbrain.server.app import (
+from allbrain.server.tools.events import (
+    list_events_impl,
+    save_event_impl,
+)
+from allbrain.server.tools.git import (
     get_git_context_impl,
     get_git_status_impl,
     get_recent_changes_impl,
-    list_events_impl,
-    resume_project_impl,
-    save_event_impl,
 )
+from allbrain.server.tools.snapshots import resume_project_impl
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 from tests._helpers import make_context, make_context_from_repo
 

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from allbrain.soft_repair.model import DEFAULT_BLEND_THRESHOLD, HARD_UPDATE_THRESHOLD
 
 

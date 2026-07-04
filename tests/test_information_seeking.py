@@ -17,11 +17,11 @@ from allbrain.information_seeking import (
 )
 from allbrain.replay import EventReplayEngine
 from allbrain.runtime_core import SystemDecisionPipeline
-from allbrain.server.app import (
+from allbrain.server.tools.knowledge import (
     estimate_information_gain_impl,
     identify_information_needs_impl,
-    run_decision_pipeline_impl,
 )
+from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
 from allbrain.uncertainty.models import KnowledgeGap
 from tests.test_sprint12_memory_policy_ui import events, make_context
 

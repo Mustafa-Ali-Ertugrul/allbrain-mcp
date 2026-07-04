@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import math
-
 from allbrain.dynamics.model import (
     DENSITY_PENALTY_FACTOR,
     DRIFT_EMA_LONG_WINDOW,

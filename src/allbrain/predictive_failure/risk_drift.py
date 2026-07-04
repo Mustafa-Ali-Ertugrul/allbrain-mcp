@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 DRIFT_MIN_SAMPLES = 3
 DRIFT_WINDOW_SIZE = 10
 DRIFT_BOOST_THRESHOLD = 0.15

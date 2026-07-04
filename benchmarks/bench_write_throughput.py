@@ -20,7 +20,6 @@ so future runs can be compared for regression detection.
 from __future__ import annotations
 
 import json
-import os
 import sys
 import tempfile
 import time
@@ -197,7 +196,7 @@ def v6_repo_plus_audit(rows: list[dict[str, Any]]) -> float:
 
 def v7_full_save_event(rows: list[dict[str, Any]]) -> float:
     ctx, engine = _make_context(Path(tempfile.mkdtemp(prefix="bv7_")))
-    from allbrain.server.app import save_event_impl
+    from allbrain.server.tools.events import save_event_impl
 
     t0 = time.perf_counter()
     for r in rows:
@@ -211,7 +210,7 @@ def v8_with_snapshot(rows: list[dict[str, Any]]) -> float:
     # V8 = save_event_impl with auto_snapshot_threshold=100 so
     # maybe_auto_snapshot fires every ~100 calls.
     from allbrain.server import BrainContext
-    from allbrain.server.app import save_event_impl
+    from allbrain.server.tools.events import save_event_impl
     from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 
     tmp = Path(tempfile.mkdtemp(prefix="bv8_"))

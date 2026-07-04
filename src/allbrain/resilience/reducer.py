@@ -15,7 +15,6 @@ from allbrain.resilience.model import (
     FaultRecord,
     MetricsSnapshot,
     RecoveryPlan,
-    ResilienceState,
 )
 
 

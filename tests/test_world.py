@@ -7,7 +7,10 @@ import pytest
 from allbrain.events import EventType
 from allbrain.replay import EventReplayEngine
 from allbrain.runtime_core import SystemDecisionPipeline
-from allbrain.server.app import observe_world_impl, simulate_action_impl
+from allbrain.server.tools.world import (
+    observe_world_impl,
+    simulate_action_impl,
+)
 from allbrain.world import (
     EnvironmentTracker,
     Prediction,

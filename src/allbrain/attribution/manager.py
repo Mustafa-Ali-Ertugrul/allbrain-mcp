@@ -12,8 +12,6 @@ from allbrain.attribution.estimator import (
 from allbrain.attribution.matrix import detect_importance_change
 from allbrain.attribution.model import (
     ATTRIBUTION_COUNTERFACTUAL_INTERVAL,
-    AttributionResult,
-    CreditAllocation,
 )
 from allbrain.foundations import canonical_event_sort
 

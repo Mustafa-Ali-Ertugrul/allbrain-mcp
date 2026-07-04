@@ -2,7 +2,7 @@ from pathlib import Path
 
 from allbrain.models.schemas import SaveEventInput
 from allbrain.server import BrainContext
-from allbrain.server.app import save_event_impl
+from allbrain.server.tools.events import save_event_impl
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 from tests._helpers import make_context
 

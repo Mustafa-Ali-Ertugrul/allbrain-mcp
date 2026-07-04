@@ -4,7 +4,6 @@ from allbrain.value_alignment.model import (
     ALIGNMENT_CHECK_INTERVAL,
     ALIGNMENT_THRESHOLD,
     AlignmentResult,
-    AlignmentScore,
 )
 
 

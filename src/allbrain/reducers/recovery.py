@@ -46,7 +46,6 @@ from allbrain.recovery_consensus.events import (
 from allbrain.recovery_consensus.model import (
     CONSENSUS_TEMPLATE_VERSION,
     CandidateStrategy,
-    RecoveryConsensusState,
     RecoveryDecision,
 )
 from allbrain.resilience.events import (
@@ -61,7 +60,6 @@ from allbrain.resilience.model import (
     FaultRecord,
     MetricsSnapshot,
     RecoveryPlan,
-    ResilienceState,
 )
 from allbrain.self_repair.events import (
     validate_policy_snapshotted,

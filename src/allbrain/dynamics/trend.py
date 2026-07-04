@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import math
-
 from allbrain.dynamics.model import (
     TREND_DEGRADING_EPSILON,
     TREND_HYSTERESIS_COUNT,

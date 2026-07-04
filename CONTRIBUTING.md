@@ -3,7 +3,7 @@
 ## Development setup
 
 ```powershell
-uv sync --extra dev
+uv sync --group dev
 ```
 
 Confirm the CLI starts:
@@ -28,7 +28,7 @@ make ci-local
 Audit development and optional dependencies with:
 
 ```powershell
-uv run --extra dev pip-audit
+uv run --group dev pip-audit
 ```
 
 The project uses `pip-audit`, not `safety`, for its supported dependency-vulnerability workflow. `make security` separately runs Bandit against first-party source code; accepted findings and reporting guidance are documented in [SECURITY.md](SECURITY.md).

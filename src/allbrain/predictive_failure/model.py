@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 PREDICTIVE_FAILURE_TEMPLATE_VERSION = 1
 

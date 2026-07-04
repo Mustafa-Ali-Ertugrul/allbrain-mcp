@@ -11,8 +11,7 @@ from allbrain.fusion.analyzer import (
 )
 from allbrain.fusion.calibration import normalize_signal
 from allbrain.fusion.fusion import build_signal_vector, unified_decision_score
-from allbrain.fusion.model import SignalWeights
-from allbrain.fusion.weights import calibrate_weights, default_weights
+from allbrain.fusion.weights import calibrate_weights
 
 
 class FusionManager:

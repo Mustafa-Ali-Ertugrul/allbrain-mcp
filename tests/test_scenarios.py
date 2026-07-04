@@ -20,10 +20,10 @@ from allbrain.scenarios import (
     ScenarioResult,
     apply_overlay,
 )
-from allbrain.server.app import (
+from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
+from allbrain.server.tools.scenarios import (
     evaluate_scenarios_impl,
     generate_scenarios_impl,
-    run_decision_pipeline_impl,
 )
 from allbrain.world import PredictionBridge, StateTransitionBridge, WorldState
 from allbrain.world.simulation import SimulationBridge

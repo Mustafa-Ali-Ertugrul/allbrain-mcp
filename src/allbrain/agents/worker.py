@@ -4,8 +4,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 from allbrain.agents.queue import QueueItem, TaskQueue
 from allbrain.workflow.models import SubtaskResult

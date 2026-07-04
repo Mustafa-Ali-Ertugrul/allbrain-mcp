@@ -78,16 +78,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-dev = [
-    { name = "bandit" },
-    { name = "bump-my-version" },
-    { name = "pip-audit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-]
 distributed = [
     { name = "aio-pika" },
     { name = "redis" },
@@ -99,7 +89,9 @@ postgres = [
 [package.dev-dependencies]
 dev = [
     { name = "anyio" },
+    { name = "bandit" },
     { name = "bump-my-version" },
+    { name = "pip-audit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -111,32 +103,26 @@ dev = [
 requires-dist = [
     { name = "aio-pika", marker = "extra == 'distributed'", specifier = ">=9.0.0,<10.0" },
     { name = "alembic", specifier = ">=1.16.0,<2.0" },
-    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.8.0" },
-    { name = "bump-my-version", marker = "extra == 'dev'", specifier = ">=1.4.1" },
-    { name = "fastmcp", specifier = ">=3.4.2,<4.0" },
+    { name = "fastmcp", specifier = ">=3.4.2,<3.5" },
     { name = "gitpython", specifier = ">=3.1.0,<4.0" },
-    { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7.0" },
     { name = "psutil", specifier = ">=5.9.0,<6.0" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'postgres'", specifier = ">=3.2.0,<4.0" },
     { name = "pydantic", specifier = ">=2.10,<3.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.1.0" },
-    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.8.0" },
     { name = "redis", marker = "extra == 'distributed'", specifier = ">=5.0.0,<6.0" },
     { name = "rich", specifier = ">=13.0.0,<14.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.11.0" },
     { name = "sqlalchemy", specifier = ">=2.0,<3.0" },
     { name = "sqlmodel", specifier = ">=0.0.22,<0.1" },
     { name = "typer", specifier = ">=0.12.0,<1.0" },
     { name = "uuid6", specifier = ">=2024.7.10,<2025.0" },
 ]
-provides-extras = ["postgres", "distributed", "dev"]
+provides-extras = ["postgres", "distributed"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "anyio", specifier = ">=4.14.1" },
+    { name = "bandit", specifier = ">=1.8.0" },
     { name = "bump-my-version", specifier = ">=1.4.1" },
+    { name = "pip-audit", specifier = ">=2.7.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-asyncio", specifier = ">=1.4.0" },
     { name = "pytest-cov", specifier = ">=7.1.0" },

@@ -13,8 +13,7 @@ from allbrain.adaptive_recovery.model import (
 )
 
 if TYPE_CHECKING:
-    from allbrain.failure_memory.manager import FailureMemoryManager
-    from allbrain.recovery_consensus.model import CandidateStrategy
+    pass
 
 
 def _chain_id(fault_id: str, fault_type: str) -> str:

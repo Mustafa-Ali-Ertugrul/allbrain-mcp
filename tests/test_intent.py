@@ -5,14 +5,16 @@ from pathlib import Path
 from allbrain.contradiction import ContradictionDetector
 from allbrain.intent import IntentExtractor, IntentStore
 from allbrain.resume import IncrementalResumeEngine, IntentResumeEngine, MultiAgentResumeEngine
-from allbrain.server.app import (
-    create_snapshot_impl,
+from allbrain.server.tools.events import save_event_impl
+from allbrain.server.tools.intents import (
     detect_contradictions_impl,
     extract_intents_impl,
-    resume_with_intent_impl,
-    save_event_impl,
 )
 from allbrain.server.tools.intents import register_tools as register_intent_tools
+from allbrain.server.tools.snapshots import (
+    create_snapshot_impl,
+    resume_with_intent_impl,
+)
 from allbrain.storage import BrainRepository, SnapshotRepo
 from tests._helpers import make_context_from_repo, make_repo
 

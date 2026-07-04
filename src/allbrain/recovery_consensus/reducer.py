@@ -13,7 +13,6 @@ from allbrain.recovery_consensus.events import (
 from allbrain.recovery_consensus.model import (
     CONSENSUS_TEMPLATE_VERSION,
     CandidateStrategy,
-    RecoveryConsensusState,
     RecoveryDecision,
 )
 

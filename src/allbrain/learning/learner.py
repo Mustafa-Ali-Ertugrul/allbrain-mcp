@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from allbrain.learning.model import (
-    INITIAL_CAPABILITY,
     LEARNING_EMA_BIAS,
     LEARNING_RETENTION,
 )

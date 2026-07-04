@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 FAILURE_MEMORY_TEMPLATE_VERSION = 1
 DEFAULT_NEUTRAL_BIAS = 0.50

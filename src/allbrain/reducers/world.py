@@ -8,13 +8,11 @@ from allbrain.episodic.events import (
     validate_episode_forgotten,
     validate_episode_retrieved,
 )
-from allbrain.episodic.model import Episode, EpisodicState
+from allbrain.episodic.model import Episode
 from allbrain.events.schemas import EventType
-from allbrain.evidence.estimator import _stable_evidence_id
 from allbrain.evidence.state import EvidenceState
 from allbrain.reputation.estimator import (
     _stable_reputation_id,
-    consistency,
     mean_confidence,
     mean_duration,
     mean_retry,
@@ -28,7 +26,7 @@ from allbrain.semantic.events import (
     validate_concept_forgotten,
     validate_concept_updated,
 )
-from allbrain.semantic.model import SemanticConcept, SemanticState
+from allbrain.semantic.model import SemanticConcept
 from allbrain.telemetry.events import validate_completed_payload
 from allbrain.telemetry.metrics import _stable_telemetry_id
 from allbrain.telemetry.metrics import runtime_score as compute_runtime_score

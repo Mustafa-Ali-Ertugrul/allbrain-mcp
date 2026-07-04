@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from allbrain.resilience.model import (
     DEFAULT_GUARDRAIL_THRESHOLD,
     FaultRecord,
