@@ -154,6 +154,7 @@ AllBrain stores events, sessions, and audit logs in local SQLite. Data never lea
 - [Storage backends](docs/database_scaling_policy.md) — SQLite vs PostgreSQL vs queue adapters
 - [Multi-agent pilot](docs/two-agent-pilot.md) — two-agent workflow walkthrough
 - [Upgrade guide](docs/upgrade-guide.md) — migrations, rollback, breaking changes
+- [Community examples](docs/community-examples.md) — real user setups, terminal output, workflows
 
 ## Status
 
