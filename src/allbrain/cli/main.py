@@ -94,6 +94,53 @@ def install(
     installer_main(args)
 
 
+def _pick_clients(
+    flag_params: dict[str, str],
+    flags_map: dict[str, bool],
+) -> list[str]:
+    """Interactive or flag-based client selection."""
+    from allbrain.install import CLIENTS
+
+    selected_flags = [name.removeprefix("--") for name, on in flags_map.items() if on]
+    want_all = Confirm.ask("Configure AllBrain for [bold]all[/bold] supported MCP clients?", default=False)
+    if not want_all and not selected_flags:
+        console.print("\nSupported clients:")
+        for i, name in enumerate(CLIENTS, 1):
+            console.print(f"  {i:>2}. {name}")
+        choices = Prompt.ask(
+            "Enter numbers separated by commas (e.g. 1,3,5), or 'all'",
+            default="1",
+        )
+        if choices.strip().lower() == "all":
+            return list(CLIENTS)
+        indices = [int(c.strip()) for c in choices.split(",") if c.strip().isdigit()]
+        return [list(CLIENTS)[i - 1] for i in indices if 1 <= i <= len(list(CLIENTS))]
+    if selected_flags:
+        return selected_flags
+    return list(CLIENTS)
+
+
+def _save_demo_event() -> None:
+    """Prompt user and save a demo event."""
+    engine = create_engine_for_path(default_db_path())
+    init_db(engine)
+    repo = BrainRepository(engine)
+    task_type = Prompt.ask("Event type", default="task_started")
+    task_desc = Prompt.ask("Description", default="Set up AllBrain MCP")
+    from datetime import datetime
+
+    event_id = repo.save_event(
+        session_id=None,
+        event_type=task_type,
+        payload={"description": task_desc, "source": "cli-onboard"},
+        agent_name="cli-onboard",
+        logged_at=datetime.now(UTC),
+    )
+    engine.dispose()
+    console.print(f"[green]✔ Event saved[/green] [dim](id: {event_id})[/dim]")
+    console.print("  Restart your MCP client and call [bold]list_events()[/bold] to see it.")
+
+
 @app.command()
 def onboard(
     project: Annotated[Path, typer.Option("--project", "-p", help="Project root.")] = Path("."),
@@ -110,7 +157,6 @@ def onboard(
     kiro: Annotated[bool, typer.Option("--kiro", help="Configure Kiro")] = False,
 ) -> None:
     """Interactive onboarding wizard — configure, verify, and run your first event."""
-    from allbrain.install import CLIENTS
     from allbrain.install import main as installer_main
     from allbrain.install import verify as _verify
 
@@ -122,52 +168,28 @@ def onboard(
     console.print("  4. Save your first event\n")
 
     # Step 1: pick clients
-    flags_map = {
-        "--codex": codex,
-        "--claude": claude,
-        "--claude-desktop": claude_desktop,
-        "--opencode": opencode,
-        "--gemini": gemini,
-        "--antigravity": antigravity,
-        "--vscode": vscode,
-        "--cursor": cursor,
-        "--windsurf": windsurf,
-        "--zed": zed,
-        "--kiro": kiro,
-    }
-    selected_flags = [name.removeprefix("--") for name, on in flags_map.items() if on]
-
-    want_all = Confirm.ask("Configure AllBrain for [bold]all[/bold] supported MCP clients?", default=False)
-    selected: list[str] = []
-    if not want_all and not selected_flags:
-        console.print("\nSupported clients:")
-        for i, name in enumerate(CLIENTS, 1):
-            console.print(f"  {i:>2}. {name}")
-        choices = Prompt.ask(
-            "Enter numbers separated by commas (e.g. 1,3,5), or 'all'",
-            default="1",
-        )
-        if choices.strip().lower() == "all":
-            selected = list(CLIENTS)
-        else:
-            indices = [int(c.strip()) for c in choices.split(",") if c.strip().isdigit()]
-            names = list(CLIENTS)
-            selected = [names[i - 1] for i in indices if 1 <= i <= len(names)]
-    elif selected_flags:
-        selected = selected_flags
-    else:
-        selected = list(CLIENTS)
-
+    flags_map = _client_flags_map(
+        codex,
+        claude,
+        claude_desktop,
+        opencode,
+        gemini,
+        antigravity,
+        vscode,
+        cursor,
+        windsurf,
+        zed,
+        kiro,
+    )
+    selected = _pick_clients({}, flags_map)
     if not selected:
         console.print("[yellow]No clients selected. Nothing to do.[/yellow]")
         raise typer.Exit()
-
     console.print(f"\nSelected: {', '.join(selected)}\n")
 
     # Step 2: install
     console.print("[bold]Step 2/4 — Installing AllBrain...[/bold]")
-    args = ["--project", str(project), "--verify", *selected]
-    installer_main(args)
+    installer_main(["--project", str(project), "--verify", *selected])
     console.print()
 
     # Step 3: verify
@@ -180,25 +202,8 @@ def onboard(
 
     # Step 4: first event
     console.print("[bold]Step 4/4 — Save your first event[/bold]")
-    save_now = Confirm.ask("Save a demo event to confirm shared memory is working?", default=True)
-    if save_now:
-        engine = create_engine_for_path(default_db_path())
-        init_db(engine)
-        repo = BrainRepository(engine)
-        task_type = Prompt.ask("Event type", default="task_started")
-        task_desc = Prompt.ask("Description", default="Set up AllBrain MCP")
-        from datetime import datetime
-
-        event_id = repo.save_event(
-            session_id=None,
-            event_type=task_type,
-            payload={"description": task_desc, "source": "cli-onboard"},
-            agent_name="cli-onboard",
-            logged_at=datetime.now(UTC),
-        )
-        engine.dispose()
-        console.print(f"[green]✔ Event saved[/green] [dim](id: {event_id})[/dim]")
-        console.print("  Restart your MCP client and call [bold]list_events()[/bold] to see it.")
+    if Confirm.ask("Save a demo event to confirm shared memory is working?", default=True):
+        _save_demo_event()
 
     console.print("\n[bold green]✔ AllBrain MCP is ready![/bold green]")
     console.print("  Next: open your MCP client and start using the tools.")
@@ -451,18 +456,90 @@ def doctor(
     console.print("\nAll checks passed.")
 
 
-def _uninstall_client(name: str, project: Path, dry_run: bool) -> None:
-    """Remove the allbrain entry from a single client config."""
+def _client_flags_map(
+    codex: bool = False,
+    claude: bool = False,
+    claude_desktop: bool = False,
+    opencode: bool = False,
+    gemini: bool = False,
+    antigravity: bool = False,
+    vscode: bool = False,
+    cursor: bool = False,
+    windsurf: bool = False,
+    zed: bool = False,
+    kiro: bool = False,
+) -> dict[str, bool]:
+    return {
+        "--codex": codex,
+        "--claude": claude,
+        "--claude-desktop": claude_desktop,
+        "--opencode": opencode,
+        "--gemini": gemini,
+        "--antigravity": antigravity,
+        "--vscode": vscode,
+        "--cursor": cursor,
+        "--windsurf": windsurf,
+        "--zed": zed,
+        "--kiro": kiro,
+    }
+
+
+def _client_config_path(name: str, project: Path) -> tuple[Path | None, str]:
+    """Return (config_path, container_key) for a client name. (None, '') if unknown."""
     import os
 
-    from allbrain.install import home_config, load_json, write_json
+    from allbrain.install import home_config
 
+    mapping: dict[str, tuple[str, str]] = {
+        "codex": ("config.toml__codex", ""),
+        "claude": (".mcp.json", "mcpServers"),
+        "claude-desktop": ("__claude_desktop__", "mcpServers"),
+        "opencode": (".opencode/opencode.json", "mcp"),
+        "gemini": (".gemini/settings.json", "mcpServers"),
+        "antigravity": ("__antigravity__", "mcpServers"),
+        "vscode": (".vscode/mcp.json", "servers"),
+        "cursor": (".cursor/mcp.json", "mcpServers"),
+        "windsurf": ("__windsurf__", "mcpServers"),
+        "zed": ("__zed__", "context_servers"),
+        "kiro": (".kiro/settings/mcp.json", "mcpServers"),
+    }
     if name == "codex":
         path = project / ".codex" / "config.toml"
         if path.exists():
-            old = path.read_text(encoding="utf-8-sig")
+            return path, ""
+        return None, ""
+    if name == "claude-desktop":
+        base = Path(os.environ.get("APPDATA", home_config("Library", "Application Support")))
+        return base / "Claude" / "claude_desktop_config.json", "mcpServers"
+    if name == "antigravity":
+        return home_config(".gemini", "antigravity", "mcp_config.json"), "mcpServers"
+    if name == "windsurf":
+        return home_config(".codeium", "windsurf", "mcp_config.json"), "mcpServers"
+    if name == "zed":
+        if sys.platform == "darwin":
+            return home_config(".config", "zed", "settings.json"), "context_servers"
+        if os.name == "nt":
+            return Path(os.environ.get("APPDATA", Path.home())) / "Zed" / "settings.json", "context_servers"
+        return home_config(".config", "zed", "settings.json"), "context_servers"
+
+    entry = mapping.get(name)
+    if entry is None:
+        return None, ""
+    path, container = entry
+    return project / path, container
+
+
+def _uninstall_client(name: str, project: Path, dry_run: bool) -> None:
+    """Remove the allbrain entry from a single client config."""
+    from allbrain.install import load_json, write_json
+
+    # Codex uses TOML — handled separately
+    if name == "codex":
+        path = project / ".codex" / "config.toml"
+        if path.exists():
             import re
 
+            old = path.read_text(encoding="utf-8-sig")
             pattern = re.compile(r"(?ms)^\[mcp_servers\.allbrain\].*?(?=^\[|\Z)")
             updated = pattern.sub("", old).strip()
             if updated != old.strip():
@@ -470,48 +547,21 @@ def _uninstall_client(name: str, project: Path, dry_run: bool) -> None:
                 if not dry_run:
                     path.write_text(updated + "\n" if updated else "", encoding="utf-8")
         return
-    elif name == "claude":
-        path = project / ".mcp.json"
-    elif name == "claude-desktop":
-        base = Path(os.environ.get("APPDATA", home_config("Library", "Application Support")))
-        path = base / "Claude" / "claude_desktop_config.json"
-    elif name == "opencode":
-        path = project / ".opencode" / "opencode.json"
-    elif name == "gemini":
-        path = project / ".gemini" / "settings.json"
-    elif name == "antigravity":
-        path = home_config(".gemini", "antigravity", "mcp_config.json")
-    elif name == "vscode":
-        path = project / ".vscode" / "mcp.json"
-    elif name == "cursor":
-        path = project / ".cursor" / "mcp.json"
-    elif name == "windsurf":
-        path = home_config(".codeium", "windsurf", "mcp_config.json")
-    elif name == "zed":
-        if sys.platform == "darwin":
-            path = home_config(".config", "zed", "settings.json")
-        elif os.name == "nt":
-            path = Path(os.environ.get("APPDATA", Path.home())) / "Zed" / "settings.json"
-        else:
-            path = home_config(".config", "zed", "settings.json")
-    elif name == "kiro":
-        path = project / ".kiro" / "settings" / "mcp.json"
-    else:
-        return
 
-    if not path.exists():
+    # JSON clients via _client_config_path
+    path, container = _client_config_path(name, project)
+    if path is None or not path.exists():
         console.print(f"  [yellow]Skipped {name}: config not found[/yellow]")
         return
 
     config = load_json(path)
-    container = "mcpServers" if name not in ("opencode", "vscode") else ("mcp" if name == "opencode" else "servers")
     servers = config.get(container, {})
     if "allbrain" not in servers:
         console.print(f"  Skipped {name}: no allbrain entry")
         return
     del servers["allbrain"]
     if not servers:
-        del config[container]
+        config.pop(container, None)
     write_json(path, config, dry_run)
     console.print(f"  {'Would remove' if dry_run else 'Removed'} allbrain from {path}")
 
