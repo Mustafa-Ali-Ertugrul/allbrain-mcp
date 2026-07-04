@@ -26,6 +26,36 @@ def main() -> None:
 
 
 @app.command()
+def install(
+    clients: Annotated[list[str] | None, typer.Argument(help="Clients to configure (default: all)")] = None,
+    all_clients: Annotated[bool, typer.Option("--all", help="Configure every supported client")] = False,
+    project: Annotated[Path, typer.Option("--project", "-p", help="Project root to bind.")] = Path("."),
+    isolate: Annotated[bool, typer.Option("--isolate", help="Use separate DB per client")] = False,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Show changes without writing")] = False,
+    verify: Annotated[bool, typer.Option("--verify", help="Run MCP handshake after config")] = False,
+) -> None:
+    """Configure MCP clients to connect to AllBrain.
+
+    Supported clients: codex, claude, claude-desktop, opencode, gemini,
+    antigravity, vscode, cursor, windsurf, zed, kiro.
+    """
+    from allbrain.install import main as installer_main
+
+    args = ["--project", str(project)]
+    if isolate:
+        args.append("--isolate")
+    if dry_run:
+        args.append("--dry-run")
+    if verify:
+        args.append("--verify")
+    if all_clients:
+        args.append("--all")
+    if clients:
+        args.extend(clients)
+    installer_main(args)
+
+
+@app.command()
 def start(
     project: Annotated[Path, typer.Option("--project", "-p", help="Project root to bind.")] = Path("."),
     agent: Annotated[str, typer.Option("--agent", "-a", help="Agent name for the session.")] = "unknown",

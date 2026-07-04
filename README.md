@@ -42,6 +42,25 @@ See the [detailed architecture](docs/ARCHITECTURE.md) and [multi-agent flow](doc
 
 ## Quick start
 
+### Package manager (recommended)
+
+Install via `uvx` or `pipx`:
+
+```powershell
+uvx allbrain-mcp install --codex
+```
+
+Or with pipx:
+
+```powershell
+pipx install allbrain-mcp
+allbrain-mcp install --codex
+```
+
+The `install` command configures the specified MCP client(s). Use `--all` for every supported client, or list individual clients: `--codex --claude --opencode --cursor --gemini --kiro --windsurf --zed --antigravity --claude-desktop`.
+
+### From source
+
 Prerequisites: Git, Python 3.12+, and [uv](https://docs.astral.sh/uv/).
 
 ```powershell
