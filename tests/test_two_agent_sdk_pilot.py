@@ -9,7 +9,7 @@ import pytest
 from examples.two_agent_sqlite_pilot import run_pilot
 
 
-@pytest.mark.skipif(os.environ.get("CI") == "true", reason="ALLOWED_PROJECT_ROOTS not propagated through nested uv subprocess on CI")
+@pytest.mark.skipif(os.environ.get("CI") == "true", reason="ALLOWED_PROJECT_ROOTS not passed to nested uv subprocess")
 def test_code_and_security_agents_share_memory_and_surface_conflict(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
