@@ -2,7 +2,26 @@
 
 One brain. Many agents. One shared memory.
 
+![CI](https://github.com/Mustafa-Ali-Ertugrul/allbrain-mcp/actions/workflows/ci.yml/badge.svg)
+![PyPI](https://img.shields.io/pypi/v/allbrain-mcp)
+![Downloads](https://img.shields.io/pypi/dm/allbrain-mcp)
+![Python](https://img.shields.io/pypi/pyversions/allbrain-mcp)
+![License](https://img.shields.io/pypi/l/allbrain-mcp)
+![Ruff](https://img.shields.io/badge/ruff-passing-22b455)
+
 ![AllBrain MCP banner](docs/images/banner.svg)
+
+![demo](docs/images/demo.svg)
+
+## Without AllBrain vs with AllBrain
+
+| Scenario | Without AllBrain | With AllBrain |
+|---|---|---|
+| Agent A saves a plan | Written to local chat history, immediately lost when session ends | Appended to shared event store via `save_event()` |
+| Agent B starts the same project | Fresh context — no knowledge of Agent A's work | `resume_project()` returns full event history |
+| Two agents write conflicting changes | Silent overwrite, no one knows | `detect_conflicts()` surfaces both versions |
+| Handoff between agents | Manual copy-paste of context | `list_events()` with agent filter shows handoff trail |
+| Debugging state drift | "It worked in my session" | Deterministic replay from raw events, exactly reproducible |
 
 ## The problem
 

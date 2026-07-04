@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" font-family="'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace" font-size="13">
+  <defs>
+    <linearGradient id="term-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1b26"/>
+      <stop offset="100%" stop-color="#16161e"/>
+    </linearGradient>
+    <linearGradient id="header-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2d2d3d"/>
+      <stop offset="100%" stop-color="#1a1b26"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Window frame -->
+  <rect x="0" y="0" width="800" height="520" rx="10" ry="10" fill="url(#term-bg)" stroke="#3d3d5c" stroke-width="1.5"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="800" height="36" rx="10" ry="10" fill="url(#header-grad)"/>
+  <rect x="0" y="26" width="800" height="10" fill="url(#header-grad)"/>
+
+  <!-- Traffic lights -->
+  <circle cx="20" cy="18" r="6" fill="#ff5f57"/>
+  <circle cx="40" cy="18" r="6" fill="#febc2e"/>
+  <circle cx="60" cy="18" r="6" fill="#28c840"/>
+
+  <!-- Window title -->
+  <text x="400" y="23" text-anchor="middle" fill="#8888aa" font-size="12">bash — two_agent_sqlite_pilot.py</text>
+
+  <!-- Terminal content -->
+  <text x="20" y="65" fill="#c0caf5" font-size="13">$ </text>
+  <text x="35" y="65" fill="#7dcfff" font-size="13">uv run python examples/two_agent_sqlite_pilot.py</text>
+
+  <text x="20" y="88" fill="#c0caf5" font-size="13">  --project . --db-path .allbrain-pilot.db</text>
+
+  <text x="20" y="115" fill="#565f89" font-size="12">▎ Agent A: code-agent saves a task event,</text>
+  <text x="20" y="130" fill="#565f89" font-size="12">▎ then Agent B: security-agent reads it back.</text>
+
+  <!-- Server start messages -->
+  <text x="20" y="160" fill="#565f89" font-size="12">[23:56:37] </text>
+  <text x="125" y="160" fill="#9ece6a" font-size="12">AllBrain MCP started for</text>
+  <text x="20" y="178" fill="#565f89" font-size="12">           ~/allbrain-mcp</text>
+  <text x="20" y="196" fill="#565f89" font-size="12">[23:56:37] INFO  Starting MCP server with transport 'stdio'</text>
+
+  <!-- Agent A writes -->
+  <text x="20" y="224" fill="#e0af68" font-size="12">▶ Agent A (code-agent) writing event...</text>
+  <text x="30" y="244" fill="#c0caf5" font-size="12">save_event(type="task_planned", payload={</text>
+  <text x="30" y="261" fill="#c0caf5" font-size="12">  "task": "implement auth for API",</text>
+  <text x="30" y="278" fill="#c0caf5" font-size="12">  "priority": "high"</text>
+  <text x="30" y="295" fill="#c0caf5" font-size="12">})</text>
+  <text x="30" y="315" fill="#9ece6a" font-size="12">✔ Event saved (id: 01J5...)</text>
+
+  <!-- Agent B reads -->
+  <text x="20" y="345" fill="#e0af68" font-size="12">▶ Agent B (security-agent) reading events...</text>
+  <text x="30" y="365" fill="#c0caf5" font-size="12">list_events()</text>
+  <text x="30" y="385" fill="#c0caf5" font-size="12">→ 1 event found from agent "code-agent"</text>
+
+  <text x="20" y="415" fill="#e0af68" font-size="12">▶ Agent B (security-agent) writing a review event...</text>
+
+  <!-- Summary box -->
+  <rect x="20" y="440" width="760" height="65" rx="6" fill="#2d2d3d" stroke="#3d3d5c" stroke-width="1"/>
+  <text x="35" y="460" fill="#9ece6a" font-size="13" font-weight="bold">✔ All 5 checks passed</text>
+  <text x="35" y="480" fill="#c0caf5" font-size="12">✓ no_event_loss  ✓ agent_attribution  ✓ handoff_visible</text>
+  <text x="35" y="498" fill="#c0caf5" font-size="12">✓ conflict_visible  ✓ replay_agrees</text>
+</svg>
