@@ -154,6 +154,17 @@ def onboard(
 
 
 @app.command()
+def ui(
+    host: Annotated[str, typer.Option("--host", help="Bind address.")] = "127.0.0.1",
+    port: Annotated[int, typer.Option("--port", "-p", help="Listen port.")] = 8080,
+) -> None:
+    """Start the local operational dashboard (single-page web view)."""
+    from allbrain.ui.dashboard_server import start_dashboard
+
+    start_dashboard(host=host, port=port)
+
+
+@app.command()
 def start(
     project: Annotated[Path, typer.Option("--project", "-p", help="Project root to bind.")] = Path("."),
     agent: Annotated[str, typer.Option("--agent", "-a", help="Agent name for the session.")] = "unknown",
