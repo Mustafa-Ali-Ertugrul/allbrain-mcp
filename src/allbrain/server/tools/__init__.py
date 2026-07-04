@@ -25,7 +25,7 @@ from allbrain.server.tools import (
     world,
 )
 
-ToolProfile = Literal["core", "full"]
+ToolProfile = Literal["core", "full", "minimal", "memory", "collaboration", "reasoning"]
 
 CORE_TOOL_NAMES = frozenset(
     {
@@ -41,6 +41,46 @@ CORE_TOOL_NAMES = frozenset(
         "resume_project",
     }
 )
+
+MINIMAL_TOOL_NAMES = frozenset(
+    {
+        "save_event",
+        "list_events",
+        "resume_project",
+    }
+)
+
+MEMORY_TOOL_NAMES = MINIMAL_TOOL_NAMES | {"retrieve_memory"}
+
+COLLABORATION_TOOL_NAMES = MEMORY_TOOL_NAMES | {
+    "create_task",
+    "get_task_graph",
+    "orchestrate_project",
+    "detect_conflicts",
+    "resolve_conflicts",
+}
+
+REASONING_TOOL_NAMES = MEMORY_TOOL_NAMES | {
+    "run_decision_pipeline",
+    "generate_counterfactual",
+    "generate_scenarios",
+    "generate_future_plans",
+    "evaluate_plan",
+    "evaluate_scenarios",
+    "estimate_uncertainty",
+    "estimate_information_gain",
+    "identify_information_needs",
+}
+
+
+def _allowed_for_profile(profile: ToolProfile) -> frozenset[str] | None:
+    mapping: dict[ToolProfile, frozenset[str]] = {
+        "minimal": MINIMAL_TOOL_NAMES,
+        "memory": MEMORY_TOOL_NAMES,
+        "collaboration": COLLABORATION_TOOL_NAMES,
+        "reasoning": REASONING_TOOL_NAMES,
+    }
+    return mapping.get(profile)  # type: ignore[arg-type]
 
 
 class _ProfiledToolRegistrar:
@@ -68,9 +108,15 @@ class _ProfiledToolRegistrar:
 
 
 def register_all_tools(mcp: Any, context: Any, *, tool_profile: ToolProfile = "full") -> frozenset[str]:
-    if tool_profile not in {"core", "full"}:
+    valid_profiles = {"core", "full", "minimal", "memory", "collaboration", "reasoning"}
+    if tool_profile not in valid_profiles:
         raise ValueError(f"Unknown tool profile: {tool_profile}")
-    allowed = CORE_TOOL_NAMES if tool_profile == "core" else None
+    if tool_profile == "core":
+        allowed: frozenset[str] | None = CORE_TOOL_NAMES
+    elif tool_profile == "full":
+        allowed = None
+    else:
+        allowed = _allowed_for_profile(tool_profile)
     registrar = _ProfiledToolRegistrar(mcp, allowed=allowed)
     for domain in (
         conflicts,
@@ -92,7 +138,7 @@ def register_all_tools(mcp: Any, context: Any, *, tool_profile: ToolProfile = "f
         world,
     ):
         domain.register_tools(registrar, context)
-    if tool_profile == "core" and registrar.registered != CORE_TOOL_NAMES:
+    if tool_profile in ("core",) and registrar.registered != CORE_TOOL_NAMES:
         missing = sorted(CORE_TOOL_NAMES - registrar.registered)
         raise RuntimeError(f"Core MCP tool profile is incomplete: {missing}")
     return frozenset(registrar.registered)

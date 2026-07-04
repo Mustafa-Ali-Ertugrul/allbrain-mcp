@@ -75,7 +75,10 @@ def start(
     ] = None,
     tool_profile: Annotated[
         str | None,
-        typer.Option("--tool-profile", help="Tool profile: 'full' or 'core'."),
+        typer.Option(
+            "--tool-profile",
+            help="Tool profile: 'minimal', 'memory', 'collaboration', 'reasoning', 'core', or 'full'.",
+        ),
     ] = None,
 ) -> None:
     run_mcp_server(project=project, agent=agent, db_path=db_path, tool_profile=tool_profile or "full")
