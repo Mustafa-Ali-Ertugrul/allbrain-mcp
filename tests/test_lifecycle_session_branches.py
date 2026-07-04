@@ -25,6 +25,7 @@ def test_ensure_session_started_existing():
 
     def ensure_active():
         return ctx.active_session
+
     ctx.ensure_active_session = ensure_active
 
     session = ensure_session_started(ctx)

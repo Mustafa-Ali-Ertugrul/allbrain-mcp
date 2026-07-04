@@ -17,6 +17,7 @@ from allbrain.server.tools.git import (
 
 def _validation_error():
     """Build a real ValidationError instance for testing."""
+
     class _Dummy(BaseModel):
         x: int
 

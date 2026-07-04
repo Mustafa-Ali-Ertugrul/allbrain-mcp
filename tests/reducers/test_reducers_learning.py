@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import pytest
 
@@ -82,18 +82,24 @@ class TestCapabilityLearningReducer:
         from allbrain.reducers.learning import CapabilityLearningReducer
 
         r = CapabilityLearningReducer()
-        r.apply(make_event(
-            EventType.AGENT_CAPABILITY_OBSERVED.value,
-            payload=dict(agent_id="x", task_type="y", success=False, runtime_score=0.3, selection_score=0.2),
-        ))
-        r.apply(make_event(
-            EventType.AGENT_CAPABILITY_LEARNED.value,
-            payload=dict(agent_id="x", task_type="y", old_score=0.0, new_score=0.75, delta=0.75),
-        ))
-        r.apply(make_event(
-            EventType.AGENT_CAPABILITY_DECAYED.value,
-            payload=dict(agent_id="x", task_type="y", old_score=0.75, new_score=0.6),
-        ))
+        r.apply(
+            make_event(
+                EventType.AGENT_CAPABILITY_OBSERVED.value,
+                payload=dict(agent_id="x", task_type="y", success=False, runtime_score=0.3, selection_score=0.2),
+            )
+        )
+        r.apply(
+            make_event(
+                EventType.AGENT_CAPABILITY_LEARNED.value,
+                payload=dict(agent_id="x", task_type="y", old_score=0.0, new_score=0.75, delta=0.75),
+            )
+        )
+        r.apply(
+            make_event(
+                EventType.AGENT_CAPABILITY_DECAYED.value,
+                payload=dict(agent_id="x", task_type="y", old_score=0.75, new_score=0.6),
+            )
+        )
         s = r.snapshot(agent_id="x", task_type="y")
         assert s.capability_score == pytest.approx(0.6)
 

@@ -41,7 +41,9 @@ def test_step_skip_missing_node_on_completion():
     graph = _one_node_graph()
     engine = WorkflowEngine()
     result = engine.step(
-        graph, candidate_agents=["agent1"], metrics={},
+        graph,
+        candidate_agents=["agent1"],
+        metrics={},
         completions={"nonexistent": SubtaskResult(node_id="n", agent_id="a", output="")},
     )
     assert "nonexistent" not in result.completed
@@ -52,7 +54,9 @@ def test_step_completion_non_running_skips_transition():
     graph = _one_node_graph(WorkflowStatus.PENDING)
     engine = WorkflowEngine()
     result = engine.step(
-        graph, candidate_agents=["agent1"], metrics={},
+        graph,
+        candidate_agents=["agent1"],
+        metrics={},
         completions={"a": SubtaskResult(node_id="a", agent_id="a", output="")},
     )
     assert "a" not in result.completed
