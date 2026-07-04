@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from allbrain.models.schemas import EventRead
-from allbrain.resume.gitbrain import GitBrain
+from allbrain.gitbrain import GitBrain
 
 
 class ContextBuilder:

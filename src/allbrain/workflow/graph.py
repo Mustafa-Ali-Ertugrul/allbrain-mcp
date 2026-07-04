@@ -36,10 +36,12 @@ class DependencyEngine:
                 errors.append(f"Self-loop detected on node '{edge.from_id}'")
                 cycles.append([edge.from_id, edge.from_id])
 
-        cycle = self._find_cycle(graph)
-        if cycle:
-            cycles.append(cycle)
-            errors.append(f"Cycle detected: {' -> '.join(cycle)}")
+        # Dangling edges make _find_cycle unsafe — skip cycle check
+        if not dangling:
+            cycle = self._find_cycle(graph)
+            if cycle:
+                cycles.append(cycle)
+                errors.append(f"Cycle detected: {' -> '.join(cycle)}")
 
         return ValidationResult(
             valid=len(errors) == 0,
@@ -117,6 +119,8 @@ class DependencyEngine:
         in_degree: dict[str, int] = {nid: 0 for nid in graph.nodes}
         adj: dict[str, list[str]] = {nid: [] for nid in graph.nodes}
         for edge in graph.depends_on_edges():
+            if edge.from_id not in adj or edge.to_id not in adj:
+                continue
             adj[edge.from_id].append(edge.to_id)
             in_degree[edge.to_id] += 1
 
@@ -139,6 +143,8 @@ class DependencyEngine:
         parent: dict[str, str | None] = {nid: None for nid in graph.nodes}
         adj: dict[str, list[str]] = {nid: [] for nid in graph.nodes}
         for edge in graph.depends_on_edges():
+            if edge.from_id not in adj or edge.to_id not in adj:
+                continue
             adj[edge.from_id].append(edge.to_id)
 
         def dfs(node_id: str) -> list[str] | None:
