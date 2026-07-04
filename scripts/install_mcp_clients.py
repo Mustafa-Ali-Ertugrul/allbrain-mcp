@@ -78,7 +78,26 @@ def home_config(*parts: str) -> Path:
     return Path.home().joinpath(*parts)
 
 
-def allbrain_server(repo: Path, project: Path, agent: str, db_path: Path) -> dict[str, Any]:
+def allbrain_server(repo: Path, project: Path, agent: str, db_path: Path, portable: bool = False) -> dict[str, Any]:
+    if portable:
+        return {
+            "command": "uv",
+            "args": [
+                "run",
+                "--project",
+                ".",
+                "allbrain",
+                "start",
+                "--project",
+                ".",
+                "--agent",
+                agent,
+                "--db-path",
+                str(db_path),
+            ],
+            "cwd": ".",
+            "env": {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
+        }
     return {
         "command": "uv",
         "args": [
@@ -203,7 +222,8 @@ async def main() -> None:
 
         # Check 2 — save_event
         try:
-            r = await client.call_tool("save_event", {{"type": "verify_test", "payload": {{"check": "product_verify"}}}})
+            payload = {{"type": "verify_test", "payload": {{"check": "product_verify"}}}}
+            r = await client.call_tool("save_event", payload)
             has_error = getattr(r, "isError", False)
             results.append(("events", "save_event", not has_error, "ok" if not has_error else str(r)))
         except Exception as exc:

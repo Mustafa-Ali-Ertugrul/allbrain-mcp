@@ -41,10 +41,7 @@ def extract_typer_commands(source: str) -> set[str]:
             if func != "command":
                 continue
             # @app.command("explicit-name")
-            if deco.args:
-                name = ast.literal_eval(deco.args[0])
-            else:
-                name = node.name.replace("_", "-")
+            name = ast.literal_eval(deco.args[0]) if deco.args else node.name.replace("_", "-")
             commands.add(name)
 
     return commands
