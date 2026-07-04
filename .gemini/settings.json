@@ -5,17 +5,17 @@
       "args": [
         "run",
         "--project",
-        "C:\\Users\\Ali\\OneDrive\\Masaüstü\\AllBrain MCP",
+        ".",
         "allbrain",
         "start",
         "--project",
-        "C:\\Users\\Ali\\OneDrive\\Masaüstü\\AllBrain MCP",
+        ".",
         "--agent",
         "gemini",
         "--db-path",
-        "C:\\Users\\Ali\\.allbrain\\allbrain.db"
+        ".allbrain.db"
       ],
-      "cwd": "C:\\Users\\Ali\\OneDrive\\Masaüstü\\AllBrain MCP",
+      "cwd": ".",
       "env": {
         "PYTHONUTF8": "1",
         "PYTHONIOENCODING": "utf-8"
