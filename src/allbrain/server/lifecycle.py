@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import timedelta
 
 import anyio
@@ -27,24 +28,32 @@ logger = logging.getLogger(__name__)
 def create_lifespan(context: BrainContext):
     @asynccontextmanager
     async def lifespan(_server):
-        async with anyio.create_task_group() as tg:
-            tg.start_soon(_heartbeat_loop, context)
-            tg.start_soon(_cleanup_loop, context)
+        # FastMCP may enter and exit its lifespan context from different asyncio
+        # tasks. AnyIO task groups require both operations in the same task and
+        # raise a cancel-scope RuntimeError during otherwise clean stdio EOF.
+        background = [
+            asyncio.create_task(_heartbeat_loop(context)),
+            asyncio.create_task(_cleanup_loop(context)),
+        ]
+        try:
+            yield {"brain_context": context}
+        except BaseException:
             try:
-                yield {"brain_context": context}
-            except BaseException:
-                try:
-                    finalize_active_session(context, status="failed", reason="server_error")
-                except Exception:
-                    logger.exception("Failed-session finalization failed")
-                raise
-            else:
-                try:
-                    finalize_active_session(context, status="closed", reason="stdio_eof")
-                except Exception:
-                    logger.exception("Session finalization failed")
-            finally:
-                tg.cancel_scope.cancel()
+                finalize_active_session(context, status="failed", reason="server_error")
+            except Exception:
+                logger.exception("Failed-session finalization failed")
+            raise
+        else:
+            try:
+                finalize_active_session(context, status="closed", reason="stdio_eof")
+            except Exception:
+                logger.exception("Session finalization failed")
+        finally:
+            for task in background:
+                task.cancel()
+            for task in background:
+                with suppress(asyncio.CancelledError):
+                    await task
 
     return lifespan
 

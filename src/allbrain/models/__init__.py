@@ -10,6 +10,7 @@ from allbrain.models.schemas import (
     ResumeProjectInput,
     SaveEventInput,
     ToolResult,
+    WorkSummaryInput,
 )
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "Session",
     "SnapshotRecord",
     "ToolResult",
+    "WorkSummaryInput",
 ]

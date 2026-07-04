@@ -4,6 +4,7 @@ import contextlib
 import hashlib
 import os
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -100,6 +101,89 @@ class GitBrain:
         except (ValueError, GitCommandError):
             return []
         return changes
+
+    def get_work_summary(
+        self,
+        *,
+        since: datetime | None = None,
+        until: datetime | None = None,
+        limit: int = 100,
+    ) -> dict[str, Any]:
+        """Summarize committed work across every local and remote branch.
+
+        Unlike ``get_recent_changes``, this is time-windowed and walks ``--all``.
+        Commit objects are naturally de-duplicated even when reachable from more
+        than one branch.
+        """
+        empty = {
+            "since": since.isoformat() if since else None,
+            "until": until.isoformat() if until else None,
+            "commit_count": 0,
+            "work_commit_count": 0,
+            "merge_commit_count": 0,
+            "additions": 0,
+            "deletions": 0,
+            "files_changed": 0,
+            "files": [],
+            "commits": [],
+            "truncated": False,
+        }
+        if self.repo is None:
+            return empty
+
+        kwargs: dict[str, Any] = {"all": True, "max_count": limit + 1}
+        if since is not None:
+            kwargs["since"] = since.isoformat()
+        if until is not None:
+            kwargs["until"] = until.isoformat()
+        try:
+            with self._git_env():
+                commits = list(self.repo.iter_commits(**kwargs))
+        except (ValueError, GitCommandError):
+            return empty
+
+        truncated = len(commits) > limit
+        commits = commits[:limit]
+        files: set[str] = set()
+        additions = deletions = merges = 0
+        details: list[dict[str, Any]] = []
+        for commit in commits:
+            stats = commit.stats.total
+            commit_files = sorted(commit.stats.files)
+            commit_additions = int(stats.get("insertions", 0))
+            commit_deletions = int(stats.get("deletions", 0))
+            is_merge = len(commit.parents) > 1
+            merges += int(is_merge)
+            # Merge diffs repeat work already represented by their parent
+            # commits, so aggregate work metrics from non-merge commits only.
+            if not is_merge:
+                files.update(commit_files)
+                additions += commit_additions
+                deletions += commit_deletions
+            details.append(
+                {
+                    "sha": commit.hexsha,
+                    "summary": sanitize_text(commit.summary),
+                    "author": sanitize_text(commit.author.name),
+                    "committed_at": commit.committed_datetime.isoformat(),
+                    "is_merge": is_merge,
+                    "additions": commit_additions,
+                    "deletions": commit_deletions,
+                    "files_changed": len(commit_files),
+                }
+            )
+        return {
+            **empty,
+            "commit_count": len(commits),
+            "work_commit_count": len(commits) - merges,
+            "merge_commit_count": merges,
+            "additions": additions,
+            "deletions": deletions,
+            "files_changed": len(files),
+            "files": sorted(files),
+            "commits": details,
+            "truncated": truncated,
+        }
 
     def build_fingerprint(self) -> dict[str, Any]:
         """Return a content-free Git fingerprint suitable for session attribution."""

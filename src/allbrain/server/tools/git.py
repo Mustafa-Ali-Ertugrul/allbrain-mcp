@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from pydantic import ValidationError
@@ -13,6 +14,7 @@ from allbrain.models.schemas import (
     RecentChangesInput,
     ToolResult,
     UserInputError,
+    WorkSummaryInput,
 )
 from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
@@ -90,11 +92,38 @@ def get_recent_changes_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+def get_work_summary_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
+    try:
+        data = WorkSummaryInput.model_validate(kwargs)
+        bound_session_id = bind_session_id(context, None)
+        summary = GitBrain(context.project_path).get_work_summary(
+            since=data.since,
+            until=data.until,
+            limit=data.limit,
+        )
+        audit_tool_call(
+            context,
+            tool_name="get_work_summary",
+            tool_args=data.model_dump(mode="json"),
+            session_id=bound_session_id,
+        )
+        return ToolResult(ok=True, data=summary)
+    except ValidationError as exc:
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
+    except UserInputError as exc:
+        return ToolResult(ok=False, error=str(exc))
+    except Exception:
+        logger.exception("Tool failed")
+        return ToolResult(ok=False, error="Internal server error")
+
+
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def git_info(
         info_type: str = "all",
-        limit: int = 10,
+        limit: int = 100,
+        since: datetime | None = None,
+        until: datetime | None = None,
     ) -> dict[str, Any]:
         """Retrieve git repository context, working tree status, or recent changes.
 
@@ -112,9 +141,12 @@ def register_tools(mcp, context: BrainContext) -> None:
                 - "all": branch, remote, commits, and working tree status (default)
                 - "context": branch name, remote URL, list of recent commits
                 - "status": working tree status with staged/modified/untracked files
-                - "changes": file-level diff from git log
-            limit: Max recent changes to return when info_type is "changes" or "all"
-                (default 10).
+                - "changes": recent commits from the current branch
+                - "work_summary": date-filtered commit/file/line summary across all branches
+            limit: Max commits to return (default 100). Work summaries report
+                ``truncated=true`` when more commits exist in the time window.
+            since: Optional inclusive ISO timestamp for "work_summary".
+            until: Optional exclusive ISO timestamp for "work_summary".
 
         Returns:
             Git information dict with keys depending on info_type. "all" returns
@@ -128,4 +160,14 @@ def register_tools(mcp, context: BrainContext) -> None:
             result["status"] = get_git_status_impl(context).data
         if info_type_lower in ("all", "changes"):
             result["changes"] = get_recent_changes_impl(context, limit=limit).data
+        if info_type_lower == "work_summary":
+            work_result = get_work_summary_impl(
+                context,
+                limit=limit,
+                since=since,
+                until=until,
+            )
+            if not work_result.ok:
+                return work_result.model_dump(mode="json")
+            result["work_summary"] = work_result.data
         return ToolResult(ok=True, data=result).model_dump(mode="json")

@@ -187,6 +187,22 @@ class RecentChangesInput(BaseInputModel):
     limit: int = Field(default=10, ge=1, le=100)
 
 
+class WorkSummaryInput(BaseInputModel):
+    """Validated time window for cross-branch Git work summaries."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    since: datetime | None = None
+    until: datetime | None = None
+    limit: int = Field(default=100, ge=1, le=1000)
+
+    @model_validator(mode="after")
+    def validate_window(self) -> WorkSummaryInput:
+        if self.since is not None and self.until is not None and self.since >= self.until:
+            raise ValueError("since must be earlier than until")
+        return self
+
+
 class ConflictInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
