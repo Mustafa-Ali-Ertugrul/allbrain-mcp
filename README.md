@@ -4,170 +4,141 @@ One brain. Many agents. One shared memory.
 
 ![AllBrain MCP banner](docs/images/banner.svg)
 
-AllBrain MCP is an event-sourced memory and orchestration server for multi-agent work. It captures what each agent did, replays the shared state, and helps the next agent pick up cleanly.
+## The problem
 
-## What it gives you
+Your AI coding agents don't talk to each other. Agent A saves a plan, Agent B starts fresh, Agent C has no idea what happened. Each agent works in isolation, repeating mistakes and missing context.
 
-- FastMCP stdio server
-- append-only event log on SQLite
-- UUIDv7 event identities with database-authoritative stream ordering
-- session-bound agent attribution
-- `save_event()`, `list_events()`, `resume_project()`
-- conflict detection and resolution
-- semantic intent extraction
-- world, counterfactual, and scenario reasoning
-- deterministic replay from raw events
+AllBrain gives every agent a shared workbench. Each tool call is recorded in an append-only event store. When the next agent arrives, it sees everything that happened before — events, sessions, conflicts, decisions — and picks up cleanly.
 
-## Architecture
+## What AllBrain gives you
 
-```mermaid
-flowchart LR
-    subgraph Clients["MCP clients"]
-        C["Codex"]
-        CL["Claude Code"]
-        O["OpenCode / Antigravity"]
-    end
+- **Shared memory** — `save_event`, `list_events`, `resume_project` across any MCP client
+- **Agent attribution** — every event is tagged with the agent that wrote it
+- **Conflict detection** — automatic surface of conflicting state updates
+- **Decision pipelines** — counterfactual reasoning, scenario planning, foresight
+- **Deterministic replay** — rebuild project state from raw events
+- **55 tools** in full profile across 18 domain modules (start with 3, enable more as needed)
 
-    C & CL & O -->|"JSON-RPC over stdio"| M["FastMCP server"]
-    M --> T["Validated MCP tools"]
-    T -->|"append immutable event"| L[("Event store<br/>SQLite / PostgreSQL")]
-    L -->|"ordered replay"| R["Deterministic reducers"]
-    R --> P["Shared-memory projections"]
-    P -->|"list_events / resume_project"| M
+## 30-second demo
+
+```shell
+# Agent A: save a plan
+uv run allbrain start --project . --agent agent-a
+# In Agent A's client, call:
+#   save_event(type="task_planned", payload={"task": "implement auth"})
 ```
 
-Each client starts a local stdio server process. In shared mode those processes point at the same SQLite database, so an event appended by one agent is visible to the others on their next tool call. Reducers rebuild derived state in the project-local order assigned atomically by the database; UUIDv7 remains the stable event identity. AllBrain does not push-wake or autonomously run another agent.
+```shell
+# Agent B: see what Agent A did
+uv run allbrain start --project . --agent agent-b
+# In Agent B's client, call:
+#   list_events()
+#   resume_project()
+```
 
-See the [detailed architecture](docs/ARCHITECTURE.md) and [multi-agent flow](docs/images/multi-agent-flow.svg).
+See [`examples/two_agent_sqlite_pilot.py`](examples/two_agent_sqlite_pilot.py) for a full two-agent workflow with conflict detection and replay verification.
 
-## Quick start
+## Install for one client
 
-Prerequisites: Git, Python 3.12+, and [uv](https://docs.astral.sh/uv/).
+```shell
+uvx allbrain-mcp install --codex
+```
 
-```powershell
+This configures Codex to start AllBrain automatically. Replace `--codex` with the client name:
+
+| Client | Flag |
+|---|---|
+| Codex | `--codex` |
+| Claude Code | `--claude` |
+| OpenCode | `--opencode` |
+| Cursor | `--cursor` |
+| VS Code | `--vscode` |
+| Zed | `--zed` |
+| Gemini CLI | `--gemini` |
+| Kiro | `--kiro` |
+| Windsurf | `--windsurf` |
+| Antigravity | `--antigravity` |
+| Claude Desktop | `--claude-desktop` |
+
+Use `--all` to configure every supported client at once.
+
+### Verify it works
+
+```shell
+uvx allbrain-mcp install --codex --verify
+```
+
+The `--verify` flag starts the server, saves a test event, reads it back, and confirms shared memory is working.
+
+### Tool profiles
+
+Start with `--tool-profile minimal` (3 tools) and expand when needed:
+
+| Profile | Tools | Use when |
+|---|---|---|
+| `minimal` | save_event, list_events, resume_project | Getting started |
+| `memory` | minimal + retrieve_memory | Need recall |
+| `collaboration` | memory + task/conflict/resolution tools | Multi-agent handoff |
+| `reasoning` | memory + decision pipeline tools | Planning and analysis |
+| `full` | All 55 tools | Everything |
+
+```shell
+uv run allbrain start --project . --agent my-agent --tool-profile memory
+```
+
+### From source
+
+```shell
 git clone https://github.com/Mustafa-Ali-Ertugrul/allbrain-mcp.git
 cd allbrain-mcp
 uv sync
-.\scripts\install-mcp.ps1 -All -Isolate
-.\scripts\install-mcp.ps1 -All -Verify
+./scripts/install-mcp.sh --all --isolate --verify
 ```
 
-On macOS or Linux, replace the installer command with:
+See the [full setup guide](docs/setup.md) for manual config, troubleshooting, and shared-vs-isolated databases.
 
-```bash
-./scripts/install-mcp.sh --all --isolate
+## First memory save
+
+Once AllBrain is installed and the client is restarted, call:
+
+```text
+save_event(type="task_started", payload={"task": "implement auth", "agent": "codex"})
 ```
 
-Restart the configured MCP clients after installation. The merge-safe installer supports Codex, Claude Code and Desktop, OpenCode, Gemini CLI, Antigravity, VS Code, Cursor, Windsurf, Zed, and Kiro. To configure only one client, use `-Codex` on Windows or `--codex` on macOS/Linux. Use the universal stdio entry in the setup guide for any other MCP client.
+Then verify it was recorded:
 
-To run the stdio server directly instead of installing client configs:
-
-```powershell
-uv run allbrain start --project . --agent codex
+```text
+list_events()
 ```
 
-### Shared or isolated memory
+Switch to another client, call `list_events()` again — the same event appears.
 
-| Mode | Installer | Database | Use when |
-|---|---|---|---|
-| Isolated | `-Isolate` / `--isolate` | One file per client, such as `~/.allbrain/codex.db` | You need fault, test, or privacy boundaries between agents. |
-| Shared (default) | Omit the isolation flag | `~/.allbrain/allbrain.db` | Agents must read and continue one another's work. |
+## Tool count and supported clients
 
-Isolation prevents cross-agent memory by design. It is useful for independent client runs, but it disables the shared-memory workflow unless histories are merged later. Re-run the installer without the isolation flag to switch generated configs back to shared mode.
+- 55 tools in the full MCP profile across 18 domain tool modules
+- Default profile (`full`) registers all tools
+- `minimal` profile: 3 tools
 
-See the [complete installation and troubleshooting guide](docs/setup.md) for Windows, macOS, Linux, client-specific verification, and shared-memory configuration.
+## Data lifecycle and security
 
-## Storage backends
+AllBrain stores events, sessions, and audit logs in local SQLite. Data never leaves your machine. Credential-like values are redacted before storage.
 
-The runtime depends on the minimal `EventStore` append/list protocol rather than a database-specific API. `BrainRepository` is the SQLAlchemy-backed implementation, with Alembic migrations and project-local stream positions shared by SQLite and PostgreSQL.
+- [Data lifecycle](docs/data-lifecycle.md) — what is stored, retention, cleanup, restore
+- [Uninstall guide](docs/uninstall.md) — remove AllBrain from clients and delete data
 
-| Backend | Status | Intended use |
-|---|---|---|
-| SQLite | Default | Zero-config local development and moderate single-host workloads |
-| PostgreSQL | CI-validated scale-out target | Write-heavy or multi-host deployments |
-| Redis / RabbitMQ | Experimental queue adapters | Task delivery only; they are not authoritative event stores |
+## Advanced docs
 
-Install the PostgreSQL driver and supply one database setting:
-
-```powershell
-uv sync --extra postgres
-$env:ALLBRAIN_DATABASE_URL = "postgresql+psycopg://allbrain:secret@localhost/allbrain"
-uv run allbrain start --project . --agent codex
-```
-
-`--database-url` is also accepted, but the environment variable avoids placing credentials in shell history and process arguments. It is mutually exclusive with `--db-path`. After starting the server, call `list_tools` in the client to confirm connectivity and check `repair-history` for migration validation.
-
-## Example flow
-
-1. Agent A writes an event.
-2. Agent B writes to the same project.
-3. Agent C opens the project and gets the merged view.
-4. Conflicts are surfaced instead of being hidden.
-
-## Why this repo is useful
-
-- Good for shared agent memory
-- Good for cross-client MCP testing
-- Good for deterministic orchestration experiments
-- Good for debugging multi-agent state drift
-
-## Reality check
-
-This is a real MCP server with real tool calls and real state replay.
-
-It still does not make the model magically autonomous. Decision pipelines support `event_only`, `mock_runtime`, and queue-backed `queued_runtime`; none implies arbitrary live-world execution.
-
-## Operational boundaries
-
-- SQLite is the default local, single-host backend. WAL mode and bounded retries support concurrent local clients, but its single-writer model remains the ceiling.
-- Treat 10 or more concurrent write-heavy agents, or a sustained target near 100 events/second, as the point to prefer PostgreSQL and benchmark the intended deployment. This is a conservative planning threshold, not a portable SQLite capacity guarantee.
-- SQLite acceptance requires zero lock/write errors, p95 <= 250 ms, and p99 <= 1,500 ms. The checked-in 10-agent/2,000-event MCP run recorded one lock error and missed both latency budgets, demonstrating the transition signal. See the [database scaling policy](docs/database_scaling_policy.md).
-- Tool rate limits are per tool and per server process: 1,000 calls/second burst and 100,000 calls/minute by default. Override them before startup with `ALLBRAIN_RATE_LIMIT_RPS` and `ALLBRAIN_RATE_LIMIT_RPM`.
-- Review the [security policy](SECURITY.md) before exposing tools beyond a trusted local development environment.
-
-## Custom agents
-
-AllBrain speaks standard MCP over stdio, so a custom Python or Node.js agent can use an existing MCP client without an AllBrain-specific SDK. The [custom-agent integration guide](docs/custom-agent-integration.md) contains short, complete examples for `save_event` and `resume_project`, plus the request and response contracts.
-
-## Python SDK (experimental)
-
-The repository now includes a separate, thin [`allbrain-sdk`](packages/allbrain-sdk/README.md) package. It provides an async `AllBrainClient`, Pydantic response models, typed tool errors, and stdio lifecycle management without moving business logic out of the server.
-
-```powershell
-uv pip install -e ./packages/allbrain-sdk
-```
-
-```python
-import asyncio
-from allbrain_sdk import AllBrainClient
-
-async def main():
-    async with AllBrainClient(project=".", agent="code-agent", db_path=".allbrain.db") as client:
-        await client.save_event("task_started", {"task": "implement auth"})
-        return await client.resume_project(include_git=False)
-
-state = asyncio.run(main())
-```
-
-The next SDK milestone is a matching TypeScript client after the Python API and MCP contracts have settled through real multi-agent runs.
-
-## Two-agent pilot
-
-[`examples/two_agent_sqlite_pilot.py`](examples/two_agent_sqlite_pilot.py) runs a code agent and a security agent against one shared SQLite stream. It verifies event retention, agent attribution, handoff visibility, conflict detection, and replay agreement. See the [pilot notes and extracted SDK patterns](docs/two-agent-pilot.md).
-
-## Repo layout
-
-- `src/allbrain/` - server, runtime, reducers, and tools
-- `tests/` - coverage for the event-sourced flows
-- `docs/` - [setup notes](docs/setup.md), [custom-agent integration](docs/custom-agent-integration.md), [two-agent pilot](docs/two-agent-pilot.md), [architecture overview](docs/ARCHITECTURE.md), [code-quality audit](docs/code-quality-audit.md), and [docs index](docs/index.md)
-- `docs/images/` - GitHub-friendly visuals
+- [Full setup guide](docs/setup.md) — all clients, shared vs isolated databases, troubleshooting
+- [Custom agent integration](docs/custom-agent-integration.md) — use AllBrain from any MCP client
+- [Python SDK](packages/allbrain-sdk/README.md) — typed async client (experimental)
+- [Architecture](docs/ARCHITECTURE.md) — event sourcing, reducers, stream ordering
+- [Storage backends](docs/database_scaling_policy.md) — SQLite vs PostgreSQL vs queue adapters
+- [Multi-agent pilot](docs/two-agent-pilot.md) — two-agent workflow walkthrough
+- [Upgrade guide](docs/upgrade-guide.md) — migrations, rollback, breaking changes
 
 ## Status
 
-- 2567 tests collected; (pass rate varies by environment) in the latest successful CI run
+- 2567 tests collected
 - stdio MCP handshake verified
-- multi-agent write/read/conflict flows verified
-- 55 tools in the full MCP profile across 18 domain tool modules
-- Python 3.13 coverage CI; measured coverage 80.72% in the latest successful run (enforced threshold: 80%)
-
-
+- Python 3.12+ (CI at 3.13)
+- Coverage: 80.72% (enforced threshold 80%)
