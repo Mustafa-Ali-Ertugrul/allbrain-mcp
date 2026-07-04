@@ -62,6 +62,28 @@ class TestSlidingWindowCounter:
         ok, _ = c.check_and_record("k")
         assert ok
 
+    def test_pop_last_removes_only_one(self) -> None:
+        c = SlidingWindowCounter(window_seconds=60.0, max_events=5)
+        c.check_and_record("k")
+        c.check_and_record("k")
+        c.check_and_record("k")
+        c.pop_last("k")
+        # pop_last removed the 3rd record → count should now be 2
+        ok, count = c.check_and_record("k")
+        assert ok
+        assert count == 3  # 2 original + 1 new
+
+    def test_pop_last_empty_key_is_noop(self) -> None:
+        c = SlidingWindowCounter(window_seconds=60.0, max_events=5)
+        c.pop_last("nonexistent")  # must not raise
+
+    def test_pop_last_removes_key_when_empty(self) -> None:
+        c = SlidingWindowCounter(window_seconds=60.0, max_events=5)
+        c.check_and_record("k")
+        c.pop_last("k")
+        # deque should be fully removed from _buckets
+        assert "k" not in c._buckets
+
     def test_reset_all(self) -> None:
         c = SlidingWindowCounter(window_seconds=60.0, max_events=2)
         c.check_and_record("a")
@@ -108,6 +130,35 @@ class TestCheckToolRate:
 
         ok, _ = _MINUTE_LIMITER.check("reset_tool")
         assert ok  # reset cleared it
+
+
+class TestMinuteLimitRollback:
+    """pop_last semantics: minute deny only undoes the last burst record."""
+
+    def test_rollback_does_not_erase_burst_history(self) -> None:
+        reset_rate_limits()
+
+        from allbrain.security.rate_limit import _BURST_LIMITER, _MINUTE_LIMITER
+
+        # Record 5 legitimate burst entries before the minute limit would deny
+        for _ in range(5):
+            _BURST_LIMITER.check_and_record("rollback_tool")
+
+        # Fill the minute limiter to capacity by monkey-patching its max_events
+        old_max = _MINUTE_LIMITER._max
+        _MINUTE_LIMITER._max = 1
+        _MINUTE_LIMITER.check_and_record("rollback_tool")  # now at capacity
+
+        # Use the real integration point — it should pop_last, not reset
+        from allbrain.security.rate_limit import check_tool_rate
+
+        with pytest.raises(RateLimitError):
+            check_tool_rate("rollback_tool")
+        _MINUTE_LIMITER._max = old_max
+
+        # Burst counter should be 5 (6 after check_and_record − 1 pop_last), not 0 (which reset would give)
+        _, burst_count = _BURST_LIMITER.check("rollback_tool")
+        assert burst_count == 5, f"Expected 5 burst records after pop_last, got {burst_count}"
 
 
 class TestRateLimiterConcurrency:

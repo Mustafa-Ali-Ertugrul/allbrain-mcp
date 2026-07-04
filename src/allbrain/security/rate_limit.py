@@ -80,6 +80,19 @@ class SlidingWindowCounter:
             else:
                 self._buckets.pop(key, None)
 
+    def pop_last(self, key: str) -> None:
+        """Remove only the most recent timestamp for *key*.
+
+        Unlike ``reset`` this does not wipe earlier records, so a
+        minute-limit rollback does not erase legitimate burst history.
+        """
+        with self._lock:
+            ts_list = self._buckets.get(key)
+            if ts_list:
+                ts_list.pop()
+                if not ts_list:
+                    self._buckets.pop(key, None)
+
 
 # Rate limit defaults (generous — catch runaway loops, not normal usage).
 # Override via env vars:
@@ -124,5 +137,5 @@ def check_tool_rate(tool_name: str) -> None:
 
         minute_ok, minute_count = _MINUTE_LIMITER.check_and_record(tool_name)
         if not minute_ok:
-            _BURST_LIMITER.reset(tool_name)
+            _BURST_LIMITER.pop_last(tool_name)
             raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {minute_count}/{_TOOL_MINUTE_RPS} per minute")

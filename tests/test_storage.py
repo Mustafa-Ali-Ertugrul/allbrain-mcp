@@ -132,6 +132,30 @@ def test_list_events_returns_latest_limit_in_chronological_order(tmp_path: Path)
     assert [event.payload["index"] for event in events] == [2, 3, 4]
 
 
+def test_list_events_limit_returns_newest_n_in_asc_order(tmp_path: Path) -> None:
+    repo = make_repository(tmp_path)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    session = repo.create_session(project_root, "codex")
+
+    ids: list[str] = []
+    for index in range(10):
+        evt = repo.append_event(
+            project_path=project_root,
+            session_id=session.id or 0,
+            type="test",
+            source="agent",
+            payload={"index": index},
+        )
+        ids.append(evt.id)
+
+    # Limit=5 → newest 5 events, in ASC order (indices 5-9)
+    events = repo.list_events(project_path=project_root, limit=5)
+    assert len(events) == 5
+    assert [e.payload["index"] for e in events] == [5, 6, 7, 8, 9]
+    assert [e.id for e in events] == sorted(e.id for e in events)
+
+
 def test_quality_gate_uuidv7_ordering_uses_created_at_tie_break(tmp_path: Path) -> None:
     repo = make_repository(tmp_path)
     project_root = tmp_path / "project"

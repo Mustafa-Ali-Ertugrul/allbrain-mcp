@@ -13,6 +13,7 @@ SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"gho_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_oauth"),
     (re.compile(r"ghu_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_user"),
     (re.compile(r"ghr_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_refresh"),
+    (re.compile(r"ghs_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_server_to_server"),
     (re.compile(r"AKIA[0-9A-Z]{16}", re.IGNORECASE), "aws_access_key"),
     (re.compile(r"xox[baprs]-[a-zA-Z0-9-]+", re.IGNORECASE), "slack_token"),
     # Extended patterns
@@ -47,6 +48,11 @@ _SENSITIVE_FIELD_NAMES: set[str] = {
     "private_key",
     "auth_token",
     "refresh_token",
+    "apikey",
+    "bearer",
+    "client_secret",
+    "authorization",
+    "password_hash",
 }
 
 MASK = "********"
@@ -111,7 +117,7 @@ def sanitize_text(text: str) -> str:
 # without losing the error type / location.  Example match:
 #   "Input should be a valid string [type=string_type, input_value='sk-abc...', input_type=str]"
 #   → "Input should be a valid string [type=string_type, input_type=str]"
-_PYDANTIC_INPUT_RE = re.compile(r",?\s*input_value=[^,\]]*")
+_PYDANTIC_INPUT_RE = re.compile(r",?\s*input_value=(?:[^,\]]|,(?!\s*\w+=))*")
 
 
 def sanitize_valerr_msg(msg: str) -> str:
