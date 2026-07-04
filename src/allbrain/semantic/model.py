@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 MAX_CONCEPTS = 500
 CONSOLIDATION_MIN_EPISODES = 3

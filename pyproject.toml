@@ -2,7 +2,7 @@
 name = "allbrain-mcp"
 version = "0.2.1"
 description = "Event-sourced memory and orchestration server for multi-agent AI systems"
-authors = [{ name = "Ali GÖREN", email = "ali.goren@example.com" }]
+authors = [{ name = "Ali GÖREN", email = "mustafali1230@hotmail.com" }]
 keywords = ["mcp", "agent", "multi-agent", "orchestration", "memory", "event-sourcing", "ai"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -20,7 +20,7 @@ license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.16.0,<2.0",
-    "fastmcp>=3.4.2,<4.0",
+    "fastmcp>=3.4.2,<3.5",
     "GitPython>=3.1.0,<4.0",
     "psutil>=5.9.0,<6.0",
     "pydantic>=2.10,<3.0",
@@ -39,17 +39,6 @@ distributed = [
     "redis>=5.0.0,<6.0",
     "aio-pika>=9.0.0,<10.0",
 ]
-dev = [
-    "bandit>=1.8.0",
-    "bump-my-version>=1.4.1",
-    "pip-audit>=2.7.0",
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "pytest-cov>=7.1.0",
-    "pytest-xdist>=3.8.0",
-    "ruff>=0.11.0",
-]
-
 [project.scripts]
 allbrain = "allbrain.cli.main:app"
 
@@ -77,14 +66,13 @@ fail_under = 80
 
 [tool.ruff]
 line-length = 120
-target-version = "py313"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
-ignore = ["F401"]
-
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["F401", "SIM"]
+"__init__.py" = ["F401"]
 
 [tool.bandit]
 skips = ["B311"]
@@ -92,10 +80,28 @@ skips = ["B311"]
 [dependency-groups]
 dev = [
     "anyio>=4.14.1",
+    "bandit>=1.8.0",
     "bump-my-version>=1.4.1",
+    "pip-audit>=2.7.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
     "ruff>=0.15.20",
 ]
+
+[tool.bumpversion]
+current_version = "0.2.1"
+allow_dirty = false
+commit = false
+tag = false
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "src/allbrain/__init__.py"
+search = '__version__ = "{current_version}"'
+replace = '__version__ = "{new_version}"'

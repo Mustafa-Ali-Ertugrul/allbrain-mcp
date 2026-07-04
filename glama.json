@@ -1,7 +1,7 @@
 {
   "name": "AllBrain MCP",
   "description": "Event-sourced memory and orchestration server for multi-agent AI systems. Shared state, conflict resolution, deterministic replay, counterfactual reasoning, scenario planning, and foresight analysis for agent workflows.",
-  "author": "Ali GÖREN",
+  "author": "Ali G\u00d6REN",
   "categories": [
     "agent-orchestration",
     "memory",
@@ -31,15 +31,15 @@
   "related_servers": [
     {
       "name": "Memory",
-      "url": "https://glama.ai/mcp/servers/..."
+      "url": "https://glama.ai/mcp/servers/modelcontextprotocol/knowledge-graph-memory-server"
     },
     {
       "name": "Sequential Thinking",
-      "url": "https://glama.ai/mcp/servers/..."
+      "url": "https://glama.ai/mcp/servers/%40new69toss/mcp-sequential-thinking"
     },
     {
       "name": "Context Manager",
-      "url": "https://glama.ai/mcp/servers/..."
+      "url": "https://glama.ai/mcp/servers/transparentlyok/mcp-context-manager"
     }
   ],
   "runtime": {
@@ -50,5 +50,5 @@
   "config": {
     "timeout": 120000
   },
-  "icon": "🧠"
+  "icon": "\ud83e\udde0"
 }

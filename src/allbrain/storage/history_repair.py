@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from sqlalchemy.engine import Engine
-from sqlmodel import col, select
+from sqlmodel import select
 
 from allbrain.events import EventType
 from allbrain.models.entities import Event, Project, Session, utc_now

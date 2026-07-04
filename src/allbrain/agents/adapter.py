@@ -100,7 +100,7 @@ class AgentAdapter(ABC):
         return self._health
 
     def _update_health(self, success: bool, error: str | None = None) -> None:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         if success:
             self._health = AgentHealth(

@@ -5,10 +5,8 @@ from typing import Any
 
 from allbrain.causal.model import (
     CAUSAL_CONFIDENCE_SHRINK,
-    CAUSAL_IMPACT_THRESHOLD,
     CAUSAL_MIN_SAMPLES,
     CausalImpact,
-    ImpactDirection,
 )
 from allbrain.events.schemas import EventType
 

@@ -7,7 +7,6 @@ from allbrain.attention.budget import compute_unused_budget, derive_adaptive_bud
 from allbrain.attention.estimator import estimate_signal_cost, estimate_signal_importance
 from allbrain.attention.model import (
     ATTENTION_REALLOCATION_THRESHOLD,
-    AttentionWeight,
     ResourceBudget,
 )
 from allbrain.attention.scheduler import schedule_attention

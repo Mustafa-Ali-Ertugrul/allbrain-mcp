@@ -7,7 +7,7 @@ from allbrain.episodic.events import (
     validate_episode_forgotten,
     validate_episode_retrieved,
 )
-from allbrain.episodic.model import Episode, EpisodicState
+from allbrain.episodic.model import Episode
 from allbrain.events.schemas import EventType
 
 

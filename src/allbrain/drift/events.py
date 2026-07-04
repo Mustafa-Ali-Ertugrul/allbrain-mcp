@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.drift.detector import DRIFT_TEMPLATE_VERSION, DRIFT_THRESHOLD, REASONS
+from allbrain.drift.detector import DRIFT_TEMPLATE_VERSION, REASONS
 
 REQUIRED_KEYS: frozenset[str] = frozenset({"context_key", "belief_before", "belief_after", "magnitude", "reason"})
 

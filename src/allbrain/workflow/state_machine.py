@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from allbrain.workflow.models import TaskGraph, TaskNode, WorkflowStatus
+from allbrain.workflow.models import TaskGraph, WorkflowStatus
 
 
 @dataclass

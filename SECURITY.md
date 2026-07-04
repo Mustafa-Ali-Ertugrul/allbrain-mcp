@@ -13,9 +13,9 @@ Do not publish an exploitable vulnerability in a public issue. Use the repositor
 Install development dependencies and run both source and dependency checks:
 
 ```bash
-uv sync --extra dev
+uv sync --group dev
 uv run bandit -c pyproject.toml -r src/ -ll
-uv run --extra dev pip-audit
+uv run --group dev pip-audit
 ```
 
 `pip-audit` is the supported dependency scanner. `safety` is not part of the project environment or CI workflow.

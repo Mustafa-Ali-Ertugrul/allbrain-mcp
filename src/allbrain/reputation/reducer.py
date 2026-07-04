@@ -5,7 +5,6 @@ from typing import Any
 from allbrain.events.schemas import EventType
 from allbrain.reputation.estimator import (
     _stable_reputation_id,
-    consistency,
     mean_confidence,
     mean_duration,
     mean_retry,

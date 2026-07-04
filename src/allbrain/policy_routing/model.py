@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any
 
 POLICY_ROUTING_TEMPLATE_VERSION = 1
 

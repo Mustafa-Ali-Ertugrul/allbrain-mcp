@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
 from allbrain.graph.workflow_graph_builder import WorkflowGraphBuilder
 from allbrain.observability import ObservabilityBuilder
 from allbrain.replay.event_replay_engine import EventReplayEngine

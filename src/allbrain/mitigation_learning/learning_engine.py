@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Any
 
 from allbrain.mitigation_learning.model import (
     DISABLE_SUCCESS_RATE_THRESHOLD,

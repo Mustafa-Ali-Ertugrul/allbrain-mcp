@@ -11,7 +11,6 @@ from allbrain.storage.repository import BrainRepository
 
 __all__ = [
     "BrainRepository",
-    "SnapshotRepo",
     "create_engine_for_path",
     "create_engine_for_url",
     "ensure_event_payload_version_column",

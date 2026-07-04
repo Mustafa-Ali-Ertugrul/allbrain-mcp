@@ -15,14 +15,11 @@ from allbrain.models.schemas import (
 )
 from allbrain.observability import ObservabilityBuilder
 from allbrain.reliability.metrics import ReliabilityMetrics
-from allbrain.security.rate_limit import check_tool_rate
 from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
-    datetime_now_iso,
-    filter_observability_events,
     observability_project_and_limit,
 )
 from allbrain.snapshot.constants import NON_SEMANTIC_EVENT_TYPES

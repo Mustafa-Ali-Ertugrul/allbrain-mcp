@@ -17,11 +17,8 @@ from allbrain.models.schemas import (
 from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
-    append_selection_decision,
     audit_tool_call,
     bind_session_id,
-    get_task_or_raise,
-    maybe_auto_snapshot,
     semantic_event_count,
     snapshot_to_dict,
 )

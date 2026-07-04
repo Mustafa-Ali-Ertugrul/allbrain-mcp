@@ -3,8 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Any
+from datetime import UTC, datetime, timedelta
 
 from uuid6 import uuid7
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 ADAPTIVE_RECOVERY_TEMPLATE_VERSION = 1
 DEFAULT_MAX_CHAIN_LENGTH = 4

@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
-
 from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.policy_competition.evaluator import PolicyEvaluator
 from allbrain.policy_competition.model import (
-    COMPETITION_CANDIDATE_COUNT,
     COMPETITION_MIN_CONFIDENCE,
     CompetitionResult,
     PolicyCandidate,
-    ScoredPolicy,
 )
 
 

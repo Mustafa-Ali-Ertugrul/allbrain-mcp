@@ -11,7 +11,7 @@ SAME shared WAL-mode SQLite database.  Measures:
   4. State drift — resume_project consistency across 10 agents
 
 Usage:
-    uv run --extra dev python scripts/mcp_stress_test.py
+    uv run --group dev python scripts/mcp_stress_test.py
 
 Comparison with Option A (stress_test.py):
     Option A: thread-level within single process, direct _impl calls
@@ -23,14 +23,12 @@ from __future__ import annotations
 import json
 import os
 import random
-import shutil
 import subprocess
 import sys
-import tempfile
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 

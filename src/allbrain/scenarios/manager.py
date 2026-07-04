@@ -3,7 +3,7 @@ from __future__ import annotations
 from uuid6 import uuid7
 
 from allbrain.scenarios.evaluator import ScenarioEvaluator
-from allbrain.scenarios.generator import DEFAULT_TEMPLATES, ScenarioGenerator, ScenarioTemplate
+from allbrain.scenarios.generator import ScenarioGenerator
 from allbrain.scenarios.models import SCENARIO_TEMPLATE_VERSION, ScenarioAnalysis, ScenarioResult
 from allbrain.scenarios.ranking import ScenarioRanker
 from allbrain.world import PredictionBridge, SimulationBridge, StateTransitionBridge, WorldState

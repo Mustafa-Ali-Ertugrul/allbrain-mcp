@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events.schemas import EventType
-from allbrain.evidence.estimator import _stable_evidence_id
 from allbrain.evidence.state import EvidenceState
 
 

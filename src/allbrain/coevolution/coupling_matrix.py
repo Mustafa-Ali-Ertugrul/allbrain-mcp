@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from allbrain.coevolution.model import (
     COEVOLUTION_DAMPING,
-    COEVOLUTION_WINDOW_SIZE,
     CoEvolutionState,
     Coupling,
 )

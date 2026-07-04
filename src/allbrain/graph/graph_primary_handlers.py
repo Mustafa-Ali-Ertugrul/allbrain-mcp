@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events import EventType
-from allbrain.foundations import canonical_event_sort
 from allbrain.graph.graph_node_helpers import _add_edge, _task_id
 from allbrain.models.schemas import EventRead
 

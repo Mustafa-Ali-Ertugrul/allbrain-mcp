@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
-from allbrain.workflow.models import EdgeType, TaskEdge, TaskGraph, TaskNode, WorkflowStatus
+from allbrain.workflow.models import TaskGraph, TaskNode, WorkflowStatus
 
 
 @dataclass

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-from typing import Any
 
 from allbrain.mitigation_learning.model import (
     POLICY_UPDATE_MIN_RECORDS,

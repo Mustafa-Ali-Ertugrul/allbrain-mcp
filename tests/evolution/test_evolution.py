@@ -16,7 +16,7 @@ from allbrain.graph import WorkflowGraphBuilder
 from allbrain.memory import MemoryBuilder
 from allbrain.observability import DashboardDataBuilder
 from allbrain.replay import EventReplayEngine
-from allbrain.server.app import save_event_impl
+from allbrain.server.tools.events import save_event_impl
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from allbrain.policy_competition.model import (
     COMPETITION_SCORE_WEIGHTS,
     PolicyCandidate,

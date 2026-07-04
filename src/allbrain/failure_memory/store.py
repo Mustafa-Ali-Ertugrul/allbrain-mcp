@@ -4,8 +4,6 @@ from typing import Any
 
 from allbrain.failure_memory.model import (
     FAILURE_MEMORY_TEMPLATE_VERSION,
-    FailureMemoryEntry,
-    FailureMemoryState,
     FailurePattern,
     FailureRecord,
     RecoveryExperience,

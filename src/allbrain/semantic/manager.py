@@ -14,12 +14,10 @@ from allbrain.semantic.consolidation import (
     compute_concept_confidence,
     find_matching_concept,
     should_create_concept,
-    should_forget_concept,
     trim_to_capacity,
 )
 from allbrain.semantic.model import (
     CONFIDENCE_DECAY_RATE,
-    CONSOLIDATION_MIN_EPISODES,
     CONSOLIDATION_THRESHOLD,
     DEFAULT_SEMANTIC_LIMIT,
     MAX_CONCEPTS,

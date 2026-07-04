@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import math
-
 from allbrain.dynamics.model import (
     FORECAST_CAP_PER_STEP,
     FORECAST_DAMPING_FACTOR,

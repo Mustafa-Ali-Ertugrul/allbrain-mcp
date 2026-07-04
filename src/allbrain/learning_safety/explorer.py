@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import random
-from typing import Any
 
 from allbrain.learning_safety.entropy import EntropyCalculator, shannon_entropy
 from allbrain.learning_safety.model import ExplorationDecision

@@ -2,14 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.foundations import canonical_event_sort
 from allbrain.meta_policy.estimator import estimate_mode_reward
 from allbrain.meta_policy.evaluator import detect_policy_drift, should_snapshot
 from allbrain.meta_policy.learner import _default_mode_stats, update_mode_stats
 from allbrain.meta_policy.model import (
     META_POLICY_EXPLORATION_MAX,
-    META_POLICY_SNAPSHOT_INTERVAL,
     META_POLICY_TEMPERATURE_INIT,
     ModeStats,
     PolicyState,

@@ -6,7 +6,6 @@ from allbrain.events.schemas import EventType
 from allbrain.foundations import canonical_event_sort
 from allbrain.reputation.estimator import (
     _stable_reputation_id,
-    consistency,
     mean_confidence,
     mean_duration,
     mean_retry,

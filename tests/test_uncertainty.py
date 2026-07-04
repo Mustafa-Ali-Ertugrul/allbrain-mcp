@@ -8,11 +8,11 @@ from allbrain.events import EventType
 from allbrain.foresight import ForesightEngine
 from allbrain.replay import EventReplayEngine
 from allbrain.runtime_core import SystemDecisionPipeline
-from allbrain.server.app import (
+from allbrain.server.tools.knowledge import (
     detect_knowledge_gaps_impl,
     estimate_uncertainty_impl,
-    run_decision_pipeline_impl,
 )
+from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
 from allbrain.uncertainty import (
     UNCERTAINTY_TEMPLATE_VERSION,
     ConfidenceComponent,

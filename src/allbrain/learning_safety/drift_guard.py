@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from collections import deque
-from typing import Any
 
 from allbrain.learning_safety.model import (
     DRIFT_THRESHOLD,
-    MIN_RECENT_RECORDS,
     SAFETY_LEARNING_DRIFT_DETECTED,
     SafetyEvent,
 )

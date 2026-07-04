@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from allbrain.decision.model import DecisionContext
 from allbrain.routing import (
-    adaptive_selection_score,
     causal_selection_score,
     dynamics_selection_score,
-    extended_selection_score,
     selection_score,
     unified_decision_score,
 )

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from allbrain.episodic.model import Episode
 from allbrain.semantic.abstraction import (
     extract_pattern_from_episode,
-    generalize_signature,
     pattern_overlap,
 )
 from allbrain.semantic.model import (

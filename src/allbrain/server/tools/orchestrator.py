@@ -5,14 +5,10 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from pydantic import ValidationError
-
-from allbrain.events import EventType
 from allbrain.models.schemas import (
     OrchestratorInput,
     RunDecisionPipelineInput,
     ToolResult,
-    UserInputError,
 )
 from allbrain.orchestrator import TaskStateReducer
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
@@ -29,7 +25,6 @@ from allbrain.runtime_core.constants import (
     DEFAULT_SCENARIO_RECOMMENDATION_THRESHOLD,
     DEFAULT_SCENARIOS_LIMIT,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.queueing import QueueCoordinator
 from allbrain.server.tools._shared import (
