@@ -15,7 +15,7 @@ async def test_core_tool_profile_is_exact_and_unique(tmp_path) -> None:
         tools = await server.list_tools()
         names = [tool.name for tool in tools]
         assert set(names) == CORE_TOOL_NAMES
-        assert len(names) == len(CORE_TOOL_NAMES) == 12
+        assert len(names) == len(CORE_TOOL_NAMES) == 10
     finally:
         context.repository.close()
 

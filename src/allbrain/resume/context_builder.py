@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from allbrain.models.schemas import EventRead
 from allbrain.gitbrain import GitBrain
+from allbrain.models.schemas import EventRead
 
 
 class ContextBuilder:

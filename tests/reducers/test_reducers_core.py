@@ -2,14 +2,14 @@
 
 import pytest
 
-from tests.reducers.conftest import make_event
 from allbrain.events.schemas import EventType
+from tests.reducers.conftest import make_event
 
 
 class TestCapabilityReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.reducers.core import CapabilityReducer
         from allbrain.capabilities.model import CapabilityState
+        from allbrain.reducers.core import CapabilityReducer
 
         reducer = CapabilityReducer()
         snap = reducer.snapshot(agent_id="test_agent")

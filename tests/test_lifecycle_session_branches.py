@@ -4,14 +4,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from allbrain.models.entities import Session
+from allbrain.server.context import BrainContext
 from allbrain.server.lifecycle_session import (
+    build_session_summary,
     ensure_session_started,
     finalize_active_session,
-    build_session_summary,
     reconcile_stale_sessions,
 )
-from allbrain.server.context import BrainContext
-from allbrain.models.entities import Session
 
 
 def test_ensure_session_started_existing():
