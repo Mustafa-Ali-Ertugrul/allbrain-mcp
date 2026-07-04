@@ -20,3 +20,9 @@ scripts/mcp_latency_profiles/
 
 # Benchmark results (generated; committed baselines use git add -f)
 benchmarks/results/
+
+# AI coding tool dump files (generated per-workspace; never committed)
+.kilo/
+.kimi-code/
+.mimocode/
+.zcode/

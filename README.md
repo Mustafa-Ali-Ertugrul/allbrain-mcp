@@ -95,7 +95,7 @@ $env:ALLBRAIN_DATABASE_URL = "postgresql+psycopg://allbrain:secret@localhost/all
 uv run allbrain start --project . --agent codex
 ```
 
-`--database-url` is also accepted, but the environment variable avoids placing credentials in shell history and process arguments. It is mutually exclusive with `--db-path`. Run `allbrain doctor` with the same environment to validate migrations, connectivity, and the MCP handshake.
+`--database-url` is also accepted, but the environment variable avoids placing credentials in shell history and process arguments. It is mutually exclusive with `--db-path`. After starting the server, call `list_tools` in the client to confirm connectivity and check `repair-history` for migration validation.
 
 ## Example flow
 
