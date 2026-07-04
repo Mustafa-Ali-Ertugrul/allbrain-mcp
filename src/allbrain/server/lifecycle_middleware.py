@@ -100,7 +100,8 @@ def _record_outcome(
     if error_type:
         payload["error_type"] = error_type
     if error:
-        payload["error"] = sanitize_text(error)[:2000]
+        safe_error = sanitize_text(error)
+        payload["error"] = safe_error[:2000] + "…" if len(safe_error) > 2000 else safe_error
     context.repository.append_event(
         project_path=context.project_path,
         session_id=session.id or 0,

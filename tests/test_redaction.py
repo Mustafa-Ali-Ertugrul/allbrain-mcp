@@ -78,6 +78,62 @@ def test_multiple_secrets_in_one_string() -> None:
     assert result["text"] == "******** ********"
 
 
+def test_github_server_token_masked() -> None:
+    result = sanitize_payload({"key": "ghs_" + "a" * 36})
+    assert result["key"] == "********"
+
+
+def test_jwt_masked() -> None:
+    result = sanitize_payload({"token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dQw4w9WgXcQ"})
+    assert result["token"] == "********"
+
+
+def test_ssh_private_key_masked() -> None:
+    key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA\n-----END RSA PRIVATE KEY-----"
+    result = sanitize_payload({"key": key})
+    assert result["key"] == "********"
+
+
+def test_stripe_live_key_masked() -> None:
+    result = sanitize_payload({"key": "sk_live_" + "a" * 24})
+    assert result["key"] == "********"
+
+
+def test_stripe_test_key_masked() -> None:
+    result = sanitize_payload({"key": "rk_test_" + "a" * 24})
+    assert result["key"] == "********"
+
+
+def test_twilio_sid_masked() -> None:
+    result = sanitize_payload({"sid": "AC" + "a" * 30 + "12"})
+    assert result["sid"] == "********"
+
+
+def test_google_api_key_masked() -> None:
+    result = sanitize_payload({"key": "AIzaSyD" + "a" * 32})
+    assert result["key"] == "********"
+
+
+def test_bearer_field_masked() -> None:
+    result = sanitize_payload({"bearer": "sk-abc123"})
+    assert result["bearer"] == "********"
+
+
+def test_client_secret_field_masked() -> None:
+    result = sanitize_payload({"client_secret": "rk_test_xyz"})
+    assert result["client_secret"] == "********"
+
+
+def test_authorization_field_masked() -> None:
+    result = sanitize_payload({"authorization": "Bearer mytoken"})
+    assert result["authorization"] == "********"
+
+
+def test_apikey_field_masked() -> None:
+    result = sanitize_payload({"apikey": "AIzaSy..."})
+    assert result["apikey"] == "********"
+
+
 def test_safe_string_unchanged() -> None:
     result = sanitize_payload({"msg": "hello world"})
     assert result["msg"] == "hello world"
@@ -94,6 +150,31 @@ def test_original_payload_not_mutated() -> None:
     expected = deepcopy(original)
     sanitize_payload(original)
     assert original == expected, "sanitize_payload mutated the input in-place"
+
+
+def test_sanitize_valerr_msg_strips_input_value_with_commas() -> None:
+    from allbrain.security.redaction import sanitize_valerr_msg
+
+    # input_value containing comma and bracket chars
+    msg = (
+        "1 validation error for TestModel\n"
+        "field\n"
+        "  Input should be a valid string "
+        "[type=string_type, input_value='a,]secret', input_type=str]"
+    )
+    cleaned = sanitize_valerr_msg(msg)
+    assert "input_value=" not in cleaned
+    assert "a,]secret" not in cleaned
+
+
+def test_sanitize_valerr_msg_preserves_type_and_input_type() -> None:
+    from allbrain.security.redaction import sanitize_valerr_msg
+
+    msg = "[type=string_type, input_value='sk-abc', input_type=str]"
+    cleaned = sanitize_valerr_msg(msg)
+    assert "type=string_type" in cleaned
+    assert "input_type=str" in cleaned
+    assert "input_value=" not in cleaned
 
 
 def test_log_does_not_leak_secret(caplog) -> None:

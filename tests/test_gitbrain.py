@@ -1,3 +1,6 @@
+import os
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta, timezone
 
 from git import Repo
@@ -71,6 +74,62 @@ def test_work_summary_includes_commits_from_all_branches(tmp_path) -> None:
     assert summary["additions"] == 2
     assert summary["deletions"] == 0
     assert summary["truncated"] is False
+
+
+class TestGitEnvSandbox:
+    """_git_env context manager: env isolation and thread safety."""
+
+    def test_env_sandbox_restores_fully(self) -> None:
+        """After _git_env exits, os.environ matches the original."""
+        brain = GitBrain(".")
+        original = dict(os.environ)
+        # Set a distinct marker to verify restore
+        os.environ["_ALLBRAIN_TEST_MARKER"] = "should_persist"
+        try:
+            with brain._git_env():
+                # Inside: safe env vars expected
+                assert "PATH" in os.environ
+                assert "GIT_TERMINAL_PROMPT" in os.environ
+            # Outside: marker restored (non-credential → passes safe_git_env)
+            assert os.environ.get("_ALLBRAIN_TEST_MARKER") == "should_persist"
+            for k, v in original.items():
+                assert os.environ.get(k) == v, f"Mismatch for {k}"
+        finally:
+            os.environ.pop("_ALLBRAIN_TEST_MARKER", None)
+
+    def test_env_sandbox_strips_cred_vars(self) -> None:
+        """Credentials set in env before _git_env are excluded inside."""
+        brain = GitBrain(".")
+        os.environ["_ALLBRAIN_TEST_TOKEN"] = "sk-secret-12345"
+        try:
+            with brain._git_env():
+                assert "_ALLBRAIN_TEST_TOKEN" not in os.environ
+            # Restored after exit
+            assert os.environ["_ALLBRAIN_TEST_TOKEN"] == "sk-secret-12345"
+        finally:
+            os.environ.pop("_ALLBRAIN_TEST_TOKEN", None)
+
+    def test_concurrent_env_sandbox_no_crash(self) -> None:
+        """Multiple threads calling _git_env simultaneously must not raise."""
+        brain = GitBrain(".")
+
+        def run_sandbox(delay: float) -> None:
+            time.sleep(delay)
+            with brain._git_env():
+                # Inside sandbox: only safe env
+                assert "GIT_TERMINAL_PROMPT" in os.environ
+                time.sleep(0.005)
+
+        errors: list[Exception] = []
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futs = [pool.submit(run_sandbox, i * 0.01) for i in range(4)]
+            for fut in as_completed(futs):
+                try:
+                    fut.result()
+                except Exception as exc:
+                    errors.append(exc)
+
+        assert not errors, f"Concurrent _git_env raised: {errors}"
 
 
 def test_work_summary_reports_truncation(tmp_path) -> None:

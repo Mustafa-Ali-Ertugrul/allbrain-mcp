@@ -385,9 +385,8 @@ class BrainRepository:
                 statement = statement.where(Event.agent_id == agent_id)
             if type is not None:
                 statement = statement.where(Event.type == type)
-            statement = statement.order_by(col(Event.stream_position).desc()).limit(limit)
-            events = db.exec(statement).all()
-            events = sorted(events, key=lambda event: event.id)
+            statement = statement.order_by(col(Event.id).desc()).limit(limit)
+            events = list(reversed(db.exec(statement).all()))
             return [event_to_read(event) for event in events]
 
     def list_events_after(
