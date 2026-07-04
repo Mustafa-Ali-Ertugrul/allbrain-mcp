@@ -26,3 +26,9 @@ benchmarks/results/
 .kimi-code/
 .mimocode/
 .zcode/
+
+# Diagnostic and analysis artifacts
+bandit_report.json
+git_changes.diff
+*.allbrain-diagnostic*
+*.db.bak*
