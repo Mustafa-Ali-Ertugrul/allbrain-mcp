@@ -8,7 +8,7 @@ from allbrain.mitigation_learning.model import (
     STRATEGY_BASE_EFFECTIVENESS,
     OutcomeRecord,
 )
-from allbrain.predictive_failure.model import RISK_THRESHOLD_FAILURE
+# imported lazily inside measure() to avoid circular import
 
 
 def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:
@@ -54,6 +54,7 @@ class OutcomeTracker:
             base_eff = STRATEGY_BASE_EFFECTIVENESS.get(strategy, 0.30)
             reduction = base_eff * urgency
             post_risk = _clamp(pre_risk * (1.0 - reduction))
+            from allbrain.predictive_failure.model import RISK_THRESHOLD_FAILURE
             failure_prevented = post_risk < RISK_THRESHOLD_FAILURE
             stability_delta = _clamp(pre_risk - post_risk)
 
