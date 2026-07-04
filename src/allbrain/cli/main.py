@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from contextlib import asynccontextmanager
+from datetime import UTC
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Annotated
@@ -9,6 +10,8 @@ from typing import Annotated
 import anyio
 import typer
 from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.prompt import Confirm, Prompt
 
 from allbrain.config import canonicalize_project_path, default_db_path
 from allbrain.server import BrainContext, create_mcp_server
@@ -63,6 +66,102 @@ def install(
     if clients:
         args.extend(clients)
     installer_main(args)
+
+
+@app.command()
+def onboard(
+    project: Annotated[Path, typer.Option("--project", "-p", help="Project root.")] = Path("."),
+) -> None:
+    """Interactive onboarding wizard — configure, verify, and run your first event."""
+    from allbrain.install import CLIENTS
+    from allbrain.install import main as installer_main
+    from allbrain.install import verify as _verify
+
+    console.print("[bold]🚀 AllBrain MCP — Guided Setup[/bold]\n")
+    console.print("This wizard will:\n")
+    console.print("  1. Pick which MCP client(s) to configure")
+    console.print("  2. Install AllBrain for those clients")
+    console.print("  3. Run a connectivity check")
+    console.print("  4. Save your first event\n")
+
+    # Step 1: pick clients
+    want_all = Confirm.ask("Configure AllBrain for [bold]all[/bold] supported MCP clients?", default=False)
+    selected: list[str] = []
+    if not want_all:
+        console.print("\nSupported clients:")
+        for i, name in enumerate(CLIENTS, 1):
+            console.print(f"  {i:>2}. {name}")
+        choices = Prompt.ask(
+            "Enter numbers separated by commas (e.g. 1,3,5), or 'all'",
+            default="1",
+        )
+        if choices.strip().lower() == "all":
+            selected = list(CLIENTS)
+        else:
+            indices = [int(c.strip()) for c in choices.split(",") if c.strip().isdigit()]
+            names = list(CLIENTS)
+            selected = [names[i - 1] for i in indices if 1 <= i <= len(names)]
+    else:
+        selected = list(CLIENTS)
+
+    if not selected:
+        console.print("[yellow]No clients selected. Nothing to do.[/yellow]")
+        raise typer.Exit()
+
+    console.print(f"\nSelected: {', '.join(selected)}\n")
+
+    # Step 2: install
+    console.print("[bold]Step 2/4 — Installing AllBrain...[/bold]")
+    args = ["--project", str(project), "--verify", *selected]
+    installer_main(args)
+    console.print()
+
+    # Step 3: verify
+    console.print("[bold]Step 3/4 — Verifying connectivity...[/bold]")
+    with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console) as prog:
+        prog.add_task("Running product-level verification...", total=None)
+        repo = Path(__file__).resolve().parents[2]
+        _verify(repo, project.resolve())
+    console.print("[green]✔ Verification passed[/green]\n")
+
+    # Step 4: first event
+    console.print("[bold]Step 4/4 — Save your first event[/bold]")
+    save_now = Confirm.ask("Save a demo event to confirm shared memory is working?", default=True)
+    if save_now:
+        engine = create_engine_for_path(default_db_path())
+        init_db(engine)
+        repo = BrainRepository(engine)
+        task_type = Prompt.ask("Event type", default="task_started")
+        task_desc = Prompt.ask("Description", default="Set up AllBrain MCP")
+        from datetime import datetime
+
+        event_id = repo.save_event(
+            session_id=None,
+            event_type=task_type,
+            payload={"description": task_desc, "source": "cli-onboard"},
+            agent_name="cli-onboard",
+            logged_at=datetime.now(UTC),
+        )
+        engine.dispose()
+        console.print(f"[green]✔ Event saved[/green] [dim](id: {event_id})[/dim]")
+        console.print("  Restart your MCP client and call [bold]list_events()[/bold] to see it.")
+
+    console.print("\n[bold green]✔ AllBrain MCP is ready![/bold green]")
+    console.print("  Next: open your MCP client and start using the tools.")
+    console.print("  Quick reference: [bold]save_event()[/bold], [bold]list_events()[/bold],")
+    console.print("                         [bold]resume_project()[/bold]")
+    console.print("  Docs: https://github.com/Mustafa-Ali-Ertugrul/allbrain-mcp")
+
+
+@app.command()
+def ui(
+    host: Annotated[str, typer.Option("--host", help="Bind address.")] = "127.0.0.1",
+    port: Annotated[int, typer.Option("--port", "-p", help="Listen port.")] = 8080,
+) -> None:
+    """Start the local operational dashboard (single-page web view)."""
+    from allbrain.ui.dashboard_server import start_dashboard
+
+    start_dashboard(host=host, port=port)
 
 
 @app.command()
