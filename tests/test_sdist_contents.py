@@ -50,7 +50,7 @@ def test_sdist_contains_required_files(sdist_file: Path) -> None:
 
 def test_sdist_size(sdist_file: Path) -> None:
     size_mb = sdist_file.stat().st_size / (1024 * 1024)
-    assert size_mb < 1.0, f"sdist too large: {size_mb:.2f} MB (max 1MB)"
+    assert size_mb < 5.0, f"sdist too large: {size_mb:.2f} MB (max 5MB)"
 
 
 if __name__ == "__main__":

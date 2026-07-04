@@ -41,6 +41,7 @@ distributed = [
 ]
 [project.scripts]
 allbrain = "allbrain.cli.main:app"
+allbrain-mcp = "allbrain.cli.main:app"
 
 [build-system]
 requires = ["hatchling>=1.25.0"]
@@ -120,7 +121,7 @@ dev = [
 ]
 
 [tool.bumpversion]
-current_version = "0.2.1"
+current_version = "0.2.2"
 allow_dirty = false
 commit = false
 tag = false
