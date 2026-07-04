@@ -11,7 +11,7 @@
         "--project",
         "C:\\Users\\Ali\\OneDrive\\Masaüstü\\AllBrain MCP",
         "--agent",
-        "claude-code",
+        "cursor",
         "--db-path",
         "C:\\Users\\Ali\\.allbrain\\allbrain.db"
       ],

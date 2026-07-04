@@ -1,6 +1,6 @@
 # Installation and MCP setup
 
-This guide connects AllBrain MCP to Codex, Claude Code, OpenCode, and Antigravity.
+This guide connects AllBrain MCP to the major MCP-capable coding clients.
 
 All four clients start the same local stdio MCP server. By default, AllBrain stores shared state in:
 
@@ -67,13 +67,14 @@ Run from the repository root:
 .\scripts\install-mcp.ps1 -All
 ```
 
-Install only selected clients:
+Install only selected clients (the same pattern works for every name below):
 
 ```powershell
 .\scripts\install-mcp.ps1 -Codex
 .\scripts\install-mcp.ps1 -Claude
 .\scripts\install-mcp.ps1 -OpenCode
 .\scripts\install-mcp.ps1 -Antigravity
+.\scripts\install-mcp.ps1 -VSCode -Cursor -Gemini -Kiro
 ```
 
 After installation, completely restart the affected clients.
@@ -93,9 +94,33 @@ Install only selected clients:
 ./scripts/install-mcp.sh --claude
 ./scripts/install-mcp.sh --opencode
 ./scripts/install-mcp.sh --antigravity
+./scripts/install-mcp.sh --vscode --cursor --gemini --kiro
 ```
 
 After installation, completely restart the affected clients.
+
+### Supported automatic targets
+
+| Family | Clients |
+|---|---|
+| CLI agents | Codex, Claude Code, OpenCode, Gemini CLI, Kiro CLI |
+| Editors/IDEs | VS Code, Cursor, Windsurf, Zed, Kiro |
+| Desktop agents | Claude Desktop, Antigravity |
+
+The installer uses absolute repository and project paths, merges the `allbrain` entry without deleting other MCP servers, and points every client at the shared database by default. Add `--isolate` (or `-Isolate` on Windows) only when cross-client memory is not desired.
+
+For another standards-compliant MCP client, use this universal stdio server entry and substitute absolute paths:
+
+```json
+{
+  "mcpServers": {
+    "allbrain": {
+      "command": "uv",
+      "args": ["run", "--project", "/path/to/allbrain-mcp", "allbrain", "start", "--project", "/path/to/project", "--agent", "custom-client", "--db-path", "/home/user/.allbrain/allbrain.db"]
+    }
+  }
+}
+```
 
 ## Codex
 

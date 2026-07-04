@@ -1,5 +1,6 @@
 """Tests for allbrain.server.tools.git — error branches + register_tools."""
 
+from datetime import UTC, datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,6 +12,7 @@ from allbrain.server.tools.git import (
     get_git_context_impl,
     get_git_status_impl,
     get_recent_changes_impl,
+    get_work_summary_impl,
     register_tools,
 )
 
@@ -86,6 +88,17 @@ class TestGetRecentChangesImpl:
         assert result.error is not None
 
 
+class TestGetWorkSummaryImpl:
+    def test_validation_error(self, mock_context):
+        result = get_work_summary_impl(
+            mock_context,
+            since=datetime(2026, 7, 5, tzinfo=UTC),
+            until=datetime(2026, 7, 4, tzinfo=UTC),
+        )
+        assert result.ok is False
+        assert "since must be earlier" in result.error
+
+
 class TestRegisterTools:
     def test_git_info_returns_context(self, mock_context):
         with patch("allbrain.server.tools.git.get_git_context_impl") as mock_fn:
@@ -140,3 +153,14 @@ class TestRegisterTools:
         mock_ctx.assert_called_once_with(mock_context)
         mock_st.assert_called_once_with(mock_context)
         mock_ch.assert_called_once_with(mock_context, limit=5)
+
+    def test_git_info_work_summary(self, mock_context):
+        with patch("allbrain.server.tools.git.get_work_summary_impl") as mock_fn:
+            mock_fn.return_value = ToolResult(ok=True, data={"commit_count": 3})
+            mcp = MagicMock()
+            register_tools(mcp, mock_context)
+            registered_fn = mcp.tool.call_args[0][0]
+            result = registered_fn(info_type="work_summary", limit=50)
+        assert result["ok"] is True
+        assert result["data"]["work_summary"] == {"commit_count": 3}
+        mock_fn.assert_called_once_with(mock_context, limit=50, since=None, until=None)

@@ -49,7 +49,7 @@ git clone https://github.com/Mustafa-Ali-Ertugrul/allbrain-mcp.git
 cd allbrain-mcp
 uv sync
 .\scripts\install-mcp.ps1 -All -Isolate
-uv run allbrain doctor --project .
+.\scripts\install-mcp.ps1 -All -Verify
 ```
 
 On macOS or Linux, replace the installer command with:
@@ -58,7 +58,7 @@ On macOS or Linux, replace the installer command with:
 ./scripts/install-mcp.sh --all --isolate
 ```
 
-Restart the configured MCP clients after installation. The installer creates or refreshes configs for Codex, Claude Code, OpenCode, and Antigravity. To configure only one client, use `-Codex` on Windows or `--codex` on macOS/Linux (equivalent flags exist for the other clients).
+Restart the configured MCP clients after installation. The merge-safe installer supports Codex, Claude Code and Desktop, OpenCode, Gemini CLI, Antigravity, VS Code, Cursor, Windsurf, Zed, and Kiro. To configure only one client, use `-Codex` on Windows or `--codex` on macOS/Linux. Use the universal stdio entry in the setup guide for any other MCP client.
 
 To run the stdio server directly instead of installing client configs:
 

@@ -1,23 +1,24 @@
 [mcp_servers.allbrain]
-command = "C:/ABMCP/.venv/Scripts/python.exe"
+command = "uv"
 args = [
-    "-m",
-    "allbrain.cli.main",
+    "run",
+    "--project",
+    "C:\\Users\\Ali\\OneDrive\\Masa\u00fcst\u00fc\\AllBrain MCP",
+    "allbrain",
     "start",
     "--project",
-    "C:/ABMCP",
+    "C:\\Users\\Ali\\OneDrive\\Masa\u00fcst\u00fc\\AllBrain MCP",
     "--agent",
     "codex",
     "--db-path",
-    "C:/ABMCP/.allbrain.db",
+    "C:\\Users\\Ali\\.allbrain\\allbrain.db",
 ]
-cwd = "C:/ABMCP"
+cwd = "C:\\Users\\Ali\\OneDrive\\Masa\u00fcst\u00fc\\AllBrain MCP"
 startup_timeout_sec = 60
 tool_timeout_sec = 120
 enabled = true
 required = false
 
 [mcp_servers.allbrain.env]
-PYTHONPATH = "C:/ABMCP/src"
 PYTHONUTF8 = "1"
 PYTHONIOENCODING = "utf-8"

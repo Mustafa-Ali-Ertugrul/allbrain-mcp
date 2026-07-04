@@ -6,16 +6,17 @@
       "command": [
         "uv",
         "run",
+        "--project",
+        "C:\\Users\\Ali\\OneDrive\\Masaüstü\\AllBrain MCP",
         "allbrain",
         "start",
         "--project",
-        ".",
+        "C:\\Users\\Ali\\OneDrive\\Masaüstü\\AllBrain MCP",
         "--agent",
         "opencode",
         "--db-path",
-        "C:/ABMCP/.allbrain.db"
+        "C:\\Users\\Ali\\.allbrain\\allbrain.db"
       ],
-      "cwd": ".",
       "enabled": true,
       "timeout": 120000
     }
