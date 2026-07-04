@@ -1,6 +1,6 @@
 [project]
 name = "allbrain-mcp"
-version = "0.2.1"
+version = "0.2.2"
 description = "Event-sourced memory and orchestration server for multi-agent AI systems"
 authors = [{ name = "Mustafa Ali Ertuğrul", email = "mustafali1230@hotmail.com" }]
 keywords = ["mcp", "agent", "multi-agent", "orchestration", "memory", "event-sourcing", "ai"]
@@ -43,8 +43,37 @@ distributed = [
 allbrain = "allbrain.cli.main:app"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.25.0"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/README.md",
+  "/LICENSE",
+  "/pyproject.toml",
+  "/uv.lock",
+  "/docs",
+  "/examples",
+  "/packages/allbrain-sdk/src",
+]
+exclude = [
+  "/.opencode",
+  "/.kilo",
+  "/.kimi-code",
+  "/.mimocode",
+  "/.zcode",
+  "/.venv",
+  "/.git",
+  "/dist",
+  "/tests",
+  "/analysis",
+  "/benchmarks",
+  "/scripts",
+  "*.db",
+  "*.bak",
+  "node_modules",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/allbrain"]

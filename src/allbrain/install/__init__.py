@@ -70,14 +70,40 @@ def merge_server(path: Path, container: str, server: dict[str, Any], dry_run: bo
     if not isinstance(servers, dict):
         raise SystemExit(f"Expected '{container}' to be an object in {path}")
     servers["allbrain"] = server
-    write_json(path, servers, dry_run)
+    write_json(path, config, dry_run)
 
 
 def home_config(*parts: str) -> Path:
     return Path.home().joinpath(*parts)
 
 
+def _is_pipx_or_wheel_install() -> bool:
+    """True if running from an installed package (site-packages), not source repo."""
+    pkg_dir = Path(__file__).resolve().parent.parent  # allbrain/install -> allbrain/
+    # site-packages ise 'src/allbrain' yolundan değil
+    return "site-packages" in str(pkg_dir) or not (pkg_dir.parent.parent / "pyproject.toml").exists()
+
+
 def allbrain_server(repo: Path, project: Path, agent: str, db_path: Path, portable: bool = False) -> dict[str, Any]:
+    if _is_pipx_or_wheel_install():
+        # uvx — paket adından çek, depo yoluna bağımlı değil
+        return {
+            "command": "uvx",
+            "args": [
+                "--from",
+                "allbrain-mcp",
+                "allbrain",
+                "start",
+                "--project",
+                str(project),
+                "--agent",
+                agent,
+                "--db-path",
+                str(db_path),
+            ],
+            "cwd": str(project),
+            "env": {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
+        }
     if portable:
         return {
             "command": "uv",

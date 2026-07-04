@@ -9,13 +9,15 @@ permissions:
   contents: read
   id-token: write
 
+env:
+  UV_VERSION: "0.6.x"
+  PYTHON_VERSION: "3.13"
+
 jobs:
   build-and-publish:
     name: Build & publish to PyPI
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
+    needs: [lint, test]   # Wait for CI to pass
     steps:
       - uses: actions/checkout@v4
 
@@ -28,6 +30,18 @@ jobs:
       - run: uv sync --group dev
 
       - run: uv build
+
+      - name: Verify sdist has no node_modules
+        run: |
+          sdist=$(ls dist/*.tar.gz)
+          if tar -tzf "$sdist" | grep -q "node_modules"; then
+            echo "::error::sdist contains node_modules"
+            exit 1
+          fi
+
+      - name: Wheel smoke — install and CLI help
+        run: |
+          uvx --from dist/*.whl allbrain --help
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
