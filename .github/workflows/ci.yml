@@ -53,6 +53,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --extra dev
+      - run: uv pip install -e packages/allbrain-sdk
       - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=80 -n auto --dist=worksteal
 
   postgres-contract:
