@@ -45,7 +45,10 @@
   "runtime": {
     "type": "stdio",
     "command": "uv",
-    "args": ["run", "allbrain", "start", "--project", ".", "--agent", "claude-code"]
+    "args": ["run", "allbrain", "start", "--project", ".", "--agent", "claude-code"],
+    "env": {
+      "ALLOWED_PROJECT_ROOTS": "/app"
+    }
   },
   "config": {
     "timeout": 120000
