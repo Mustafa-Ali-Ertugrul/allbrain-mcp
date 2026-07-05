@@ -40,7 +40,7 @@ class RedisTaskQueue(TaskQueue):
     """Lease-aware Redis queue adapter.
 
     When a `redis_url` is supplied and the `redis` package is installed
-    (`pip install allbrain-mcp[distributed]`), this adapter connects to a real
+    (`pip install allbrain-agent-runtime[distributed]`), this adapter connects to a real
     Redis instance.  Otherwise it falls back to an in-memory simulation so that
     offline / chaos tests work without a broker.
     """

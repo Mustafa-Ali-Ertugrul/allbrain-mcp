@@ -4,10 +4,10 @@
 
 ## Example 1: First install and verify
 
-After running `uvx allbrain-mcp install --codex` and restarting the client, a user's first terminal output looks like:
+After running `uvx allbrain-agent-runtime install --codex` and restarting the client, a user's first terminal output looks like:
 
 ```text
-$ uvx allbrain-mcp install --codex --verify
+$ uvx allbrain-agent-runtime install --codex --verify
 
 ✓ Codex config written to ~/.codex/config.json
 ✓ AllBrain MCP server found

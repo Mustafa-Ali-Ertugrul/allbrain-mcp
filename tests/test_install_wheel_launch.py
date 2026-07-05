@@ -19,7 +19,7 @@ def test_allbrain_server_wheel_install() -> None:
         )
         assert result["command"] == "uvx"
         assert result["args"][0] == "--from"
-        assert result["args"][1] == "allbrain-mcp"
+        assert result["args"][1] == "allbrain-agent-runtime"
         assert "--project" in result["args"]
         assert "/repo" not in result["args"]  # repo path not used in wheel mode
 
@@ -29,7 +29,7 @@ def test_allbrain_server_source_install() -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             repo = Path(tmpdir) / "repo"
             repo.mkdir()
-            (repo / "pyproject.toml").write_text("[project]\nname = 'allbrain-mcp'\n")
+            (repo / "pyproject.toml").write_text("[project]\nname = 'allbrain-agent-runtime'\n")
 
             result = allbrain_server(
                 repo=repo,

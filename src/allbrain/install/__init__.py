@@ -91,7 +91,7 @@ def allbrain_server(repo: Path, project: Path, agent: str, db_path: Path, portab
             "command": "uvx",
             "args": [
                 "--from",
-                "allbrain-mcp",
+                "allbrain-agent-runtime",
                 "allbrain",
                 "start",
                 "--project",

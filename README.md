@@ -3,10 +3,10 @@
 One brain. Many agents. One shared memory.
 
 ![CI](https://github.com/Mustafa-Ali-Ertugrul/allbrain-mcp/actions/workflows/ci.yml/badge.svg)
-![PyPI](https://img.shields.io/pypi/v/allbrain-mcp)
-![Downloads](https://img.shields.io/pypi/dm/allbrain-mcp)
-![Python](https://img.shields.io/pypi/pyversions/allbrain-mcp)
-![License](https://img.shields.io/pypi/l/allbrain-mcp)
+![PyPI](https://img.shields.io/pypi/v/allbrain-agent-runtime)
+![Downloads](https://img.shields.io/pypi/dm/allbrain-agent-runtime)
+![Python](https://img.shields.io/pypi/pyversions/allbrain-agent-runtime)
+![License](https://img.shields.io/pypi/l/allbrain-agent-runtime)
 ![Ruff](https://img.shields.io/badge/ruff-passing-22b455)
 
 ![AllBrain MCP banner](docs/images/banner.svg)
@@ -60,7 +60,7 @@ See [`examples/two_agent_sqlite_pilot.py`](examples/two_agent_sqlite_pilot.py) f
 ## Install for one client
 
 ```shell
-uvx allbrain-mcp install --codex
+uvx allbrain-agent-runtime install --codex
 ```
 
 This configures Codex to start AllBrain automatically. Replace `--codex` with the client name:
@@ -84,7 +84,7 @@ Use `--all` to configure every supported client at once.
 ### Verify it works
 
 ```shell
-uvx allbrain-mcp install --codex --verify
+uvx allbrain-agent-runtime install --codex --verify
 ```
 
 The `--verify` flag starts the server, saves a test event, reads it back, and confirms shared memory is working.

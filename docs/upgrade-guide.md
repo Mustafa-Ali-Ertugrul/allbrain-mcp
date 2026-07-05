@@ -25,13 +25,13 @@ Pre-1.0 versions use the minor number for breaking changes (e.g., `0.3.0` could 
 ## Upgrade via PyPI
 
 ```shell
-pipx upgrade allbrain-mcp
+pipx upgrade allbrain-agent-runtime
 ```
 
 Or if you use `uvx`:
 
 ```shell
-uvx allbrain-mcp@latest install --codex --verify
+uvx allbrain-agent-runtime@latest install --codex --verify
 ```
 
 The `install` command updates the client configuration to the new version path.
@@ -55,7 +55,7 @@ uv sync
 ### PyPI install
 
 ```shell
-pipx install allbrain-mcp==0.2.0
+pipx install allbrain-agent-runtime==0.2.0
 allbrain-mcp install --codex
 ```
 

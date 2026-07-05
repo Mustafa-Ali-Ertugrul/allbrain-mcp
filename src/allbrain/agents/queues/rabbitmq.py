@@ -17,7 +17,7 @@ class RabbitMQTaskQueue(RedisTaskQueue):
     """Durable-message RabbitMQ adapter with Sprint 14 lease semantics.
 
     When an `amqp_url` is supplied and `aio-pika` is installed
-    (`pip install allbrain-mcp[distributed]`), this adapter connects to a real
+    (`pip install allbrain-agent-runtime[distributed]`), this adapter connects to a real
     AMQP broker.  Otherwise it falls back to the local simulation store so
     chaos tests work without a broker.
     """

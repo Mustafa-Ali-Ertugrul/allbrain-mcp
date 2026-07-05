@@ -61,7 +61,7 @@ wheels = [
 ]
 
 [[package]]
-name = "allbrain-mcp"
+name = "allbrain-agent-runtime"
 version = "0.2.2"
 source = { editable = "." }
 dependencies = [

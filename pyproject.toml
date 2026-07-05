@@ -1,5 +1,5 @@
 [project]
-name = "allbrain-mcp"
+name = "allbrain-agent-runtime"
 version = "0.2.2"
 description = "Event-sourced memory and orchestration server for multi-agent AI systems"
 authors = [{ name = "Mustafa Ali Ertuğrul", email = "mustafali1230@hotmail.com" }]
@@ -42,6 +42,7 @@ distributed = [
 [project.scripts]
 allbrain = "allbrain.cli.main:app"
 allbrain-mcp = "allbrain.cli.main:app"
+allbrain-agent-runtime = "allbrain.cli.main:app"
 
 [build-system]
 requires = ["hatchling>=1.25.0"]
