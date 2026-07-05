@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from allbrain.server import create_mcp_server
-from allbrain.server.tools import CORE_TOOL_NAMES
+from allbrain.server.tools import CORE_TOOL_NAMES, MINIMAL_TOOL_NAMES
 from tests._helpers import make_context
 
 
@@ -29,5 +29,23 @@ async def test_full_tool_profile_has_no_duplicate_pipeline_tool(tmp_path) -> Non
         assert len(names) == len(set(names))
         assert names.count("run_decision_pipeline") == 1
         assert CORE_TOOL_NAMES.issubset(names)
+    finally:
+        context.repository.close()
+
+
+@pytest.mark.anyio
+async def test_minimal_tool_profile_is_exact_and_unique(tmp_path) -> None:
+    """Minimal profili: tam olarak 3 tool kaydedilmeli."""
+    context = make_context(tmp_path)
+    try:
+        server = create_mcp_server(context, tool_profile="minimal")
+        tools = await server.list_tools()
+        names = [tool.name for tool in tools]
+        assert len(names) == len(set(names)), "Mükerrer araç kaydı var"
+        assert set(names) == MINIMAL_TOOL_NAMES
+        assert len(names) == len(MINIMAL_TOOL_NAMES) == 3
+        assert names.count("save_event") == 1
+        assert names.count("list_events") == 1
+        assert names.count("resume_project") == 1
     finally:
         context.repository.close()

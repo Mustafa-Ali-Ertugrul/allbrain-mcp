@@ -105,6 +105,21 @@ Start with `--tool-profile minimal` (3 tools) and expand when needed:
 uv run allbrain start --project . --agent my-agent --tool-profile memory
 ```
 
+## Glama MCP Portal
+
+Glama MCP puanlama evaluatorü, bu sunucuyu **minimal tool profili** ile
+değerlendirir (`glama.json` → `runtime.args` içinde `--tool-profile minimal`).
+Bu, yalnızca 3 araç (`save_event`, `list_events`, `resume_project`)
+kayıt edilir ve değerlendirme context maliyeti ile araç seçim yükü azalır.
+
+Yerel geliştirme veya tüm yetenekleri kullanmak için `full` profili kullanın:
+
+```bash
+uv run allbrain start --project . --agent claude-code --tool-profile full
+```
+
+Alternatif olarak `.mcp.json` (varsayılan `full` ile gelir) kullanılabilir.
+
 ### From source
 
 ```shell

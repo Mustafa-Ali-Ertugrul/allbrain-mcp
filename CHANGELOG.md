@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (Glama)
+
+- `glama.json` artık `--tool-profile minimal` ile çalışıyor; Glama araç sayısı 50 → 3'e düşürüldü (Tool Count skoru iyileştirmesi).
+- README'ye "Glama MCP Portal" bölümü eklendi.
+- `tests/test_mcp_tool_profiles.py`'a `test_minimal_tool_profile_is_exact_and_unique` regression testi eklendi.
+
 ## [0.2.1] - 2026-07-03
 
 ### Added
