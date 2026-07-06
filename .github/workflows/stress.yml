@@ -8,6 +8,9 @@ on:
 env:
   UV_VERSION: "0.6.x"
   PYTHON_VERSION: "3.13"
+  # Hosted-runner latency fluctuates; recent healthy runs reached 248-262 ms
+  # with 100% success and no DB locks. Keep a small margin above that noise.
+  MCP_STRESS_P95_BUDGET_SECONDS: "0.300"
 
 jobs:
   stress-a:
