@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed (Glama)
 
-- `glama.json` artık `--tool-profile minimal` ile çalışıyor; Glama araç sayısı 50 → 3'e düşürüldü (Tool Count skoru iyileştirmesi).
+- Glama evaluation now uses the balanced 10-tool `core` profile instead of the 3-tool `minimal` profile.
+- Added the required `maintainers` metadata so Glama recognizes `glama.json`.
+- Glama's public tool surface is reduced from the full profile to a focused core set for reliable tool selection.
 - README'ye "Glama MCP Portal" bölümü eklendi.
 - `tests/test_mcp_tool_profiles.py`'a `test_minimal_tool_profile_is_exact_and_unique` regression testi eklendi.
 

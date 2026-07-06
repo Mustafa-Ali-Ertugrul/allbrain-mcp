@@ -22,4 +22,4 @@ RUN useradd --create-home --uid 10001 allbrain \
 
 USER allbrain
 
-CMD ["uv", "run", "--no-sync", "allbrain", "start", "--project", "/app", "--agent", "glama", "--tool-profile", "minimal"]
+CMD ["uv", "run", "--no-sync", "allbrain", "start", "--project", "/app", "--agent", "glama", "--tool-profile", "core"]

@@ -1,4 +1,6 @@
 {
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": ["Mustafa-Ali-Ertugrul"],
   "name": "AllBrain MCP",
   "description": "Event-sourced memory and orchestration server for multi-agent AI systems. Shared state, conflict resolution, deterministic replay, counterfactual reasoning, scenario planning, and foresight analysis for agent workflows.",
   "author": "Mustafa Ali Ertu\u011frul",
@@ -54,7 +56,7 @@
       "--agent",
       "claude-code",
       "--tool-profile",
-      "minimal"
+      "core"
     ],
     "env": {
       "ALLOWED_PROJECT_ROOTS": "/app"

@@ -99,6 +99,7 @@ Start with `--tool-profile minimal` (3 tools) and expand when needed:
 | `memory` | minimal + retrieve_memory | Need recall |
 | `collaboration` | memory + task/conflict/resolution tools | Multi-agent handoff |
 | `reasoning` | memory + decision pipeline tools | Planning and analysis |
+| `core` | 10 balanced public tools | Discovery and everyday workflows |
 | `full` | All 55 tools | Everything |
 
 ```shell
@@ -107,10 +108,10 @@ uv run allbrain start --project . --agent my-agent --tool-profile memory
 
 ## Glama MCP Portal
 
-Glama MCP puanlama evaluatorü, bu sunucuyu **minimal tool profili** ile
-değerlendirir (`glama.json` → `runtime.args` içinde `--tool-profile minimal`).
-Bu, yalnızca 3 araç (`save_event`, `list_events`, `resume_project`)
-kayıt edilir ve değerlendirme context maliyeti ile araç seçim yükü azalır.
+Glama MCP evaluates this server with the balanced **core tool profile**
+(`--tool-profile core` in `glama.json`). Its 10 public tools cover shared
+memory, task orchestration, snapshots, Git context, and decision workflows
+without exposing the entire development surface.
 
 Yerel geliştirme veya tüm yetenekleri kullanmak için `full` profili kullanın:
 
@@ -157,9 +158,12 @@ Switch to another client, call `list_events()` again — the same event appears.
 
 ## Tool count and supported clients
 
+> **Note:** Glama evaluates the balanced 10-tool `core` profile. The full profile remains available for local development.
+
 - 55 tools in the full MCP profile across 18 domain tool modules
 - Default profile (`full`) registers all tools
 - `minimal` profile: 3 tools
+- `core` profile: 10 tools spanning events, memory, tasks, snapshots, orchestration, decisions, and Git context
 
 ## Data lifecycle and security
 
