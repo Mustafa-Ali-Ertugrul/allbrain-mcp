@@ -1,6 +1,9 @@
 from datetime import UTC, datetime, timezone
 from pathlib import Path
 
+import pytest
+
+from allbrain.config import canonicalize_project_path
 from allbrain.models.entities import Event
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
 
@@ -111,6 +114,162 @@ def test_event_type_counts_after_uses_project_and_cursor(tmp_path: Path) -> None
     }
 
 
+def test_cursor_queries_use_stream_position_not_event_id(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from allbrain.storage import repository as repository_module
+
+    ids = iter(["z-cursor", "a-later"])
+    monkeypatch.setattr(repository_module, "uuid7", lambda: next(ids))
+
+    repo = make_repository(tmp_path)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    session = repo.create_session(project_root, "codex")
+
+    cursor = repo.append_event(
+        project_path=project_root,
+        session_id=session.id or 0,
+        type="file_modified",
+        source="agent",
+        payload={"index": 1},
+    )
+    later = repo.append_event(
+        project_path=project_root,
+        session_id=session.id or 0,
+        type="task_completed",
+        source="agent",
+        payload={"index": 2},
+    )
+
+    with open_session(repo.engine) as db:
+        project = repo.get_or_create_project(db, project_root)
+
+    assert repo.list_events_after(project_path=project_root, event_cursor=cursor.id) == [repo.get_event(later.id)]
+    assert repo.count_events_after(project_path=project_root, event_cursor=cursor.id) == 1
+    assert repo.event_type_counts_after(project_id=project.id or 0, event_cursor=cursor.id) == {"task_completed": 1}
+
+
+def test_list_events_after_rejects_invalid_cross_project_and_positionless_cursors(tmp_path: Path) -> None:
+    repo = make_repository(tmp_path)
+    first_root = tmp_path / "first"
+    second_root = tmp_path / "second"
+    first_root.mkdir()
+    second_root.mkdir()
+    first_session = repo.create_session(first_root, "codex")
+    second_session = repo.create_session(second_root, "codex")
+
+    repo.append_event(
+        project_path=first_root,
+        session_id=first_session.id or 0,
+        type="file_modified",
+        source="agent",
+        payload={},
+    )
+    other = repo.append_event(
+        project_path=second_root,
+        session_id=second_session.id or 0,
+        type="file_modified",
+        source="agent",
+        payload={},
+    )
+
+    with pytest.raises(ValueError, match="does not exist"):
+        repo.list_events_after(project_path=first_root, event_cursor="missing")
+    with pytest.raises(ValueError, match="does not belong to project"):
+        repo.list_events_after(project_path=first_root, event_cursor=other.id)
+
+
+def test_list_events_after_rejects_positionless_cursor_on_legacy_schema(tmp_path: Path) -> None:
+    engine = create_engine_for_path(tmp_path / "legacy.db")
+    project_root = tmp_path / "legacy"
+    canonical_path = canonicalize_project_path(project_root)
+    with engine.begin() as conn:
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE project (
+                id INTEGER PRIMARY KEY,
+                canonical_project_path TEXT UNIQUE,
+                name TEXT,
+                created_at TIMESTAMP,
+                updated_at TIMESTAMP,
+                next_event_position INTEGER DEFAULT 1
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE session (
+                id INTEGER PRIMARY KEY,
+                project_id INTEGER,
+                agent_name TEXT,
+                started_at TIMESTAMP,
+                ended_at TIMESTAMP,
+                status TEXT
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE event (
+                id TEXT PRIMARY KEY,
+                project_id INTEGER NOT NULL,
+                session_id INTEGER NOT NULL,
+                agent_id TEXT,
+                type TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'agent',
+                file_path TEXT,
+                payload_json TEXT NOT NULL,
+                payload_version INTEGER DEFAULT 1,
+                task_hint TEXT,
+                importance INTEGER,
+                impact_score REAL,
+                caused_by TEXT,
+                branch TEXT,
+                created_at TIMESTAMP,
+                stream_position INTEGER
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            "INSERT INTO project (id, canonical_project_path, name, next_event_position) VALUES (1, ?, 'legacy', 1)",
+            (canonical_path,),
+        )
+        conn.exec_driver_sql("INSERT INTO session (id, project_id, agent_name) VALUES (1, 1, 'legacy')")
+        conn.exec_driver_sql(
+            "INSERT INTO event (id, project_id, session_id, type, source, payload_json, created_at, stream_position) "
+            "VALUES ('cursor', 1, 1, 'file_modified', 'legacy', '{}', '2024-01-01 00:00:00', NULL)"
+        )
+
+    repo = BrainRepository(engine)
+
+    with pytest.raises(ValueError, match="has no stream_position"):
+        repo.list_events_after(project_path=project_root, event_cursor="cursor")
+
+
+def test_list_events_after_can_stop_at_through_cursor(tmp_path: Path) -> None:
+    repo = make_repository(tmp_path)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    session = repo.create_session(project_root, "codex")
+    events = [
+        repo.append_event(
+            project_path=project_root,
+            session_id=session.id or 0,
+            type="file_modified",
+            source="agent",
+            payload={"index": index},
+        )
+        for index in range(5)
+    ]
+
+    page = repo.list_events_after(
+        project_path=project_root,
+        event_cursor=events[1].id,
+        through_cursor=events[3].id,
+    )
+
+    assert [event.id for event in page] == [events[2].id, events[3].id]
+
+
 def test_list_events_returns_latest_limit_in_chronological_order(tmp_path: Path) -> None:
     repo = make_repository(tmp_path)
     project_root = tmp_path / "project"
@@ -156,7 +315,7 @@ def test_list_events_limit_returns_newest_n_in_asc_order(tmp_path: Path) -> None
     assert [e.id for e in events] == sorted(e.id for e in events)
 
 
-def test_quality_gate_uuidv7_ordering_uses_created_at_tie_break(tmp_path: Path) -> None:
+def test_quality_gate_stream_position_ordering_ignores_created_at(tmp_path: Path) -> None:
     repo = make_repository(tmp_path)
     project_root = tmp_path / "project"
     project_root.mkdir()

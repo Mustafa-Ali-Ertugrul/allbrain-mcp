@@ -7,6 +7,7 @@ from typing import Any
 
 from sqlalchemy import func, update
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session as DbSession
 from sqlmodel import col, select
 from uuid6 import uuid7
@@ -41,7 +42,9 @@ class BrainRepository:
     def get_or_create_project(self, db: DbSession, project_path: str | Path | None) -> Project:
         """Get existing project or create new one for the given path.
 
-        Canonicalizes project path for consistent lookups.
+        Canonicalizes project path for consistent lookups.  Handles the
+        project-creation race between concurrent writers by retrying the
+        lookup if the insert collides on the unique canonical path.
         """
         canonical_path = canonicalize_project_path(project_path)
         project = db.exec(select(Project).where(Project.canonical_project_path == canonical_path)).first()
@@ -53,7 +56,14 @@ class BrainRepository:
             name=Path(canonical_path).name or canonical_path,
         )
         db.add(project)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            # Another writer created the project between our lookup and insert.
+            db.rollback()
+            project = db.exec(select(Project).where(Project.canonical_project_path == canonical_path)).first()
+            if project is None:
+                raise
         db.refresh(project)
         return project
 
@@ -137,8 +147,10 @@ class BrainRepository:
         limit: int = 150,
         status: str | None = None,
     ) -> list[Session]:
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return []
         with open_session(self.engine) as db:
-            project = self.get_or_create_project(db, project_path)
             statement = select(Session).where(Session.project_id == project.id)
             if status is not None:
                 statement = statement.where(Session.status == status)
@@ -157,9 +169,11 @@ class BrainRepository:
         stale_before: datetime,
     ) -> list[Session]:
         """Close heartbeat-expired sessions without deleting historical rows."""
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return []
         reconciled: list[Session] = []
         with open_session(self.engine) as db:
-            project = self.get_or_create_project(db, project_path)
             sessions = db.exec(
                 select(Session).where(Session.project_id == project.id, Session.status == "active")
             ).all()
@@ -196,8 +210,10 @@ class BrainRepository:
         Returns the number of deleted sessions.  Runs inside a single
         transaction to avoid race conditions with concurrent inserts.
         """
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return 0
         with open_session(self.engine) as db:
-            project = self.get_or_create_project(db, project_path)
             empty_sessions = db.exec(
                 select(Session).where(
                     Session.project_id == project.id,
@@ -222,16 +238,20 @@ class BrainRepository:
         project_path: str | Path | None,
         status: str | None = None,
     ) -> int:
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return 0
         with open_session(self.engine) as db:
-            project = self.get_or_create_project(db, project_path)
             statement = select(Session).where(Session.project_id == project.id)
             if status is not None:
                 statement = statement.where(Session.status == status)
             return len(db.exec(statement).all())
 
     def count_snapshots(self, *, project_path: str | Path | None) -> int:
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return 0
         with open_session(self.engine) as db:
-            project = self.get_or_create_project(db, project_path)
             return len(db.exec(select(SnapshotRecord).where(SnapshotRecord.project_id == project.id)).all())
 
     def queue_state_counts(self) -> dict[str, int]:
@@ -376,8 +396,10 @@ class BrainRepository:
         type: str | None = None,
         limit: int = 50,
     ) -> list[EventRead]:
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return []
         with open_session(self.engine) as db:
-            project = self.get_or_create_project(db, project_path)
             statement = select(Event).where(Event.project_id == project.id)
             if session_id is not None:
                 statement = statement.where(Event.session_id == session_id)
@@ -385,7 +407,9 @@ class BrainRepository:
                 statement = statement.where(Event.agent_id == agent_id)
             if type is not None:
                 statement = statement.where(Event.type == type)
-            statement = statement.order_by(col(Event.id).desc()).limit(limit)
+            # Order by the database-authoritative stream position rather than
+            # UUIDv7 id so clock skew across hosts cannot reorder events.
+            statement = statement.order_by(col(Event.stream_position).desc()).limit(limit)
             events = list(reversed(db.exec(statement).all()))
             return [event_to_read(event) for event in events]
 
@@ -394,15 +418,30 @@ class BrainRepository:
         *,
         project_path: str | Path | None,
         event_cursor: str | None,
+        through_cursor: str | None = None,
         limit: int | None = None,
     ) -> list[EventRead]:
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return []
         with open_session(self.engine) as db:
-            project = self.get_or_create_project(db, project_path)
             statement = select(Event).where(Event.project_id == project.id)
             if event_cursor is not None:
-                if db.get(Event, event_cursor) is None:
-                    raise ValueError(f"event_cursor {event_cursor} does not exist")
-                statement = statement.where(col(Event.id) > event_cursor)
+                cursor_position = self._cursor_stream_position(
+                    db,
+                    project_id=project.id or 0,
+                    event_cursor=event_cursor,
+                    cursor_name="event_cursor",
+                )
+                statement = statement.where(col(Event.stream_position) > cursor_position)
+            if through_cursor is not None:
+                through_position = self._cursor_stream_position(
+                    db,
+                    project_id=project.id or 0,
+                    event_cursor=through_cursor,
+                    cursor_name="through_cursor",
+                )
+                statement = statement.where(col(Event.stream_position) <= through_position)
             statement = statement.order_by(col(Event.stream_position))
             if limit is not None:
                 statement = statement.limit(limit)
@@ -410,16 +449,52 @@ class BrainRepository:
             return [event_to_read(event) for event in events]
 
     def count_events_after(self, *, project_path: str | Path | None, event_cursor: str | None) -> int:
-        return len(self.list_events_after(project_path=project_path, event_cursor=event_cursor))
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return 0
+        with open_session(self.engine) as db:
+            statement = select(func.count(Event.id)).where(Event.project_id == project.id)
+            if event_cursor is not None:
+                cursor_position = self._cursor_stream_position(
+                    db,
+                    project_id=project.id or 0,
+                    event_cursor=event_cursor,
+                    cursor_name="event_cursor",
+                )
+                statement = statement.where(col(Event.stream_position) > cursor_position)
+            return int(db.exec(statement).one())
 
     def event_type_counts_after(self, *, project_id: int, event_cursor: str | None) -> dict[str, int]:
         """Count events after a cursor without materializing their payloads."""
         with open_session(self.engine) as db:
             statement = select(Event.type, func.count()).where(Event.project_id == project_id)
             if event_cursor is not None:
-                statement = statement.where(col(Event.id) > event_cursor)
+                cursor_position = self._cursor_stream_position(
+                    db,
+                    project_id=project_id,
+                    event_cursor=event_cursor,
+                    cursor_name="event_cursor",
+                )
+                statement = statement.where(col(Event.stream_position) > cursor_position)
             rows = db.exec(statement.group_by(Event.type)).all()
             return {event_type: int(count) for event_type, count in rows}
+
+    def _cursor_stream_position(
+        self,
+        db: DbSession,
+        *,
+        project_id: int,
+        event_cursor: str,
+        cursor_name: str,
+    ) -> int:
+        cursor = db.get(Event, event_cursor)
+        if cursor is None:
+            raise ValueError(f"{cursor_name} {event_cursor} does not exist")
+        if cursor.project_id != project_id:
+            raise ValueError(f"{cursor_name} {event_cursor} does not belong to project")
+        if cursor.stream_position is None:
+            raise ValueError(f"{cursor_name} {event_cursor} has no stream_position")
+        return cursor.stream_position
 
     def get_event(self, event_id: str) -> EventRead | None:
         with open_session(self.engine) as db:

@@ -7,7 +7,7 @@ import ast
 import sys
 from pathlib import Path
 
-EXEMPT_ROOTS = {"api", "cli", "resume", "server", "storage", "ui"}
+EXEMPT_ROOTS = {"api", "cli", "server", "storage", "ui"}
 INFRASTRUCTURE_PREFIXES = ("allbrain.server", "allbrain.storage")
 
 

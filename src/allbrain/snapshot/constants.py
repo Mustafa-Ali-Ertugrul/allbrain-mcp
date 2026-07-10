@@ -36,6 +36,6 @@ NON_SEMANTIC_EVENT_TYPES: frozenset[str] = frozenset(
 )
 """Event types excluded from semantic memory coverage calculations."""
 
-# Snapshot size limits
+# Snapshot read limits
 MAX_SNAPSHOT_EVENT_COUNT = 50000
-"""Maximum events to consider when building a snapshot."""
+"""Default event-log batch size used when building automatic snapshots."""

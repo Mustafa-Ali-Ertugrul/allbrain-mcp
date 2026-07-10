@@ -37,6 +37,7 @@ AllBrain is an **event-sourced multi-agent memory and orchestration server**. Du
 - Domain packages (`runtime_core`, `world`, `routing`, etc.) must not import `server` or `storage`.
 - `server` may import domain packages but not vice versa.
 - `runtime_core` defines the `EventStore` protocol; `storage` provides the SQLAlchemy-backed `BrainRepository`.
+- `resume` defines its own event repository and snapshot store protocols; server adapters inject concrete storage implementations.
 
 ---
 

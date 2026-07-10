@@ -161,7 +161,8 @@ def register_tools(mcp, context: BrainContext) -> None:
         """Query and filter recorded events from the append-only event log.
 
         Use this to inspect the history of agent actions and system state changes.
-        Events are ordered by stable UUIDv7 timestamps for consistent replay.
+        Events are ordered by the database-authoritative stream position for
+        consistent replay.
 
         Side effects: Read-only operation; no data is modified.
 

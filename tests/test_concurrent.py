@@ -156,7 +156,7 @@ def test_timestamp_ordering(tmp_path: Path) -> None:
 
     events = context.repository.list_events(project_path=context.project_path, limit=50000)
     event_ids = [e.id for e in events]
-    # UUID7 is time-sortable; list_events returns sorted by event.id
+    # list_events returns events ordered by stream_position
     assert event_ids == sorted(event_ids), "event IDs are not monotonically ordered"
 
 

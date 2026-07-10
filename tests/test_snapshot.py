@@ -4,7 +4,10 @@ import time
 from pathlib import Path
 
 from allbrain.compression import EventCompressor
+from allbrain.events import EventType
+from allbrain.models.entities import utc_now
 from allbrain.resume import ResumeEngine
+from allbrain.resume.incremental import IncrementalResumeEngine
 from allbrain.server import BrainContext
 from allbrain.server.tools.events import save_event_impl
 from allbrain.server.tools.snapshots import (
@@ -12,6 +15,7 @@ from allbrain.server.tools.snapshots import (
     resume_project_impl,
 )
 from allbrain.snapshot import SnapshotCompactor
+from allbrain.snapshot.engine import Snapshot
 from allbrain.snapshot.versions import snapshot_versions
 from allbrain.storage import BrainRepository, SnapshotRepo
 from tests._helpers import make_context_from_repo, make_repo
@@ -133,6 +137,117 @@ def test_incremental_resume_applies_delta_after_snapshot_cursor(tmp_path: Path) 
     assert incremental.data["snapshot_cursor"] == snapshot_result.data["event_cursor"]
     assert incremental.data["delta_event_count"] == 3
     assert "Delta task" in incremental.data["open_tasks"]
+
+
+def test_snapshot_limit_is_batch_size_and_preserves_early_history(tmp_path: Path) -> None:
+    repo, project_root = make_repo(tmp_path)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
+    session_id = context.active_session_id or 0
+    repo.append_event(
+        project_path=project_root,
+        session_id=session_id,
+        type=EventType.TASK_CREATED.value,
+        source="test",
+        payload={"task_id": "early-task", "goal": "Keep early history", "kind": "test", "priority": 3},
+    )
+    for index in range(6):
+        repo.append_event(
+            project_path=project_root,
+            session_id=session_id,
+            type="file_modified",
+            source="test",
+            payload={"index": index},
+            file_path=f"file_{index}.py",
+        )
+
+    snapshot_result = create_snapshot_impl(context, force=True, limit=2)
+    events = repo.list_events(project_path=project_root, limit=100)
+    full = ResumeEngine().resume(events=events, project_path=str(project_root), include_git=False)
+    incremental = resume_project_impl(context, include_git=False, use_snapshot=True, limit=2)
+
+    assert snapshot_result.ok
+    assert "early-task" in snapshot_result.data["state"]["task_view"]["tasks"]
+    assert incremental.ok
+    assert comparable_resume(incremental.data) == comparable_resume(full)
+
+
+def test_snapshot_uses_high_water_cursor_and_later_events_resume_as_delta(tmp_path: Path, monkeypatch) -> None:
+    repo, project_root = make_repo(tmp_path)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
+    session_id = context.active_session_id or 0
+    before = repo.append_event(
+        project_path=project_root,
+        session_id=session_id,
+        type="file_modified",
+        source="test",
+        payload={"index": 1},
+    )
+
+    original_list_events_after = repo.list_events_after
+    injected = False
+
+    def list_events_after_with_concurrent_append(**kwargs):
+        nonlocal injected
+        batch = original_list_events_after(**kwargs)
+        if not injected and kwargs.get("event_cursor") is None:
+            repo.append_event(
+                project_path=project_root,
+                session_id=session_id,
+                type="task_started",
+                source="test",
+                payload={"task": "After high water"},
+            )
+            injected = True
+        return batch
+
+    monkeypatch.setattr(repo, "list_events_after", list_events_after_with_concurrent_append)
+
+    snapshot_result = create_snapshot_impl(context, force=True, limit=1)
+    resumed = resume_project_impl(context, include_git=False, use_snapshot=True, limit=100)
+
+    assert snapshot_result.ok
+    assert snapshot_result.data["event_cursor"] == before.id
+    assert resumed.ok
+    assert resumed.data["snapshot_used"] is True
+    assert "After high water" in resumed.data["open_tasks"]
+
+
+def test_incremental_resume_accepts_protocol_stores(tmp_path: Path) -> None:
+    repo, project_root = make_repo(tmp_path)
+    context = make_context_from_repo(repo, project_root, "codex", auto_snapshot_threshold=10_000)
+    assert save_event_impl(context, type="task_started", payload={"task": "Protocol task"}).ok
+
+    class FakeRepository:
+        def list_events(self, *, project_path: str, limit: int = 50):
+            return repo.list_events(project_path=project_path, limit=limit)
+
+        def list_events_after(self, *, project_path: str, event_cursor: str | None):
+            return repo.list_events_after(project_path=project_path, event_cursor=event_cursor)
+
+    class FakeSnapshotStore:
+        def get_latest(self, project_id: int):
+            return Snapshot(
+                id="snapshot-1",
+                project_id=project_id,
+                created_at=utc_now(),
+                event_cursor=None,
+                state={},
+                metadata={"snapshot_schema_version": "old"},
+            )
+
+    project = repo.get_project_by_path(project_root)
+    assert project is not None
+
+    resumed = IncrementalResumeEngine(FakeRepository(), FakeSnapshotStore()).resume(
+        project_path=str(project_root),
+        project_id=project.id or 0,
+        include_git=False,
+        use_snapshot=True,
+    )
+
+    assert resumed["snapshot_used"] is False
+    assert resumed["snapshot_rebuild_required"] is True
+    assert "Protocol task" in resumed["open_tasks"]
 
 
 def test_agent_switch_uses_snapshot_for_context_reconstruction(tmp_path: Path) -> None:

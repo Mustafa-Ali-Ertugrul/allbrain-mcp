@@ -4,6 +4,8 @@ from allbrain.models.schemas import EventRead
 
 
 def canonical_event_sort(events: list[EventRead]) -> list[EventRead]:
+    if all(getattr(event, "stream_position", None) is not None for event in events):
+        return sorted(events, key=lambda event: (event.stream_position, event.id))
     return sorted(events, key=lambda event: event.id)
 
 

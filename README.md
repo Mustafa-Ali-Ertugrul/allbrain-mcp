@@ -1,4 +1,4 @@
-# AllBrain MCP
+# AllBrain Agent Runtime
 
 One brain. Many agents. One shared memory.
 
@@ -9,7 +9,7 @@ One brain. Many agents. One shared memory.
 ![License](https://img.shields.io/pypi/l/allbrain-agent-runtime)
 ![Ruff](https://img.shields.io/badge/ruff-passing-22b455)
 
-![AllBrain MCP banner](docs/images/banner.svg)
+![AllBrain Agent Runtime banner](docs/images/banner.svg)
 
 ![demo](docs/images/demo.svg)
 
@@ -36,7 +36,7 @@ AllBrain gives every agent a shared workbench. Each tool call is recorded in an 
 - **Conflict detection** — automatic surface of conflicting state updates
 - **Decision pipelines** — counterfactual reasoning, scenario planning, foresight
 - **Deterministic replay** — rebuild project state from raw events
-- **55 tools** in full profile across 18 domain modules (start with 3, enable more as needed)
+- **50 tools** in full profile across 18 domain modules (start with 3, enable more as needed)
 
 ## 30-second demo
 
@@ -58,6 +58,10 @@ uv run allbrain start --project . --agent agent-b
 See [`examples/two_agent_sqlite_pilot.py`](examples/two_agent_sqlite_pilot.py) for a full two-agent workflow with conflict detection and replay verification.
 
 ## Install for one client
+
+The PyPI distribution is `allbrain-agent-runtime`. The canonical CLI command is
+`allbrain`; `allbrain-mcp` and `allbrain-agent-runtime` remain compatibility
+aliases for existing installations and scripts.
 
 ```shell
 uvx allbrain-agent-runtime install --codex
@@ -99,8 +103,8 @@ Start with `--tool-profile minimal` (3 tools) and expand when needed:
 | `memory` | minimal + retrieve_memory | Need recall |
 | `collaboration` | memory + task/conflict/resolution tools | Multi-agent handoff |
 | `reasoning` | memory + decision pipeline tools | Planning and analysis |
-| `core` | 10 balanced public tools | Discovery and everyday workflows |
-| `full` | All 55 tools | Everything |
+| `core` | save_event, list_events, retrieve_memory, git_info, create_task, get_task_graph, orchestrate_project, run_decision_pipeline, create_snapshot, resume_project | Essential workflow |
+| `full` | 50 tools | Everything |
 
 ```shell
 uv run allbrain start --project . --agent my-agent --tool-profile memory
@@ -160,10 +164,10 @@ Switch to another client, call `list_events()` again — the same event appears.
 
 > **Note:** Glama evaluates the balanced 10-tool `core` profile. The full profile remains available for local development.
 
-- 55 tools in the full MCP profile across 18 domain tool modules
+- 50 tools in the full MCP profile across 18 domain tool modules
 - Default profile (`full`) registers all tools
-- `minimal` profile: 3 tools
-- `core` profile: 10 tools spanning events, memory, tasks, snapshots, orchestration, decisions, and Git context
+- `minimal` profile: 3 tools (`save_event`, `list_events`, `resume_project`)
+- `core` profile: 10 tools (essential workflow + reasoning)
 
 ## Data lifecycle and security
 

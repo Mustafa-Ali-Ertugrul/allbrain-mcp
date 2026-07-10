@@ -16,7 +16,8 @@ packages are separate stages rather than duplicate implementations:
   and `learning_safety` guards learning updates.
 
 Domain packages must not import `server` or `storage`. Runtime orchestration
-depends on `RuntimeContext` and `EventStore` protocols. Server and storage are
+depends on `RuntimeContext` and `EventStore` protocols, and snapshot resume
+depends on `resume`-owned repository/snapshot protocols. Server and storage are
 adapters at the system boundary; CI enforces these rules.
 
 Redis and RabbitMQ adapters are experimental. Their real-service contracts

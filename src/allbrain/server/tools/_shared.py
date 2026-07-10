@@ -35,6 +35,30 @@ def semantic_event_count(events) -> int:
     return sum(1 for event in events if event.type != "tool_call")
 
 
+def load_events_through_cursor(repository, *, project_path: str | Path, batch_size: int):
+    """Load complete project history through a stable high-water event cursor."""
+    high_water_events = repository.list_events(project_path=project_path, limit=1)
+    if not high_water_events:
+        return []
+    high_water_cursor = high_water_events[-1].id
+    events = []
+    cursor = None
+    while True:
+        batch = repository.list_events_after(
+            project_path=project_path,
+            event_cursor=cursor,
+            through_cursor=high_water_cursor,
+            limit=batch_size,
+        )
+        if not batch:
+            break
+        events.extend(batch)
+        cursor = batch[-1].id
+        if cursor == high_water_cursor:
+            break
+    return events
+
+
 def bind_session_id(context: BrainContext, session_id: int | None) -> int:
     from allbrain.storage.database import open_session
 
@@ -43,8 +67,8 @@ def bind_session_id(context: BrainContext, session_id: int | None) -> int:
             session = context.repository.get_session(db, session_id)
             if session is None:
                 raise UserInputError("Invalid session")
-            project = context.repository.get_or_create_project(db, context.project_path)
-            if session.project_id != project.id:
+            project = context.repository.get_project_by_path(context.project_path)
+            if project is None or session.project_id != project.id:
                 raise UserInputError("Invalid session")
         return session_id
     if context.active_session_id is None:
@@ -134,7 +158,11 @@ def _build_snapshot_if_due(
     if not baseline_due and weight < context.auto_snapshot_threshold:
         return
     with profile_stage("snapshot.build"):
-        all_events = context.repository.list_events(project_path=context.project_path, limit=MAX_SNAPSHOT_EVENT_COUNT)
+        all_events = load_events_through_cursor(
+            context.repository,
+            project_path=context.project_path,
+            batch_size=MAX_SNAPSHOT_EVENT_COUNT,
+        )
         SnapshotEngine(SnapshotBuilder(include_derived=False), snapshot_repo).build_snapshot(
             project_id=project.id, events=all_events
         )

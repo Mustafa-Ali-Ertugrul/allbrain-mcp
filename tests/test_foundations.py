@@ -31,6 +31,7 @@ def _event(
     event_id: str | None = None,
     created_at: datetime | None = None,
     payload_version: int | None = None,
+    stream_position: int | None = None,
 ) -> EventRead:
     return EventRead(
         id=event_id or str(uuid4()),
@@ -44,6 +45,7 @@ def _event(
         importance=1,
         created_at=created_at or datetime(2026, 1, 1, 12, 0, 0),
         payload_version=payload_version if payload_version is not None else current_payload_version(),
+        stream_position=stream_position,
     )
 
 
@@ -106,6 +108,22 @@ def test_canonical_ordering_with_mixed_event_types() -> None:
     ]
     ids = canonical_event_keys(events)
     assert ids == sorted(ids)
+
+
+def test_canonical_ordering_uses_stream_position_when_all_events_have_positions() -> None:
+    e1 = _event("a", event_id="z-id", stream_position=1)
+    e2 = _event("b", event_id="a-id", stream_position=2)
+    e3 = _event("c", event_id="m-id", stream_position=3)
+
+    assert canonical_event_keys([e2, e3, e1]) == [e1.id, e2.id, e3.id]
+
+
+def test_canonical_ordering_uses_uuid_when_any_event_lacks_position() -> None:
+    positioned = _event("a", event_id="z-id", stream_position=1)
+    legacy = _event("b", event_id="a-id")
+    later = _event("c", event_id="m-id", stream_position=3)
+
+    assert canonical_event_keys([positioned, legacy, later]) == ["a-id", "m-id", "z-id"]
 
 
 def test_tolerance_unknown_world_event_skipped(tmp_path) -> None:
@@ -280,7 +298,7 @@ def test_is_known_event_basic_check() -> None:
     assert is_known_event("some_future_unknown_event") is False
 
 
-def test_list_events_ordered_by_id_not_created_at(tmp_path) -> None:
+def test_list_events_ordered_by_stream_position_not_created_at(tmp_path) -> None:
     from datetime import datetime
 
     from allbrain.models.entities import Event

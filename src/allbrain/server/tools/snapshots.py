@@ -19,6 +19,7 @@ from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
+    load_events_through_cursor,
     semantic_event_count,
     snapshot_to_dict,
 )
@@ -114,7 +115,9 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 )
                 return ToolResult(ok=True, data=snapshot_to_dict(latest) | {"reused": True})
 
-        events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
+        events = load_events_through_cursor(
+            context.repository, project_path=context.project_path, batch_size=data.limit
+        )
         snapshot = SnapshotEngine(SnapshotBuilder(include_derived=data.include_derived), snapshot_repo).build_snapshot(
             project_id=project.id,
             events=events,
@@ -228,7 +231,7 @@ def register_tools(mcp, context: BrainContext) -> None:
         a write operation that stores a compressed representation of current state.
 
         Args:
-            limit: Maximum number of events to include (default 5000).
+            limit: Event-log batch size for full-history snapshot replay.
             force: Whether to force creation even if no new events exist since last
                 snapshot (default False).
             include_derived: Whether to include derived/computed state in addition to
