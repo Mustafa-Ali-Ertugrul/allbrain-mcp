@@ -261,9 +261,7 @@ class BrainRepository:
 
     def queue_state_counts(self) -> dict[str, int]:
         with open_session(self.engine) as db:
-            rows = db.exec(
-                select(QueueItemRecord.state, func.count()).group_by(QueueItemRecord.state)
-            ).all()
+            rows = db.exec(select(QueueItemRecord.state, func.count()).group_by(QueueItemRecord.state)).all()
         return dict(sorted((str(state), int(count)) for state, count in rows))
 
     def append_event(
