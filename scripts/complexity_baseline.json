@@ -61,6 +61,10 @@
       "complexity": 16,
       "lines": 36
     },
+    "allbrain/models/session_summary.py::build_session_summary": {
+      "complexity": 22,
+      "lines": 59
+    },
     "allbrain/orchestrator/metrics/agent_performance_reducer.py::AgentPerformanceReducer.reduce": {
       "complexity": 16,
       "lines": 37
@@ -72,34 +76,6 @@
     "allbrain/recovery_consensus/reducer.py::RecoveryConsensusReducer.apply": {
       "complexity": 16,
       "lines": 80
-    },
-    "allbrain/reducers/governance.py::ArbitrationReducer.apply": {
-      "complexity": 16,
-      "lines": 60
-    },
-    "allbrain/reducers/predictive_failure.py::PredictiveFailureReducer.apply": {
-      "complexity": 19,
-      "lines": 62
-    },
-    "allbrain/reducers/recovery.py::AdaptiveRecoveryReducer.apply": {
-      "complexity": 22,
-      "lines": 96
-    },
-    "allbrain/reducers/recovery.py::FailureMemoryReducer.apply": {
-      "complexity": 17,
-      "lines": 81
-    },
-    "allbrain/reducers/recovery.py::RecoveryConsensusReducer.apply": {
-      "complexity": 16,
-      "lines": 80
-    },
-    "allbrain/reducers/recovery.py::ResilienceReducer.apply": {
-      "complexity": 19,
-      "lines": 90
-    },
-    "allbrain/reducers/recovery.py::SelfRepairReducer.apply": {
-      "complexity": 16,
-      "lines": 51
     },
     "allbrain/replay/event_replay_engine.py::EventReplayEngine._apply": {
       "complexity": 30,
@@ -124,10 +100,6 @@
     "allbrain/self_repair/reducer.py::SelfRepairReducer.apply": {
       "complexity": 16,
       "lines": 51
-    },
-    "allbrain/server/lifecycle_session.py::build_session_summary": {
-      "complexity": 22,
-      "lines": 60
     },
     "allbrain/server/queueing.py::QueueCoordinator.enqueue_pipeline_result": {
       "complexity": 18,
