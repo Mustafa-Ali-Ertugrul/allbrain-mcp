@@ -242,25 +242,29 @@ class BrainRepository:
         if project is None:
             return 0
         with open_session(self.engine) as db:
-            statement = select(Session).where(Session.project_id == project.id)
+            statement = select(func.count()).select_from(Session).where(Session.project_id == project.id)
             if status is not None:
                 statement = statement.where(Session.status == status)
-            return len(db.exec(statement).all())
+            return int(db.exec(statement).one())
 
     def count_snapshots(self, *, project_path: str | Path | None) -> int:
         project = self.get_project_by_path(project_path)
         if project is None:
             return 0
         with open_session(self.engine) as db:
-            return len(db.exec(select(SnapshotRecord).where(SnapshotRecord.project_id == project.id)).all())
+            statement = (
+                select(func.count(SnapshotRecord.id))
+                .select_from(SnapshotRecord)
+                .where(SnapshotRecord.project_id == project.id)
+            )
+            return int(db.exec(statement).one())
 
     def queue_state_counts(self) -> dict[str, int]:
         with open_session(self.engine) as db:
-            records = db.exec(select(QueueItemRecord)).all()
-        counts: dict[str, int] = {}
-        for record in records:
-            counts[record.state] = counts.get(record.state, 0) + 1
-        return dict(sorted(counts.items()))
+            rows = db.exec(
+                select(QueueItemRecord.state, func.count()).group_by(QueueItemRecord.state)
+            ).all()
+        return dict(sorted((str(state), int(count)) for state, count in rows))
 
     def append_event(
         self,

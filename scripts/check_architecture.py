@@ -43,6 +43,9 @@ def main() -> int:
         relative = path.relative_to(root)
         package_root = relative.parts[0]
         for lineno, imported in imports:
+            if package_root == "storage" and imported.startswith("allbrain.server"):
+                failures.append(f"{relative.as_posix()}:{lineno} imports forbidden {imported}")
+                continue
             if not imported.startswith(INFRASTRUCTURE_PREFIXES):
                 continue
             if package_root == "runtime_core" or package_root not in EXEMPT_ROOTS:

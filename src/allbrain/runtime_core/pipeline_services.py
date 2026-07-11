@@ -28,7 +28,7 @@ class PipelineServices:
     """Injectable services used by the live decision pipeline."""
 
     uuid7_generator: Callable[[], Any]
-    governance: Any
+    governance: AutonomousGovernanceCoordinator
     economics: EconomicEvaluator
     fallback_economics: EconomicEvaluationBridge
     strategy: StrategicPlanner

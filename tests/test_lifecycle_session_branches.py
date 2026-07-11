@@ -53,9 +53,8 @@ def test_finalize_session_no_id():
 
 def test_build_session_summary_empty_events():
     """build_session_summary with empty events list."""
-    ctx = MagicMock(spec=BrainContext)
     session = Session(id=1, agent_name="a", status="active")
-    summary = build_session_summary(ctx, session, [], status="closed", reason="test")
+    summary = build_session_summary(session, [], status="closed", reason="test")
     assert summary["session_id"] == 1
     assert summary["event_count"] == 0
     assert summary["goals"] == []

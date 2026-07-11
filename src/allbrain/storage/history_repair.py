@@ -11,8 +11,7 @@ from sqlmodel import select
 
 from allbrain.events import EventType
 from allbrain.models.entities import Event, Project, Session, utc_now
-from allbrain.server.context import BrainContext
-from allbrain.server.lifecycle import build_session_summary
+from allbrain.models.session_summary import build_session_summary
 from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
 from allbrain.storage.database import open_session
 from allbrain.storage.repository import BrainRepository
@@ -176,7 +175,6 @@ class HistoryRepairer:
     def _repair_sessions(self) -> dict[str, int]:
         counts = {"empty": 0, "stale": 0, "summaries": 0, "fresh_active_skipped": 0}
         cutoff = utc_now() - timedelta(seconds=120)
-        context = BrainContext(repository=self.repository, project_path=self.project_path, agent_name="history-repair")
         with open_session(self.engine) as db:
             active = db.exec(select(Session).where(Session.status == "active")).all()
         for session in active:
@@ -199,7 +197,6 @@ class HistoryRepairer:
                 continue
             if not any(event.type == EventType.SESSION_SUMMARY.value for event in events):
                 payload = build_session_summary(
-                    context,
                     session,
                     events,
                     status="stale",
