@@ -190,17 +190,16 @@ def test_registered_intent_tools_use_bound_project_context(tmp_path: Path) -> No
     assert registry.tools["detect_contradictions"](10)["ok"] is True
 
 
-def test_intent_impl_rejects_per_call_project_override(tmp_path: Path) -> None:
+def test_intent_impl_ignores_per_call_project_override(tmp_path: Path) -> None:
+    """Legacy project_path kwargs are stripped; binding stays on BrainContext."""
     repo, project_root = make_repo(tmp_path)
     context = make_context_from_repo(repo, project_root, "codex")
 
     intents = extract_intents_impl(context, project_path=str(tmp_path / "other"))
     contradictions = detect_contradictions_impl(context, project_path=str(tmp_path / "other"))
 
-    assert intents.ok is False
-    assert "project_path" in (intents.error or "")
-    assert contradictions.ok is False
-    assert "project_path" in (contradictions.error or "")
+    assert intents.ok is True, intents.error
+    assert contradictions.ok is True, contradictions.error
 
 
 def test_snapshot_v7_stores_intent_and_contradiction_summaries(tmp_path: Path) -> None:
