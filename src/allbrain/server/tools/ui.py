@@ -181,13 +181,9 @@ def register_tools(mcp, context: BrainContext) -> None:
         """
         view_lower = view.lower()
         if view_lower == "trace":
-            result = get_ui_trace_view_impl(
-                context, workflow_id=workflow_id, task_id=task_id, limit=limit
-            )
+            result = get_ui_trace_view_impl(context, workflow_id=workflow_id, task_id=task_id, limit=limit)
         elif view_lower == "graph":
-            result = get_ui_graph_view_impl(
-                context, workflow_id=workflow_id, task_id=task_id, limit=limit
-            )
+            result = get_ui_graph_view_impl(context, workflow_id=workflow_id, task_id=task_id, limit=limit)
         elif view_lower == "replay":
             result = get_ui_replay_view_impl(
                 context, workflow_id=workflow_id, task_id=task_id, cursor=cursor, step_count=step_count, limit=limit
