@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from allbrain.server.tools import (
     conflicts,
+    context_pack,
     counterfactual,
     events,
     foresight,
@@ -39,6 +40,7 @@ CORE_TOOL_NAMES = frozenset(
         "run_decision_pipeline",
         "create_snapshot",
         "resume_project",
+        "get_context_pack",
     }
 )
 
@@ -50,7 +52,7 @@ MINIMAL_TOOL_NAMES = frozenset(
     }
 )
 
-MEMORY_TOOL_NAMES = MINIMAL_TOOL_NAMES | {"retrieve_memory"}
+MEMORY_TOOL_NAMES = MINIMAL_TOOL_NAMES | {"retrieve_memory", "get_context_pack"}
 
 COLLABORATION_TOOL_NAMES = MEMORY_TOOL_NAMES | {
     "create_task",
@@ -120,6 +122,7 @@ def register_all_tools(mcp: Any, context: Any, *, tool_profile: ToolProfile = "f
     registrar = _ProfiledToolRegistrar(mcp, allowed=allowed)
     for domain in (
         conflicts,
+        context_pack,
         counterfactual,
         events,
         foresight,
