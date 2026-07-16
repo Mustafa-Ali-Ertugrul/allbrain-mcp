@@ -4,11 +4,11 @@
 
 AllBrain MCP uses [Semantic Versioning](https://semver.org/):
 
-- **Patch** (`0.2.0` → `0.2.1`): bug fixes, internal refactors, no CLI or tool API changes
+- **Patch** (`0.2.3` → `0.2.4`): bug fixes, internal refactors, no CLI or tool API changes
 - **Minor** (`0.2.0` → `0.3.0`): new tools, CLI commands, or profiles; backward-compatible
 - **Major** (`0.2.0` → `1.0.0`): breaking changes to tool signatures, CLI commands, or storage format
 
-Pre-1.0 versions use the minor number for breaking changes (e.g., `0.3.0` could include migration steps).
+Current release line is **0.2.3**. Pre-1.0 versions use the minor number for breaking changes (e.g., `0.3.0` could include migration steps).
 
 ## Before upgrading
 

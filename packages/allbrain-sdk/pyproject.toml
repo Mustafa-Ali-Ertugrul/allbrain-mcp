@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Typed async Python client for AllBrain MCP"
 readme = "README.md"
 requires-python = ">=3.12"
+authors = [{ name = "Mustafa Ali Ertuğrul", email = "mustafali1230@hotmail.com" }]
 dependencies = [
     "fastmcp>=3.4.2,<3.5",
     "pydantic>=2.10,<3.0",

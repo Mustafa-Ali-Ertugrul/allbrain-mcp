@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import Index
+from sqlalchemy import Index, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -37,6 +37,8 @@ class Event(SQLModel, table=True):
     __table_args__ = (
         Index("ix_event_project_id_id", "project_id", "id"),
         Index("ix_event_stream_position", "stream_position"),
+        # DB-level stream invariant: one position per project (see Alembic 0002).
+        UniqueConstraint("project_id", "stream_position", name="uq_event_project_stream_position"),
     )
 
     id: str = Field(primary_key=True)
@@ -54,7 +56,7 @@ class Event(SQLModel, table=True):
     caused_by: str | None = Field(default=None, foreign_key="event.id")
     branch: str | None = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=utc_now, index=True)
-    stream_position: int | None = Field(default=None)
+    stream_position: int = Field(nullable=False)
 
 
 class SnapshotRecord(SQLModel, table=True):

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Production hardening: event stream unique invariant on ORM model; redaction key normalize (headers/query); independent snapshot check interval.
+
+## [0.2.3] - 2026-07-16
+
+### Added
+
+- `get_context_pack` compact agent context tool.
+- Multi-agent claim loop: `create_task(enqueue=…)` and queue coordinator wiring.
+- Ops: `allbrain doctor --clients` and `allbrain restart --all`.
+- MCP contract polish: event type aliases, `ToolResult.error_code`, slim resume/orchestrate detail mode.
+
 ### Changed (Glama)
 
 - Glama evaluation now uses the balanced 10-tool `core` profile instead of the 3-tool `minimal` profile.
@@ -14,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Glama's public tool surface is reduced from the full profile to a focused core set for reliable tool selection.
 - README'ye "Glama MCP Portal" bölümü eklendi.
 - `tests/test_mcp_tool_profiles.py`'a `test_minimal_tool_profile_is_exact_and_unique` regression testi eklendi.
+
+### Fixed
+
+- Restart ops: process match no longer treats `restart` as `start`; installer resolves real package repo root.
 
 ## [0.2.1] - 2026-07-03
 

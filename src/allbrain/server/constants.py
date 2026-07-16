@@ -33,6 +33,12 @@ DEFAULT_AUTO_SNAPSHOT_THRESHOLD = 50
 Lower threshold (50 vs 100) ensures snapshots are created more frequently,
 improving observability and reducing snapshot-build latency."""
 
+DEFAULT_SNAPSHOT_CHECK_INTERVAL = int(os.environ.get("ALLBRAIN_SNAPSHOT_CHECK_INTERVAL", "10"))
+"""How often (event count) to evaluate auto-snapshot eligibility.
+
+Independent of ``DEFAULT_AUTO_SNAPSHOT_THRESHOLD`` (weight gate). Override with
+``ALLBRAIN_SNAPSHOT_CHECK_INTERVAL``."""
+
 DEFAULT_SNAPSHOT_MIN_INTERVAL_SECONDS = 5.0
 """Minimum delay between automatic snapshots for the same project."""
 
