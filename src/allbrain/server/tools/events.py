@@ -118,8 +118,9 @@ def register_tools(mcp, context: BrainContext) -> None:
         write operation for the event-sourced architecture.
 
         Args:
-            type: Event type identifier (e.g., "TASK_CREATED", "TASK_ASSIGNED",
-                "TOOL_CALLED", "DECISION_MADE").
+            type: Event type identifier in snake_case (e.g., "task_created",
+                "task_assigned", "tool_call", "file_modified"). SCREAMING_SNAKE
+                aliases such as "TASK_CREATED" are also accepted.
             payload: Event data as a JSON-serializable dict. Should contain the
                 relevant state or information being recorded.
             file_path: Optional source file path (for code-related events).
@@ -169,10 +170,9 @@ def register_tools(mcp, context: BrainContext) -> None:
         Args:
             session_id: Optional session ID to filter by (useful for multi-agent
                 debugging and isolation).
-            type: Optional event type to filter by (e.g., "TASK_CREATED",
-                "TASK_ASSIGNED", "TOOL_CALLED").
-            limit: Maximum number of events to return (default 50). Increase for
-                broader history inspection.
+            type: Optional event type filter in snake_case (e.g., "task_created",
+                "task_assigned", "tool_call"). SCREAMING_SNAKE aliases accepted.
+            limit: Maximum number of events to return (default 50, maximum 500).
 
         Returns:
             List of events as JSON-serializable dicts, each containing id, type,

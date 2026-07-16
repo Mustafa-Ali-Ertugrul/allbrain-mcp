@@ -24,6 +24,7 @@ from allbrain.server.tools._shared import (
     snapshot_to_dict,
 )
 from allbrain.server.tools.decorators import handle_tool_errors
+from allbrain.server.tools.projections import slim_resume_view
 
 # Imports from allbrain.snapshot, allbrain.resume, and allbrain.storage.snapshot_repo
 # are done locally inside functions to avoid circular import chains.
@@ -82,14 +83,15 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             tool_args=data.model_dump(mode="json"),
             session_id=bound_session_id,
         )
-        return ToolResult(ok=True, data=resume)
+        payload = slim_resume_view(resume) if data.detail == "slim" else resume
+        return ToolResult(ok=True, data=payload)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
     except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
     except Exception:
         logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
 
 
 @handle_tool_errors
@@ -137,12 +139,12 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=snapshot_to_dict(snapshot) | {"reused": False})
     except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
     except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
     except Exception:
         logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
 
 
 @handle_tool_errors
@@ -184,12 +186,12 @@ def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
     except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
     except Exception:
         logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
 
 
 def register_tools(mcp, context: BrainContext) -> None:
@@ -198,30 +200,18 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         include_git: bool = True,
         use_snapshot: bool = True,
+        detail: str = "full",
     ) -> dict[str, Any]:
-        """Resume project state from the latest snapshot or event history.
-
-        Use this to reconstruct the full project state including tasks, sessions,
-        and memory after a restart or for multi-agent collaboration.
-
-        Side effects: Reads from the event log and/or snapshot store. Does not modify data.
+        """Resume project state from snapshot or event history (read-only).
 
         Args:
-            limit: Maximum number of events to process (default 5000).
-            include_git: Whether to include git context in the resume (default True).
-                Requires git repository access.
-            use_snapshot: Whether to use snapshot-based fast resume (default True).
-                Set to False to always replay from raw events.
-
-        Returns:
-            Full project state including task_view, task_graph, agent_state, sessions,
-            memory, and git context (if available).
+            limit: Max events to process (default 5000).
+            include_git: Include git context (default True).
+            use_snapshot: Prefer snapshot resume (default True).
+            detail: \"full\" (default) full payload; \"slim\" compact agent summary.
         """
         result = resume_project_impl(
-            context,
-            limit=limit,
-            include_git=include_git,
-            use_snapshot=use_snapshot,
+            context, limit=limit, include_git=include_git, use_snapshot=use_snapshot, detail=detail
         )
         return result.model_dump(mode="json")
 

@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from allbrain.events import EventType
+from allbrain.events.schemas import normalize_event_type_name
 from allbrain.security.input_guard import sanitize_payload_fields, sanitize_user_text
 from allbrain.security.redaction import sanitize_payload
 
@@ -131,12 +132,7 @@ class SaveEventInput(BaseInputModel):
     @field_validator("type")
     @classmethod
     def validate_type(cls, value: str) -> str:
-        try:
-            EventType(value)
-        except ValueError as exc:
-            allowed = ", ".join(event_type.value for event_type in EventType)
-            raise ValueError(f"unknown event type '{value}'. Allowed types: {allowed}") from exc
-        return value
+        return normalize_event_type_name(value)
 
     @model_validator(mode="after")
     def validate_task_payload(self) -> SaveEventInput:
@@ -171,12 +167,7 @@ class ListEventsInput(BaseInputModel):
     def validate_type(cls, value: str | None) -> str | None:
         if value is None:
             return None
-        try:
-            EventType(value)
-        except ValueError as exc:
-            allowed = ", ".join(event_type.value for event_type in EventType)
-            raise ValueError(f"unknown event type '{value}'. Allowed types: {allowed}") from exc
-        return value
+        return normalize_event_type_name(value)
 
 
 class ResumeProjectInput(BaseInputModel):
@@ -185,6 +176,7 @@ class ResumeProjectInput(BaseInputModel):
     limit: int = Field(default=5000, ge=1, le=50000)
     include_git: bool = True
     use_snapshot: bool = True
+    detail: str = Field(default="full", pattern="^(slim|full)$")
 
 
 class CreateSnapshotInput(BaseInputModel):
@@ -324,6 +316,7 @@ class OrchestratorInput(BaseInputModel):
     limit: int = Field(default=5000, ge=1, le=50000)
     include_git: bool = True
     use_snapshot: bool = True
+    detail: str = Field(default="full", pattern="^(slim|full)$")
 
 
 class RunDecisionPipelineInput(BaseInputModel):
@@ -493,3 +486,4 @@ class ToolResult(BaseModel):
     ok: bool
     data: Any | None = None
     error: str | None = None
+    error_code: str | None = None

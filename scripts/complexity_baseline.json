@@ -109,10 +109,6 @@
       "complexity": 1,
       "lines": 148
     },
-    "allbrain/server/tools/orchestrator.py::register_tools": {
-      "complexity": 1,
-      "lines": 110
-    },
     "allbrain/server/tools/queue.py::register_tools": {
       "complexity": 1,
       "lines": 133
