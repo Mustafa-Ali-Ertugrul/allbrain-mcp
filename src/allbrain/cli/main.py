@@ -367,11 +367,31 @@ def backup(
     console.print(f"Backup saved: {dest}")
 
 
+def _doctor_clients(*, project: Path, json_output: bool) -> None:
+    from allbrain.ops import build_clients_report, format_clients_report
+
+    report = build_clients_report(project)
+    if json_output:
+        console.print_json(data=report)
+        return
+    console.print(format_clients_report(report))
+
+
 @app.command()
 def doctor(
     db_path: Annotated[Path | None, typer.Option("--db-path", help="SQLite DB path.")] = None,
+    project: Annotated[Path, typer.Option("--project", "-p", help="Project root for client configs.")] = Path("."),
+    clients: Annotated[
+        bool,
+        typer.Option("--clients", help="Inspect MCP client configs and running AllBrain processes."),
+    ] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Emit machine-readable JSON.")] = False,
 ) -> None:
-    """Check database health, migration status, and connectivity."""
+    """Check database health; optionally inspect multi-client MCP installs."""
+    if clients:
+        _doctor_clients(project=project, json_output=json_output)
+        return
+
     resolved_db = _resolve_db(db_path)
     if not resolved_db.exists():
         console.print(f"[red]FAIL  Database not found: {resolved_db}[/red]")
@@ -456,6 +476,55 @@ def doctor(
     if not health:
         raise typer.Exit(code=1)
     console.print("\nAll checks passed.")
+
+
+@app.command()
+def restart(
+    all_clients: Annotated[bool, typer.Option("--all", help="Kill servers and refresh all client configs.")] = False,
+    project: Annotated[Path, typer.Option("--project", "-p", help="Project root for install rewrite.")] = Path("."),
+    reinstall: Annotated[bool, typer.Option("--reinstall/--no-reinstall", help="Rewrite client configs.")] = True,
+    verify_after: Annotated[
+        bool, typer.Option("--verify/--no-verify", help="Run MCP handshake after restart.")
+    ] = False,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Show actions without killing/writing.")] = False,
+) -> None:
+    """Restart AllBrain MCP server processes (and optionally reinstall client configs)."""
+    from allbrain.ops import kill_allbrain_processes, list_allbrain_processes
+
+    if not all_clients:
+        console.print("Specify --all to restart AllBrain MCP across clients.")
+        raise typer.Exit(code=2)
+
+    procs = list_allbrain_processes()
+    console.print(f"Found {len(procs)} AllBrain MCP process(es)")
+    for proc in procs:
+        console.print(f"  pid={proc['pid']} {proc['cmdline'][:140]}")
+
+    if dry_run:
+        console.print("[yellow]Dry-run: not killing processes or rewriting configs.[/yellow]")
+        return
+
+    killed = kill_allbrain_processes()
+    ok = sum(1 for item in killed if item.get("killed"))
+    console.print(f"Terminated {ok}/{len(killed)} process(es)")
+
+    if reinstall:
+        from allbrain.install import CLIENTS, install_client
+
+        repo = Path(__file__).resolve().parents[2]
+        project_path = project.resolve()
+        console.print(f"Refreshing client configs under {project_path}")
+        for name in CLIENTS:
+            console.print(f"[{name}]")
+            install_client(name, repo, project_path, isolate=False, dry_run=False)
+
+    if verify_after:
+        from allbrain.install import verify as _verify
+
+        repo = Path(__file__).resolve().parents[2]
+        _verify(repo, project.resolve())
+
+    console.print("Done. Re-open or reconnect MCP clients so they spawn a fresh AllBrain process.")
 
 
 def _client_flags_map(
