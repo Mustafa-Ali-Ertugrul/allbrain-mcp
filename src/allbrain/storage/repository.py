@@ -64,9 +64,15 @@ class BrainRepository:
                 db.flush()
         except IntegrityError:
             # Another writer created the project between our lookup and insert.
+            stale = project
             project = db.exec(select(Project).where(Project.canonical_project_path == canonical_path)).first()
             if project is None:
                 raise
+            # A nested rollback does not necessarily remove the transient
+            # object from ``session.new``.  Expunge it so the enclosing commit
+            # cannot retry the duplicate INSERT.
+            if stale in db:
+                db.expunge(stale)
         db.refresh(project)
         return project
 
