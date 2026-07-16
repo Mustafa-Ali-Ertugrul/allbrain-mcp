@@ -217,7 +217,7 @@ def test_snapshot_v7_stores_intent_and_contradiction_summaries(tmp_path: Path) -
     snapshot = create_snapshot_impl(context, force=True, include_derived=True)
 
     assert snapshot.ok
-    assert snapshot.data["metadata"]["snapshot_schema_version"] == "7.1"
+    assert snapshot.data["metadata"]["snapshot_schema_version"] == "7.2"
     assert snapshot.data["state"]["intent_view"]["active_intents"] == 2
     assert snapshot.data["state"]["contradiction_view"]["count"] == 1
 

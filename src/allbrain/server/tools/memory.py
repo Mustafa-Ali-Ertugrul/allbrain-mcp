@@ -19,10 +19,12 @@ from allbrain.server.tools._shared import (
     bind_session_id,
     observability_project_and_limit,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 
 logger = logging.getLogger(__name__)
 
 
+@handle_tool_errors
 def build_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
@@ -45,6 +47,7 @@ def build_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def retrieve_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         query = kwargs.get("query")

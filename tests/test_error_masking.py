@@ -5,6 +5,7 @@ from allbrain.models.schemas import (
     SaveEventInput,
     UserInputError,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.server.tools.events import save_event_impl
 from allbrain.server.tools.tasks import create_task_impl
 from tests._helpers import make_context
@@ -99,3 +100,14 @@ def test_internal_error_path_not_leaked(tmp_path: Path, monkeypatch) -> None:
     assert "/home" not in (result.error or "")
     assert "secret_project" not in (result.error or "")
     assert "db.sqlite" not in (result.error or "")
+
+
+def test_unexpected_value_error_is_masked() -> None:
+    @handle_tool_errors
+    def broken_tool() -> object:
+        raise ValueError("internal implementation detail")
+
+    result = broken_tool()
+
+    assert not result.ok
+    assert result.error == "Internal server error"

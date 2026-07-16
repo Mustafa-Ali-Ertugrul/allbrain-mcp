@@ -20,10 +20,12 @@ from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 
 logger = logging.getLogger(__name__)
 
 
+@handle_tool_errors
 def extract_intents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = IntentInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})
@@ -48,6 +50,7 @@ def extract_intents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def detect_contradictions_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = IntentInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})

@@ -19,11 +19,13 @@ from allbrain.server.tools._shared import (
     filter_observability_events,
     observability_project_and_limit,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.ui import GraphExplorer, MetricsDashboard, ReplayViewer, TraceViewer
 
 logger = logging.getLogger(__name__)
 
 
+@handle_tool_errors
 def get_ui_trace_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
@@ -50,6 +52,7 @@ def get_ui_trace_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def get_ui_replay_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
@@ -86,6 +89,7 @@ def get_ui_replay_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def get_ui_graph_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
@@ -112,6 +116,7 @@ def get_ui_graph_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def get_ui_metrics_view_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)

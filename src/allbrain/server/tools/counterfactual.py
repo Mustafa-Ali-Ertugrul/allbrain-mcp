@@ -23,11 +23,13 @@ from allbrain.server.tools._shared import (
     bind_session_id,
     maybe_auto_snapshot,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 
 
+@handle_tool_errors
 def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = CounterfactualInput.model_validate(kwargs)
@@ -110,6 +112,7 @@ def generate_counterfactual_impl(context: BrainContext, **kwargs: Any) -> ToolRe
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def rank_alternatives_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = AlternativeRankingInput.model_validate(kwargs)

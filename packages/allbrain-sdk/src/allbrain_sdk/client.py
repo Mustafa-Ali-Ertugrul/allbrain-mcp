@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 from fastmcp import Client
 from fastmcp.client.transports import StdioTransport
@@ -23,7 +23,7 @@ class AllBrainClient:
         db_path: str | Path | None = None,
         command: str = "uv",
         server_cwd: str | Path | None = None,
-        tool_profile: str = "core",
+        tool_profile: Literal["core", "full"] = "core",
         timeout_seconds: float = 120.0,
     ) -> None:
         self.config = AllBrainConfig(

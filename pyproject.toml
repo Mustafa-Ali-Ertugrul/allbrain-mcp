@@ -48,6 +48,12 @@ allbrain-agent-runtime = "allbrain.cli.main:app"
 requires = ["hatchling>=1.25.0"]
 build-backend = "hatchling.build"
 
+[tool.uv.workspace]
+members = ["packages/allbrain-sdk"]
+
+[tool.uv.sources]
+allbrain-sdk = { workspace = true }
+
 [tool.hatch.build.targets.sdist]
 include = [
   "/src",
@@ -105,6 +111,18 @@ select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
 "tests/*" = ["F401", "SIM"]
 "__init__.py" = ["F401"]
 
+[tool.pyright]
+include = [
+    "src/allbrain/models",
+    "src/allbrain/security",
+    "src/allbrain/server/tools/decorators.py",
+    "packages/allbrain-sdk/src",
+]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingImports = "error"
+reportMissingTypeStubs = "none"
+
 [tool.bandit]
 skips = ["B311"]
 
@@ -118,7 +136,9 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
+    "pyright>=1.1.390",
     "ruff>=0.15.20",
+    "allbrain-sdk",
 ]
 
 [tool.bumpversion]

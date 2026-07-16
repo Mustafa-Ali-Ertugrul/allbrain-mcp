@@ -110,7 +110,7 @@ def v4_orm_single_session(rows: list[dict[str, Any]]) -> float:
     init_db(engine)
     t0 = time.perf_counter()
     with open_session(engine) as s:
-        for r in rows:
+        for i, r in enumerate(rows, start=1):
             ev = Event(
                 id=r["id"],
                 project_id=1,
@@ -121,6 +121,7 @@ def v4_orm_single_session(rows: list[dict[str, Any]]) -> float:
                 payload_json=json.dumps({"i": r["id"]}, sort_keys=True),
                 payload_version=1,
                 created_at=utc_now(),
+                stream_position=i,
             )
             s.add(ev)
         s.commit()

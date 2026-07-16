@@ -9,9 +9,8 @@ from allbrain.models.schemas import (
     OrchestratorInput,
     RunDecisionPipelineInput,
     ToolResult,
+    UserInputError,
 )
-from allbrain.orchestrator import TaskStateReducer
-from allbrain.orchestrator.metrics import AgentPerformanceReducer
 
 # is_compatible, OrchestratedResumeEngine imported locally to avoid circular import
 from allbrain.runtime_core import SystemDecisionPipeline
@@ -30,13 +29,10 @@ from allbrain.server.queueing import QueueCoordinator
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
+    load_task_projection,
     maybe_auto_snapshot,
-    merge_agent_metrics,
 )
 from allbrain.server.tools.decorators import handle_tool_errors
-
-# SnapshotRepo imported locally in resume_project_impl to avoid circular import
-from allbrain.snapshot.adapters import SnapshotAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -62,11 +58,15 @@ def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult
     project_path = context.project_path
     project = context.repository.get_project_by_path(project_path)
     if project is None or project.id is None:
-        raise ValueError("project does not exist")
-    events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
+        raise UserInputError("project does not exist")
+    task_state, metrics = load_task_projection(
+        context,
+        project_id=project.id,
+        batch_size=data.limit,
+        use_snapshot=data.use_snapshot,
+    )
     from allbrain.resume.orchestrated import OrchestratedResumeEngine
     from allbrain.server.tools.snapshots import resume_project_impl
-    from allbrain.snapshot.versions import is_compatible
 
     base = resume_project_impl(
         context,
@@ -75,31 +75,10 @@ def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         use_snapshot=data.use_snapshot,
     )
     if not base.ok:
-        raise ValueError(base.error or "resume failed")
-    task_state = None
-    if data.use_snapshot:
-        from allbrain.storage.snapshot_repo import SnapshotRepo
-
-        snapshot = SnapshotRepo(context.repository.engine).get_latest(project.id)
-        if snapshot is not None:
-            snapshot = SnapshotAdapter().adapt(snapshot)
-        if snapshot is not None and is_compatible(snapshot.metadata):
-            delta_events = context.repository.list_events_after(
-                project_path=context.project_path,
-                event_cursor=snapshot.event_cursor,
-            )
-            task_state = TaskStateReducer().apply_events(snapshot.state.get("task_view", {}), delta_events)
-            snapshot_metrics = snapshot.state.get("agent_metrics", {})
-            delta_metrics = AgentPerformanceReducer().reduce(delta_events)
-            metrics = merge_agent_metrics(snapshot_metrics, delta_metrics)
-    metrics = locals().get("metrics")
+        raise UserInputError(base.error or "resume failed")
     engine = OrchestratedResumeEngine()
-    if task_state is not None:
-        result = engine.build_from_task_state(task_state=task_state, base=base.data, metrics=metrics)
-        result["global_view"]["orchestrator_snapshot_used"] = True
-    else:
-        result = engine.build(events=events, base=base.data)
-        result["global_view"]["orchestrator_snapshot_used"] = False
+    result = engine.build_from_task_state(task_state=task_state, base=base.data, metrics=metrics)
+    result["global_view"]["orchestrator_snapshot_used"] = bool(data.use_snapshot)
     audit_tool_call(
         context,
         tool_name="orchestrate_project",

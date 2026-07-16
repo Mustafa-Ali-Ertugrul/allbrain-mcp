@@ -18,7 +18,7 @@ from allbrain.server.tools._shared import (
     maybe_auto_snapshot,
 )
 from allbrain.server.tools.decorators import handle_tool_errors
-from allbrain.storage.database import open_session
+from allbrain.storage.database import open_write_session
 from allbrain.storage.repository import event_to_read
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     check_tool_rate("save_event")
     data = SaveEventInput.model_validate(kwargs)
     bound_session_id = bind_session_id(context, data.session_id)
-    with open_session(context.repository.engine) as db:
+    with open_write_session(context.repository.engine) as db:
         event = context.repository.append_event(
             project_path=context.project_path,
             session_id=bound_session_id,

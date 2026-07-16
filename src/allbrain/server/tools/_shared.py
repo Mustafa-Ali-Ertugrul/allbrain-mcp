@@ -14,6 +14,7 @@ from typing import Any
 from allbrain.models.schemas import UserInputError
 from allbrain.profiling import profile_stage
 from allbrain.server.context import BrainContext
+from allbrain.storage.database import open_write_session
 
 # NOTE: Circular-safe imports — SnapshotRepo, SnapshotBuilder etc. are
 # imported locally inside the functions that need them to avoid triggering
@@ -59,6 +60,74 @@ def load_events_through_cursor(repository, *, project_path: str | Path, batch_si
     return events
 
 
+def iter_event_pages_through_cursor(
+    repository,
+    *,
+    project_path: str | Path,
+    batch_size: int,
+    event_cursor: str | None = None,
+):
+    """Yield stable high-water event pages without materializing full history."""
+    if batch_size < 1:
+        raise UserInputError("batch_size must be at least 1")
+    high_water_events = repository.list_events(project_path=project_path, limit=1)
+    if not high_water_events:
+        return
+    high_water_cursor = high_water_events[-1].id
+    cursor = event_cursor
+    while True:
+        batch = repository.list_events_after(
+            project_path=project_path,
+            event_cursor=cursor,
+            through_cursor=high_water_cursor,
+            limit=batch_size,
+        )
+        if not batch:
+            return
+        yield batch
+        cursor = batch[-1].id
+        if cursor == high_water_cursor:
+            return
+
+
+def load_task_projection(
+    context: BrainContext,
+    *,
+    project_id: int,
+    batch_size: int,
+    use_snapshot: bool = True,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Build task and agent projections from a compatible snapshot plus pages."""
+    from allbrain.orchestrator import TaskStateReducer
+    from allbrain.orchestrator.metrics import AgentPerformanceReducer
+    from allbrain.snapshot.adapters import SnapshotAdapter
+    from allbrain.snapshot.versions import is_compatible
+    from allbrain.storage.snapshot_repo import SnapshotRepo
+
+    task_state: dict[str, Any] = {}
+    metrics: dict[str, Any] = {}
+    cursor: str | None = None
+    snapshot = SnapshotRepo(context.repository.engine).get_latest(project_id) if use_snapshot else None
+    if snapshot is not None:
+        snapshot = SnapshotAdapter().adapt(snapshot)
+    if snapshot is not None and is_compatible(snapshot.metadata):
+        task_state = dict(snapshot.state.get("task_view", {}))
+        metrics = dict(snapshot.state.get("agent_metrics", {}))
+        cursor = snapshot.event_cursor
+
+    task_reducer = TaskStateReducer()
+    metric_reducer = AgentPerformanceReducer()
+    for page in iter_event_pages_through_cursor(
+        context.repository,
+        project_path=context.project_path,
+        batch_size=batch_size,
+        event_cursor=cursor,
+    ):
+        task_state = task_reducer.apply_events(task_state, page)
+        metrics = metric_reducer.apply_events(metrics, page)
+    return task_state, metrics
+
+
 def bind_session_id(context: BrainContext, session_id: int | None) -> int:
     from allbrain.storage.database import open_session
 
@@ -99,6 +168,18 @@ def audit_tool_call(
         },
         _session=_session,
     )
+
+
+@contextmanager
+def atomic_write(context: BrainContext):
+    """Open one write transaction for a logical tool operation."""
+    with open_write_session(context.repository.engine) as db:
+        try:
+            yield db
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
 
 
 def maybe_auto_snapshot(
@@ -223,6 +304,7 @@ def append_selection_decision(
     assignment_event_id: str,
     task_hint: str | None,
     caused_by: str | None = None,
+    _session: Any | None = None,
 ):
     from allbrain.events import EventType
 
@@ -245,6 +327,7 @@ def append_selection_decision(
         agent_id=assignment["agent_id"],
         task_hint=task_hint,
         caused_by=caused_by or assignment_event_id,
+        _session=_session,
     )
 
 

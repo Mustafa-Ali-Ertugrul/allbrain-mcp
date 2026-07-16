@@ -6,6 +6,7 @@ from allbrain.storage.database import (
     ensure_stream_position_columns,
     init_db,
     open_session,
+    open_write_session,
 )
 from allbrain.storage.repository import BrainRepository
 
@@ -18,6 +19,7 @@ __all__ = [
     "ensure_stream_position_columns",
     "init_db",
     "open_session",
+    "open_write_session",
 ]
 
 

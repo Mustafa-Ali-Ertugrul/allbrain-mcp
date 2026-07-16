@@ -10,7 +10,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from allbrain.models.schemas import ToolResult, UserInputError
-from allbrain.security.redaction import sanitize_valerr_msg
+from allbrain.security.redaction import sanitize_text, sanitize_valerr_msg
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +39,10 @@ def handle_tool_errors(func: Callable[..., ToolResult]) -> Callable[..., ToolRes
         except ValidationError as exc:
             return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
         except UserInputError as exc:
-            return ToolResult(ok=False, error=str(exc))
-        except ValueError as exc:
-            return ToolResult(ok=False, error=str(exc))
+            return ToolResult(ok=False, error=sanitize_text(str(exc)))
+        except ValueError:
+            logger.exception("Tool rejected an unexpected value")
+            return ToolResult(ok=False, error="Internal server error")
         except Exception:
             logger.exception("Tool failed")
             return ToolResult(ok=False, error="Internal server error")

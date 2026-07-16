@@ -22,10 +22,12 @@ from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 
 logger = logging.getLogger(__name__)
 
 
+@handle_tool_errors
 def get_git_context_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = GitContextInput.model_validate(kwargs)
@@ -48,6 +50,7 @@ def get_git_context_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def get_git_status_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = GitContextInput.model_validate(kwargs)
@@ -70,6 +73,7 @@ def get_git_status_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def get_recent_changes_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = RecentChangesInput.model_validate(kwargs)
@@ -92,6 +96,7 @@ def get_recent_changes_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def get_work_summary_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = WorkSummaryInput.model_validate(kwargs)

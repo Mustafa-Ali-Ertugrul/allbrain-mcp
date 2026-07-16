@@ -21,12 +21,14 @@ from allbrain.server.tools._shared import (
     bind_session_id,
     maybe_auto_snapshot,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.storage.repository import event_to_read
 from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 
 
+@handle_tool_errors
 def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ObserveWorldInput.model_validate(kwargs)
@@ -60,6 +62,7 @@ def observe_world_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = SimulateActionInput.model_validate(kwargs)

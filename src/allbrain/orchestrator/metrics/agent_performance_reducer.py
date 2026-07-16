@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from math import log
 from typing import Any
 
@@ -9,34 +10,45 @@ from allbrain.models.schemas import EventRead
 
 class AgentPerformanceReducer:
     def reduce(self, events: list[EventRead]) -> dict[str, dict[str, Any]]:
-        metrics: dict[str, dict[str, Any]] = {}
-        for event in events:
-            agent_id = self._agent_for_event(event)
-            if agent_id is None:
-                continue
-            agent = metrics.setdefault(agent_id, self._empty(agent_id))
-            if event.type == EventType.TASK_ASSIGNED.value:
-                agent["assigned_count"] += 1
-            elif event.type == EventType.TASK_COMPLETED.value:
-                agent["success_count"] += 1
-                agent["consecutive_failures"] = 0
-            elif event.type == EventType.TASK_FAILED.value:
-                agent["failure_count"] += 1
-                agent["consecutive_failures"] += 1
-                agent["last_failure_at"] = event.created_at.isoformat()
-                reason = event.payload.get("reason") or event.payload.get("error_type") or event.payload.get("error")
-                if isinstance(reason, str) and reason:
-                    agent["last_failure_reason"] = reason
-            elif event.type == EventType.TASK_BLOCKED.value:
-                agent["blocked_count"] += 1
-            elif event.type == "user_feedback":
-                score = event.payload.get("score")
-                if isinstance(score, int | float):
-                    agent["user_feedback_score"] = score
-            version = event.payload.get("agent_version")
-            if isinstance(version, str) and version:
-                agent["agent_version"] = version
+        return self.apply_events({}, events)
 
+    def apply_events(
+        self,
+        base: dict[str, dict[str, Any]] | None,
+        events: list[EventRead],
+    ) -> dict[str, dict[str, Any]]:
+        """Apply a page of events to an existing metrics projection."""
+        metrics: dict[str, dict[str, Any]] = deepcopy(base or {})
+        for event in events:
+            self._apply_event(metrics, event)
+        return self._finalize(metrics)
+
+    def _apply_event(self, metrics: dict[str, dict[str, Any]], event: EventRead) -> None:
+        agent_id = self._agent_for_event(event)
+        if agent_id is None:
+            return
+        agent = metrics.setdefault(agent_id, self._empty(agent_id))
+        if event.type == EventType.TASK_ASSIGNED.value:
+            agent["assigned_count"] += 1
+        elif event.type == EventType.TASK_COMPLETED.value:
+            agent["success_count"] += 1
+            agent["consecutive_failures"] = 0
+        elif event.type == EventType.TASK_FAILED.value:
+            agent["failure_count"] += 1
+            agent["consecutive_failures"] += 1
+            agent["last_failure_at"] = event.created_at.isoformat()
+            reason = event.payload.get("reason") or event.payload.get("error_type") or event.payload.get("error")
+            if isinstance(reason, str) and reason:
+                agent["last_failure_reason"] = reason
+        elif event.type == EventType.TASK_BLOCKED.value:
+            agent["blocked_count"] += 1
+        elif event.type == "user_feedback" and isinstance(event.payload.get("score"), int | float):
+            agent["user_feedback_score"] = event.payload["score"]
+        version = event.payload.get("agent_version")
+        if isinstance(version, str) and version:
+            agent["agent_version"] = version
+
+    def _finalize(self, metrics: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
         for agent in metrics.values():
             total_tasks = agent["success_count"] + agent["failure_count"] + agent["blocked_count"]
             agent["total_tasks"] = total_tasks

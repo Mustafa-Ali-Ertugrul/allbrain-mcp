@@ -26,6 +26,7 @@ from allbrain.server.tools._shared import (
     bind_session_id,
     maybe_auto_snapshot,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.uncertainty import observed_success_rate
 from allbrain.world import WorldModel
 
@@ -90,6 +91,7 @@ def _publish_foresight_events(
     )
 
 
+@handle_tool_errors
 def generate_future_plans_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = GenerateFuturePlansInput.model_validate(kwargs)
@@ -124,6 +126,7 @@ def generate_future_plans_impl(context: BrainContext, **kwargs: Any) -> ToolResu
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = EvaluatePlanInput.model_validate(kwargs)
@@ -222,6 +225,7 @@ def _lookup_foresight_plan(
     return plan_payload, {"analysis_id": analysis_id, "candidates": candidates} if analysis_id else None
 
 
+@handle_tool_errors
 def explain_decision_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ExplainDecisionInput.model_validate(kwargs)
@@ -254,6 +258,7 @@ def explain_decision_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = EstimateConfidenceInput.model_validate(kwargs)
