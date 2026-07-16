@@ -519,7 +519,8 @@ def restart(
             install_client(name, repo, project_path, isolate=False, dry_run=False)
 
     if verify_after:
-        from allbrain.install import package_repo_root, verify as _verify
+        from allbrain.install import package_repo_root
+        from allbrain.install import verify as _verify
 
         _verify(package_repo_root(), project.resolve())
 
