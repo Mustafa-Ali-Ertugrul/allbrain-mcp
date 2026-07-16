@@ -197,8 +197,10 @@ def open_write_session(engine: Engine, *, attempts: int = 5) -> Iterator[Session
     """
 
     db: Session | None = None
+    if attempts < 1:
+        raise ValueError("attempts must be at least 1")
     for attempt in range(attempts):
-        candidate = Session(engine)
+        candidate = Session(engine, expire_on_commit=False)
         try:
             if engine.dialect.name == "sqlite":
                 candidate.connection().exec_driver_sql("BEGIN IMMEDIATE")

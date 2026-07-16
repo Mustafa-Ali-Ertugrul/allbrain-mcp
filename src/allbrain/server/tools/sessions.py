@@ -12,6 +12,7 @@ from allbrain.models.schemas import ToolResult, UserInputError
 from allbrain.server.constants import EMPTY_SESSION_TTL_HOURS
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import audit_tool_call, bind_session_id
+from allbrain.server.tools.decorators import handle_tool_errors
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,7 @@ def build_session_report(
     }
 
 
+@handle_tool_errors
 def summarize_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         bound_session_id = bind_session_id(context, None)
@@ -102,6 +104,7 @@ def summarize_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error=str(exc))
 
 
+@handle_tool_errors
 def close_session_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     """Manually close an active session."""
     try:
@@ -132,6 +135,7 @@ def close_session_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error=str(exc))
 
 
+@handle_tool_errors
 def cleanup_stale_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     """Reconcile stale sessions and delete old empty ones."""
     try:

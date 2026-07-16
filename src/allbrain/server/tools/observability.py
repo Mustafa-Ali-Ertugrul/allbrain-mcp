@@ -22,11 +22,13 @@ from allbrain.server.tools._shared import (
     bind_session_id,
     observability_project_and_limit,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.snapshot.constants import NON_SEMANTIC_EVENT_TYPES
 
 logger = logging.getLogger(__name__)
 
 
+@handle_tool_errors
 def get_observability_dashboard_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = OrchestratorInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})
@@ -48,6 +50,7 @@ def get_observability_dashboard_impl(context: BrainContext, **kwargs: Any) -> To
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
@@ -85,6 +88,7 @@ def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error=str(exc))
 
 
+@handle_tool_errors
 def get_workflow_trace_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
@@ -115,6 +119,7 @@ def get_workflow_trace_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def get_system_metrics_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
@@ -138,6 +143,7 @@ def get_system_metrics_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
@@ -192,6 +198,7 @@ def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolRes
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def get_workflow_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         project_path, limit = observability_project_and_limit(context, kwargs)
@@ -222,6 +229,7 @@ def get_workflow_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def compare_agents_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = OrchestratorInput.model_validate({"include_git": True, "use_snapshot": True, **kwargs})

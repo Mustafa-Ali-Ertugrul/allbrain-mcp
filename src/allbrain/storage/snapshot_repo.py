@@ -10,7 +10,7 @@ from uuid6 import uuid7
 
 from allbrain.models.entities import SnapshotRecord, utc_now
 from allbrain.snapshot.engine import Snapshot
-from allbrain.storage.database import open_session
+from allbrain.storage.database import open_session, open_write_session
 
 
 class SnapshotRepo:
@@ -33,7 +33,7 @@ class SnapshotRepo:
             metadata_json=json.dumps(metadata or {}, ensure_ascii=True, sort_keys=True),
             created_at=utc_now(),
         )
-        with open_session(self.engine) as db:
+        with open_write_session(self.engine) as db:
             db.add(record)
             try:
                 db.commit()

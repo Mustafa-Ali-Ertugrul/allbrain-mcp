@@ -40,6 +40,7 @@ class StateEngine:
         delta_state["goal"] = next_state["goal"]
         delta_state["working_files"] = next_state["working_files"]
         delta_state["open_tasks"] = next_state["open_tasks"]
+        delta_state["open_task_refs"] = next_state.get("open_task_refs", {})
         delta_state["last_event_id"] = next_state["last_event_id"]
         delta_state["last_working_file"] = next_state["last_working_file"]
         delta_state["event_count"] = len(events)

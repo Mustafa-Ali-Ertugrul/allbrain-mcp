@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from math import log
 from typing import Any
 
@@ -9,7 +10,15 @@ from allbrain.models.schemas import EventRead
 
 class AgentPerformanceReducer:
     def reduce(self, events: list[EventRead]) -> dict[str, dict[str, Any]]:
-        metrics: dict[str, dict[str, Any]] = {}
+        return self.apply_events({}, events)
+
+    def apply_events(
+        self,
+        base: dict[str, dict[str, Any]] | None,
+        events: list[EventRead],
+    ) -> dict[str, dict[str, Any]]:
+        """Apply a page of events to an existing metrics projection."""
+        metrics: dict[str, dict[str, Any]] = deepcopy(base or {})
         for event in events:
             agent_id = self._agent_for_event(event)
             if agent_id is None:

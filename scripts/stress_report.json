@@ -9,8 +9,8 @@
     "rate_limited": 0,
     "db_locked": 0,
     "other_errors": [],
-    "duration_seconds": 3.916,
-    "resume_hash": "-2541461531996899136"
+    "duration_seconds": 6.095,
+    "resume_hash": "6335272886525285447"
   },
   "summary": {
     "stress_test": {
@@ -28,7 +28,7 @@
         "agent-09"
       ],
       "events_per_agent": 100,
-      "concurrent_runtime_seconds": 5.604,
+      "concurrent_runtime_seconds": 6.179,
       "total_events_attempted": 1000,
       "total_ok": 1000,
       "total_rate_limited": 0,
@@ -41,7 +41,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 1.502
+          "duration_seconds": 3.377
         },
         {
           "agent": "agent-01",
@@ -49,7 +49,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 3.261
+          "duration_seconds": 6.176
         },
         {
           "agent": "agent-02",
@@ -57,7 +57,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 1.928
+          "duration_seconds": 3.205
         },
         {
           "agent": "agent-03",
@@ -65,7 +65,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 2.994
+          "duration_seconds": 4.484
         },
         {
           "agent": "agent-04",
@@ -73,7 +73,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 2.708
+          "duration_seconds": 4.982
         },
         {
           "agent": "agent-05",
@@ -81,7 +81,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 5.497
+          "duration_seconds": 5.482
         },
         {
           "agent": "agent-06",
@@ -89,7 +89,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 5.525
+          "duration_seconds": 3.466
         },
         {
           "agent": "agent-07",
@@ -97,7 +97,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 4.041
+          "duration_seconds": 5.72
         },
         {
           "agent": "agent-08",
@@ -105,7 +105,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 5.104
+          "duration_seconds": 3.593
         },
         {
           "agent": "agent-09",
@@ -113,7 +113,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 5.593
+          "duration_seconds": 5.399
         }
       ],
       "resume_hashes_match": true,

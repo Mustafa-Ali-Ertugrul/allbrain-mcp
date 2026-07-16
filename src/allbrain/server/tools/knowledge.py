@@ -34,6 +34,7 @@ from allbrain.server.tools._shared import (
     bind_session_id,
     observability_project_and_limit,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.uncertainty import UncertaintyManager, observed_success_rate
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ def _uncertainty_manager(context: BrainContext, project_path: str) -> Uncertaint
     return UncertaintyManager(calibration_events=events)
 
 
+@handle_tool_errors
 def estimate_uncertainty_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = EstimateUncertaintyInput.model_validate(kwargs)
@@ -79,6 +81,7 @@ def estimate_uncertainty_impl(context: BrainContext, **kwargs: Any) -> ToolResul
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def detect_knowledge_gaps_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = DetectKnowledgeGapsInput.model_validate(kwargs)
@@ -121,6 +124,7 @@ def _lookup_uncertainty_gaps(context: BrainContext, decision_id: str, project_pa
     return []
 
 
+@handle_tool_errors
 def identify_information_needs_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = IdentifyInformationNeedsInput.model_validate(kwargs)
@@ -150,6 +154,7 @@ def identify_information_needs_impl(context: BrainContext, **kwargs: Any) -> Too
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def estimate_information_gain_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = EstimateInformationGainInput.model_validate(kwargs)
@@ -186,6 +191,7 @@ def estimate_information_gain_impl(context: BrainContext, **kwargs: Any) -> Tool
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = QueryBeliefInput.model_validate(kwargs)
@@ -230,6 +236,7 @@ def query_belief_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = EstimateInformationGainV2Input.model_validate(kwargs)
@@ -284,6 +291,7 @@ def estimate_information_gain_v2_impl(context: BrainContext, **kwargs: Any) -> T
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def recommend_policy_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         task = kwargs.get("task")

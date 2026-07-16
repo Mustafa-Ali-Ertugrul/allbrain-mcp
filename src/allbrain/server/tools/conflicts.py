@@ -21,10 +21,12 @@ from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 
 logger = logging.getLogger(__name__)
 
 
+@handle_tool_errors
 def detect_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ConflictInput.model_validate(kwargs)
@@ -47,6 +49,7 @@ def detect_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def resolve_conflicts_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = ConflictInput.model_validate(kwargs)

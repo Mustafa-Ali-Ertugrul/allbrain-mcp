@@ -12,6 +12,7 @@ MERGE_STRATEGY = {
     "tool_usage": "append",
     "last_event_id": "replace_if_present",
     "last_working_file": "replace_if_present",
+    "open_task_refs": "replace",
 }
 
 

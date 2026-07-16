@@ -46,6 +46,7 @@ class SnapshotAdapter:
         state.setdefault("goal", None)
         state.setdefault("working_files", [])
         state.setdefault("open_tasks", [])
+        state.setdefault("open_task_refs", {})
         state.setdefault("completed_tasks", [])
         state.setdefault("blocked", [])
         state.setdefault("failures", [])

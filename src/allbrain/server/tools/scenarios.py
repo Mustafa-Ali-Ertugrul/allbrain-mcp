@@ -22,6 +22,7 @@ from allbrain.server.tools._shared import (
     bind_session_id,
     maybe_auto_snapshot,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
@@ -86,6 +87,7 @@ def _publish_scenario_events(
     )
 
 
+@handle_tool_errors
 def generate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = GenerateScenariosInput.model_validate(kwargs)
@@ -120,6 +122,7 @@ def generate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def evaluate_scenarios_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         data = EvaluateScenariosInput.model_validate(kwargs)

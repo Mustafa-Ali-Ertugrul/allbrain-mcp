@@ -25,6 +25,7 @@ jobs:
       - run: uv sync --group dev
       - run: uv run ruff check src/ tests/
       - run: uv run ruff format --check src/ tests/
+      - run: uv run pyright
       - run: uv run python scripts/check_complexity.py
       - run: uv run python scripts/check_architecture.py
       - run: uv run python scripts/check_readme_commands.py
@@ -54,7 +55,6 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --group dev
-      - run: uv pip install -e packages/allbrain-sdk
       - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=80 -n auto --dist=worksteal
 
   postgres-contract:

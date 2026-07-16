@@ -18,9 +18,9 @@ from allbrain.foundations.versioning import (
     get_default_upcaster,
 )
 from allbrain.models.entities import Event, Project, QueueItemRecord, Session, SnapshotRecord, utc_now
-from allbrain.models.schemas import EventRead
+from allbrain.models.schemas import EventRead, UserInputError
 from allbrain.security.redaction import sanitize_payload
-from allbrain.storage.database import open_session
+from allbrain.storage.database import open_session, open_write_session
 
 
 class BrainRepository:
@@ -57,10 +57,13 @@ class BrainRepository:
         )
         db.add(project)
         try:
-            db.commit()
+            # Keep project creation inside the caller's transaction.  A nested
+            # savepoint preserves the race-safe lookup without committing an
+            # outer event/session write prematurely.
+            with db.begin_nested():
+                db.flush()
         except IntegrityError:
             # Another writer created the project between our lookup and insert.
-            db.rollback()
             project = db.exec(select(Project).where(Project.canonical_project_path == canonical_path)).first()
             if project is None:
                 raise
@@ -86,7 +89,7 @@ class BrainRepository:
         Sessions track agent activity within a project and are used
         for event attribution and session-scoped queries.
         """
-        with open_session(self.engine) as db:
+        with open_write_session(self.engine) as db:
             project = self.get_or_create_project(db, project_path)
             session = Session(
                 project_id=project.id or 0,
@@ -105,7 +108,7 @@ class BrainRepository:
         return db.get(Session, session_id)
 
     def touch_session(self, session_id: int, *, at: datetime | None = None) -> Session | None:
-        with open_session(self.engine) as db:
+        with open_write_session(self.engine) as db:
             session = db.get(Session, session_id)
             if session is None:
                 return None
@@ -124,8 +127,8 @@ class BrainRepository:
         ended_at: datetime | None = None,
     ) -> Session | None:
         if status not in {"closed", "failed", "stale", "empty"}:
-            raise ValueError("invalid terminal session status")
-        with open_session(self.engine) as db:
+            raise UserInputError("invalid terminal session status")
+        with open_write_session(self.engine) as db:
             session = db.get(Session, session_id)
             if session is None:
                 return None
@@ -173,7 +176,7 @@ class BrainRepository:
         if project is None:
             return []
         reconciled: list[Session] = []
-        with open_session(self.engine) as db:
+        with open_write_session(self.engine) as db:
             sessions = db.exec(
                 select(Session).where(Session.project_id == project.id, Session.status == "active")
             ).all()
@@ -213,7 +216,7 @@ class BrainRepository:
         project = self.get_project_by_path(project_path)
         if project is None:
             return 0
-        with open_session(self.engine) as db:
+        with open_write_session(self.engine) as db:
             empty_sessions = db.exec(
                 select(Session).where(
                     Session.project_id == project.id,
@@ -282,7 +285,7 @@ class BrainRepository:
         _session: DbSession | None = None,
     ) -> Event:
         if _session is not None:
-            event = self._append_event_core(
+            return self._append_event_in_session(
                 _session,
                 project_path=project_path,
                 session_id=session_id,
@@ -296,12 +299,10 @@ class BrainRepository:
                 impact_score=impact_score,
                 caused_by=caused_by,
                 branch=branch,
+                commit=False,
             )
-            _session.flush()
-            _session.refresh(event)
-            return event
-        with open_session(self.engine) as db:
-            event = self._append_event_core(
+        with open_write_session(self.engine) as db:
+            return self._append_event_in_session(
                 db,
                 project_path=project_path,
                 session_id=session_id,
@@ -315,10 +316,48 @@ class BrainRepository:
                 impact_score=impact_score,
                 caused_by=caused_by,
                 branch=branch,
+                commit=True,
             )
+
+    def _append_event_in_session(
+        self,
+        db: DbSession,
+        *,
+        project_path: str | Path | None,
+        session_id: int,
+        type: str,
+        source: str,
+        payload: dict[str, Any],
+        file_path: str | None,
+        agent_id: str | None,
+        task_hint: str | None,
+        importance: int | None,
+        impact_score: float | None,
+        caused_by: str | None,
+        branch: str | None,
+        commit: bool,
+    ) -> Event:
+        event = self._append_event_core(
+            db,
+            project_path=project_path,
+            session_id=session_id,
+            type=type,
+            source=source,
+            payload=payload,
+            file_path=file_path,
+            agent_id=agent_id,
+            task_hint=task_hint,
+            importance=importance,
+            impact_score=impact_score,
+            caused_by=caused_by,
+            branch=branch,
+        )
+        if commit:
             db.commit()
-            db.refresh(event)
-            return event
+        else:
+            db.flush()
+        db.refresh(event)
+        return event
 
     def append_event_read(self, **kwargs: Any) -> EventRead:
         """Append an event and return its public read model."""
@@ -343,13 +382,13 @@ class BrainRepository:
     ) -> Event:
         session = self.get_session(db, session_id)
         if session is None:
-            raise ValueError(f"session_id {session_id} does not exist")
+            raise UserInputError(f"session_id {session_id} does not exist")
         if caused_by is not None and db.get(Event, caused_by) is None:
-            raise ValueError(f"caused_by event {caused_by} does not exist")
+            raise UserInputError(f"caused_by event {caused_by} does not exist")
 
         project = self.get_or_create_project(db, project_path)
         if session.project_id != project.id:
-            raise ValueError("session_id does not belong to project_path")
+            raise UserInputError("session_id does not belong to project_path")
 
         # Defense-in-depth: always redact secrets from payload at storage layer
         payload = sanitize_payload(payload)
@@ -491,11 +530,11 @@ class BrainRepository:
     ) -> int:
         cursor = db.get(Event, event_cursor)
         if cursor is None:
-            raise ValueError(f"{cursor_name} {event_cursor} does not exist")
+            raise UserInputError(f"{cursor_name} {event_cursor} does not exist")
         if cursor.project_id != project_id:
-            raise ValueError(f"{cursor_name} {event_cursor} does not belong to project")
+            raise UserInputError(f"{cursor_name} {event_cursor} does not belong to project")
         if cursor.stream_position is None:
-            raise ValueError(f"{cursor_name} {event_cursor} has no stream_position")
+            raise UserInputError(f"{cursor_name} {event_cursor} has no stream_position")
         return cursor.stream_position
 
     def get_event(self, event_id: str) -> EventRead | None:

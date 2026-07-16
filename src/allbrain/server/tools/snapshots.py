@@ -23,6 +23,7 @@ from allbrain.server.tools._shared import (
     semantic_event_count,
     snapshot_to_dict,
 )
+from allbrain.server.tools.decorators import handle_tool_errors
 
 # Imports from allbrain.snapshot, allbrain.resume, and allbrain.storage.snapshot_repo
 # are done locally inside functions to avoid circular import chains.
@@ -30,6 +31,7 @@ from allbrain.server.tools._shared import (
 logger = logging.getLogger(__name__)
 
 
+@handle_tool_errors
 def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         kwargs.pop("project_path", None)  # backward compat
@@ -37,14 +39,16 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         bound_session_id = bind_session_id(context, None)
         project = context.repository.get_project_by_path(context.project_path)
         if project is None or project.id is None:
-            raise ValueError("project does not exist")
+            raise UserInputError("project does not exist")
         from allbrain.resume.incremental import IncrementalResumeEngine
         from allbrain.resume.multi_agent import MultiAgentResumeEngine
         from allbrain.snapshot.versions import is_compatible
 
         events = None
         if not data.use_snapshot:
-            events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
+            events = load_events_through_cursor(
+                context.repository, project_path=context.project_path, batch_size=data.limit
+            )
         all_events = events
         if all_events is None:
             from allbrain.storage.snapshot_repo import SnapshotRepo
@@ -55,7 +59,9 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                     project_path=context.project_path, event_cursor=snapshot.event_cursor
                 )
             else:
-                all_events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
+                all_events = load_events_through_cursor(
+                    context.repository, project_path=context.project_path, batch_size=data.limit
+                )
         from allbrain.storage.snapshot_repo import SnapshotRepo
 
         incremental = IncrementalResumeEngine(
@@ -86,6 +92,7 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         kwargs.pop("project_path", None)  # backward compat
@@ -94,7 +101,7 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         project_path = context.project_path
         project = context.repository.get_project_by_path(project_path)
         if project is None or project.id is None:
-            raise ValueError("project does not exist")
+            raise UserInputError("project does not exist")
 
         from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
         from allbrain.storage.snapshot_repo import SnapshotRepo
@@ -138,6 +145,7 @@ def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         return ToolResult(ok=False, error="Internal server error")
 
 
+@handle_tool_errors
 def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     try:
         kwargs.pop("project_path", None)  # backward compat
@@ -146,8 +154,10 @@ def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         project_path = context.project_path
         project = context.repository.get_project_by_path(project_path)
         if project is None or project.id is None:
-            raise ValueError("project does not exist")
-        events = context.repository.list_events(project_path=context.project_path, limit=data.limit)
+            raise UserInputError("project does not exist")
+        events = load_events_through_cursor(
+            context.repository, project_path=context.project_path, batch_size=data.limit
+        )
         from allbrain.resume.incremental import IncrementalResumeEngine
         from allbrain.resume.intent_resume import IntentResumeEngine
         from allbrain.resume.multi_agent import MultiAgentResumeEngine
