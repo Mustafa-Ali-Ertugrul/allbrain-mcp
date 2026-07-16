@@ -31,6 +31,18 @@ CLIENTS = (
 )
 
 
+def package_repo_root() -> Path:
+    """Return the AllBrain git/package repo root (directory with pyproject.toml)."""
+    start = Path(__file__).resolve()
+    for parent in start.parents:
+        if (parent / "pyproject.toml").is_file() and (
+            (parent / "src" / "allbrain").is_dir() or (parent / "allbrain").is_dir()
+        ):
+            return parent
+    # Fallback: install/ -> allbrain/ -> src|site-packages parent guess
+    return start.parents[2]
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Configure AllBrain for MCP coding clients")
     parser.add_argument("clients", nargs="*", choices=CLIENTS, help="clients to configure (default: all)")
@@ -301,7 +313,7 @@ asyncio.run(main())
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
-    repo = Path(__file__).resolve().parents[2]  # package -> src -> repo root
+    repo = package_repo_root()
     project = (args.project or repo).resolve()
     flags = [client for client in CLIENTS if getattr(args, f"select_{client.replace('-', '_')}")]
     selected = list(dict.fromkeys([*args.clients, *flags]))

@@ -509,9 +509,9 @@ def restart(
     console.print(f"Terminated {ok}/{len(killed)} process(es)")
 
     if reinstall:
-        from allbrain.install import CLIENTS, install_client
+        from allbrain.install import CLIENTS, install_client, package_repo_root
 
-        repo = Path(__file__).resolve().parents[2]
+        repo = package_repo_root()
         project_path = project.resolve()
         console.print(f"Refreshing client configs under {project_path}")
         for name in CLIENTS:
@@ -519,10 +519,10 @@ def restart(
             install_client(name, repo, project_path, isolate=False, dry_run=False)
 
     if verify_after:
+        from allbrain.install import package_repo_root
         from allbrain.install import verify as _verify
 
-        repo = Path(__file__).resolve().parents[2]
-        _verify(repo, project.resolve())
+        _verify(package_repo_root(), project.resolve())
 
     console.print("Done. Re-open or reconnect MCP clients so they spawn a fresh AllBrain process.")
 
