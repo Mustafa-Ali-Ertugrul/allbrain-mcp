@@ -79,44 +79,18 @@ class StateMachine:
             event_type = EventType(event.type)
         except ValueError:
             return
-        if event_type == EventType.TOOL_CALL:
-            self._record_tool_usage(event)
-            return
-
-        if event_type == EventType.GOAL_SET:
-            goal = event.payload.get("goal") or event.task_hint
-            if isinstance(goal, str) and goal:
-                self.state.goal = goal
-        elif event_type == EventType.TASK_STARTED:
-            key, task = self._task_ref(event)
-            if key and task:
-                self.state.open_task_refs[key] = task
-                self._sync_open_tasks()
-        elif event_type == EventType.TASK_COMPLETED:
-            key, task = self._task_ref(event)
-            if key and task:
-                self.state.open_task_refs.pop(key, None)
-                if key.startswith("legacy:"):
-                    for ref in list(self.state.open_task_refs):
-                        if ref == key:
-                            self.state.open_task_refs.pop(ref, None)
-                self._sync_open_tasks()
-                if task not in self.state.completed_tasks:
-                    self.state.completed_tasks.append(task)
-        elif event_type == EventType.TASK_UPDATED:
-            task_id = event.payload.get("task_id")
-            goal = event.payload.get("goal") or event.payload.get("task") or event.task_hint
-            if isinstance(task_id, str) and task_id and isinstance(goal, str) and goal:
-                self.state.open_task_refs[f"id:{task_id}"] = goal
-                self._sync_open_tasks()
-        elif event_type == EventType.FILE_MODIFIED:
-            file_path = event.file_path or event.payload.get("file_path") or event.payload.get("file")
-            if isinstance(file_path, str) and file_path:
-                self._mark_working_file(file_path)
-        elif event_type == EventType.FAILURE:
-            self.state.failures.append(event.payload)
-        elif event_type == EventType.TASK_BLOCKED:
-            self.state.blocked.append(event.payload)
+        handler = {
+            EventType.TOOL_CALL: self._record_tool_usage,
+            EventType.GOAL_SET: self._apply_goal_set,
+            EventType.TASK_STARTED: self._apply_task_started,
+            EventType.TASK_COMPLETED: self._apply_task_completed,
+            EventType.TASK_UPDATED: self._apply_task_updated,
+            EventType.FILE_MODIFIED: self._apply_file_modified,
+            EventType.FAILURE: self._apply_failure,
+            EventType.TASK_BLOCKED: self._apply_blocked,
+        }.get(event_type)
+        if handler is not None:
+            handler(event)
 
     def get_state(self) -> ProjectState:
         return self.state
@@ -126,6 +100,44 @@ class StateMachine:
             self.state.working_files.remove(file_path)
         self.state.working_files.append(file_path)
         self.state.last_working_file = file_path
+
+    def _apply_goal_set(self, event: EventRead) -> None:
+        goal = event.payload.get("goal") or event.task_hint
+        if isinstance(goal, str) and goal:
+            self.state.goal = goal
+
+    def _apply_task_started(self, event: EventRead) -> None:
+        key, task = self._task_ref(event)
+        if key and task:
+            self.state.open_task_refs[key] = task
+            self._sync_open_tasks()
+
+    def _apply_task_completed(self, event: EventRead) -> None:
+        key, task = self._task_ref(event)
+        if not key or not task:
+            return
+        self.state.open_task_refs.pop(key, None)
+        self._sync_open_tasks()
+        if task not in self.state.completed_tasks:
+            self.state.completed_tasks.append(task)
+
+    def _apply_task_updated(self, event: EventRead) -> None:
+        task_id = event.payload.get("task_id")
+        goal = event.payload.get("goal") or event.payload.get("task") or event.task_hint
+        if isinstance(task_id, str) and task_id and isinstance(goal, str) and goal:
+            self.state.open_task_refs[f"id:{task_id}"] = goal
+            self._sync_open_tasks()
+
+    def _apply_file_modified(self, event: EventRead) -> None:
+        file_path = event.file_path or event.payload.get("file_path") or event.payload.get("file")
+        if isinstance(file_path, str) and file_path:
+            self._mark_working_file(file_path)
+
+    def _apply_failure(self, event: EventRead) -> None:
+        self.state.failures.append(event.payload)
+
+    def _apply_blocked(self, event: EventRead) -> None:
+        self.state.blocked.append(event.payload)
 
     def _task_ref(self, event: EventRead) -> tuple[str | None, str | None]:
         task_id = event.payload.get("task_id")

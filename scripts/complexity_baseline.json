@@ -17,10 +17,6 @@
       "complexity": 16,
       "lines": 60
     },
-    "allbrain/core/state_machine.py::StateMachine.apply": {
-      "complexity": 25,
-      "lines": 34
-    },
     "allbrain/decision/manager.py::DecisionManager._build_context": {
       "complexity": 19,
       "lines": 89
@@ -64,10 +60,6 @@
     "allbrain/models/session_summary.py::build_session_summary": {
       "complexity": 22,
       "lines": 59
-    },
-    "allbrain/orchestrator/metrics/agent_performance_reducer.py::AgentPerformanceReducer.reduce": {
-      "complexity": 16,
-      "lines": 37
     },
     "allbrain/predictive_failure/reducer.py::PredictiveFailureReducer.apply": {
       "complexity": 19,
