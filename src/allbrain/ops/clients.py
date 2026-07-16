@@ -232,7 +232,10 @@ def list_allbrain_processes() -> list[dict[str, Any]]:
             joined = " ".join(str(part) for part in cmdline)
             if not joined:
                 continue
-            module_start = "allbrain.cli.main" in joined and "start" in joined
+            # Match argv token "start", not substrings like "restart".
+            module_start = "allbrain.cli.main" in joined and "start" in [
+                str(part) for part in cmdline
+            ]
             if not module_start and not cli_start.search(joined):
                 continue
             found.append(
