@@ -13,7 +13,7 @@ def _run(context: BrainContext, operation, **kwargs: Any) -> ToolResult:
         context.ensure_active_session()
         return ToolResult(ok=True, data=operation(**kwargs))
     except (ValueError, TypeError) as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
 
 
 def register_tools(mcp, context: BrainContext) -> None:

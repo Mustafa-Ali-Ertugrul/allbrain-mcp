@@ -29,6 +29,7 @@ from allbrain.orchestrator import (
 from allbrain.security.rate_limit import check_tool_rate
 from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
+from allbrain.server.queueing import QueueCoordinator
 from allbrain.server.tools._shared import (
     append_selection_decision,
     atomic_write,
@@ -63,6 +64,8 @@ def create_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                     "kind": data.kind,
                     "related_files": data.related_files,
                     "priority": data.priority,
+                    "enqueue": data.enqueue,
+                    "agent_id": data.agent_id,
                 },
                 task_hint=data.goal,
                 importance=data.priority,
@@ -76,14 +79,30 @@ def create_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 _session=db,
             )
         maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
+        payload = event_to_read(event).model_dump(mode="json")
+        if data.enqueue:
+            agent_id = data.agent_id or context.agent_name
+            if not agent_id:
+                raise UserInputError("agent_id is required when enqueue=true and context has no agent")
+            queue_item = QueueCoordinator(context).enqueue_task(
+                task_id=task_id,
+                goal=data.goal,
+                kind=data.kind,
+                priority=data.priority,
+                agent_id=agent_id,
+                workflow_id=task_id,
+                metadata={"source": "create_task"},
+                idempotency_prefix="task",
+            )
+            payload["queue"] = queue_item
+        return ToolResult(ok=True, data=payload)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
     except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
     except Exception:
         logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
 
 
 @handle_tool_errors
@@ -418,30 +437,22 @@ def register_tools(mcp, context: BrainContext) -> None:
         related_files: list[str] | None = None,
         priority: int = 3,
         task_id: str | None = None,
+        agent_id: str | None = None,
+        enqueue: bool = False,
     ) -> dict[str, Any]:
-        """Create a new task in the event-sourced task graph for multi-agent orchestration.
+        """Create a task in the event-sourced graph; optionally enqueue for claim workers.
 
-        Use this to add work items before assigning them to agents. For updating an existing
-        task's priority, use `change_task_priority` instead. This appends a TASK_CREATED event
-        to the append-only SQLite event log with stable UUIDv7 ordering.
-
-        Side effects: Creates a TASK_CREATED event in the project's event log. Triggers an
-        automatic snapshot when the event threshold is reached. Does NOT assign the task.
+        Side effects: TASK_CREATED event. When enqueue=true, also inserts a queue item
+        scoped to agent_id (or the current session agent) for claim_task workers.
 
         Args:
-            goal: Required task objective (1-3 sentences recommended). Should describe what
-                needs to be accomplished, not how.
-            kind: Task category (default "implementation"). Common values: "implementation",
-                "review", "testing", "research", "design".
-            related_files: Optional list of file paths this task touches; helps agents provide
-                relevant context and reduces hallucination risk.
-            priority: Importance level from 1 (low) to 5 (critical); higher priority tasks are
-                scheduled first by the deterministic scheduler. Default 3.
-            task_id: Optional explicit task ID; if omitted, a stable UUIDv7 is auto-generated.
-
-        Returns:
-            The created TASK_CREATED event as a JSON-serializable dict containing task_id,
-            goal, kind, related_files, priority, and creation timestamp.
+            goal: Task objective (what, not how).
+            kind: Category (implementation/review/testing/research/design).
+            related_files: Optional related file paths.
+            priority: 1-5 importance (default 3).
+            task_id: Optional explicit ID; else UUIDv7.
+            agent_id: Target agent when enqueue=true (default: current agent).
+            enqueue: If true, queue for claim_task/complete_task (default false).
         """
         result = create_task_impl(
             context,
@@ -450,6 +461,8 @@ def register_tools(mcp, context: BrainContext) -> None:
             related_files=related_files or [],
             priority=priority,
             task_id=task_id,
+            agent_id=agent_id,
+            enqueue=enqueue,
         )
         return result.model_dump(mode="json")
 

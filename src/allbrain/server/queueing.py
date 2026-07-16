@@ -31,29 +31,60 @@ class QueueCoordinator:
         agent_id = str(assignment.get("agent_id") or objective.get("agent_id") or "unknown")
         workflow_id = str(result.get("run_id") or task_id)
         goal = objective.get("goal") or objective.get("description") or decomposition.get("goal") or task_id
+        return self.enqueue_task(
+            task_id=task_id,
+            goal=str(goal),
+            kind=str(objective.get("kind") or "implementation"),
+            priority=int(objective.get("priority", 3) or 3),
+            agent_id=agent_id,
+            workflow_id=workflow_id,
+            node_id=node_id,
+            metadata={"pipeline_run_id": workflow_id},
+            idempotency_prefix="pipeline",
+        )
+
+    def enqueue_task(
+        self,
+        *,
+        task_id: str,
+        goal: str,
+        agent_id: str,
+        kind: str = "implementation",
+        priority: int = 3,
+        workflow_id: str | None = None,
+        node_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        idempotency_prefix: str = "task",
+    ) -> dict[str, Any]:
+        """Enqueue a worker-claimable item scoped to *agent_id*."""
+        if not task_id or not agent_id:
+            raise ValueError("task_id and agent_id are required")
+        resolved_workflow = str(workflow_id or task_id)
+        resolved_node = str(node_id or task_id)
+        meta = dict(metadata or {})
         payload = {
             "node": {
-                "node_id": node_id,
+                "node_id": resolved_node,
                 "task_id": task_id,
                 "goal": str(goal),
-                "kind": str(objective.get("kind") or "implementation"),
+                "kind": str(kind or "implementation"),
                 "status": "pending",
                 "agent_id": agent_id,
-                "priority": int(objective.get("priority", 3) or 3),
+                "priority": int(priority or 3),
                 "parent_id": None,
                 "depth": 0,
                 "result": None,
                 "retry_count": 0,
                 "max_retries": self.max_attempts,
-                "metadata": {"pipeline_run_id": workflow_id},
+                "metadata": meta,
             },
             "agent_id": agent_id,
-            "workflow_id": workflow_id,
+            "workflow_id": resolved_workflow,
             "enqueued_at": utc_now().isoformat(),
             "parent_results": {},
-            "metadata": {"pipeline_run_id": workflow_id},
+            "metadata": meta,
         }
-        key = f"pipeline:{workflow_id}:{task_id}:{agent_id}"
+        key = f"{idempotency_prefix}:{resolved_workflow}:{task_id}:{agent_id}"
         with open_session(self.context.repository.engine) as db:
             existing = db.exec(select(QueueItemRecord).where(QueueItemRecord.idempotency_key == key)).first()
             if existing is not None:
@@ -61,9 +92,9 @@ class QueueCoordinator:
             record = QueueItemRecord(
                 id=str(uuid7()),
                 idempotency_key=key,
-                workflow_id=workflow_id,
+                workflow_id=resolved_workflow,
                 task_id=task_id,
-                node_id=node_id,
+                node_id=resolved_node,
                 agent_id=agent_id,
                 state="queued",
                 payload_json=json.dumps(payload, ensure_ascii=True, sort_keys=True),
