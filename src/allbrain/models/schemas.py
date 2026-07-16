@@ -253,6 +253,7 @@ class CreateTaskInput(BaseInputModel):
     related_files: list[str] = Field(default_factory=list, max_length=50)
     priority: int = Field(default=3, ge=1, le=5)
     agent_id: str | None = Field(default=None, max_length=255)
+    enqueue: bool = False
 
     @field_validator("related_files")
     @classmethod
