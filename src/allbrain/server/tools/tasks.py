@@ -171,8 +171,11 @@ def add_task_dependency_impl(context: BrainContext, **kwargs: Any) -> ToolResult
                 _session=db,
             )
             audit_tool_call(
-                context, tool_name="add_task_dependency", tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id, _session=db,
+                context,
+                tool_name="add_task_dependency",
+                tool_args=data.model_dump(mode="json"),
+                session_id=bound_session_id,
+                _session=db,
             )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
@@ -201,8 +204,11 @@ def change_task_priority_impl(context: BrainContext, **kwargs: Any) -> ToolResul
                 _session=db,
             )
             audit_tool_call(
-                context, tool_name="change_task_priority", tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id, _session=db,
+                context,
+                tool_name="change_task_priority",
+                tool_args=data.model_dump(mode="json"),
+                session_id=bound_session_id,
+                _session=db,
             )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
@@ -344,15 +350,20 @@ def update_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 type=EventType.TASK_UPDATED.value,
                 source="allbrain",
                 payload={
-                    "task_id": data.task_id, "goal": data.goal, "kind": data.kind,
+                    "task_id": data.task_id,
+                    "goal": data.goal,
+                    "kind": data.kind,
                     "related_files": data.related_files,
                 },
                 task_hint=data.goal,
                 _session=db,
             )
             audit_tool_call(
-                context, tool_name="update_task", tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id, _session=db,
+                context,
+                tool_name="update_task",
+                tool_args=data.model_dump(mode="json"),
+                session_id=bound_session_id,
+                _session=db,
             )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
@@ -382,8 +393,11 @@ def delete_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
                 _session=db,
             )
             audit_tool_call(
-                context, tool_name="delete_task", tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id, _session=db,
+                context,
+                tool_name="delete_task",
+                tool_args=data.model_dump(mode="json"),
+                session_id=bound_session_id,
+                _session=db,
             )
         maybe_auto_snapshot(context, project_path=context.project_path)
         return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
