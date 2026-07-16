@@ -191,3 +191,57 @@ def test_log_does_not_leak_secret(caplog) -> None:
     log_text = caplog.text
     assert "sk-" + "a" * 40 not in log_text
     assert "secret_redacted" in log_text
+
+
+def test_header_x_api_key_masked() -> None:
+    result = sanitize_payload({"headers": {"X-Api-Key": "secretvalue"}})
+    assert result["headers"]["X-Api-Key"] == "********"
+
+
+def test_hyphenated_api_key_field_masked() -> None:
+    result = sanitize_payload({"api-key": "v"})
+    assert result["api-key"] == "********"
+
+
+def test_nested_password_suffix_masked() -> None:
+    result = sanitize_payload({"nested": {"my_password": "p"}})
+    assert result["nested"]["my_password"] == "********"
+
+
+def test_url_query_sensitive_params_masked() -> None:
+    url = "https://example.com/callback?api_key=plainsecret&token=abc&safe=1"
+    result = sanitize_payload({"url": url})
+    assert "plainsecret" not in result["url"]
+    assert "token=********" in result["url"]
+    assert "safe=1" in result["url"]
+
+
+def test_url_openai_key_in_query_still_masked() -> None:
+    secret = "sk-" + "a" * 40
+    result = sanitize_payload({"url": f"https://x.com?q={secret}"})
+    assert secret not in result["url"]
+    assert "********" in result["url"]
+
+
+def test_fp_task_key_not_masked() -> None:
+    result = sanitize_payload({"task_key": "task-123", "foreign_key": "fk-9", "metric_key": "m1"})
+    assert result["task_key"] == "task-123"
+    assert result["foreign_key"] == "fk-9"
+    assert result["metric_key"] == "m1"
+
+
+def test_sanitize_text_url_query() -> None:
+    from allbrain.security.redaction import sanitize_text
+
+    text = "failed request https://api.example.com?token=supersecret&ok=1"
+    cleaned = sanitize_text(text)
+    assert "supersecret" not in cleaned
+
+
+def test_sanitize_valerr_msg_masks_residual_secret_pattern() -> None:
+    from allbrain.security.redaction import sanitize_valerr_msg
+
+    secret = "sk-" + "b" * 40
+    msg = f"boom detail without input_value but has {secret}"
+    cleaned = sanitize_valerr_msg(msg)
+    assert secret not in cleaned

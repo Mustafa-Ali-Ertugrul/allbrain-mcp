@@ -156,3 +156,19 @@ def test_uppercase_api_key_field_name_redacted() -> None:
     """API_KEY (uppercase) is redacted — case-insensitive field name match."""
     result = sanitize_payload({"API_KEY": "test123"})
     assert result["API_KEY"] == "********"
+
+
+def test_x_api_key_header_case_variants() -> None:
+    for key in ("X-Api-Key", "x-api-key", "X-API-KEY"):
+        result = sanitize_payload({key: "raw-secret"})
+        assert result[key] == "********", key
+
+
+def test_my_api_key_suffix_redacted() -> None:
+    result = sanitize_payload({"service_api_key": "raw"})
+    assert result["service_api_key"] == "********"
+
+
+def test_keyboard_not_redacted_as_secret() -> None:
+    result = sanitize_payload({"keyboard": "qwerty"})
+    assert result["keyboard"] == "qwerty"

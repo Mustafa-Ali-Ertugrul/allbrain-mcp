@@ -5,7 +5,11 @@ from typing import TYPE_CHECKING, Any
 
 from uuid6 import uuid7
 
-from allbrain.server.constants import DEFAULT_AUTO_SNAPSHOT_THRESHOLD, DEFAULT_SNAPSHOT_MIN_INTERVAL_SECONDS
+from allbrain.server.constants import (
+    DEFAULT_AUTO_SNAPSHOT_THRESHOLD,
+    DEFAULT_SNAPSHOT_CHECK_INTERVAL,
+    DEFAULT_SNAPSHOT_MIN_INTERVAL_SECONDS,
+)
 
 if TYPE_CHECKING:
     from allbrain.models.entities import Session
@@ -35,7 +39,7 @@ class BrainContext:
         client_version: str | None = None,
         central_audit_enabled: bool = False,
         auto_snapshot_threshold: int = DEFAULT_AUTO_SNAPSHOT_THRESHOLD,
-        snapshot_check_interval: int = DEFAULT_AUTO_SNAPSHOT_THRESHOLD,
+        snapshot_check_interval: int = DEFAULT_SNAPSHOT_CHECK_INTERVAL,
         snapshot_min_interval_seconds: float = DEFAULT_SNAPSHOT_MIN_INTERVAL_SECONDS,
     ) -> None:
         # ── thread synchronisation (must be created first) ──
