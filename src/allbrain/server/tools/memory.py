@@ -99,7 +99,7 @@ def register_tools(mcp, context: BrainContext) -> None:
             Semantic memory store as a JSON-serializable dict containing similar_workflows
             and failure_patterns indices.
         """
-        result = build_memory_impl(context, project_path=context.project_path, limit=limit)
+        result = build_memory_impl(context, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -126,5 +126,5 @@ def register_tools(mcp, context: BrainContext) -> None:
             Dict with similar_workflows and failure_patterns lists, each containing
             matched items with similarity scores and metadata.
         """
-        result = retrieve_memory_impl(context, query=query, project_path=context.project_path, limit=limit, top_k=top_k)
+        result = retrieve_memory_impl(context, query=query, limit=limit, top_k=top_k)
         return result.model_dump(mode="json")

@@ -274,7 +274,7 @@ def register_tools(mcp, context: BrainContext) -> None:
             Dashboard with agent performance summary, recent workflow metrics,
             and high-level system state.
         """
-        result = get_observability_dashboard_impl(context, project_path=context.project_path, limit=limit)
+        result = get_observability_dashboard_impl(context, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -353,7 +353,7 @@ def register_tools(mcp, context: BrainContext) -> None:
             System metrics with CPU, memory, event throughput, tool call frequency,
             and reliability indicators.
         """
-        result = get_system_metrics_impl(context, project_path=context.project_path, limit=limit)
+        result = get_system_metrics_impl(context, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -376,7 +376,7 @@ def register_tools(mcp, context: BrainContext) -> None:
             Reliability report with lease statistics, failure counts, session
             summaries, memory coverage rates, and category breakdowns.
         """
-        result = get_reliability_status_impl(context, project_path=context.project_path, limit=limit)
+        result = get_reliability_status_impl(context, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -399,5 +399,5 @@ def register_tools(mcp, context: BrainContext) -> None:
             Agent comparison data with per-agent success rates, failure counts,
             task assignments, confidence scores, and performance rankings.
         """
-        result = compare_agents_impl(context, project_path=context.project_path, limit=limit)
+        result = compare_agents_impl(context, limit=limit)
         return result.model_dump(mode="json")

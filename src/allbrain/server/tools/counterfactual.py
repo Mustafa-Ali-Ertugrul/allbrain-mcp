@@ -208,5 +208,5 @@ def register_tools(mcp, context: BrainContext) -> None:
             Ranked alternatives with success probabilities, confidence intervals,
             and current world state.
         """
-        result = rank_alternatives_impl(context, actions=actions, project_path=context.project_path, limit=limit)
+        result = rank_alternatives_impl(context, actions=actions, limit=limit)
         return result.model_dump(mode="json")

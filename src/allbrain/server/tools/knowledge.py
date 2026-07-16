@@ -473,5 +473,5 @@ def register_tools(mcp, context: BrainContext) -> None:
             Policy recommendation with suggested agent, approach, success
             probability estimate, and relevant historical precedents.
         """
-        result = recommend_policy_impl(context, task=task, project_path=context.project_path, limit=limit)
+        result = recommend_policy_impl(context, task=task, limit=limit)
         return result.model_dump(mode="json")
