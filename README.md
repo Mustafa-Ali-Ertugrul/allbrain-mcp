@@ -113,7 +113,7 @@ uv run allbrain start --project . --agent my-agent --tool-profile memory
 ## Glama MCP Portal
 
 Glama MCP evaluates this server with the balanced **core tool profile**
-(`--tool-profile core` in `glama.json`). Its 10 public tools cover shared
+(`--tool-profile core` in `glama.json`). Its 11 public tools cover shared
 memory, task orchestration, snapshots, Git context, and decision workflows
 without exposing the entire development surface.
 
@@ -167,7 +167,7 @@ Switch to another client, call `list_events()` again — the same event appears.
 - 50 tools in the full MCP profile across 18 domain tool modules
 - Default profile (`full`) registers all tools
 - `minimal` profile: 3 tools (`save_event`, `list_events`, `resume_project`)
-- `core` profile: 10 tools (essential workflow + reasoning)
+- `core` profile: 11 tools (essential workflow + reasoning + context pack)
 
 ## Data lifecycle and security
 

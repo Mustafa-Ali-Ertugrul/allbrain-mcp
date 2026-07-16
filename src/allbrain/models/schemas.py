@@ -179,6 +179,22 @@ class ResumeProjectInput(BaseInputModel):
     detail: str = Field(default="full", pattern="^(slim|full)$")
 
 
+class ContextPackInput(BaseInputModel):
+    """Compact multi-source context for agents (Sprint B)."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    task_id: str | None = Field(default=None, max_length=255)
+    query: str | None = Field(default=None, max_length=4000)
+    window_hours: int = Field(default=24, ge=1, le=720)
+    limit: int = Field(default=500, ge=1, le=5000)
+    include_git: bool = True
+    top_k: int = Field(default=5, ge=1, le=50)
+    event_limit: int = Field(default=30, ge=1, le=100)
+    session_limit: int = Field(default=20, ge=1, le=150)
+    session_detail_limit: int = Field(default=8, ge=0, le=50)
+
+
 class CreateSnapshotInput(BaseInputModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 

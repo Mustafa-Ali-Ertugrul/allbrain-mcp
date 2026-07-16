@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from allbrain.events.schemas import normalize_event_type_name
 from allbrain.models.schemas import ListEventsInput, SaveEventInput
 from allbrain.server.tools import CORE_TOOL_NAMES
+from allbrain.server.tools.context_pack import get_context_pack_impl
 from allbrain.server.tools.events import list_events_impl, save_event_impl
 from allbrain.server.tools.git import get_git_context_impl
 from allbrain.server.tools.memory import retrieve_memory_impl
@@ -104,6 +105,7 @@ def test_core_tool_happy_paths(tmp_path: Path) -> None:
             execute_mode="event_only",
             limit=200,
         ),
+        "get_context_pack": get_context_pack_impl(context, window_hours=24, limit=100, include_git=False),
     }
     assert set(results) == CORE_TOOL_NAMES
     for name, result in results.items():
@@ -113,8 +115,9 @@ def test_core_tool_happy_paths(tmp_path: Path) -> None:
 
 
 def test_core_tool_names_registered() -> None:
-    assert len(CORE_TOOL_NAMES) == 10
+    assert len(CORE_TOOL_NAMES) == 11
     assert "list_events" in CORE_TOOL_NAMES
+    assert "get_context_pack" in CORE_TOOL_NAMES
 
 
 def test_list_events_input_schema_max() -> None:
