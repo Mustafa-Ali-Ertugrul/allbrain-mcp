@@ -145,31 +145,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         use_snapshot: bool = True,
         detail: str = "full",
     ) -> dict[str, Any]:
-        """Build a complete orchestration view of the project with tasks, agents, and state.
-
-        Use this to get a holistic view of the project's current state, including all tasks,
-        agent assignments, performance metrics, and session information. More comprehensive
-        than `get_task_graph` which focuses only on task dependencies.
-
-        Side effects: Read-only operation; uses snapshot resume for efficiency.
+        """Build orchestration view (tasks, agents, state). Read-only.
 
         Args:
-            limit: Maximum number of events to process (default 10000).
-            include_git: Whether to include git context in the view (default True).
-            use_snapshot: Whether to use snapshot-based fast resume (default True).
-            detail: Response size mode. "full" (default) returns nested views;
-                "slim" returns open-task counts/summaries and decision next_step only.
-
-        Returns:
-            Orchestration view with task_view, agent_queue, agent_state, global_view,
-            sessions, memory, and git context (if available). Slim mode omits megablobs.
+            limit: Max events to process (default 10000).
+            include_git: Include git context (default True).
+            use_snapshot: Prefer snapshot resume (default True).
+            detail: \"full\" nested views (default); \"slim\" task counts and next_step.
         """
         result = orchestrate_project_impl(
-            context,
-            limit=limit,
-            include_git=include_git,
-            use_snapshot=use_snapshot,
-            detail=detail,
+            context, limit=limit, include_git=include_git, use_snapshot=use_snapshot, detail=detail
         )
         return result.model_dump(mode="json")
 

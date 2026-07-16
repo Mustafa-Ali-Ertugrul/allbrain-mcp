@@ -202,33 +202,16 @@ def register_tools(mcp, context: BrainContext) -> None:
         use_snapshot: bool = True,
         detail: str = "full",
     ) -> dict[str, Any]:
-        """Resume project state from the latest snapshot or event history.
-
-        Use this to reconstruct the full project state including tasks, sessions,
-        and memory after a restart or for multi-agent collaboration.
-
-        Side effects: Reads from the event log and/or snapshot store. Does not modify data.
+        """Resume project state from snapshot or event history (read-only).
 
         Args:
-            limit: Maximum number of events to process (default 5000).
-            include_git: Whether to include git context in the resume (default True).
-                Requires git repository access.
-            use_snapshot: Whether to use snapshot-based fast resume (default True).
-                Set to False to always replay from raw events.
-            detail: Response size mode. "full" (default) returns the complete resume
-                payload; "slim" returns a compact agent-facing summary.
-
-        Returns:
-            Full project state including task_view, task_graph, agent_state, sessions,
-            memory, and git context (if available). With detail="slim", returns a
-            compact summary (goal, open/completed/blocked tasks, failures, files, next_step).
+            limit: Max events to process (default 5000).
+            include_git: Include git context (default True).
+            use_snapshot: Prefer snapshot resume (default True).
+            detail: \"full\" (default) full payload; \"slim\" compact agent summary.
         """
         result = resume_project_impl(
-            context,
-            limit=limit,
-            include_git=include_git,
-            use_snapshot=use_snapshot,
-            detail=detail,
+            context, limit=limit, include_git=include_git, use_snapshot=use_snapshot, detail=detail
         )
         return result.model_dump(mode="json")
 
