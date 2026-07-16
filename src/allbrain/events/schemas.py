@@ -2,6 +2,33 @@ from __future__ import annotations
 
 from enum import StrEnum
 
+# Client docs historically used SCREAMING_SNAKE or near-miss names.
+_EVENT_TYPE_ALIASES: dict[str, str] = {
+    "TOOL_CALLED": "tool_call",
+    "tool_called": "tool_call",
+}
+
+
+def normalize_event_type_name(value: str) -> str:
+    """Map client-facing event type names to canonical EventType values.
+
+    Accepts exact snake_case values and common SCREAMING_SNAKE aliases
+    (e.g. ``TASK_CREATED`` → ``task_created``). Unknown names raise ValueError
+    with the allowed list (same contract as EventType()).
+    """
+    if not value:
+        raise ValueError("event type must be non-empty")
+    alias = _EVENT_TYPE_ALIASES.get(value) or _EVENT_TYPE_ALIASES.get(value.upper())
+    for candidate in (alias, value, value.lower()):
+        if candidate is None:
+            continue
+        try:
+            return EventType(candidate).value
+        except ValueError:
+            continue
+    allowed = ", ".join(event_type.value for event_type in EventType)
+    raise ValueError(f"unknown event type '{value}'. Allowed types: {allowed}")
+
 
 class EventType(StrEnum):
     GOAL_SET = "goal_set"

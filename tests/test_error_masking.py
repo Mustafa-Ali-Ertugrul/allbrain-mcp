@@ -21,6 +21,7 @@ def test_validation_error_visible_to_user(tmp_path: Path) -> None:
     assert not result.ok
     assert result.error is not None
     assert "unknown event type" in result.error
+    assert result.error_code == "validation_error"
 
 
 def test_extra_field_rejected(tmp_path: Path) -> None:
@@ -64,6 +65,7 @@ def test_user_input_error_visible_to_user(tmp_path: Path) -> None:
     assert not result.ok
     assert result.error is not None
     assert result.error == "Invalid session"
+    assert result.error_code == "user_input_error"
 
 
 # --- Internal error masking ---
@@ -82,6 +84,7 @@ def test_internal_error_masked(tmp_path: Path, monkeypatch) -> None:
 
     assert not result.ok
     assert result.error == "Internal server error"
+    assert result.error_code == "internal_error"
 
 
 def test_internal_error_path_not_leaked(tmp_path: Path, monkeypatch) -> None:

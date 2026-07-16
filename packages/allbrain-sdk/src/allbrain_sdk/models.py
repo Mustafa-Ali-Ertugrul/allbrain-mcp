@@ -23,6 +23,7 @@ class ToolEnvelope[T](BaseModel):
     ok: bool
     data: T | None = None
     error: str | None = None
+    error_code: str | None = None
 
 
 class EventRecord(BaseModel):

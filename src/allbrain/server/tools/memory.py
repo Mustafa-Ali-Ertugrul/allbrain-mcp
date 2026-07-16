@@ -39,12 +39,12 @@ def build_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=store.to_dict())
     except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
     except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
     except Exception:
         logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
 
 
 @handle_tool_errors
@@ -72,12 +72,12 @@ def retrieve_memory_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         )
         return ToolResult(ok=True, data=result)
     except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
+        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
     except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
+        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
     except Exception:
         logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
 
 
 def register_tools(mcp, context: BrainContext) -> None:
