@@ -1,7 +1,8 @@
 """Security integration and non-regression tests.
 
 Covers:
-- project_path / agent_id field rejection (non-regression for Patch 1+2)
+- project_path is stripped/ignored (never redirects binding)
+- agent_id accepted on save_event
 - Fuzz-like parametrized edge cases on save_event, list_events, create_task, assign_task
 - 4 critical tool surface area
 """
@@ -35,27 +36,45 @@ def _reset_allowed_roots() -> None:
 
 
 # ============================================================
-# Non-regression: project_path / agent_id must be rejected
+# Non-regression: project_path is ignored (never redirects)
 # ============================================================
 
 
-def test_project_path_rejected(tmp_path: Path) -> None:
-    """SaveEventInput MUST reject project_path as extra field.
+def test_project_path_ignored_not_redirected(tmp_path: Path) -> None:
+    """Legacy/wrapper project_path kwargs must be stripped, not used for binding.
 
-    If someone later adds project_path back to the API surface,
-    this test fails (non-regression).
+    Clients and internal MCP wrappers may still pass project_path. We ignore it
+    and always bind to BrainContext.project_path (security: no path redirect).
     """
     context = make_context(tmp_path)
     result = save_event_impl(
         context,
         type="file_modified",
-        payload={},
-        project_path="/tmp",
+        payload={"note": "legacy project_path should be ignored"},
+        project_path=str(tmp_path / "attacker-other-project"),
     )
-    assert not result.ok
-    assert result.error is not None
-    # Pydantic extra='forbid' should flag it
-    assert "project_path" in result.error
+    assert result.ok, result.error
+    assert result.data is not None
+    # Event is stored under the context project, not the attacker path.
+    listed = list_events_impl(context, limit=10)
+    assert listed.ok
+    assert any(e.get("type") == "file_modified" for e in (listed.data or []))
+
+
+def test_assign_task_accepts_legacy_project_path_kwarg(tmp_path: Path) -> None:
+    """assign_task must not fail when wrappers pass project_path=context.project_path."""
+    context = make_context(tmp_path)
+    created = create_task_impl(context, goal="legacy project_path smoke", kind="testing", priority=2)
+    assert created.ok, created.error
+    task_id = created.data["payload"]["task_id"]
+    result = assign_task_impl(
+        context,
+        task_id=task_id,
+        agent_id="codex",
+        project_path=context.project_path,
+        limit=100,
+    )
+    assert result.ok, result.error
 
 
 def test_agent_id_accepted(tmp_path: Path) -> None:

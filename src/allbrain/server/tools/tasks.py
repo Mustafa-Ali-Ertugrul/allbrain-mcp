@@ -483,7 +483,6 @@ def register_tools(mcp, context: BrainContext) -> None:
             context,
             task_id=task_id,
             agent_id=agent_id,
-            project_path=context.project_path,
             limit=limit,
         )
         return result.model_dump(mode="json")
@@ -511,9 +510,7 @@ def register_tools(mcp, context: BrainContext) -> None:
         Returns:
             The created TASK_DEPENDENCY_ADDED event as a JSON-serializable dict.
         """
-        result = add_task_dependency_impl(
-            context, task_id=task_id, depends_on=depends_on, project_path=context.project_path
-        )
+        result = add_task_dependency_impl(context, task_id=task_id, depends_on=depends_on)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -538,9 +535,7 @@ def register_tools(mcp, context: BrainContext) -> None:
         Returns:
             The created TASK_PRIORITY_CHANGED event as a JSON-serializable dict.
         """
-        result = change_task_priority_impl(
-            context, task_id=task_id, old=old, new=new, project_path=context.project_path
-        )
+        result = change_task_priority_impl(context, task_id=task_id, old=old, new=new)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -667,5 +662,5 @@ def register_tools(mcp, context: BrainContext) -> None:
         Returns:
             Task state view, task graph structure, and agent state as JSON.
         """
-        result = get_task_graph_impl(context, project_path=context.project_path, limit=limit)
+        result = get_task_graph_impl(context, limit=limit)
         return result.model_dump(mode="json")

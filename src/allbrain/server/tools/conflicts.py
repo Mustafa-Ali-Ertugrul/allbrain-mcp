@@ -96,7 +96,7 @@ def register_tools(mcp, context: BrainContext) -> None:
             List of detected conflicts with conflicting event pairs, similarity scores,
             and suggested resolution strategies.
         """
-        result = detect_conflicts_impl(context, project_path=context.project_path, limit=limit, threshold=threshold)
+        result = detect_conflicts_impl(context, limit=limit, threshold=threshold)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -117,5 +117,5 @@ def register_tools(mcp, context: BrainContext) -> None:
             List of resolved conflicts with the chosen resolution, confidence score,
             and the resolved state for each conflict.
         """
-        result = resolve_conflicts_impl(context, project_path=context.project_path, limit=limit, threshold=threshold)
+        result = resolve_conflicts_impl(context, limit=limit, threshold=threshold)
         return result.model_dump(mode="json")

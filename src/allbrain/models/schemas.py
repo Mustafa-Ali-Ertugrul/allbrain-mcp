@@ -44,7 +44,25 @@ class BaseInputModel(BaseModel):
     Rejects null bytes, sanitizes strings for prompt injection,
     and enforces size limits on dict fields to prevent DoS attacks.
     All MCP tool input models should inherit from this.
+
+    Legacy/server-context fields such as ``project_path`` are stripped
+    before validation: project binding always comes from BrainContext,
+    never from client or wrapper kwargs. Stripping (rather than rejecting)
+    keeps ``extra='forbid'`` tools compatible with older MCP clients and
+    internal wrappers that still pass ``project_path=context.project_path``.
     """
+
+    @model_validator(mode="before")
+    @classmethod
+    def _strip_server_context_fields(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        # Copy only when a legacy key is present to avoid unnecessary allocs.
+        if "project_path" not in data:
+            return data
+        cleaned = dict(data)
+        cleaned.pop("project_path", None)
+        return cleaned
 
     @field_validator("*", mode="after")
     @classmethod

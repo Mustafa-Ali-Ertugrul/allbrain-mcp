@@ -132,7 +132,7 @@ def register_tools(mcp, context: BrainContext) -> None:
             Current world state dict with environment context, recent observations,
             and the associated event record.
         """
-        result = observe_world_impl(context, project_path=context.project_path, limit=limit)
+        result = observe_world_impl(context, limit=limit)
         return result.model_dump(mode="json")
 
     @mcp.tool
@@ -162,5 +162,5 @@ def register_tools(mcp, context: BrainContext) -> None:
             Simulation result with predicted state changes, risk score, and
             the recorded observation and simulation events.
         """
-        result = simulate_action_impl(context, action=action, project_path=context.project_path, limit=limit)
+        result = simulate_action_impl(context, action=action, limit=limit)
         return result.model_dump(mode="json")
