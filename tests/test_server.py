@@ -84,7 +84,7 @@ def test_resume_project_builds_state_and_keeps_tool_usage_secondary(tmp_path: Pa
     save_event_impl(context, type="task_started", payload={"task": "Update middleware"})
     save_event_impl(context, type="file_modified", payload={}, file_path="middleware.py")
 
-    result = resume_project_impl(context, include_git=False)
+    result = resume_project_impl(context, detail="full", include_git=False)
 
     assert result.ok
     data = result.data
@@ -107,7 +107,7 @@ def test_resume_project_scores_blocker_over_open_task(tmp_path: Path) -> None:
     save_event_impl(context, type="task_started", payload={"task": "Update middleware"})
     save_event_impl(context, type="task_blocked", payload={"reason": "Redis unavailable"})
 
-    result = resume_project_impl(context, include_git=False)
+    result = resume_project_impl(context, detail="full", include_git=False)
 
     assert result.ok
     assert result.data["next_step"] == "Resolve blockers first"
@@ -154,7 +154,7 @@ def test_quality_gate_event_consistency_resume_state_is_stable(tmp_path: Path) -
         "tool_call",
     ]
 
-    result = resume_project_impl(context, include_git=False)
+    result = resume_project_impl(context, detail="full", include_git=False)
 
     assert result.ok
     data = result.data
@@ -181,7 +181,7 @@ def test_quality_gate_agent_switch_simulation_reconstructs_context(tmp_path: Pat
     save_event_impl(codex_context, type="failure", payload={"error": "Redis limiter failed"})
 
     claude_context = make_context_from_repo(repo, project_root, "claude")
-    result = resume_project_impl(claude_context, include_git=False)
+    result = resume_project_impl(claude_context, detail="full", include_git=False)
 
     assert result.ok
     data = result.data

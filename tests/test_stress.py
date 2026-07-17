@@ -63,7 +63,7 @@ def test_stress_1000_events_random_churn_and_5_agent_switches(tmp_path: Path) ->
     tool_usage_counts = []
     for agent_index, agent in enumerate(["claude", "antigravity", "opencode", "codex-2", "claude-2"]):
         context = make_context_from_repo(repo, project_root, agent)
-        result = resume_project_impl(context, include_git=False, limit=5000)
+        result = resume_project_impl(context, detail="full", include_git=False, limit=5000)
         assert result.ok, result.error
 
         data = result.data

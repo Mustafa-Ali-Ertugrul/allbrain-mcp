@@ -78,7 +78,7 @@ def test_snapshot_correctness_matches_full_replay_for_500_events(tmp_path: Path)
     snapshot_result = create_snapshot_impl(context, force=True, limit=5000)
     events_after_snapshot = repo.list_events(project_path=project_root, limit=5000)
     full_data = ResumeEngine().resume(events=events_after_snapshot, project_path=str(project_root), include_git=False)
-    incremental = resume_project_impl(context, include_git=False, use_snapshot=True, limit=5000)
+    incremental = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=5000)
 
     assert snapshot_result.ok
     assert incremental.ok
@@ -130,7 +130,7 @@ def test_incremental_resume_applies_delta_after_snapshot_cursor(tmp_path: Path) 
     assert snapshot_result.ok
 
     assert save_event_impl(context, type="task_started", payload={"task": "Delta task"}).ok
-    incremental = resume_project_impl(context, include_git=False, use_snapshot=True, limit=500)
+    incremental = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=500)
 
     assert incremental.ok
     assert incremental.data["snapshot_used"] is True
@@ -163,7 +163,7 @@ def test_snapshot_limit_is_batch_size_and_preserves_early_history(tmp_path: Path
     snapshot_result = create_snapshot_impl(context, force=True, limit=2)
     events = repo.list_events(project_path=project_root, limit=100)
     full = ResumeEngine().resume(events=events, project_path=str(project_root), include_git=False)
-    incremental = resume_project_impl(context, include_git=False, use_snapshot=True, limit=2)
+    incremental = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=2)
 
     assert snapshot_result.ok
     assert "early-task" in snapshot_result.data["state"]["task_view"]["tasks"]
@@ -203,7 +203,7 @@ def test_snapshot_uses_high_water_cursor_and_later_events_resume_as_delta(tmp_pa
     monkeypatch.setattr(repo, "list_events_after", list_events_after_with_concurrent_append)
 
     snapshot_result = create_snapshot_impl(context, force=True, limit=1)
-    resumed = resume_project_impl(context, include_git=False, use_snapshot=True, limit=100)
+    resumed = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=100)
 
     assert snapshot_result.ok
     assert snapshot_result.data["event_cursor"] == before.id
@@ -258,7 +258,7 @@ def test_agent_switch_uses_snapshot_for_context_reconstruction(tmp_path: Path) -
     assert snapshot_result.ok
 
     claude = make_context_from_repo(repo, project_root, "claude", auto_snapshot_threshold=10_000)
-    resumed = resume_project_impl(claude, include_git=False, use_snapshot=True, limit=1000)
+    resumed = resume_project_impl(claude, detail="full", include_git=False, use_snapshot=True, limit=1000)
 
     assert resumed.ok
     assert resumed.data["snapshot_used"] is True
@@ -293,7 +293,7 @@ def test_snapshot_delta_rebuild_equals_full_replay(tmp_path: Path) -> None:
 
     events = repo.list_events(project_path=project_root, limit=1000)
     full = ResumeEngine().resume(events=events, project_path=str(project_root), include_git=False)
-    incremental = resume_project_impl(context, include_git=False, use_snapshot=True, limit=1000)
+    incremental = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=1000)
 
     assert incremental.ok
     assert comparable_resume(incremental.data) == comparable_resume(full)
@@ -315,7 +315,7 @@ def test_incompatible_snapshot_falls_back_to_full_replay(tmp_path: Path) -> None
         metadata={"reducer_version": "old", "compression_version": "old", "snapshot_schema_version": "old"},
     )
 
-    resumed = resume_project_impl(context, include_git=False, use_snapshot=True, limit=100)
+    resumed = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=100)
 
     assert resumed.ok
     assert resumed.data["snapshot_used"] is False
@@ -345,7 +345,7 @@ def test_v6_snapshot_adapter_adds_scheduler_defaults(tmp_path: Path) -> None:
         metadata={"snapshot_schema_version": "6.0", "reducer_version": "6.0", "compression_version": "1.1"},
     )
 
-    resumed = resume_project_impl(context, include_git=False, use_snapshot=True, limit=100)
+    resumed = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=100)
 
     assert resumed.ok
     assert resumed.data["snapshot_used"] is True
@@ -375,7 +375,7 @@ def test_snapshot_resume_10k_events_under_50ms(tmp_path: Path) -> None:
     assert snapshot_result.ok
 
     started = time.perf_counter()
-    resumed = resume_project_impl(context, include_git=False, use_snapshot=True, limit=25_000)
+    resumed = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=25_000)
     elapsed_ms = (time.perf_counter() - started) * 1000
 
     assert resumed.ok

@@ -7,27 +7,12 @@ from typing import Any
 _SLIM_LIST_CAP = 20
 _SLIM_FILES_CAP = 30
 _SLIM_TASKS_CAP = 25
-_FULL_FILES_CAP = 200
-_FULL_TOOL_USAGE_CAP = 50
 
 
 def _cap_list(value: Any, limit: int) -> list[Any]:
     if not isinstance(value, list):
         return []
     return value[:limit]
-
-
-def cap_full_resume_view(data: dict[str, Any]) -> dict[str, Any]:
-    """Soft-cap unbounded lists in full resume payloads (token/DoS guard)."""
-    if not isinstance(data, dict):
-        return data
-    out = dict(data)
-    out["detail"] = "full"
-    if isinstance(out.get("working_files"), list):
-        out["working_files"] = out["working_files"][:_FULL_FILES_CAP]
-    if isinstance(out.get("tool_usage"), list):
-        out["tool_usage"] = out["tool_usage"][:_FULL_TOOL_USAGE_CAP]
-    return out
 
 
 def slim_resume_view(data: dict[str, Any]) -> dict[str, Any]:
