@@ -117,6 +117,9 @@ include = [
     "src/allbrain/models",
     "src/allbrain/security",
     "src/allbrain/server/tools/decorators.py",
+    "src/allbrain/server/resources.py",
+    "src/allbrain/server/prompts.py",
+    "src/allbrain/ops/inventory.py",
     "packages/allbrain-sdk/src",
 ]
 pythonVersion = "3.12"
