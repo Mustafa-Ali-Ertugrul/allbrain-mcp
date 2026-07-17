@@ -178,6 +178,8 @@ class BrainRepository:
         stale_before: datetime,
     ) -> list[Session]:
         """Close heartbeat-expired sessions without deleting historical rows."""
+        from sqlalchemy import func
+
         project = self.get_project_by_path(project_path)
         if project is None:
             return []
@@ -186,19 +188,27 @@ class BrainRepository:
             sessions = db.exec(
                 select(Session).where(Session.project_id == project.id, Session.status == "active")
             ).all()
+            comparable_cutoff = stale_before if stale_before.tzinfo is not None else stale_before.replace(tzinfo=UTC)
+            expired: list[Session] = []
             for session in sessions:
                 heartbeat = session.last_heartbeat_at or session.started_at
                 comparable_heartbeat = heartbeat if heartbeat.tzinfo is not None else heartbeat.replace(tzinfo=UTC)
-                comparable_cutoff = (
-                    stale_before if stale_before.tzinfo is not None else stale_before.replace(tzinfo=UTC)
-                )
-                if comparable_heartbeat >= comparable_cutoff:
-                    continue
-                events = db.exec(
-                    select(Event).where(Event.session_id == session.id).order_by(col(Event.created_at).desc())
-                ).all()
-                session.status = "stale" if events else "empty"
-                session.ended_at = events[0].created_at if events else session.started_at
+                if comparable_heartbeat < comparable_cutoff:
+                    expired.append(session)
+            last_event_at: dict[int, datetime] = {}
+            if expired:
+                session_ids = [session.id for session in expired if session.id is not None]
+                if session_ids:
+                    rows = db.exec(
+                        select(Event.session_id, func.max(Event.created_at))
+                        .where(col(Event.session_id).in_(session_ids))
+                        .group_by(Event.session_id)
+                    ).all()
+                    last_event_at = {int(sid): ts for sid, ts in rows if sid is not None}
+            for session in expired:
+                latest = last_event_at.get(session.id or -1)
+                session.status = "stale" if latest is not None else "empty"
+                session.ended_at = latest if latest is not None else session.started_at
                 session.last_heartbeat_at = session.ended_at
                 session.close_reason = "heartbeat_expired"
                 db.add(session)

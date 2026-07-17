@@ -148,15 +148,26 @@ class BrainContext:
                 self._client_version = version
 
     def ensure_active_session(self) -> Any:
+        """Return active session; create outside the lock to avoid holding it on DB I/O."""
+        with self._session_lock:
+            if self._active_session is not None:
+                return self._active_session
+            project_path = self.project_path
+            agent_name = self._agent_name
+            server_instance_id = self.server_instance_id
+            client_name = self._client_name
+            client_version = self._client_version
+        # DB write outside lock (SQLite busy_timeout serializes writers).
+        created = self._repository.create_session(
+            project_path=project_path,
+            agent_name=agent_name,
+            server_instance_id=server_instance_id,
+            client_name=client_name,
+            client_version=client_version,
+        )
         with self._session_lock:
             if self._active_session is None:
-                self._active_session = self._repository.create_session(
-                    project_path=self.project_path,
-                    agent_name=self._agent_name,
-                    server_instance_id=self.server_instance_id,
-                    client_name=self._client_name,
-                    client_version=self._client_version,
-                )
+                self._active_session = created
             return self._active_session
 
     def increment_and_check_event_count(self) -> bool:
