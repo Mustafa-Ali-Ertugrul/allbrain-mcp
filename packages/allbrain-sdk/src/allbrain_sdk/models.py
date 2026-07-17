@@ -6,6 +6,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+ToolProfile = Literal["minimal", "memory", "collaboration", "reasoning", "core", "full"]
+
 
 class AllBrainConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -15,7 +17,7 @@ class AllBrainConfig(BaseModel):
     db_path: Path | None = None
     command: str = "uv"
     server_cwd: Path | None = None
-    tool_profile: Literal["core", "full"] = "core"
+    tool_profile: ToolProfile = "core"
     timeout_seconds: float = Field(default=120.0, gt=0)
 
 

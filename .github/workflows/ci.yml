@@ -28,6 +28,7 @@ jobs:
       - run: uv run pyright
       - run: uv run python scripts/check_complexity.py
       - run: uv run python scripts/check_architecture.py
+      - run: uv run python scripts/check_maturity.py
       - run: uv run python scripts/check_readme_commands.py
 
   security:

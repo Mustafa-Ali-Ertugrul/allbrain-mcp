@@ -105,6 +105,7 @@ When in doubt for production deploys: stick to **production core** + SQLite/Post
 | Mechanism | What it does |
 |-----------|----------------|
 | `scripts/check_architecture.py` | Domain packages cannot import `server`/`storage` |
+| `scripts/check_maturity.py` | Disk packages must appear in this inventory |
 | MCP tool profiles (`minimal` / `core` / `full`) | Limits which tools clients see |
 | Pipeline flags | Keep foresight/scenarios/etc. off by default |
 | CI extras | `postgres`, `distributed` tested separately from default SQLite path |

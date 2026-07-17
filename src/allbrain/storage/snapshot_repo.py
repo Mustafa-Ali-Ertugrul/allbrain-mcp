@@ -63,6 +63,15 @@ class SnapshotRepo:
                 return None
             return record_to_snapshot(record)
 
+    def delete_for_project(self, project_id: int) -> int:
+        """Delete all snapshot rows for a project. Returns deleted row count."""
+        with open_write_session(self.engine) as db:
+            records = list(db.exec(select(SnapshotRecord).where(SnapshotRecord.project_id == project_id)).all())
+            for record in records:
+                db.delete(record)
+            db.commit()
+            return len(records)
+
 
 def record_to_snapshot(record: SnapshotRecord) -> Snapshot:
     return Snapshot(

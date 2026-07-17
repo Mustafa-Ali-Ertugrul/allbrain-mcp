@@ -82,7 +82,11 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     events = context.repository.list_events(
         project_path=context.project_path,
         session_id=data.session_id,
+        agent_id=data.agent_id,
         type=data.type,
+        branch=data.branch,
+        since=data.since,
+        until=data.until,
         limit=data.limit,
     )
     audit_tool_call(
@@ -157,31 +161,21 @@ def register_tools(mcp, context: BrainContext) -> None:
     def list_events(
         session_id: int | None = None,
         type: str | None = None,
+        agent_id: str | None = None,
+        branch: str | None = None,
+        since: str | None = None,
+        until: str | None = None,
         limit: int = 50,
     ) -> dict[str, Any]:
-        """Query and filter recorded events from the append-only event log.
-
-        Use this to inspect the history of agent actions and system state changes.
-        Events are ordered by the database-authoritative stream position for
-        consistent replay.
-
-        Side effects: Read-only operation; no data is modified.
-
-        Args:
-            session_id: Optional session ID to filter by (useful for multi-agent
-                debugging and isolation).
-            type: Optional event type filter in snake_case (e.g., "task_created",
-                "task_assigned", "tool_call"). SCREAMING_SNAKE aliases accepted.
-            limit: Maximum number of events to return (default 50, maximum 500).
-
-        Returns:
-            List of events as JSON-serializable dicts, each containing id, type,
-            timestamp, source, payload, and optional metadata fields.
-        """
+        """Query event log (filters: session_id, type, agent_id, branch, since, until, limit)."""
         result = list_events_impl(
             context,
             session_id=session_id,
             type=type,
+            agent_id=agent_id,
+            branch=branch,
+            since=since,
+            until=until,
             limit=limit,
         )
         return result.model_dump(mode="json")

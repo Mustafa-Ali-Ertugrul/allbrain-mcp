@@ -273,6 +273,59 @@ def run_mcp_server(project: Path, agent: str, db_path: Path | None, tool_profile
         repository.close()
 
 
+@app.command("rebuild-snapshots")
+def rebuild_snapshots(
+    project: Annotated[Path, typer.Option("--project", "-p", help="Project root.")] = Path("."),
+    db_path: Annotated[Path | None, typer.Option("--db-path", help="SQLite DB path.")] = None,
+    yes: Annotated[bool, typer.Option("--yes", help="Confirm destructive snapshot rebuild.")] = False,
+) -> None:
+    """Delete project snapshots and rebuild a baseline snapshot from the event log."""
+    if not yes:
+        console.print("Refusing to rebuild without --yes (event log is kept; snapshot rows are deleted).")
+        raise typer.Exit(code=1)
+
+    from allbrain.server.tools._shared import load_events_through_cursor
+    from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
+    from allbrain.snapshot.constants import MAX_SNAPSHOT_EVENT_COUNT
+    from allbrain.storage.snapshot_repo import SnapshotRepo
+
+    resolved_db = _resolve_db(db_path)
+    project_path = canonicalize_project_path(project)
+    engine = create_engine_for_path(resolved_db)
+    init_db(engine)
+    repository = BrainRepository(engine)
+    try:
+        project_row = repository.get_project_by_path(project_path)
+        if project_row is None or project_row.id is None:
+            console.print(f"No project found for {project_path}")
+            raise typer.Exit(code=1)
+        snapshot_repo = SnapshotRepo(engine)
+        deleted = snapshot_repo.delete_for_project(project_row.id)
+        events = load_events_through_cursor(
+            repository,
+            project_path=project_path,
+            batch_size=MAX_SNAPSHOT_EVENT_COUNT,
+        )
+        if not events:
+            console.print_json(data={"deleted_snapshots": deleted, "built": False, "reason": "no_events"})
+            return
+        snapshot = SnapshotEngine(SnapshotBuilder(include_derived=False), snapshot_repo).build_snapshot(
+            project_id=project_row.id,
+            events=events,
+        )
+        console.print_json(
+            data={
+                "deleted_snapshots": deleted,
+                "built": True,
+                "snapshot_id": snapshot.id,
+                "event_cursor": snapshot.event_cursor,
+                "event_count": len(events),
+            }
+        )
+    finally:
+        engine.dispose()
+
+
 @app.command("repair-history")
 def repair_history(
     project: Annotated[Path, typer.Option("--project", "-p", help="Project root to repair.")] = Path("."),

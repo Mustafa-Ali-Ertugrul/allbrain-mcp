@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import json
 import logging
+import os
 import re
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 logger = logging.getLogger(__name__)
 
-SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
+_MAX_ENV_PATTERN_LENGTH = 512
+
+_BUILTIN_SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"sk-ant-[a-zA-Z0-9_-]{20,}", re.IGNORECASE), "anthropic"),
     (re.compile(r"sk-(?!ant-)[a-zA-Z0-9]{20,}", re.IGNORECASE), "openai"),
     (re.compile(r"ghp_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_pat"),
@@ -32,6 +36,61 @@ SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\bAC[a-fA-F0-9]{32}\b", re.IGNORECASE), "twilio"),
     (re.compile(r"AIza[0-9A-Za-z_-]{35}"), "google_api_key"),
 ]
+
+
+def _load_env_secret_patterns() -> list[tuple[re.Pattern, str]]:
+    """Load optional extra patterns from ALLBRAIN_SECRET_PATTERNS_JSON."""
+    raw = os.environ.get("ALLBRAIN_SECRET_PATTERNS_JSON", "").strip()
+    if not raw:
+        return []
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.warning("ALLBRAIN_SECRET_PATTERNS_JSON is not valid JSON; ignoring")
+        return []
+    if not isinstance(payload, list):
+        logger.warning("ALLBRAIN_SECRET_PATTERNS_JSON must be a JSON list; ignoring")
+        return []
+    loaded: list[tuple[re.Pattern, str]] = []
+    for index, item in enumerate(payload):
+        if not isinstance(item, dict):
+            logger.warning("ALLBRAIN_SECRET_PATTERNS_JSON[%s] must be an object; skipping", index)
+            continue
+        pattern = item.get("pattern")
+        name = item.get("name") or f"env_pattern_{index}"
+        if not isinstance(pattern, str) or not pattern:
+            logger.warning("ALLBRAIN_SECRET_PATTERNS_JSON[%s] missing pattern; skipping", index)
+            continue
+        if len(pattern) > _MAX_ENV_PATTERN_LENGTH:
+            logger.warning(
+                "ALLBRAIN_SECRET_PATTERNS_JSON[%s] pattern exceeds %s chars; skipping",
+                index,
+                _MAX_ENV_PATTERN_LENGTH,
+            )
+            continue
+        if not isinstance(name, str) or not name:
+            name = f"env_pattern_{index}"
+        try:
+            loaded.append((re.compile(pattern), name))
+        except re.error as exc:
+            logger.warning(
+                "ALLBRAIN_SECRET_PATTERNS_JSON[%s] invalid regex (%s); skipping",
+                index,
+                exc,
+            )
+    return loaded
+
+
+SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
+    *_BUILTIN_SECRET_PATTERNS,
+    *_load_env_secret_patterns(),
+]
+
+
+def reload_secret_patterns() -> None:
+    """Rebuild SECRET_PATTERNS from builtins + current env (for tests)."""
+    SECRET_PATTERNS[:] = [*_BUILTIN_SECRET_PATTERNS, *_load_env_secret_patterns()]
+
 
 # Dict key names that indicate sensitive values (after normalization).
 _SENSITIVE_FIELD_NAMES: set[str] = {

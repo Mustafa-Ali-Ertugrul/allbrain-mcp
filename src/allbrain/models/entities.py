@@ -37,6 +37,8 @@ class Event(SQLModel, table=True):
     __table_args__ = (
         Index("ix_event_project_id_id", "project_id", "id"),
         Index("ix_event_stream_position", "stream_position"),
+        Index("ix_event_project_type_created", "project_id", "type", "created_at"),
+        Index("ix_event_session_type_created", "session_id", "type", "created_at"),
         # DB-level stream invariant: one position per project (see Alembic 0002).
         UniqueConstraint("project_id", "stream_position", name="uq_event_project_stream_position"),
     )
