@@ -120,13 +120,14 @@ def register_prompts(mcp: Any, context: BrainContext) -> None:
             ]
         with open_session(context.repository.engine) as db:
             session = context.repository.get_session(db, session_id)
-        if session is None or session.project_id != project.id:
-            return [
-                {
-                    "role": "user",
-                    "content": sanitize_text(f"Session {session_id} not found in this project."),
-                },
-            ]
+            if session is None or session.project_id != project.id:
+                return [
+                    {
+                        "role": "user",
+                        "content": sanitize_text(f"Session {session_id} not found in this project."),
+                    },
+                ]
+            agent_name = session.agent_name
         events = context.repository.list_events(
             project_path=context.project_path,
             session_id=session_id,
@@ -136,7 +137,7 @@ def register_prompts(mcp: Any, context: BrainContext) -> None:
         summary = _json_text(
             {
                 "session_id": session_id,
-                "agent_name": session.agent_name,
+                "agent_name": agent_name,
                 "total_events": len(events),
                 "conflict_events": [{"id": e.id, "type": e.type, "payload": e.payload} for e in conflict_events],
             }
@@ -145,7 +146,7 @@ def register_prompts(mcp: Any, context: BrainContext) -> None:
             {
                 "role": "user",
                 "content": sanitize_text(
-                    f"Investigate conflict in session {session_id} (agent: {session.agent_name}).\nContext:\n{summary}"
+                    f"Investigate conflict in session {session_id} (agent: {agent_name}).\nContext:\n{summary}"
                 ),
             },
             {
