@@ -176,7 +176,8 @@ class ResumeProjectInput(BaseInputModel):
     limit: int = Field(default=5000, ge=1, le=50000)
     include_git: bool = True
     use_snapshot: bool = True
-    detail: str = Field(default="full", pattern="^(slim|full)$")
+    # Agents should get compact context by default; pass detail="full" for dumps.
+    detail: str = Field(default="slim", pattern="^(slim|full)$")
 
 
 class ContextPackInput(BaseInputModel):
@@ -333,7 +334,7 @@ class OrchestratorInput(BaseInputModel):
     limit: int = Field(default=5000, ge=1, le=50000)
     include_git: bool = True
     use_snapshot: bool = True
-    detail: str = Field(default="full", pattern="^(slim|full)$")
+    detail: str = Field(default="slim", pattern="^(slim|full)$")
 
 
 class RunDecisionPipelineInput(BaseInputModel):

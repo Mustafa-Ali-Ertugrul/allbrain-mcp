@@ -367,10 +367,10 @@ def backup(
     console.print(f"Backup saved: {dest}")
 
 
-def _doctor_clients(*, project: Path, json_output: bool) -> None:
+def _doctor_clients(*, project: Path, json_output: bool, db_path: Path | None = None) -> None:
     from allbrain.ops import build_clients_report, format_clients_report
 
-    report = build_clients_report(project)
+    report = build_clients_report(project, db_path=db_path)
     if json_output:
         console.print_json(data=report)
         return
@@ -389,7 +389,7 @@ def doctor(
 ) -> None:
     """Check database health; optionally inspect multi-client MCP installs."""
     if clients:
-        _doctor_clients(project=project, json_output=json_output)
+        _doctor_clients(project=project, json_output=json_output, db_path=db_path)
         return
 
     resolved_db = _resolve_db(db_path)

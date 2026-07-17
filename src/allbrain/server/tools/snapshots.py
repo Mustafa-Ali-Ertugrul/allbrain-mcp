@@ -24,7 +24,7 @@ from allbrain.server.tools._shared import (
     snapshot_to_dict,
 )
 from allbrain.server.tools.decorators import handle_tool_errors
-from allbrain.server.tools.projections import slim_resume_view
+from allbrain.server.tools.projections import cap_full_resume_view, slim_resume_view
 
 # Imports from allbrain.snapshot, allbrain.resume, and allbrain.storage.snapshot_repo
 # are done locally inside functions to avoid circular import chains.
@@ -83,7 +83,7 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             tool_args=data.model_dump(mode="json"),
             session_id=bound_session_id,
         )
-        payload = slim_resume_view(resume) if data.detail == "slim" else resume
+        payload = slim_resume_view(resume) if data.detail == "slim" else cap_full_resume_view(resume)
         return ToolResult(ok=True, data=payload)
     except ValidationError as exc:
         return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
@@ -200,15 +200,17 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = 5000,
         include_git: bool = True,
         use_snapshot: bool = True,
-        detail: str = "full",
+        detail: str = "slim",
     ) -> dict[str, Any]:
         """Resume project state from snapshot or event history (read-only).
+
+        Prefer ``get_context_pack`` for agent day-to-day context.
 
         Args:
             limit: Max events to process (default 5000).
             include_git: Include git context (default True).
             use_snapshot: Prefer snapshot resume (default True).
-            detail: \"full\" (default) full payload; \"slim\" compact agent summary.
+            detail: \"slim\" compact summary (default); \"full\" full dump (capped).
         """
         result = resume_project_impl(
             context, limit=limit, include_git=include_git, use_snapshot=use_snapshot, detail=detail
