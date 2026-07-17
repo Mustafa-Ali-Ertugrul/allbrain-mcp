@@ -160,6 +160,10 @@ class ListEventsInput(BaseInputModel):
 
     session_id: int | None = None
     type: str | None = None
+    agent_id: str | None = Field(default=None, max_length=255)
+    branch: str | None = Field(default=None, max_length=255)
+    since: datetime | None = None
+    until: datetime | None = None
     limit: int = Field(default=50, ge=1, le=500)
 
     @field_validator("type")
@@ -168,6 +172,12 @@ class ListEventsInput(BaseInputModel):
         if value is None:
             return None
         return normalize_event_type_name(value)
+
+    @model_validator(mode="after")
+    def validate_time_range(self) -> ListEventsInput:
+        if self.since is not None and self.until is not None and self.since > self.until:
+            raise ValueError("since must be less than or equal to until")
+        return self
 
 
 class ResumeProjectInput(BaseInputModel):

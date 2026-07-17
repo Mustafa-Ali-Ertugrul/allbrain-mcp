@@ -217,11 +217,11 @@ See [SUMMARY.md](../SUMMARY.md) for the current security hardening coverage stat
 - [docs/setup.md](setup.md) — installation and troubleshooting
 - [docs/database_scaling_policy.md](database_scaling_policy.md) — storage backends
 - [docs/repository_context_aware_api.md](repository_context_aware_api.md) — multi-repo API
-- [sprint32](sprint32_system_integration_runtime_core_architecture.md) — runtime core initial design
-- [sprint41](sprint41_foundations_hardening.md) — foundations hardening and invariants
-- [sprint33–39](sprint33_world_model.md) — reasoning layer designs
-- [sprint52–57](sprint52_capabilities.md) — learning and capability signal designs
-- [sprint13–14](sprint13_reliability_architecture.md) — reliability and resilience designs
-- [sprint64–69](sprint64_failure_memory.md) — recovery subsystem designs
-- [sprint21–31](sprint21_policy_engine_architecture.md) — governance and policy designs
-- [sprint51](sprint51_routing.md) — routing architecture
+- [sprint32](sprints/sprint32_system_integration_runtime_core_architecture.md) — runtime core initial design
+- [sprint41](sprints/sprint41_foundations_hardening.md) — foundations hardening and invariants
+- [sprint33–39](sprints/sprint33_world_model.md) — reasoning layer designs
+- [sprint52–57](sprints/sprint52_capabilities.md) — learning and capability signal designs
+- [sprint13–14](sprints/sprint13_reliability_architecture.md) — reliability and resilience designs
+- [sprint64–69](sprints/sprint64_failure_memory.md) — recovery subsystem designs
+- [sprint21–31](sprints/sprint21_policy_engine_architecture.md) — governance and policy designs
+- [sprint51](sprints/sprint51_routing.md) — routing architecture

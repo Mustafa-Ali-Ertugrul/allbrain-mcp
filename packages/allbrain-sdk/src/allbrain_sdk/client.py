@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Literal, Self
+from typing import Any, Self
 
 from fastmcp import Client
 from fastmcp.client.transports import StdioTransport
 from pydantic import ValidationError
 
 from allbrain_sdk.errors import AllBrainProtocolError, AllBrainToolError
-from allbrain_sdk.models import AllBrainConfig, EventRecord, ResumeProjectResult, ToolEnvelope
+from allbrain_sdk.models import AllBrainConfig, EventRecord, ResumeProjectResult, ToolEnvelope, ToolProfile
 
 
 class AllBrainClient:
@@ -23,7 +23,7 @@ class AllBrainClient:
         db_path: str | Path | None = None,
         command: str = "uv",
         server_cwd: str | Path | None = None,
-        tool_profile: Literal["core", "full"] = "core",
+        tool_profile: ToolProfile = "core",
         timeout_seconds: float = 120.0,
     ) -> None:
         self.config = AllBrainConfig(
@@ -95,12 +95,26 @@ class AllBrainClient:
         *,
         session_id: int | None = None,
         event_type: str | None = None,
+        agent_id: str | None = None,
+        branch: str | None = None,
+        since: str | None = None,
+        until: str | None = None,
         limit: int = 50,
     ) -> list[EventRecord]:
-        payload = await self._call(
-            "list_events",
-            {"session_id": session_id, "type": event_type, "limit": limit},
-        )
+        arguments: dict[str, Any] = {"limit": limit}
+        if session_id is not None:
+            arguments["session_id"] = session_id
+        if event_type is not None:
+            arguments["type"] = event_type
+        if agent_id is not None:
+            arguments["agent_id"] = agent_id
+        if branch is not None:
+            arguments["branch"] = branch
+        if since is not None:
+            arguments["since"] = since
+        if until is not None:
+            arguments["until"] = until
+        payload = await self._call("list_events", arguments)
         return [EventRecord.model_validate(item) for item in payload]
 
     async def resume_project(

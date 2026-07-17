@@ -90,7 +90,8 @@ packages = ["src/allbrain"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-n auto --dist=worksteal"
+# Parallelism is opt-in: CI passes -n auto. Local `pytest` works without xdist.
+# addopts left empty so a bare pytest install does not fail on unknown -n.
 
 [tool.coverage.run]
 source = ["allbrain"]

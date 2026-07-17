@@ -451,6 +451,9 @@ class BrainRepository:
         session_id: int | None = None,
         agent_id: str | None = None,
         type: str | None = None,
+        branch: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         limit: int = 50,
     ) -> list[EventRead]:
         project = self.get_project_by_path(project_path)
@@ -464,6 +467,12 @@ class BrainRepository:
                 statement = statement.where(Event.agent_id == agent_id)
             if type is not None:
                 statement = statement.where(Event.type == type)
+            if branch is not None:
+                statement = statement.where(Event.branch == branch)
+            if since is not None:
+                statement = statement.where(col(Event.created_at) >= since)
+            if until is not None:
+                statement = statement.where(col(Event.created_at) <= until)
             # Order by the database-authoritative stream position rather than
             # UUIDv7 id so clock skew across hosts cannot reorder events.
             statement = statement.order_by(col(Event.stream_position).desc()).limit(limit)
