@@ -104,8 +104,13 @@ _DEFAULT_RPS = int(os.environ.get("ALLBRAIN_RATE_LIMIT_RPS", "1000"))
 _MINUTE_LIMITER = SlidingWindowCounter(window_seconds=60.0, max_events=_DEFAULT_RPM)
 _BURST_LIMITER = SlidingWindowCounter(window_seconds=1.0, max_events=_DEFAULT_RPS)
 
-_TOOL_MINUTE_RPS = _DEFAULT_RPM
-_TOOL_BURST_RPS = _DEFAULT_RPS
+# Per-minute ceiling (name is limit, not RPS).
+_TOOL_MINUTE_LIMIT = _DEFAULT_RPM
+# Per-second burst ceiling.
+_TOOL_BURST_LIMIT = _DEFAULT_RPS
+# Back-compat aliases (older code/tests may reference RPS names).
+_TOOL_MINUTE_RPS = _TOOL_MINUTE_LIMIT
+_TOOL_BURST_RPS = _TOOL_BURST_LIMIT
 
 # Cross-limiter lock: serialises burst + minute check-and-record so that
 # the two-phase commit is atomic from the caller's perspective.
@@ -133,9 +138,11 @@ def check_tool_rate(tool_name: str) -> None:
     with _cross_limiter_lock:
         burst_ok, burst_count = _BURST_LIMITER.check_and_record(tool_name)
         if not burst_ok:
-            raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {burst_count}/{_TOOL_BURST_RPS} per second")
+            raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {burst_count}/{_TOOL_BURST_LIMIT} per second")
 
         minute_ok, minute_count = _MINUTE_LIMITER.check_and_record(tool_name)
         if not minute_ok:
             _BURST_LIMITER.pop_last(tool_name)
-            raise RateLimitError(f"Rate limit exceeded for '{tool_name}': {minute_count}/{_TOOL_MINUTE_RPS} per minute")
+            raise RateLimitError(
+                f"Rate limit exceeded for '{tool_name}': {minute_count}/{_TOOL_MINUTE_LIMIT} per minute"
+            )

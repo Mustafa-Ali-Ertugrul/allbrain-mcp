@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import logging
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
-from time import time
+from time import sleep, time
 from typing import Any
 
 from allbrain.models.schemas import UserInputError
@@ -22,6 +23,7 @@ from allbrain.storage.database import open_write_session
 
 logger = logging.getLogger(__name__)
 _SNAPSHOT_LEASE_STALE_SECONDS = 300
+_LEASE_REMOVE_ATTEMPTS = 3
 
 
 def datetime_now_iso() -> str:
@@ -192,7 +194,7 @@ def maybe_auto_snapshot(
     if not force_baseline and not context.increment_and_check_event_count():
         return
     with profile_stage("snapshot.lease"):
-        lease = _snapshot_lease(context.project_path)
+        lease = _snapshot_lease(context)
     with lease as acquired:
         if not acquired:
             return
@@ -250,18 +252,60 @@ def _build_snapshot_if_due(
 
 
 @contextmanager
-def _snapshot_lease(project_path: str | Path):
-    digest = sha256(str(Path(project_path).resolve()).encode("utf-8")).hexdigest()[:20]
+def _snapshot_lease(context: BrainContext) -> Iterator[bool]:
+    """Cross-process snapshot mutex: PG advisory lock, else filesystem lease."""
+    engine = context.repository.engine
+    dialect = getattr(engine.dialect, "name", "") or ""
+    if dialect.startswith("postgres"):
+        yield from _pg_snapshot_lease(engine, context.project_path)
+        return
+    digest = sha256(str(Path(context.project_path).resolve()).encode("utf-8")).hexdigest()[:20]
     lease_path = Path(tempfile.gettempdir()) / f"allbrain-snapshot-{digest}.lock"
     acquired = _try_create_lease(lease_path)
     try:
         yield acquired
     finally:
-        if acquired:
-            try:
+        if acquired and not _force_remove_lease(lease_path):
+            logger.warning("Snapshot lease cleanup failed: %s", lease_path.name)
+
+
+def _advisory_lock_key(project_path: str | Path) -> int:
+    """Stable signed 63-bit key for pg_try_advisory_lock (bigint)."""
+    digest = sha256(str(Path(project_path).resolve()).encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big") & 0x7FFFFFFFFFFFFFFF
+
+
+def _pg_snapshot_lease(engine: Any, project_path: str | Path) -> Iterator[bool]:
+    from sqlalchemy import text
+
+    key = _advisory_lock_key(project_path)
+    conn = engine.connect()
+    acquired = False
+    try:
+        acquired = bool(conn.execute(text("SELECT pg_try_advisory_lock(:k)"), {"k": key}).scalar())
+        yield acquired
+    finally:
+        try:
+            if acquired:
+                conn.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": key})
+                conn.commit()
+        except Exception:
+            logger.exception("PostgreSQL snapshot lease unlock failed")
+        conn.close()
+
+
+def _force_remove_lease(lease_path: Path) -> bool:
+    """Best-effort remove of lease dir/file (Windows may need retries)."""
+    for attempt in range(_LEASE_REMOVE_ATTEMPTS):
+        try:
+            if lease_path.is_dir():
                 lease_path.rmdir()
-            except OSError:
-                logger.warning("Snapshot lease cleanup failed: %s", lease_path.name)
+            elif lease_path.exists():
+                lease_path.unlink()
+            return not lease_path.exists()
+        except OSError:
+            sleep(0.05 * (attempt + 1))
+    return not lease_path.exists()
 
 
 def _try_create_lease(lease_path: Path) -> bool:
@@ -270,9 +314,14 @@ def _try_create_lease(lease_path: Path) -> bool:
         return True
     except FileExistsError:
         try:
+            if lease_path.is_file():
+                lease_path.unlink()
+                lease_path.mkdir()
+                return True
             stale = time() - lease_path.stat().st_mtime > _SNAPSHOT_LEASE_STALE_SECONDS
             if stale:
-                lease_path.rmdir()
+                if not _force_remove_lease(lease_path):
+                    return False
                 lease_path.mkdir()
                 return True
         except OSError:

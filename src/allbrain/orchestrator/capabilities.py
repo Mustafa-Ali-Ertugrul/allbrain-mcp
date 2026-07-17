@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from importlib import resources
 from pathlib import Path
 from typing import Any
+
+_default_registry = None
+_default_registry_lock = threading.Lock()
+_default_registry_source: str | None = None
 
 
 class CapabilityRegistry:
@@ -13,10 +18,25 @@ class CapabilityRegistry:
 
     @classmethod
     def from_env(cls) -> CapabilityRegistry:
+        """Return process-wide registry for the current ALLBRAIN_CAPABILITIES_PATH."""
+        global _default_registry, _default_registry_source
         override = os.getenv("ALLBRAIN_CAPABILITIES_PATH")
-        if override:
-            return cls(cls.load_path(Path(override)))
-        return cls()
+        source = override or ""
+        with _default_registry_lock:
+            if _default_registry is not None and _default_registry_source == source:
+                return _default_registry
+            registry = cls(cls.load_path(Path(override))) if override else cls()
+            _default_registry = registry
+            _default_registry_source = source
+            return registry
+
+    @classmethod
+    def reset_default_cache(cls) -> None:
+        """Test helper: drop cached from_env() instance."""
+        global _default_registry, _default_registry_source
+        with _default_registry_lock:
+            _default_registry = None
+            _default_registry_source = None
 
     @staticmethod
     def load_default() -> dict[str, dict[str, int]]:
