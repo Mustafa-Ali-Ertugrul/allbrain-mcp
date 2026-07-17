@@ -265,19 +265,22 @@ async def main() -> None:
             names = {{getattr(t, "name", None) for t in tools}}
             if "get_context_pack" not in names:
                 return False, "tool not registered"
-            return await call_ok("get_context_pack", {{"window_hours": 24, "include_git": False, "limit": 100}})
+            pack_args = {{"window_hours": 24, "include_git": False, "limit": 100}}
+            return await call_ok("get_context_pack", pack_args)
         await check("tools", "list_tools", list_tools_ok())
         save_args = {{"type": "file_modified", "payload": {{"check": "product_verify"}}}}
         await check("events", "save_event", call_ok("save_event", save_args))
         await check("events", "list_events", call_ok("list_events", {{}}))
         await check("session", "resume_project", call_ok("resume_project", {{}}))
-        await check("session", "get_context_pack", pack_ok())        print("Component   Check              Result Detail")
+        await check("session", "get_context_pack", pack_ok())
+        print("Component Check Result Detail")
         print("-" * 60)
         failed = 0
         for component, name, ok, detail in results:
             status = "PASS" if ok else "FAIL"
             failed += 0 if ok else 1
-            print(f"{{component:<12}} {{name:<18}} {{status:<6}} {{detail}}")
+            row = f"{{component:<12}} {{name:<18}} {{status:<6}} {{detail}}"
+            print(row)
         total = len(results)
         label = "PASS" if failed == 0 else "FAIL"
         print(f"\\n{{label}}: {{total - failed}}/{{total}} checks passed")
