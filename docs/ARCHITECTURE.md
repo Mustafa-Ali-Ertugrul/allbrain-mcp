@@ -17,7 +17,8 @@ AllBrain is an **event-sourced multi-agent memory and orchestration server**. Du
 
 ## 2. Repository Layout & Bounded Contexts
 
-`src/allbrain/` contains 82 top-level packages. They group into 11 bounded contexts:
+`src/allbrain/` contains **85 top-level packages**. They group into 11 bounded contexts  
+(see [package-maturity.md](package-maturity.md) for production vs opt-in vs experimental):
 
 | Context | Key packages | Responsibility |
 |---|---|---|
