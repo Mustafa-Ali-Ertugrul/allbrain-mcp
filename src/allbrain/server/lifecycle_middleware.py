@@ -71,12 +71,8 @@ class AllBrainMiddleware(Middleware):
         )
         record_git_changes(self.brain, session, confidence="medium")
         self.brain.repository.touch_session(session.id or 0)
-        try:
-            from allbrain.server.tools._shared import maybe_auto_snapshot
-
-            maybe_auto_snapshot(self.brain, project_path=self.brain.project_path)
-        except Exception:
-            logger.exception("Automatic snapshot check failed")
+        # Auto-snapshot is owned by write-tool paths (maybe_auto_snapshot after
+        # append_event), not middleware — avoids double checks on every call.
         return result
 
 

@@ -9,19 +9,14 @@ from allbrain.server.queueing import QueueCoordinator
 
 
 def _run(context: BrainContext, operation, **kwargs: Any) -> ToolResult:
-    try:
-        context.ensure_active_session()
-        return ToolResult(ok=True, data=operation(**kwargs))
-    except (ValueError, TypeError) as exc:
-        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
+    context.ensure_active_session()
+    return ToolResult(ok=True, data=operation(**kwargs))
 
 
 def register_tools(mcp, context: BrainContext) -> None:
+
     @mcp.tool
-    def claim_task(
-        workflow_id: str | None = None,
-        lease_ttl_seconds: int = 120,
-    ) -> dict[str, Any]:
+    def claim_task(workflow_id: str | None = None, lease_ttl_seconds: int = 120) -> dict[str, Any]:
         """Claim a task from the distributed queue for exclusive processing.
 
         Use this in worker/actor patterns where multiple agents compete for tasks.
@@ -49,11 +44,7 @@ def register_tools(mcp, context: BrainContext) -> None:
         ).model_dump(mode="json")
 
     @mcp.tool
-    def renew_task_lease(
-        queue_item_id: str,
-        lease_id: str,
-        lease_ttl_seconds: int = 120,
-    ) -> dict[str, Any]:
+    def renew_task_lease(queue_item_id: str, lease_id: str, lease_ttl_seconds: int = 120) -> dict[str, Any]:
         """Extend the lease on a claimed task to prevent automatic release.
 
         Use this when a task is taking longer than expected. Call periodically
@@ -81,10 +72,7 @@ def register_tools(mcp, context: BrainContext) -> None:
 
     @mcp.tool
     def complete_task(
-        queue_item_id: str,
-        lease_id: str,
-        output: str,
-        artifacts: list[str] | None = None,
+        queue_item_id: str, lease_id: str, output: str, artifacts: list[str] | None = None
     ) -> dict[str, Any]:
         """Mark a claimed task as completed with output and optional artifacts.
 
@@ -111,16 +99,11 @@ def register_tools(mcp, context: BrainContext) -> None:
             lease_id=lease_id,
             server_instance_id=context.server_instance_id,
             output=sanitize_text(output),
-            artifacts=[sanitize_text(item) for item in (artifacts or [])],
+            artifacts=[sanitize_text(item) for item in artifacts or []],
         ).model_dump(mode="json")
 
     @mcp.tool
-    def fail_task(
-        queue_item_id: str,
-        lease_id: str,
-        reason: str,
-        requeue: bool = True,
-    ) -> dict[str, Any]:
+    def fail_task(queue_item_id: str, lease_id: str, reason: str, requeue: bool = True) -> dict[str, Any]:
         """Mark a claimed task as failed with a reason, optionally requeuing it.
 
         Use this when a task cannot be completed due to errors, timeouts, or

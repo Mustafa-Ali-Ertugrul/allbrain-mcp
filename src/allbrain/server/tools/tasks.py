@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from pydantic import ValidationError
-
 from allbrain.events import EventType
 from allbrain.models.schemas import (
     AssignTaskInput,
@@ -27,7 +25,6 @@ from allbrain.orchestrator import (
     TaskStateReducer,
 )
 from allbrain.security.rate_limit import check_tool_rate
-from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.queueing import QueueCoordinator
 from allbrain.server.tools._shared import (
@@ -47,386 +44,322 @@ logger = logging.getLogger(__name__)
 
 @handle_tool_errors
 def create_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        check_tool_rate("create_task")
-        data = CreateTaskInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        task_id = data.task_id or TaskStateReducer.new_task_id()
-        with atomic_write(context) as db:
-            event = context.repository.append_event(
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                type=EventType.TASK_CREATED.value,
-                source="allbrain",
-                payload={
-                    "task_id": task_id,
-                    "goal": data.goal,
-                    "kind": data.kind,
-                    "related_files": data.related_files,
-                    "priority": data.priority,
-                    "enqueue": data.enqueue,
-                    "agent_id": data.agent_id,
-                },
-                task_hint=data.goal,
-                importance=data.priority,
-                _session=db,
-            )
-            audit_tool_call(
-                context,
-                tool_name="create_task",
-                tool_args=data.model_dump(mode="json") | {"task_id": task_id},
-                session_id=bound_session_id,
-                _session=db,
-            )
-        maybe_auto_snapshot(context, project_path=context.project_path)
-        payload = event_to_read(event).model_dump(mode="json")
-        if data.enqueue:
-            agent_id = data.agent_id or context.agent_name
-            if not agent_id:
-                raise UserInputError("agent_id is required when enqueue=true and context has no agent")
-            queue_item = QueueCoordinator(context).enqueue_task(
-                task_id=task_id,
-                goal=data.goal,
-                kind=data.kind,
-                priority=data.priority,
-                agent_id=agent_id,
-                workflow_id=task_id,
-                metadata={"source": "create_task"},
-                idempotency_prefix="task",
-            )
-            payload["queue"] = queue_item
-        return ToolResult(ok=True, data=payload)
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
+    check_tool_rate("create_task")
+    data = CreateTaskInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    task_id = data.task_id or TaskStateReducer.new_task_id()
+    with atomic_write(context) as db:
+        event = context.repository.append_event(
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            type=EventType.TASK_CREATED.value,
+            source="allbrain",
+            payload={
+                "task_id": task_id,
+                "goal": data.goal,
+                "kind": data.kind,
+                "related_files": data.related_files,
+                "priority": data.priority,
+                "enqueue": data.enqueue,
+                "agent_id": data.agent_id,
+            },
+            task_hint=data.goal,
+            importance=data.priority,
+            _session=db,
+        )
+        audit_tool_call(
+            context,
+            tool_name="create_task",
+            tool_args=data.model_dump(mode="json") | {"task_id": task_id},
+            session_id=bound_session_id,
+            _session=db,
+        )
+    maybe_auto_snapshot(context, project_path=context.project_path)
+    payload = event_to_read(event).model_dump(mode="json")
+    if data.enqueue:
+        agent_id = data.agent_id or context.agent_name
+        if not agent_id:
+            raise UserInputError("agent_id is required when enqueue=true and context has no agent")
+        queue_item = QueueCoordinator(context).enqueue_task(
+            task_id=task_id,
+            goal=data.goal,
+            kind=data.kind,
+            priority=data.priority,
+            agent_id=agent_id,
+            workflow_id=task_id,
+            metadata={"source": "create_task"},
+            idempotency_prefix="task",
+        )
+        payload["queue"] = queue_item
+    return ToolResult(ok=True, data=payload)
 
 
 @handle_tool_errors
 def assign_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        check_tool_rate("assign_task")
-        data = AssignTaskInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        project = context.repository.get_project_by_path(context.project_path)
-        if project is None or project.id is None:
-            raise UserInputError("project does not exist")
-        task_state, metrics = load_task_projection(context, project_id=project.id, batch_size=data.limit)
-        task = get_task_or_raise(task_state, data.task_id)
-        assignment = DeterministicScheduler().choose_agent(
-            task=task,
-            task_state=task_state,
-            explicit_agent_id=data.agent_id,
-            events=[],
-            metrics=metrics,
-        )
-        with atomic_write(context) as db:
-            event = context.repository.append_event(
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                type=EventType.TASK_ASSIGNED.value,
-                source="allbrain",
-                payload={
-                    "task_id": data.task_id,
-                    "agent_id": assignment["agent_id"],
-                    "score": assignment["score"],
-                    "breakdown": assignment["breakdown"],
-                    "reason": assignment["reason"],
-                    "candidate_agents": assignment["candidate_agents"],
-                },
-                task_hint=task.get("goal"),
-                _session=db,
-            )
-            decision_event = append_selection_decision(
-                context,
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                task_id=data.task_id,
-                assignment=assignment,
-                assignment_event_id=event.id,
-                task_hint=task.get("goal"),
-                _session=db,
-            )
-            audit_tool_call(
-                context,
-                tool_name="assign_task",
-                tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id,
-                _session=db,
-            )
-        maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(
-            ok=True,
-            data={
-                "event": event_to_read(event).model_dump(mode="json"),
-                "decision_event": event_to_read(decision_event).model_dump(mode="json"),
-                "assignment": assignment,
+    check_tool_rate("assign_task")
+    data = AssignTaskInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    project = context.repository.get_project_by_path(context.project_path)
+    if project is None or project.id is None:
+        raise UserInputError("project does not exist")
+    task_state, metrics = load_task_projection(context, project_id=project.id, batch_size=data.limit)
+    task = get_task_or_raise(task_state, data.task_id)
+    assignment = DeterministicScheduler().choose_agent(
+        task=task,
+        task_state=task_state,
+        explicit_agent_id=data.agent_id,
+        events=[],
+        metrics=metrics,
+    )
+    with atomic_write(context) as db:
+        event = context.repository.append_event(
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            type=EventType.TASK_ASSIGNED.value,
+            source="allbrain",
+            payload={
+                "task_id": data.task_id,
+                "agent_id": assignment["agent_id"],
+                "score": assignment["score"],
+                "breakdown": assignment["breakdown"],
+                "reason": assignment["reason"],
+                "candidate_agents": assignment["candidate_agents"],
             },
+            task_hint=task.get("goal"),
+            _session=db,
         )
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+        decision_event = append_selection_decision(
+            context,
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            task_id=data.task_id,
+            assignment=assignment,
+            assignment_event_id=event.id,
+            task_hint=task.get("goal"),
+            _session=db,
+        )
+        audit_tool_call(
+            context,
+            tool_name="assign_task",
+            tool_args=data.model_dump(mode="json"),
+            session_id=bound_session_id,
+            _session=db,
+        )
+    maybe_auto_snapshot(context, project_path=context.project_path)
+    return ToolResult(
+        ok=True,
+        data={
+            "event": event_to_read(event).model_dump(mode="json"),
+            "decision_event": event_to_read(decision_event).model_dump(mode="json"),
+            "assignment": assignment,
+        },
+    )
 
 
 @handle_tool_errors
 def add_task_dependency_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        data = TaskDependencyInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        with atomic_write(context) as db:
-            event = context.repository.append_event(
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                type=EventType.TASK_DEPENDENCY_ADDED.value,
-                source="allbrain",
-                payload={"task_id": data.task_id, "depends_on": data.depends_on},
-                _session=db,
-            )
-            audit_tool_call(
-                context,
-                tool_name="add_task_dependency",
-                tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id,
-                _session=db,
-            )
-        maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+    data = TaskDependencyInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    with atomic_write(context) as db:
+        event = context.repository.append_event(
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            type=EventType.TASK_DEPENDENCY_ADDED.value,
+            source="allbrain",
+            payload={"task_id": data.task_id, "depends_on": data.depends_on},
+            _session=db,
+        )
+        audit_tool_call(
+            context,
+            tool_name="add_task_dependency",
+            tool_args=data.model_dump(mode="json"),
+            session_id=bound_session_id,
+            _session=db,
+        )
+    maybe_auto_snapshot(context, project_path=context.project_path)
+    return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
 
 
 @handle_tool_errors
 def change_task_priority_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        data = TaskPriorityInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        with atomic_write(context) as db:
-            event = context.repository.append_event(
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                type=EventType.TASK_PRIORITY_CHANGED.value,
-                source="allbrain",
-                payload={"task_id": data.task_id, "old": data.old, "new": data.new},
-                importance=data.new,
-                _session=db,
-            )
-            audit_tool_call(
-                context,
-                tool_name="change_task_priority",
-                tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id,
-                _session=db,
-            )
-        maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+    data = TaskPriorityInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    with atomic_write(context) as db:
+        event = context.repository.append_event(
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            type=EventType.TASK_PRIORITY_CHANGED.value,
+            source="allbrain",
+            payload={"task_id": data.task_id, "old": data.old, "new": data.new},
+            importance=data.new,
+            _session=db,
+        )
+        audit_tool_call(
+            context,
+            tool_name="change_task_priority",
+            tool_args=data.model_dump(mode="json"),
+            session_id=bound_session_id,
+            _session=db,
+        )
+    maybe_auto_snapshot(context, project_path=context.project_path)
+    return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
 
 
 @handle_tool_errors
 def handoff_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        data = HandoffTaskInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        project = context.repository.get_project_by_path(context.project_path)
-        if project is None or project.id is None:
-            raise UserInputError("project does not exist")
-        task_state, metrics = load_task_projection(context, project_id=project.id, batch_size=data.limit)
-        task = get_task_or_raise(task_state, data.task_id)
-        recommendation = HandoffEngine().recommend(
-            task=task,
-            task_state=task_state,
-            from_agent=data.from_agent,
-            to_agent=data.to_agent,
-            events=[],
-            metrics=metrics,
-        )
-        assignment = recommendation["assignment"]
-        with atomic_write(context) as db:
-            handoff_event = context.repository.append_event(
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                type=EventType.HANDOFF_CREATED.value,
-                source="allbrain",
-                payload={
-                    "task_id": data.task_id,
-                    "from_agent": data.from_agent,
-                    "to_agent": recommendation["to_agent"],
-                    "reason": data.reason,
-                    "assignment": recommendation["assignment"],
-                },
-                task_hint=task.get("goal"),
-                _session=db,
-            )
-            assigned_event = context.repository.append_event(
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                type=EventType.TASK_ASSIGNED.value,
-                source="allbrain",
-                payload={
-                    "task_id": data.task_id,
-                    "agent_id": assignment["agent_id"],
-                    "score": assignment["score"],
-                    "breakdown": assignment["breakdown"],
-                    "reason": "handoff",
-                    "candidate_agents": assignment["candidate_agents"],
-                },
-                task_hint=task.get("goal"),
-                caused_by=handoff_event.id,
-                _session=db,
-            )
-            decision_event = append_selection_decision(
-                context,
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                task_id=data.task_id,
-                assignment=assignment,
-                assignment_event_id=assigned_event.id,
-                task_hint=task.get("goal"),
-                caused_by=handoff_event.id,
-                _session=db,
-            )
-            audit_tool_call(
-                context,
-                tool_name="handoff_task",
-                tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id,
-                _session=db,
-            )
-        maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(
-            ok=True,
-            data={
-                "handoff_event": event_to_read(handoff_event).model_dump(mode="json"),
-                "assigned_event": event_to_read(assigned_event).model_dump(mode="json"),
-                "decision_event": event_to_read(decision_event).model_dump(mode="json"),
-                "handoff": recommendation,
+    data = HandoffTaskInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    project = context.repository.get_project_by_path(context.project_path)
+    if project is None or project.id is None:
+        raise UserInputError("project does not exist")
+    task_state, metrics = load_task_projection(context, project_id=project.id, batch_size=data.limit)
+    task = get_task_or_raise(task_state, data.task_id)
+    recommendation = HandoffEngine().recommend(
+        task=task,
+        task_state=task_state,
+        from_agent=data.from_agent,
+        to_agent=data.to_agent,
+        events=[],
+        metrics=metrics,
+    )
+    assignment = recommendation["assignment"]
+    with atomic_write(context) as db:
+        handoff_event = context.repository.append_event(
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            type=EventType.HANDOFF_CREATED.value,
+            source="allbrain",
+            payload={
+                "task_id": data.task_id,
+                "from_agent": data.from_agent,
+                "to_agent": recommendation["to_agent"],
+                "reason": data.reason,
+                "assignment": recommendation["assignment"],
             },
+            task_hint=task.get("goal"),
+            _session=db,
         )
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+        assigned_event = context.repository.append_event(
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            type=EventType.TASK_ASSIGNED.value,
+            source="allbrain",
+            payload={
+                "task_id": data.task_id,
+                "agent_id": assignment["agent_id"],
+                "score": assignment["score"],
+                "breakdown": assignment["breakdown"],
+                "reason": "handoff",
+                "candidate_agents": assignment["candidate_agents"],
+            },
+            task_hint=task.get("goal"),
+            caused_by=handoff_event.id,
+            _session=db,
+        )
+        decision_event = append_selection_decision(
+            context,
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            task_id=data.task_id,
+            assignment=assignment,
+            assignment_event_id=assigned_event.id,
+            task_hint=task.get("goal"),
+            caused_by=handoff_event.id,
+            _session=db,
+        )
+        audit_tool_call(
+            context,
+            tool_name="handoff_task",
+            tool_args=data.model_dump(mode="json"),
+            session_id=bound_session_id,
+            _session=db,
+        )
+    maybe_auto_snapshot(context, project_path=context.project_path)
+    return ToolResult(
+        ok=True,
+        data={
+            "handoff_event": event_to_read(handoff_event).model_dump(mode="json"),
+            "assigned_event": event_to_read(assigned_event).model_dump(mode="json"),
+            "decision_event": event_to_read(decision_event).model_dump(mode="json"),
+            "handoff": recommendation,
+        },
+    )
 
 
 @handle_tool_errors
 def get_task_graph_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        limit = int(kwargs.get("limit", 5000) or 5000)
-        bound_session_id = bind_session_id(context, None)
-        project = context.repository.get_project_by_path(context.project_path)
-        if project is None or project.id is None:
-            raise UserInputError("project does not exist")
-        task_state, metrics = load_task_projection(context, project_id=project.id, batch_size=limit)
-        agent_state = AgentStateBuilder().build(metrics=metrics, task_state=task_state)
-        graph = TaskGraphBuilder().build(task_state)
-        audit_tool_call(
-            context,
-            tool_name="get_task_graph",
-            tool_args={"limit": limit},
-            session_id=bound_session_id,
-        )
-        return ToolResult(ok=True, data={"task_view": task_state, "task_graph": graph, "agent_state": agent_state})
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+    limit = int(kwargs.get("limit", 5000) or 5000)
+    bound_session_id = bind_session_id(context, None)
+    project = context.repository.get_project_by_path(context.project_path)
+    if project is None or project.id is None:
+        raise UserInputError("project does not exist")
+    task_state, metrics = load_task_projection(context, project_id=project.id, batch_size=limit)
+    agent_state = AgentStateBuilder().build(metrics=metrics, task_state=task_state)
+    graph = TaskGraphBuilder().build(task_state)
+    audit_tool_call(
+        context,
+        tool_name="get_task_graph",
+        tool_args={"limit": limit},
+        session_id=bound_session_id,
+    )
+    return ToolResult(ok=True, data={"task_view": task_state, "task_graph": graph, "agent_state": agent_state})
 
 
 @handle_tool_errors
 def update_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        check_tool_rate("update_task")
-        data = UpdateTaskInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        with atomic_write(context) as db:
-            event = context.repository.append_event(
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                type=EventType.TASK_UPDATED.value,
-                source="allbrain",
-                payload={
-                    "task_id": data.task_id,
-                    "goal": data.goal,
-                    "kind": data.kind,
-                    "related_files": data.related_files,
-                },
-                task_hint=data.goal,
-                _session=db,
-            )
-            audit_tool_call(
-                context,
-                tool_name="update_task",
-                tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id,
-                _session=db,
-            )
-        maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+    check_tool_rate("update_task")
+    data = UpdateTaskInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    with atomic_write(context) as db:
+        event = context.repository.append_event(
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            type=EventType.TASK_UPDATED.value,
+            source="allbrain",
+            payload={
+                "task_id": data.task_id,
+                "goal": data.goal,
+                "kind": data.kind,
+                "related_files": data.related_files,
+            },
+            task_hint=data.goal,
+            _session=db,
+        )
+        audit_tool_call(
+            context,
+            tool_name="update_task",
+            tool_args=data.model_dump(mode="json"),
+            session_id=bound_session_id,
+            _session=db,
+        )
+    maybe_auto_snapshot(context, project_path=context.project_path)
+    return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
 
 
 @handle_tool_errors
 def delete_task_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        check_tool_rate("delete_task")
-        data = DeleteTaskInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        with atomic_write(context) as db:
-            event = context.repository.append_event(
-                project_path=context.project_path,
-                session_id=bound_session_id,
-                type=EventType.TASK_DELETED.value,
-                source="allbrain",
-                payload={"task_id": data.task_id, "reason": data.reason},
-                task_hint=data.reason or data.task_id,
-                _session=db,
-            )
-            audit_tool_call(
-                context,
-                tool_name="delete_task",
-                tool_args=data.model_dump(mode="json"),
-                session_id=bound_session_id,
-                _session=db,
-            )
-        maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+    check_tool_rate("delete_task")
+    data = DeleteTaskInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    with atomic_write(context) as db:
+        event = context.repository.append_event(
+            project_path=context.project_path,
+            session_id=bound_session_id,
+            type=EventType.TASK_DELETED.value,
+            source="allbrain",
+            payload={"task_id": data.task_id, "reason": data.reason},
+            task_hint=data.reason or data.task_id,
+            _session=db,
+        )
+        audit_tool_call(
+            context,
+            tool_name="delete_task",
+            tool_args=data.model_dump(mode="json"),
+            session_id=bound_session_id,
+            _session=db,
+        )
+    maybe_auto_snapshot(context, project_path=context.project_path)
+    return ToolResult(ok=True, data=event_to_read(event).model_dump(mode="json"))
 
 
 def register_tools(mcp, context: BrainContext) -> None:

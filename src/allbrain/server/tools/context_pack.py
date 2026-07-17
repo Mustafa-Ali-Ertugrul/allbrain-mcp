@@ -41,7 +41,7 @@ def _filter_events(events: Any, *, cutoff: datetime, limit: int) -> list[dict[st
         if not isinstance(event, dict):
             continue
         created = event.get("created_at")
-        if created is not None and not _within_window(created, cutoff=cutoff):
+        if created is not None and (not _within_window(created, cutoff=cutoff)):
             continue
         filtered.append(
             {
@@ -66,7 +66,7 @@ def _filter_session_details(details: Any, *, cutoff: datetime) -> list[dict[str,
         if not isinstance(item, dict):
             continue
         started = item.get("started_at")
-        if started is not None and not _within_window(started, cutoff=cutoff):
+        if started is not None and (not _within_window(started, cutoff=cutoff)):
             continue
         kept.append(
             {
@@ -111,45 +111,32 @@ def get_context_pack_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     data = ContextPackInput.model_validate(kwargs)
     bound_session_id = bind_session_id(context, None)
     cutoff = datetime.now(UTC) - timedelta(hours=data.window_hours)
-
     resume = resume_project_impl(
-        context,
-        detail="slim",
-        include_git=data.include_git,
-        use_snapshot=True,
-        limit=data.limit,
+        context, detail="slim", include_git=data.include_git, use_snapshot=True, limit=data.limit
     )
     project = resume.data if resume.ok and isinstance(resume.data, dict) else None
-
     task = _resolve_task_focus(context, data.task_id, data.limit)
     query = _memory_query(explicit=data.query, task=task, project=project)
-
     memory = retrieve_memory_impl(context, query=query, limit=data.limit, top_k=data.top_k)
     events_result = list_events_impl(context, limit=min(data.event_limit, 100))
     sessions = build_session_report(
-        context,
-        limit=data.session_limit,
-        include_empty=False,
-        detail_limit=data.session_detail_limit,
+        context, limit=data.session_limit, include_empty=False, detail_limit=data.session_detail_limit
     )
-
     pack = {
         "pack_version": 1,
         "generated_at": datetime.now(UTC).isoformat(),
         "window_hours": data.window_hours,
         "query": query,
         "task_id": data.task_id,
-        "task": (
-            {
-                "task_id": task.get("task_id") or data.task_id,
-                "goal": task.get("goal"),
-                "status": task.get("status"),
-                "owner": task.get("owner"),
-                "priority": task.get("priority"),
-            }
-            if task
-            else None
-        ),
+        "task": {
+            "task_id": task.get("task_id") or data.task_id,
+            "goal": task.get("goal"),
+            "status": task.get("status"),
+            "owner": task.get("owner"),
+            "priority": task.get("priority"),
+        }
+        if task
+        else None,
         "project": project,
         "sessions": {
             "session_count": sessions.get("session_count"),
@@ -159,26 +146,18 @@ def get_context_pack_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
         },
         "memory": memory.data if memory.ok else {"error": memory.error, "error_code": memory.error_code},
         "recent_events": _filter_events(
-            events_result.data if events_result.ok else [],
-            cutoff=cutoff,
-            limit=data.event_limit,
+            events_result.data if events_result.ok else [], cutoff=cutoff, limit=data.event_limit
         ),
-        "sources": {
-            "resume_ok": resume.ok,
-            "memory_ok": memory.ok,
-            "events_ok": events_result.ok,
-        },
+        "sources": {"resume_ok": resume.ok, "memory_ok": memory.ok, "events_ok": events_result.ok},
     }
     audit_tool_call(
-        context,
-        tool_name="get_context_pack",
-        tool_args=data.model_dump(mode="json"),
-        session_id=bound_session_id,
+        context, tool_name="get_context_pack", tool_args=data.model_dump(mode="json"), session_id=bound_session_id
     )
     return ToolResult(ok=True, data=pack)
 
 
 def register_tools(mcp, context: BrainContext) -> None:
+
     @mcp.tool
     def get_context_pack(
         task_id: str | None = None,

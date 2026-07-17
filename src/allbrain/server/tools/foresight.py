@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from pydantic import ValidationError
-
 from allbrain.events import EventType
 from allbrain.foresight import ForesightEngine
 from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis
@@ -17,9 +15,7 @@ from allbrain.models.schemas import (
     ExplainDecisionInput,
     GenerateFuturePlansInput,
     ToolResult,
-    UserInputError,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
@@ -93,112 +89,96 @@ def _publish_foresight_events(
 
 @handle_tool_errors
 def generate_future_plans_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        data = GenerateFuturePlansInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
-        world_model = WorldModel()
-        engine = ForesightEngine(max_horizon=data.max_horizon)
-        current_state = world_model.observe()
-        context.repository.append_event(
-            project_path=context.project_path,
-            session_id=bound_session_id,
-            type=EventType.WORLD_STATE_OBSERVED.value,
-            source="foresight",
-            payload=current_state.model_dump(mode="json"),
-        )
-        analysis = engine.analyze(current_state, data.action, limit=data.foresight_limit)
-        _publish_foresight_events(context, bound_session_id, project_path, analysis, data.action)
-        audit_tool_call(
-            context,
-            tool_name="generate_future_plans",
-            tool_args=data.model_dump(mode="json"),
-            session_id=bound_session_id,
-        )
-        maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+    data = GenerateFuturePlansInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    project_path = context.project_path
+    world_model = WorldModel()
+    engine = ForesightEngine(max_horizon=data.max_horizon)
+    current_state = world_model.observe()
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=bound_session_id,
+        type=EventType.WORLD_STATE_OBSERVED.value,
+        source="foresight",
+        payload=current_state.model_dump(mode="json"),
+    )
+    analysis = engine.analyze(current_state, data.action, limit=data.foresight_limit)
+    _publish_foresight_events(context, bound_session_id, project_path, analysis, data.action)
+    audit_tool_call(
+        context,
+        tool_name="generate_future_plans",
+        tool_args=data.model_dump(mode="json"),
+        session_id=bound_session_id,
+    )
+    maybe_auto_snapshot(context, project_path=context.project_path)
+    return ToolResult(ok=True, data=analysis.model_dump(mode="json"))
 
 
 @handle_tool_errors
 def evaluate_plan_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        data = EvaluatePlanInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        world_model = WorldModel()
-        engine = ForesightEngine(max_horizon=data.max_horizon)
-        current_state = world_model.observe()
-        context.repository.append_event(
-            project_path=context.project_path,
-            session_id=bound_session_id,
-            type=EventType.WORLD_STATE_OBSERVED.value,
-            source="foresight",
-            payload=current_state.model_dump(mode="json"),
-        )
-        plan = engine.evaluate_custom(current_state, list(data.actions))
-        analysis_payload = {
-            "action": "custom",
-            "plans_count": 1,
-            "plan_ids": ["plan_0"],
-            "template_version": FORESIGHT_TEMPLATE_VERSION,
+    data = EvaluatePlanInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    world_model = WorldModel()
+    engine = ForesightEngine(max_horizon=data.max_horizon)
+    current_state = world_model.observe()
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=bound_session_id,
+        type=EventType.WORLD_STATE_OBSERVED.value,
+        source="foresight",
+        payload=current_state.model_dump(mode="json"),
+    )
+    plan = engine.evaluate_custom(current_state, list(data.actions))
+    analysis_payload = {
+        "action": "custom",
+        "plans_count": 1,
+        "plan_ids": ["plan_0"],
+        "template_version": FORESIGHT_TEMPLATE_VERSION,
+        "analysis_id": "00000000-0000-0000-0000-000000000000",
+    }
+    generated_event = context.repository.append_event(
+        project_path=context.project_path,
+        session_id=bound_session_id,
+        type=EventType.FORESIGHT_GENERATED.value,
+        source="foresight",
+        payload=analysis_payload,
+    )
+    plan_payload = plan.model_dump(mode="json")
+    plan_payload["analysis_id"] = "00000000-0000-0000-0000-000000000000"
+    plan_payload["plan_id"] = "plan_0"
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=bound_session_id,
+        type=EventType.FORESIGHT_EVALUATED.value,
+        source="foresight",
+        payload=plan_payload,
+        caused_by=generated_event.id,
+        impact_score=plan.predicted_success,
+    )
+    rationale = f"custom plan: actions={plan.actions} success={plan.predicted_success:.2f}"
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=bound_session_id,
+        type=EventType.FORESIGHT_RECOMMENDED.value,
+        source="foresight",
+        payload={
             "analysis_id": "00000000-0000-0000-0000-000000000000",
-        }
-        generated_event = context.repository.append_event(
-            project_path=context.project_path,
-            session_id=bound_session_id,
-            type=EventType.FORESIGHT_GENERATED.value,
-            source="foresight",
-            payload=analysis_payload,
-        )
-        plan_payload = plan.model_dump(mode="json")
-        plan_payload["analysis_id"] = "00000000-0000-0000-0000-000000000000"
-        plan_payload["plan_id"] = "plan_0"
-        context.repository.append_event(
-            project_path=context.project_path,
-            session_id=bound_session_id,
-            type=EventType.FORESIGHT_EVALUATED.value,
-            source="foresight",
-            payload=plan_payload,
-            caused_by=generated_event.id,
-            impact_score=plan.predicted_success,
-        )
-        rationale = f"custom plan: actions={plan.actions} success={plan.predicted_success:.2f}"
-        context.repository.append_event(
-            project_path=context.project_path,
-            session_id=bound_session_id,
-            type=EventType.FORESIGHT_RECOMMENDED.value,
-            source="foresight",
-            payload={
-                "analysis_id": "00000000-0000-0000-0000-000000000000",
-                "best_plan": plan.model_dump(mode="json"),
-                "expected_plan": plan.model_dump(mode="json"),
-                "rationale": rationale,
-                "template_version": FORESIGHT_TEMPLATE_VERSION,
-            },
-            caused_by=generated_event.id,
-            impact_score=plan.predicted_success,
-        )
-        audit_tool_call(
-            context,
-            tool_name="evaluate_plan",
-            tool_args=data.model_dump(mode="json"),
-            session_id=bound_session_id,
-        )
-        maybe_auto_snapshot(context, project_path=context.project_path)
-        return ToolResult(ok=True, data=plan.model_dump(mode="json"))
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+            "best_plan": plan.model_dump(mode="json"),
+            "expected_plan": plan.model_dump(mode="json"),
+            "rationale": rationale,
+            "template_version": FORESIGHT_TEMPLATE_VERSION,
+        },
+        caused_by=generated_event.id,
+        impact_score=plan.predicted_success,
+    )
+    audit_tool_call(
+        context,
+        tool_name="evaluate_plan",
+        tool_args=data.model_dump(mode="json"),
+        session_id=bound_session_id,
+    )
+    maybe_auto_snapshot(context, project_path=context.project_path)
+    return ToolResult(ok=True, data=plan.model_dump(mode="json"))
 
 
 def _lookup_foresight_plan(
@@ -227,72 +207,54 @@ def _lookup_foresight_plan(
 
 @handle_tool_errors
 def explain_decision_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        data = ExplainDecisionInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
-        plan_payload, lookup = _lookup_foresight_plan(context, data.plan_id, bound_session_id, project_path)
-        if plan_payload is None or lookup is None:
-            return ToolResult(ok=False, error=f"plan_id '{data.plan_id}' not found in foresight events")
-        from allbrain.foresight.models import FuturePlan
+    data = ExplainDecisionInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    project_path = context.project_path
+    plan_payload, lookup = _lookup_foresight_plan(context, data.plan_id, bound_session_id, project_path)
+    if plan_payload is None or lookup is None:
+        return ToolResult(ok=False, error=f"plan_id '{data.plan_id}' not found in foresight events")
+    from allbrain.foresight.models import FuturePlan
 
-        selected_plan = FuturePlan.model_validate(plan_payload)
-        candidates = [FuturePlan.model_validate(c) for c in lookup["candidates"]]
-        manager = MetaReasoningManager()
-        explanation = manager.explain(
-            selected_plan, candidates, _dummy_foresight_result(selected_plan, lookup["analysis_id"])
-        )
-        audit_tool_call(
-            context,
-            tool_name="explain_decision",
-            tool_args=data.model_dump(mode="json"),
-            session_id=bound_session_id,
-        )
-        return ToolResult(ok=True, data=explanation.model_dump(mode="json"))
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+    selected_plan = FuturePlan.model_validate(plan_payload)
+    candidates = [FuturePlan.model_validate(c) for c in lookup["candidates"]]
+    manager = MetaReasoningManager()
+    explanation = manager.explain(
+        selected_plan, candidates, _dummy_foresight_result(selected_plan, lookup["analysis_id"])
+    )
+    audit_tool_call(
+        context,
+        tool_name="explain_decision",
+        tool_args=data.model_dump(mode="json"),
+        session_id=bound_session_id,
+    )
+    return ToolResult(ok=True, data=explanation.model_dump(mode="json"))
 
 
 @handle_tool_errors
 def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        data = EstimateConfidenceInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
-        plan_payload, lookup = _lookup_foresight_plan(context, data.plan_id, bound_session_id, project_path)
-        if plan_payload is None or lookup is None:
-            return ToolResult(ok=False, error=f"plan_id '{data.plan_id}' not found in foresight events")
-        from allbrain.foresight.models import FuturePlan
+    data = EstimateConfidenceInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    project_path = context.project_path
+    plan_payload, lookup = _lookup_foresight_plan(context, data.plan_id, bound_session_id, project_path)
+    if plan_payload is None or lookup is None:
+        return ToolResult(ok=False, error=f"plan_id '{data.plan_id}' not found in foresight events")
+    from allbrain.foresight.models import FuturePlan
 
-        selected_plan = FuturePlan.model_validate(plan_payload)
-        try:
-            events = context.repository.list_events(project_path=context.project_path, limit=5000)
-            historical = observed_success_rate(events)
-        except Exception:
-            historical = 0.7
-        engine = ConfidenceEngine()
-        estimate = engine.estimate(
-            selected_plan, _dummy_foresight_result(selected_plan, lookup["analysis_id"]), historical
-        )
-        audit_tool_call(
-            context,
-            tool_name="estimate_confidence",
-            tool_args=data.model_dump(mode="json"),
-            session_id=bound_session_id,
-        )
-        return ToolResult(ok=True, data=estimate.model_dump(mode="json"))
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)))
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc))
+    selected_plan = FuturePlan.model_validate(plan_payload)
+    try:
+        events = context.repository.list_events(project_path=context.project_path, limit=5000)
+        historical = observed_success_rate(events)
     except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error")
+        historical = 0.7
+    engine = ConfidenceEngine()
+    estimate = engine.estimate(selected_plan, _dummy_foresight_result(selected_plan, lookup["analysis_id"]), historical)
+    audit_tool_call(
+        context,
+        tool_name="estimate_confidence",
+        tool_args=data.model_dump(mode="json"),
+        session_id=bound_session_id,
+    )
+    return ToolResult(ok=True, data=estimate.model_dump(mode="json"))
 
 
 def _dummy_foresight_result(selected_plan, analysis_id: str):
