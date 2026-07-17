@@ -180,14 +180,16 @@ def test_audit2_scale_performance_baseline_and_snapshot_delta_determinism(tmp_pa
     append_specs(context, specs[9800:])
 
     resume_started = time.perf_counter()
-    resume = resume_project_impl(context, include_git=False, use_snapshot=True, limit=20_000)
+    resume = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=20_000)
     resume_time = (time.perf_counter() - resume_started) * 1000
 
     orchestrate_started = time.perf_counter()
-    snapshot_delta = orchestrate_project_impl(context, include_git=False, use_snapshot=True, limit=20_000)
+    snapshot_delta = orchestrate_project_impl(
+        context, detail="full", include_git=False, use_snapshot=True, limit=20_000
+    )
     orchestrate_time = (time.perf_counter() - orchestrate_started) * 1000
 
-    full_replay = orchestrate_project_impl(context, include_git=False, use_snapshot=False, limit=20_000)
+    full_replay = orchestrate_project_impl(context, detail="full", include_git=False, use_snapshot=False, limit=20_000)
     _, memory_peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 

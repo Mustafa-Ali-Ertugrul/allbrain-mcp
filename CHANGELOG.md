@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking (default):** `resume_project` and `orchestrate_project` now default to `detail="slim"`. Pass `detail="full"` for the previous dump (still soft-capped). Prefer `get_context_pack` for day-to-day agent context.
+
 ### Fixed
 
 - Production hardening: event stream unique invariant on ORM model; redaction key normalize (headers/query); independent snapshot check interval.
+- Installer verify probes `get_context_pack`; `doctor --clients` shows per-agent event freshness (24h).
+- Regression matrix ensures legacy `project_path` kwargs never `extra=forbid`-fail.
 
 ## [0.2.3] - 2026-07-16
 

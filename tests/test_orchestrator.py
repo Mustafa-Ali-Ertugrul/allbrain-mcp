@@ -75,7 +75,7 @@ def test_orchestrator_recommends_handoff_for_blocked_task(tmp_path: Path) -> Non
         agent_id="codex",
     ).ok
 
-    result = orchestrate_project_impl(context, include_git=False, limit=100)
+    result = orchestrate_project_impl(context, detail="full", include_git=False, limit=100)
 
     assert result.ok
     decision = result.data["decision_view"]
@@ -220,8 +220,8 @@ def test_audit_replay_determinism_full_replay_equals_snapshot_delta(tmp_path: Pa
             agent_id=to_agent,
         )
 
-    snapshot_delta = orchestrate_project_impl(context, include_git=False, use_snapshot=True, limit=1000)
-    full_replay = orchestrate_project_impl(context, include_git=False, use_snapshot=False, limit=1000)
+    snapshot_delta = orchestrate_project_impl(context, detail="full", include_git=False, use_snapshot=True, limit=1000)
+    full_replay = orchestrate_project_impl(context, detail="full", include_git=False, use_snapshot=False, limit=1000)
 
     assert snapshot_delta.ok
     assert full_replay.ok

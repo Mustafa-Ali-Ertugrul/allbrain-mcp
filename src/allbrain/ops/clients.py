@@ -176,13 +176,69 @@ def inspect_all_clients(project: Path) -> list[dict[str, Any]]:
     return [inspect_client(name, project) for name in CLIENTS]
 
 
-def build_clients_report(project: Path) -> dict[str, Any]:
+def agent_event_freshness(db_path: Path | str | None, *, hours: int = 24) -> list[dict[str, Any]]:
+    """Per-agent last event time and event counts from a shared SQLite DB.
+
+    Uses stdlib sqlite3 only (ops layer must not import allbrain.storage).
+    """
+    if db_path is None:
+        return []
+    path = Path(db_path).expanduser()
+    if not path.is_file():
+        return []
+    import sqlite3
+
+    win = f"-{int(hours)} hours"
+    try:
+        with sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True) as conn:
+            rows = conn.execute(
+                """
+                SELECT agent_id,
+                       COUNT(*) AS events_total,
+                       MAX(created_at) AS last_event_at,
+                       SUM(CASE WHEN created_at >= datetime('now', ?) THEN 1 ELSE 0 END) AS events_window
+                FROM event
+                WHERE agent_id IS NOT NULL AND agent_id != ''
+                GROUP BY agent_id
+                ORDER BY last_event_at DESC
+                """,
+                (win,),
+            ).fetchall()
+    except sqlite3.Error:
+        return []
+
+    out: list[dict[str, Any]] = []
+    for agent_id, total, last_at, window_count in rows:
+        out.append(
+            {
+                "agent_id": agent_id,
+                "events_total": int(total or 0),
+                "events_window": int(window_count or 0),
+                "window_hours": hours,
+                "last_event_at": str(last_at) if last_at is not None else None,
+            }
+        )
+    return out
+
+
+def _primary_db_path(clients: list[dict[str, Any]]) -> str | None:
+    for item in clients:
+        if item.get("status") == "configured" and item.get("db_path"):
+            return str(item["db_path"])
+    return None
+
+
+def build_clients_report(project: Path, *, db_path: Path | str | None = None) -> dict[str, Any]:
     """Machine-readable multi-client install report."""
+    clients = inspect_all_clients(project)
+    resolved_db = str(db_path) if db_path else _primary_db_path(clients)
     return {
         "allbrain_version": __version__,
         "project": str(project.resolve()),
-        "clients": inspect_all_clients(project),
+        "clients": clients,
         "processes": list_allbrain_processes(),
+        "db_path": resolved_db,
+        "agent_freshness": agent_event_freshness(resolved_db, hours=24),
     }
 
 
@@ -214,6 +270,18 @@ def format_clients_report(report: dict[str, Any]) -> str:
             lines.append(f"  pid={proc.get('pid')} {str(proc.get('cmdline', ''))[:120]}")
     else:
         lines.append("Running AllBrain MCP processes: 0")
+    freshness = report.get("agent_freshness") or []
+    if freshness:
+        lines.append("\nAgent event freshness (24h):")
+        for row in freshness:
+            lines.append(
+                f"  {row.get('agent_id', '?'):<16} "
+                f"events_24h={row.get('events_window', 0)} "
+                f"total={row.get('events_total', 0)} "
+                f"last={row.get('last_event_at') or '-'}"
+            )
+    elif report.get("db_path"):
+        lines.append(f"\nAgent event freshness: no events in {report.get('db_path')}")
     return "\n".join(lines)
 
 

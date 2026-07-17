@@ -87,6 +87,30 @@ def test_resume_and_orchestrate_slim(tmp_path: Path) -> None:
     assert "agent_state" not in orch_slim.data
 
 
+def test_resume_default_is_slim(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    create_task_impl(context, goal="default slim task", kind="testing")
+    result = resume_project_impl(context, include_git=False, limit=200)
+    assert result.ok is True, result.error
+    assert result.data is not None
+    assert result.data.get("detail") == "slim"
+    assert "tool_usage" not in result.data
+    assert len(result.data.get("working_files") or []) <= 30
+
+
+def test_get_context_pack_compact(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    create_task_impl(context, goal="pack task", kind="testing")
+    pack = get_context_pack_impl(context, window_hours=24, limit=100, include_git=False)
+    assert pack.ok is True, pack.error
+    assert pack.data is not None
+    size = len(json.dumps(pack.data, default=str))
+    assert size < 200_000
+    assert pack.data.get("pack_version") == 1
+    assert "project" in pack.data
+    assert "sources" in pack.data
+
+
 def test_core_tool_happy_paths(tmp_path: Path) -> None:
     context = make_context(tmp_path)
     results = {

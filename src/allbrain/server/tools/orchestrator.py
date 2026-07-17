@@ -143,7 +143,7 @@ def register_tools(mcp, context: BrainContext) -> None:
         limit: int = DEFAULT_PIPELINE_EVENT_LIMIT,
         include_git: bool = True,
         use_snapshot: bool = True,
-        detail: str = "full",
+        detail: str = "slim",
     ) -> dict[str, Any]:
         """Build orchestration view (tasks, agents, state). Read-only.
 
@@ -151,7 +151,7 @@ def register_tools(mcp, context: BrainContext) -> None:
             limit: Max events to process (default 10000).
             include_git: Include git context (default True).
             use_snapshot: Prefer snapshot resume (default True).
-            detail: \"full\" nested views (default); \"slim\" task counts and next_step.
+            detail: \"slim\" task counts and next_step (default); \"full\" nested views.
         """
         result = orchestrate_project_impl(
             context, limit=limit, include_git=include_git, use_snapshot=use_snapshot, detail=detail

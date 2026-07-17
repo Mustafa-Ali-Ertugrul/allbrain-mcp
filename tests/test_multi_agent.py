@@ -103,7 +103,7 @@ def test_task_conflict_and_dynamic_resolution(tmp_path: Path) -> None:
     resolved = ConflictResolver().resolve(
         conflicts,
         events,
-        resume_project_impl(claude, include_git=False, use_snapshot=False).data["agent_view"],
+        resume_project_impl(claude, detail="full", include_git=False, use_snapshot=False).data["agent_view"],
     )
 
     assert any(conflict["level"] == "L2" for conflict in conflicts)
@@ -117,7 +117,7 @@ def test_multi_agent_resume_layered_output_and_conflict_first_decision(tmp_path:
         save_event_impl(context, type="file_modified", payload={}, file_path="auth.py", impact_score=0.5)
 
     claude = make_context_from_repo(repo, project_root, "claude")
-    result = resume_project_impl(claude, include_git=False, use_snapshot=False)
+    result = resume_project_impl(claude, detail="full", include_git=False, use_snapshot=False)
 
     assert result.ok
     data = result.data
@@ -169,7 +169,7 @@ def test_v3_snapshot_adapter_maps_legacy_state(tmp_path: Path) -> None:
         metadata={"snapshot_schema_version": "3.1", "reducer_version": "3.1", "compression_version": "1.1"},
     )
 
-    result = resume_project_impl(context, include_git=False, use_snapshot=True)
+    result = resume_project_impl(context, detail="full", include_git=False, use_snapshot=True)
 
     assert result.ok
     assert result.data["snapshot_used"] is True
@@ -194,7 +194,7 @@ def test_resolver_does_not_pretend_to_resolve_low_margin_conflict(tmp_path: Path
     )
 
     opencode = make_context_from_repo(repo, project_root, "opencode")
-    result = resume_project_impl(opencode, include_git=False, use_snapshot=False)
+    result = resume_project_impl(opencode, detail="full", include_git=False, use_snapshot=False)
 
     assert result.ok
     decision = result.data["decision_view"]
@@ -212,7 +212,7 @@ def test_conflict_aware_next_step_overrides_global_resume_next_step(tmp_path: Pa
     save_event_impl(codex, type="file_modified", payload={}, file_path="auth.py", impact_score=0.8)
     save_event_impl(claude, type="file_modified", payload={}, file_path="auth.py", impact_score=0.8)
 
-    result = resume_project_impl(codex, include_git=False, use_snapshot=False)
+    result = resume_project_impl(codex, detail="full", include_git=False, use_snapshot=False)
 
     assert result.ok
     assert result.data["global_view"]["next_step"] == "Investigate the latest failure"
@@ -231,7 +231,10 @@ def test_agent_switch_keeps_agent_views_and_global_context_aligned(tmp_path: Pat
     save_event_impl(claude, type="file_modified", payload={}, file_path="middleware.py", impact_score=0.6)
 
     opencode_resume = resume_project_impl(
-        make_context_from_repo(repo, project_root, "opencode"), include_git=False, use_snapshot=False
+        make_context_from_repo(repo, project_root, "opencode"),
+        detail="full",
+        include_git=False,
+        use_snapshot=False,
     )
 
     assert opencode_resume.ok

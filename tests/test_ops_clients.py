@@ -99,3 +99,48 @@ def test_restart_all_dry_run() -> None:
     assert result.exit_code == 0
     out = result.output or result.stderr or ""
     assert "Dry-run" in out or "Found" in out
+
+
+def test_agent_event_freshness_from_db(tmp_path: Path) -> None:
+    from allbrain.ops.clients import agent_event_freshness, format_clients_report
+    from allbrain.storage import BrainRepository, create_engine_for_path, init_db
+
+    db = tmp_path / "brain.db"
+    engine = create_engine_for_path(db)
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project = tmp_path / "proj"
+    project.mkdir()
+    session = repo.create_session(project, "codex")
+    repo.append_event(
+        project_path=project,
+        session_id=session.id or 0,
+        type="tool_call",
+        source="agent",
+        payload={"n": 1},
+        agent_id="codex",
+    )
+    session_b = repo.create_session(project, "claude-code")
+    repo.append_event(
+        project_path=project,
+        session_id=session_b.id or 0,
+        type="tool_call",
+        source="agent",
+        payload={"n": 2},
+        agent_id="claude-code",
+    )
+    rows = agent_event_freshness(db, hours=24)
+    agents = {row["agent_id"] for row in rows}
+    assert "codex" in agents
+    assert "claude-code" in agents
+    report = {
+        "allbrain_version": "0.2.3",
+        "project": str(tmp_path),
+        "clients": [],
+        "processes": [],
+        "db_path": str(db),
+        "agent_freshness": rows,
+    }
+    text = format_clients_report(report)
+    assert "Agent event freshness" in text
+    assert "codex" in text

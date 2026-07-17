@@ -224,7 +224,7 @@ def install_client(name: str, repo: Path, project: Path, isolate: bool, dry_run:
         merge_server(project / ".kiro" / "settings" / "mcp.json", "mcpServers", server, dry_run)
 
 
-def verify(repo: Path, project: Path) -> None:
+def _verify_probe_script(repo: Path, project: Path) -> str:
     server_args = [
         "run",
         "--project",
@@ -238,9 +238,8 @@ def verify(repo: Path, project: Path) -> None:
         "--db-path",
         str(db_for("installer-verify", False)),
     ]
-    probe = f"""
-import asyncio
-import sys
+    return f"""
+import asyncio, sys
 from fastmcp import Client
 from fastmcp.client.transports import StdioTransport
 
@@ -248,64 +247,52 @@ async def main() -> None:
     transport = StdioTransport("uv", {server_args!r}, cwd={str(project)!r})
     async with Client(transport, timeout=30) as client:
         results: list[tuple[str, str, bool, str]] = []
-
-        # Check 1 — tool listing
-        try:
+        async def check(comp, name, coro):
+            try:
+                ok, detail = await coro
+                results.append((comp, name, ok, detail))
+            except Exception as exc:
+                results.append((comp, name, False, str(exc)))
+        async def list_tools_ok():
             tools = await client.list_tools()
-            ok = len(tools) > 0
-            results.append(("tools", "list_tools", ok, f"{{len(tools)}} tool(s)"))
-        except Exception as exc:
-            results.append(("tools", "list_tools", False, str(exc)))
-
-        # Check 2 — save_event
-        try:
-            payload = {{"type": "verify_test", "payload": {{"check": "product_verify"}}}}
-            r = await client.call_tool("save_event", payload)
-            has_error = getattr(r, "isError", False)
-            results.append(("events", "save_event", not has_error, "ok" if not has_error else str(r)))
-        except Exception as exc:
-            results.append(("events", "save_event", False, str(exc)))
-
-        # Check 3 — list_events (shared memory roundtrip)
-        try:
-            r = await client.call_tool("list_events", {{}})
-            has_error = getattr(r, "isError", False)
-            results.append(("events", "list_events", not has_error, "ok" if not has_error else str(r)))
-        except Exception as exc:
-            results.append(("events", "list_events", False, str(exc)))
-
-        # Check 4 — resume_project
-        try:
-            r = await client.call_tool("resume_project", {{}})
-            has_error = getattr(r, "isError", False)
-            results.append(("session", "resume_project", not has_error, "ok" if not has_error else str(r)))
-        except Exception as exc:
-            results.append(("session", "resume_project", False, str(exc)))
-
-        # Print summary table
-        print(f"{{'Component':<12}} {{'Check':<18}} {{'Result':<6}} Detail")
+            return len(tools) > 0, f"{{len(tools)}} tool(s)"
+        async def call_ok(tool, args):
+            r = await client.call_tool(tool, args)
+            bad = getattr(r, "isError", False)
+            return (not bad), ("ok" if not bad else str(r))
+        async def pack_ok():
+            tools = await client.list_tools()
+            names = {{getattr(t, "name", None) for t in tools}}
+            if "get_context_pack" not in names:
+                return False, "tool not registered"
+            pack_args = {{"window_hours": 24, "include_git": False, "limit": 100}}
+            return await call_ok("get_context_pack", pack_args)
+        await check("tools", "list_tools", list_tools_ok())
+        save_args = {{"type": "file_modified", "payload": {{"check": "product_verify"}}}}
+        await check("events", "save_event", call_ok("save_event", save_args))
+        await check("events", "list_events", call_ok("list_events", {{}}))
+        await check("session", "resume_project", call_ok("resume_project", {{}}))
+        await check("session", "get_context_pack", pack_ok())
+        print("Component Check Result Detail")
         print("-" * 60)
         failed = 0
-        for component, check, ok, detail in results:
+        for component, name, ok, detail in results:
             status = "PASS" if ok else "FAIL"
-            if not ok:
-                failed += 1
-            print(f"{{component:<12}} {{check:<18}} {{status:<6}} {{detail}}")
-        print(f"\\n{{'PASS' if failed == 0 else 'FAIL'}}: {{len(results) - failed}}/{{len(results)}} checks passed")
+            failed += 0 if ok else 1
+            row = f"{{component:<12}} {{name:<18}} {{status:<6}} {{detail}}"
+            print(row)
+        total = len(results)
+        label = "PASS" if failed == 0 else "FAIL"
+        print(f"\\n{{label}}: {{total - failed}}/{{total}} checks passed")
         if failed:
             sys.exit(1)
-
 asyncio.run(main())
 """
-    command = [
-        "uv",
-        "run",
-        "--project",
-        str(repo),
-        "python",
-        "-c",
-        probe,
-    ]
+
+
+def verify(repo: Path, project: Path) -> None:
+    probe = _verify_probe_script(repo, project)
+    command = ["uv", "run", "--project", str(repo), "python", "-c", probe]
     result = subprocess.run(command, check=False)
     if result.returncode:
         raise SystemExit("VERIFY FAILED — one or more product checks failed")
