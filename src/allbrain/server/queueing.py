@@ -98,9 +98,7 @@ class QueueCoordinator:
                 node_id=resolved_node,
                 agent_id=agent_id,
                 state="queued",
-                payload_json=json.dumps(
-                    sanitize_payload(payload), ensure_ascii=True, sort_keys=True
-                ),
+                payload_json=json.dumps(sanitize_payload(payload), ensure_ascii=True, sort_keys=True),
             )
             db.add(record)
             self._event(
