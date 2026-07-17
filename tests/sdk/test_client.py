@@ -256,13 +256,7 @@ async def test_get_context_pack_omits_nullables() -> None:
 @pytest.mark.asyncio
 async def test_detect_conflicts_passes_threshold() -> None:
     client = AllBrainClient(project=".", agent="code-agent")
-    fake = FakeMCPClient(
-        [
-            response(
-                {"ok": True, "data": {"conflicts": [{"id": "c1"}], "count": 1, "threshold": 0.8}}
-            )
-        ]
-    )
+    fake = FakeMCPClient([response({"ok": True, "data": {"conflicts": [{"id": "c1"}], "count": 1, "threshold": 0.8}})])
     client._client = fake  # type: ignore[assignment]
     result = await client.detect_conflicts(threshold=0.8, limit=1000)
     assert result.count == 1

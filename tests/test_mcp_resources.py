@@ -93,9 +93,7 @@ class TestEventById:
             source="allbrain",
             payload={"task_id": "t1", "goal": "test"},
         )
-        events = ctx.repository.list_events(
-            project_path=ctx.project_path, limit=1
-        )
+        events = ctx.repository.list_events(project_path=ctx.project_path, limit=1)
         event_id = events[-1].id
         result = _event_by_id(ctx, event_id)
         assert result["ok"] is True
