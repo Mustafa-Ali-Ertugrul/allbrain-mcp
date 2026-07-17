@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from datetime import UTC
 from pathlib import Path
 from typing import Annotated
 
@@ -118,25 +117,34 @@ def _pick_clients(
     return list(CLIENTS)
 
 
-def _save_demo_event() -> None:
-    """Prompt user and save a demo event."""
+def _save_demo_event(project: Path = Path(".")) -> None:
+    """Prompt user and append a demo event via BrainRepository.append_event."""
+    from allbrain.events.schemas import normalize_event_type_name
+
     engine = create_engine_for_path(default_db_path())
     init_db(engine)
     repo = BrainRepository(engine)
-    task_type = Prompt.ask("Event type", default="task_started")
-    task_desc = Prompt.ask("Description", default="Set up AllBrain MCP")
-    from datetime import datetime
-
-    event_id = repo.save_event(
-        session_id=None,
-        event_type=task_type,
-        payload={"description": task_desc, "source": "cli-onboard"},
-        agent_name="cli-onboard",
-        logged_at=datetime.now(UTC),
-    )
-    engine.dispose()
-    console.print(f"[green]✔ Event saved[/green] [dim](id: {event_id})[/dim]")
-    console.print("  Restart your MCP client and call [bold]list_events()[/bold] to see it.")
+    try:
+        project_path = project.expanduser().resolve()
+        session = repo.create_session(project_path, "cli-onboard")
+        task_type = Prompt.ask("Event type", default="task_started")
+        task_desc = Prompt.ask("Description", default="Set up AllBrain MCP")
+        try:
+            event_type = normalize_event_type_name(task_type)
+        except ValueError:
+            event_type = "task_started"
+        event = repo.append_event(
+            project_path=project_path,
+            session_id=session.id or 0,
+            type=event_type,
+            source="cli-onboard",
+            payload={"description": task_desc, "source": "cli-onboard"},
+            agent_id="cli-onboard",
+        )
+        console.print(f"[green]✔ Event saved[/green] [dim](id: {event.id})[/dim]")
+        console.print("  Restart your MCP client and call [bold]list_events()[/bold] to see it.")
+    finally:
+        engine.dispose()
 
 
 @app.command()
@@ -201,7 +209,7 @@ def onboard(
     # Step 4: first event
     console.print("[bold]Step 4/4 — Save your first event[/bold]")
     if Confirm.ask("Save a demo event to confirm shared memory is working?", default=True):
-        _save_demo_event()
+        _save_demo_event(project)
 
     console.print("\n[bold green]✔ AllBrain MCP is ready![/bold green]")
     console.print("  Next: open your MCP client and start using the tools.")

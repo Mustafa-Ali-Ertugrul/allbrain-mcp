@@ -18,11 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_session_report(
-    context: BrainContext,
-    *,
-    limit: int = 150,
-    include_empty: bool = False,
-    detail_limit: int = 20,
+    context: BrainContext, *, limit: int = 150, include_empty: bool = False, detail_limit: int = 20
 ) -> dict[str, Any]:
     if limit < 1 or limit > 5000:
         raise UserInputError("limit must be between 1 and 5000")
@@ -50,8 +46,7 @@ def build_session_report(
         if len(details) >= detail_limit:
             continue
         summary_event = next(
-            (event for event in reversed(events) if event.type == EventType.SESSION_SUMMARY.value),
-            None,
+            (event for event in reversed(events) if event.type == EventType.SESSION_SUMMARY.value), None
         )
         details.append(
             {
@@ -82,95 +77,72 @@ def build_session_report(
 
 @handle_tool_errors
 def summarize_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        bound_session_id = bind_session_id(context, None)
-        limit = int(kwargs.get("limit", 150) or 150)
-        include_empty = bool(kwargs.get("include_empty", False))
-        detail_limit = int(kwargs.get("detail_limit", 20) or 0)
-        report = build_session_report(
-            context,
-            limit=limit,
-            include_empty=include_empty,
-            detail_limit=detail_limit,
-        )
-        audit_tool_call(
-            context,
-            tool_name="summarize_sessions",
-            tool_args={"limit": limit, "include_empty": include_empty, "detail_limit": detail_limit},
-            session_id=bound_session_id,
-        )
-        return ToolResult(ok=True, data=report)
-    except (UserInputError, ValueError, TypeError) as exc:
-        return ToolResult(ok=False, error=str(exc))
+    bound_session_id = bind_session_id(context, None)
+    limit = int(kwargs.get("limit", 150) or 150)
+    include_empty = bool(kwargs.get("include_empty", False))
+    detail_limit = int(kwargs.get("detail_limit", 20) or 0)
+    report = build_session_report(context, limit=limit, include_empty=include_empty, detail_limit=detail_limit)
+    audit_tool_call(
+        context,
+        tool_name="summarize_sessions",
+        tool_args={"limit": limit, "include_empty": include_empty, "detail_limit": detail_limit},
+        session_id=bound_session_id,
+    )
+    return ToolResult(ok=True, data=report)
 
 
 @handle_tool_errors
 def close_session_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     """Manually close an active session."""
-    try:
-        session_id = kwargs.get("session_id")
-        if session_id is None:
-            raise UserInputError("session_id is required")
-        session_id = int(session_id)
-        reason = str(kwargs.get("reason", "manual"))
-        closed = context.repository.close_session(session_id, status="closed", reason=reason)
-        if closed is None:
-            return ToolResult(ok=False, error=f"Session {session_id} not found")
-        with suppress(UserInputError):
-            audit_tool_call(
-                context,
-                tool_name="close_session",
-                tool_args={"session_id": session_id, "reason": reason},
-                session_id=bind_session_id(context, None),
-            )
-        return ToolResult(
-            ok=True,
-            data={
-                "session_id": closed.id,
-                "status": closed.status,
-                "ended_at": closed.ended_at.isoformat() if closed.ended_at else None,
-            },
+    session_id = kwargs.get("session_id")
+    if session_id is None:
+        raise UserInputError("session_id is required")
+    session_id = int(session_id)
+    reason = str(kwargs.get("reason", "manual"))
+    closed = context.repository.close_session(session_id, status="closed", reason=reason)
+    if closed is None:
+        return ToolResult(ok=False, error=f"Session {session_id} not found")
+    with suppress(UserInputError):
+        audit_tool_call(
+            context,
+            tool_name="close_session",
+            tool_args={"session_id": session_id, "reason": reason},
+            session_id=bind_session_id(context, None),
         )
-    except (UserInputError, ValueError, TypeError) as exc:
-        return ToolResult(ok=False, error=str(exc))
+    return ToolResult(
+        ok=True,
+        data={
+            "session_id": closed.id,
+            "status": closed.status,
+            "ended_at": closed.ended_at.isoformat() if closed.ended_at else None,
+        },
+    )
 
 
 @handle_tool_errors
 def cleanup_stale_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     """Reconcile stale sessions and delete old empty ones."""
-    try:
-        from allbrain.server.lifecycle import reconcile_stale_sessions
+    from allbrain.server.lifecycle import reconcile_stale_sessions
 
-        reconciled = reconcile_stale_sessions(context)
-        before = utc_now() - timedelta(hours=EMPTY_SESSION_TTL_HOURS)
-        deleted = context.repository.cleanup_empty_sessions(project_path=context.project_path, before=before)
-        if deleted:
-            logger.info("Cleaned up %d empty session(s)", deleted)
-        with suppress(UserInputError):
-            audit_tool_call(
-                context,
-                tool_name="cleanup_stale_sessions",
-                tool_args={"reconciled": len(reconciled), "deleted": deleted},
-                session_id=bind_session_id(context, None),
-            )
-        return ToolResult(
-            ok=True,
-            data={
-                "reconciled": len(reconciled),
-                "deleted": deleted,
-            },
+    reconciled = reconcile_stale_sessions(context)
+    before = utc_now() - timedelta(hours=EMPTY_SESSION_TTL_HOURS)
+    deleted = context.repository.cleanup_empty_sessions(project_path=context.project_path, before=before)
+    if deleted:
+        logger.info("Cleaned up %d empty session(s)", deleted)
+    with suppress(UserInputError):
+        audit_tool_call(
+            context,
+            tool_name="cleanup_stale_sessions",
+            tool_args={"reconciled": len(reconciled), "deleted": deleted},
+            session_id=bind_session_id(context, None),
         )
-    except (UserInputError, ValueError, TypeError) as exc:
-        return ToolResult(ok=False, error=str(exc))
+    return ToolResult(ok=True, data={"reconciled": len(reconciled), "deleted": deleted})
 
 
 def register_tools(mcp, context: BrainContext) -> None:
+
     @mcp.tool
-    def summarize_sessions(
-        limit: int = 150,
-        include_empty: bool = False,
-        detail_limit: int = 20,
-    ) -> dict[str, Any]:
+    def summarize_sessions(limit: int = 150, include_empty: bool = False, detail_limit: int = 20) -> dict[str, Any]:
         """Summarize recent agent sessions for observability and debugging.
 
         Use this to analyze agent activity, detect rapid reconnects, and monitor
@@ -188,17 +160,11 @@ def register_tools(mcp, context: BrainContext) -> None:
             agent activity breakdown, rapid_reconnects count, and session details.
         """
         return summarize_sessions_impl(
-            context,
-            limit=limit,
-            include_empty=include_empty,
-            detail_limit=detail_limit,
+            context, limit=limit, include_empty=include_empty, detail_limit=detail_limit
         ).model_dump(mode="json")
 
     @mcp.tool
-    def close_session(
-        session_id: int,
-        reason: str = "manual",
-    ) -> dict[str, Any]:
+    def close_session(session_id: int, reason: str = "manual") -> dict[str, Any]:
         """Manually close an active session with a reason.
 
         Use this to explicitly end a session when an agent is done working.
@@ -215,11 +181,7 @@ def register_tools(mcp, context: BrainContext) -> None:
         Returns:
             Closed session info with session_id, status, and ended_at timestamp.
         """
-        return close_session_impl(
-            context,
-            session_id=session_id,
-            reason=reason,
-        ).model_dump(mode="json")
+        return close_session_impl(context, session_id=session_id, reason=reason).model_dump(mode="json")
 
     @mcp.tool
     def cleanup_stale_sessions() -> dict[str, Any]:

@@ -10,6 +10,7 @@ from uuid6 import uuid7
 
 from allbrain.events import EventType
 from allbrain.models.entities import QueueItemRecord, WorkerLeaseRecord, utc_now
+from allbrain.security.redaction import sanitize_payload
 from allbrain.server.context import BrainContext
 from allbrain.storage.database import open_session
 
@@ -97,7 +98,9 @@ class QueueCoordinator:
                 node_id=resolved_node,
                 agent_id=agent_id,
                 state="queued",
-                payload_json=json.dumps(payload, ensure_ascii=True, sort_keys=True),
+                payload_json=json.dumps(
+                    sanitize_payload(payload), ensure_ascii=True, sort_keys=True
+                ),
             )
             db.add(record)
             self._event(

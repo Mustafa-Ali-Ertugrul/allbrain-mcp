@@ -268,20 +268,26 @@ class GitBrain:
 
     @contextlib.contextmanager
     def _git_env(self):
-        """Temporarily replace ``os.environ`` with a credential-safe copy.
+        """Apply credential-safe env tweaks without ``os.environ.clear()``.
 
-        Restores original env on exit.  Intended to wrap bare git
-        subprocess calls made via GitPython.
+        Only removes known credential-carrying keys and forces
+        ``GIT_TERMINAL_PROMPT=0``. Other process env (PATH, HOME, …) stays
+        intact so concurrent threads never observe a wiped environment.
         """
-        saved = dict(os.environ)
-        safe = safe_git_env()
-        os.environ.clear()
-        os.environ.update(safe)
+        removed: dict[str, str] = {}
+        for key in list(os.environ):
+            if _is_credential_var(key):
+                removed[key] = os.environ.pop(key)
+        previous_gtp = os.environ.get("GIT_TERMINAL_PROMPT")
+        os.environ["GIT_TERMINAL_PROMPT"] = "0"
         try:
             yield
         finally:
-            os.environ.clear()
-            os.environ.update(saved)
+            if previous_gtp is None:
+                os.environ.pop("GIT_TERMINAL_PROMPT", None)
+            else:
+                os.environ["GIT_TERMINAL_PROMPT"] = previous_gtp
+            os.environ.update(removed)
 
     # ---- low-level git operations (all sanitized) -------------------------
 

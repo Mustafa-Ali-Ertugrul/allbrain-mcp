@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from pydantic import ValidationError
-
 from allbrain.models.schemas import (
     CreateSnapshotInput,
     IntentInput,
@@ -14,7 +12,6 @@ from allbrain.models.schemas import (
     ToolResult,
     UserInputError,
 )
-from allbrain.security.redaction import sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
@@ -34,165 +31,137 @@ logger = logging.getLogger(__name__)
 
 @handle_tool_errors
 def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        kwargs.pop("project_path", None)  # backward compat
-        data = ResumeProjectInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        project = context.repository.get_project_by_path(context.project_path)
-        if project is None or project.id is None:
-            raise UserInputError("project does not exist")
-        from allbrain.resume.incremental import IncrementalResumeEngine
-        from allbrain.resume.multi_agent import MultiAgentResumeEngine
-        from allbrain.snapshot.versions import is_compatible
+    kwargs.pop("project_path", None)  # backward compat
+    data = ResumeProjectInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    project = context.repository.get_project_by_path(context.project_path)
+    if project is None or project.id is None:
+        raise UserInputError("project does not exist")
+    from allbrain.resume.incremental import IncrementalResumeEngine
+    from allbrain.resume.multi_agent import MultiAgentResumeEngine
+    from allbrain.snapshot.versions import is_compatible
 
-        events = None
-        if not data.use_snapshot:
-            events = load_events_through_cursor(
-                context.repository, project_path=context.project_path, batch_size=data.limit
-            )
-        all_events = events
-        if all_events is None:
-            from allbrain.storage.snapshot_repo import SnapshotRepo
-
-            snapshot = SnapshotRepo(context.repository.engine).get_latest(project.id)
-            if snapshot is not None and is_compatible(snapshot.metadata):
-                all_events = context.repository.list_events_after(
-                    project_path=context.project_path, event_cursor=snapshot.event_cursor
-                )
-            else:
-                all_events = load_events_through_cursor(
-                    context.repository, project_path=context.project_path, batch_size=data.limit
-                )
+    events = None
+    if not data.use_snapshot:
+        events = load_events_through_cursor(
+            context.repository, project_path=context.project_path, batch_size=data.limit
+        )
+    all_events = events
+    if all_events is None:
         from allbrain.storage.snapshot_repo import SnapshotRepo
 
-        incremental = IncrementalResumeEngine(
-            repository=context.repository,
-            snapshot_repo=SnapshotRepo(context.repository.engine),
-        )
-        resume = MultiAgentResumeEngine(incremental).resume(
-            project_path=context.project_path,
-            project_id=project.id,
-            events=all_events if events is None else events,
-            limit=data.limit,
-            include_git=data.include_git,
-            use_snapshot=data.use_snapshot,
-        )
-        audit_tool_call(
-            context,
-            tool_name="resume_project",
-            tool_args=data.model_dump(mode="json"),
-            session_id=bound_session_id,
-        )
-        # full = uncapped dump for audit/debug; agents should use slim (default) or get_context_pack
-        payload = slim_resume_view(resume) if data.detail == "slim" else {**resume, "detail": "full"}
-        return ToolResult(ok=True, data=payload)
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
+        snapshot = SnapshotRepo(context.repository.engine).get_latest(project.id)
+        if snapshot is not None and is_compatible(snapshot.metadata):
+            all_events = context.repository.list_events_after(
+                project_path=context.project_path, event_cursor=snapshot.event_cursor
+            )
+        else:
+            all_events = load_events_through_cursor(
+                context.repository, project_path=context.project_path, batch_size=data.limit
+            )
+    from allbrain.storage.snapshot_repo import SnapshotRepo
+
+    incremental = IncrementalResumeEngine(
+        repository=context.repository,
+        snapshot_repo=SnapshotRepo(context.repository.engine),
+    )
+    resume = MultiAgentResumeEngine(incremental).resume(
+        project_path=context.project_path,
+        project_id=project.id,
+        events=all_events if events is None else events,
+        limit=data.limit,
+        include_git=data.include_git,
+        use_snapshot=data.use_snapshot,
+    )
+    audit_tool_call(
+        context,
+        tool_name="resume_project",
+        tool_args=data.model_dump(mode="json"),
+        session_id=bound_session_id,
+    )
+    # full = uncapped dump for audit/debug; agents should use slim (default) or get_context_pack
+    payload = slim_resume_view(resume) if data.detail == "slim" else {**resume, "detail": "full"}
+    return ToolResult(ok=True, data=payload)
 
 
 @handle_tool_errors
 def create_snapshot_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        kwargs.pop("project_path", None)  # backward compat
-        data = CreateSnapshotInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
-        project = context.repository.get_project_by_path(project_path)
-        if project is None or project.id is None:
-            raise UserInputError("project does not exist")
+    kwargs.pop("project_path", None)  # backward compat
+    data = CreateSnapshotInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    project_path = context.project_path
+    project = context.repository.get_project_by_path(project_path)
+    if project is None or project.id is None:
+        raise UserInputError("project does not exist")
 
-        from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
-        from allbrain.storage.snapshot_repo import SnapshotRepo
+    from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
+    from allbrain.storage.snapshot_repo import SnapshotRepo
 
-        snapshot_repo = SnapshotRepo(context.repository.engine)
-        latest = snapshot_repo.get_latest(project.id)
-        if latest is not None and not data.force:
-            delta_events = context.repository.list_events_after(
-                project_path=context.project_path,
-                event_cursor=latest.event_cursor,
+    snapshot_repo = SnapshotRepo(context.repository.engine)
+    latest = snapshot_repo.get_latest(project.id)
+    if latest is not None and not data.force:
+        delta_events = context.repository.list_events_after(
+            project_path=context.project_path,
+            event_cursor=latest.event_cursor,
+        )
+        if semantic_event_count(delta_events) == 0:
+            audit_tool_call(
+                context,
+                tool_name="create_snapshot",
+                tool_args=data.model_dump(mode="json"),
+                session_id=bound_session_id,
             )
-            if semantic_event_count(delta_events) == 0:
-                audit_tool_call(
-                    context,
-                    tool_name="create_snapshot",
-                    tool_args=data.model_dump(mode="json"),
-                    session_id=bound_session_id,
-                )
-                return ToolResult(ok=True, data=snapshot_to_dict(latest) | {"reused": True})
+            return ToolResult(ok=True, data=snapshot_to_dict(latest) | {"reused": True})
 
-        events = load_events_through_cursor(
-            context.repository, project_path=context.project_path, batch_size=data.limit
-        )
-        snapshot = SnapshotEngine(SnapshotBuilder(include_derived=data.include_derived), snapshot_repo).build_snapshot(
-            project_id=project.id,
-            events=events,
-        )
-        audit_tool_call(
-            context,
-            tool_name="create_snapshot",
-            tool_args=data.model_dump(mode="json"),
-            session_id=bound_session_id,
-        )
-        return ToolResult(ok=True, data=snapshot_to_dict(snapshot) | {"reused": False})
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
+    events = load_events_through_cursor(context.repository, project_path=context.project_path, batch_size=data.limit)
+    snapshot = SnapshotEngine(SnapshotBuilder(include_derived=data.include_derived), snapshot_repo).build_snapshot(
+        project_id=project.id,
+        events=events,
+    )
+    audit_tool_call(
+        context,
+        tool_name="create_snapshot",
+        tool_args=data.model_dump(mode="json"),
+        session_id=bound_session_id,
+    )
+    return ToolResult(ok=True, data=snapshot_to_dict(snapshot) | {"reused": False})
 
 
 @handle_tool_errors
 def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
-    try:
-        kwargs.pop("project_path", None)  # backward compat
-        data = IntentInput.model_validate(kwargs)
-        bound_session_id = bind_session_id(context, None)
-        project_path = context.project_path
-        project = context.repository.get_project_by_path(project_path)
-        if project is None or project.id is None:
-            raise UserInputError("project does not exist")
-        events = load_events_through_cursor(
-            context.repository, project_path=context.project_path, batch_size=data.limit
-        )
-        from allbrain.resume.incremental import IncrementalResumeEngine
-        from allbrain.resume.intent_resume import IntentResumeEngine
-        from allbrain.resume.multi_agent import MultiAgentResumeEngine
-        from allbrain.storage.snapshot_repo import SnapshotRepo
+    kwargs.pop("project_path", None)  # backward compat
+    data = IntentInput.model_validate(kwargs)
+    bound_session_id = bind_session_id(context, None)
+    project_path = context.project_path
+    project = context.repository.get_project_by_path(project_path)
+    if project is None or project.id is None:
+        raise UserInputError("project does not exist")
+    events = load_events_through_cursor(context.repository, project_path=context.project_path, batch_size=data.limit)
+    from allbrain.resume.incremental import IncrementalResumeEngine
+    from allbrain.resume.intent_resume import IntentResumeEngine
+    from allbrain.resume.multi_agent import MultiAgentResumeEngine
+    from allbrain.storage.snapshot_repo import SnapshotRepo
 
-        incremental = IncrementalResumeEngine(
-            repository=context.repository,
-            snapshot_repo=SnapshotRepo(context.repository.engine),
-        )
-        multi_agent = MultiAgentResumeEngine(incremental)
-        result = IntentResumeEngine(multi_agent).resume(
-            project_path=project_path,
-            events=events,
-            project_id=project.id,
-            limit=data.limit,
-            include_git=data.include_git,
-            use_snapshot=data.use_snapshot,
-        )
-        audit_tool_call(
-            context,
-            tool_name="resume_with_intent",
-            tool_args=data.model_dump(mode="json"),
-            session_id=bound_session_id,
-        )
-        return ToolResult(ok=True, data=result)
-    except ValidationError as exc:
-        return ToolResult(ok=False, error=sanitize_valerr_msg(str(exc)), error_code="validation_error")
-    except UserInputError as exc:
-        return ToolResult(ok=False, error=str(exc), error_code="user_input_error")
-    except Exception:
-        logger.exception("Tool failed")
-        return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
+    incremental = IncrementalResumeEngine(
+        repository=context.repository,
+        snapshot_repo=SnapshotRepo(context.repository.engine),
+    )
+    multi_agent = MultiAgentResumeEngine(incremental)
+    result = IntentResumeEngine(multi_agent).resume(
+        project_path=project_path,
+        events=events,
+        project_id=project.id,
+        limit=data.limit,
+        include_git=data.include_git,
+        use_snapshot=data.use_snapshot,
+    )
+    audit_tool_call(
+        context,
+        tool_name="resume_with_intent",
+        tool_args=data.model_dump(mode="json"),
+        session_id=bound_session_id,
+    )
+    return ToolResult(ok=True, data=result)
 
 
 def register_tools(mcp, context: BrainContext) -> None:
