@@ -271,8 +271,7 @@ async def main() -> None:
         await check("events", "save_event", call_ok("save_event", save_args))
         await check("events", "list_events", call_ok("list_events", {{}}))
         await check("session", "resume_project", call_ok("resume_project", {{}}))
-        await check("session", "get_context_pack", pack_ok())        hdr = f"{{'Component':<12}} {{'Check':<18}} {{'Result':<6}} Detail"
-        print(hdr)
+        await check("session", "get_context_pack", pack_ok())        print("Component   Check              Result Detail")
         print("-" * 60)
         failed = 0
         for component, name, ok, detail in results:
