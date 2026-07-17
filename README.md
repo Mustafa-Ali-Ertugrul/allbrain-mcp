@@ -183,13 +183,15 @@ AllBrain stores events, sessions, and audit logs in local SQLite. Data never lea
 - [Python SDK](packages/allbrain-sdk/README.md) — typed async client (experimental)
 - [Architecture](docs/ARCHITECTURE.md) — event sourcing, reducers, stream ordering
 - [Storage backends](docs/database_scaling_policy.md) — SQLite vs PostgreSQL vs queue adapters
+- [Architecture](docs/ARCHITECTURE.md) — event sourcing, pipeline, bounded contexts
+- [Package maturity](docs/package-maturity.md) — production core vs opt-in vs experimental packages
 - [Multi-agent pilot](docs/two-agent-pilot.md) — two-agent workflow walkthrough
 - [Upgrade guide](docs/upgrade-guide.md) — migrations, rollback, breaking changes
 - [Community examples](docs/community-examples.md) — real user setups, terminal output, workflows
 
 ## Status
 
-- 2567 tests collected
+- 2695 tests collected (see scripts/update_readme_test_count.py)
 - stdio MCP handshake verified
 - Python 3.12+ (CI at 3.13)
 - Coverage: 80.72% (enforced threshold 80%)
