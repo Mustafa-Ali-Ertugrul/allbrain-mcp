@@ -181,9 +181,8 @@ AllBrain stores events, sessions, and audit logs in local SQLite. Data never lea
 - [Full setup guide](docs/setup.md) — all clients, shared vs isolated databases, troubleshooting
 - [Custom agent integration](docs/custom-agent-integration.md) — use AllBrain from any MCP client
 - [Python SDK](packages/allbrain-sdk/README.md) — typed async client (experimental)
-- [Architecture](docs/ARCHITECTURE.md) — event sourcing, reducers, stream ordering
+- [Architecture](docs/ARCHITECTURE.md) — event sourcing, reducers, stream ordering, pipeline, bounded contexts
 - [Storage backends](docs/database_scaling_policy.md) — SQLite vs PostgreSQL vs queue adapters
-- [Architecture](docs/ARCHITECTURE.md) — event sourcing, pipeline, bounded contexts
 - [Package maturity](docs/package-maturity.md) — production core vs opt-in vs experimental packages
 - [Multi-agent pilot](docs/two-agent-pilot.md) — two-agent workflow walkthrough
 - [Upgrade guide](docs/upgrade-guide.md) — migrations, rollback, breaking changes
