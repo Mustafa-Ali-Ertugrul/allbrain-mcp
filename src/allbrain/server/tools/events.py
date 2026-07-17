@@ -70,7 +70,7 @@ def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     """List events from project history with optional filtering.
 
-    Supports filtering by session_id and event type, with configurable limit.
+    Supports session_id, type, agent_id, branch, since, until, and limit.
     Rate limited to prevent abuse.
 
     Returns:
@@ -98,7 +98,7 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     return ToolResult(ok=True, data=[event.model_dump(mode="json") for event in events])
 
 
-def register_tools(mcp, context: BrainContext) -> None:
+def _register_save_event(mcp, context: BrainContext) -> None:
     @mcp.tool
     def save_event(
         type: str,
@@ -157,6 +157,8 @@ def register_tools(mcp, context: BrainContext) -> None:
         )
         return result.model_dump(mode="json")
 
+
+def _register_list_events(mcp, context: BrainContext) -> None:
     @mcp.tool
     def list_events(
         session_id: int | None = None,
@@ -167,7 +169,29 @@ def register_tools(mcp, context: BrainContext) -> None:
         until: str | None = None,
         limit: int = 50,
     ) -> dict[str, Any]:
-        """Query event log (filters: session_id, type, agent_id, branch, since, until, limit)."""
+        """Query and filter recorded events from the append-only event log.
+
+        Use this to inspect the history of agent actions and system state changes.
+        Events are ordered by the database-authoritative stream position for
+        consistent replay.
+
+        Side effects: Read-only operation; no data is modified.
+
+        Args:
+            session_id: Optional session ID to filter by (useful for multi-agent
+                debugging and isolation).
+            type: Optional event type filter in snake_case (e.g., "task_created",
+                "task_assigned", "tool_call"). SCREAMING_SNAKE aliases accepted.
+            agent_id: Optional agent id filter (same length rules as save_event).
+            branch: Optional branch name filter.
+            since: Optional ISO-8601 lower bound on event created_at (inclusive).
+            until: Optional ISO-8601 upper bound on event created_at (inclusive).
+            limit: Maximum number of events to return (default 50, maximum 500).
+
+        Returns:
+            List of events as JSON-serializable dicts, each containing id, type,
+            timestamp, source, payload, and optional metadata fields.
+        """
         result = list_events_impl(
             context,
             session_id=session_id,
@@ -179,3 +203,8 @@ def register_tools(mcp, context: BrainContext) -> None:
             limit=limit,
         )
         return result.model_dump(mode="json")
+
+
+def register_tools(mcp, context: BrainContext) -> None:
+    _register_save_event(mcp, context)
+    _register_list_events(mcp, context)
