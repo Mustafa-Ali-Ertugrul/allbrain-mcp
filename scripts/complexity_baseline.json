@@ -17,6 +17,10 @@
       "complexity": 16,
       "lines": 60
     },
+    "allbrain/cli/main.py::doctor": {
+      "complexity": 16,
+      "lines": 108
+    },
     "allbrain/decision/manager.py::DecisionManager._build_context": {
       "complexity": 19,
       "lines": 89
@@ -93,9 +97,13 @@
       "complexity": 16,
       "lines": 51
     },
+    "allbrain/server/prompts.py::register_prompts": {
+      "complexity": 1,
+      "lines": 137
+    },
     "allbrain/server/queueing.py::QueueCoordinator.enqueue_pipeline_result": {
-      "complexity": 18,
-      "lines": 56
+      "complexity": 16,
+      "lines": 20
     },
     "allbrain/server/tools/foresight.py::register_tools": {
       "complexity": 1,
@@ -103,19 +111,19 @@
     },
     "allbrain/server/tools/knowledge.py::register_tools": {
       "complexity": 1,
-      "lines": 156
+      "lines": 126
     },
     "allbrain/server/tools/observability.py::register_tools": {
       "complexity": 1,
-      "lines": 148
+      "lines": 135
     },
     "allbrain/server/tools/queue.py::register_tools": {
       "complexity": 1,
-      "lines": 133
+      "lines": 119
     },
     "allbrain/server/tools/tasks.py::register_tools": {
       "complexity": 1,
-      "lines": 259
+      "lines": 247
     },
     "allbrain/storage/history_repair.py::HistoryRepairer._merge_sources": {
       "complexity": 16,
