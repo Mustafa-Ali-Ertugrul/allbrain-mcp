@@ -4,12 +4,14 @@ Typed asynchronous Python client for a local AllBrain MCP stdio server.
 
 ```python
 import asyncio
-from allbrain_sdk import AllBrainClient
+from allbrain_sdk import AllBrainClient, AssignTaskResult, CreateTaskResult
 
 async def main():
     async with AllBrainClient(project=".", agent="code-agent", db_path=".allbrain.db") as client:
         await client.save_event("task_started", {"task": "implement auth"})
-        return await client.resume_project(include_git=False)
+        created = await client.create_task("implement auth", priority=4)
+        assigned = await client.assign_task(created.payload["task_id"])
+        return assigned
 
 state = asyncio.run(main())
 ```

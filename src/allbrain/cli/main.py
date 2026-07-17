@@ -534,6 +534,17 @@ def doctor(
 
     engine.dispose()
 
+    from allbrain.ops.inventory import build_prompt_inventory, build_resource_inventory
+
+    resources = build_resource_inventory()
+    prompts = build_prompt_inventory()
+    console.print(f"PASS  Resources: {len(resources)} registered")
+    for res in resources:
+        console.print(f"      - {res['uri']} ({res['name']})")
+    console.print(f"PASS  Prompts:   {len(prompts)} registered")
+    for prm in prompts:
+        console.print(f"      - {prm['name']}({', '.join(prm['parameters'])})")
+
     if not health:
         raise typer.Exit(code=1)
     console.print("\nAll checks passed.")

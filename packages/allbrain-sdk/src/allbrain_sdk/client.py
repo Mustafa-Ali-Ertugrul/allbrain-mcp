@@ -9,7 +9,19 @@ from fastmcp.client.transports import StdioTransport
 from pydantic import ValidationError
 
 from allbrain_sdk.errors import AllBrainProtocolError, AllBrainToolError
-from allbrain_sdk.models import AllBrainConfig, EventRecord, ResumeProjectResult, ToolEnvelope, ToolProfile
+from allbrain_sdk.models import (
+    AllBrainConfig,
+    AssignTaskResult,
+    ConflictResult,
+    ContextPackResult,
+    CreateTaskResult,
+    DecisionPipelineResult,
+    EventRecord,
+    ResumeProjectResult,
+    TaskGraphResult,
+    ToolEnvelope,
+    ToolProfile,
+)
 
 
 class AllBrainClient:
@@ -129,6 +141,108 @@ class AllBrainClient:
             {"limit": limit, "include_git": include_git, "use_snapshot": use_snapshot},
         )
         return ResumeProjectResult.model_validate(payload)
+
+    async def create_task(
+        self,
+        goal: str,
+        *,
+        kind: str = "implementation",
+        related_files: list[str] | None = None,
+        priority: int = 3,
+        task_id: str | None = None,
+        agent_id: str | None = None,
+        enqueue: bool = False,
+    ) -> CreateTaskResult:
+        arguments: dict[str, Any] = {"goal": goal, "kind": kind, "priority": priority, "enqueue": enqueue}
+        if related_files is not None:
+            arguments["related_files"] = related_files
+        if task_id is not None:
+            arguments["task_id"] = task_id
+        if agent_id is not None:
+            arguments["agent_id"] = agent_id
+        return CreateTaskResult.model_validate(await self._call("create_task", arguments))
+
+    async def assign_task(
+        self,
+        task_id: str,
+        *,
+        agent_id: str | None = None,
+        limit: int = 5000,
+    ) -> AssignTaskResult:
+        arguments: dict[str, Any] = {"task_id": task_id, "limit": limit}
+        if agent_id is not None:
+            arguments["agent_id"] = agent_id
+        return AssignTaskResult.model_validate(await self._call("assign_task", arguments))
+
+    async def get_task_graph(self, *, limit: int = 5000) -> TaskGraphResult:
+        return TaskGraphResult.model_validate(await self._call("get_task_graph", {"limit": limit}))
+
+    async def run_decision_pipeline(
+        self,
+        objective: dict[str, Any],
+        *,
+        execute_mode: str = "event_only",
+        risk_threshold: float = 0.7,
+        enable_counterfactual: bool = False,
+        enable_scenarios: bool = False,
+        enable_foresight: bool = False,
+        enable_meta_reasoning: bool = False,
+        enable_uncertainty: bool = False,
+        enable_information_seeking: bool = False,
+        limit: int = 5000,
+        foresight_limit: int = 5,
+    ) -> DecisionPipelineResult:
+        arguments = {
+            "objective": objective,
+            "execute_mode": execute_mode,
+            "risk_threshold": risk_threshold,
+            "enable_counterfactual": enable_counterfactual,
+            "enable_scenarios": enable_scenarios,
+            "enable_foresight": enable_foresight,
+            "enable_meta_reasoning": enable_meta_reasoning,
+            "enable_uncertainty": enable_uncertainty,
+            "enable_information_seeking": enable_information_seeking,
+            "limit": limit,
+        }
+        return DecisionPipelineResult.model_validate(await self._call("run_decision_pipeline", arguments))
+
+    async def get_context_pack(
+        self,
+        *,
+        task_id: str | None = None,
+        query: str | None = None,
+        window_hours: int = 24,
+        limit: int = 500,
+        include_git: bool = True,
+        top_k: int = 5,
+        event_limit: int = 30,
+        session_limit: int = 20,
+        session_detail_limit: int = 8,
+    ) -> ContextPackResult:
+        arguments = {
+            "window_hours": window_hours,
+            "limit": limit,
+            "include_git": include_git,
+            "top_k": top_k,
+            "event_limit": event_limit,
+            "session_limit": session_limit,
+            "session_detail_limit": session_detail_limit,
+        }
+        if task_id is not None:
+            arguments["task_id"] = task_id
+        if query is not None:
+            arguments["query"] = query
+        return ContextPackResult.model_validate(await self._call("get_context_pack", arguments))
+
+    async def detect_conflicts(
+        self,
+        *,
+        limit: int = 5000,
+        threshold: float = 0.7,
+    ) -> ConflictResult:
+        return ConflictResult.model_validate(
+            await self._call("detect_conflicts", {"limit": limit, "threshold": threshold})
+        )
 
     async def _call(self, tool_name: str, arguments: dict[str, Any]) -> Any:
         if self._client is None:
