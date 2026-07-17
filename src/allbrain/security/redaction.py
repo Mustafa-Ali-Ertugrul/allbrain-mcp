@@ -140,7 +140,10 @@ def _mask_query_string(query: str, found_types: dict[str, int]) -> str:
 
 def _mask_url_or_text(text: str, found_types: dict[str, int]) -> str:
     """Mask sensitive query params in URL-like strings, then pattern-mask."""
-    if not text or not _URLISH_RE.search(text):
+    # Fast path: most event payloads are short non-URL strings.
+    if not text or ("?" not in text and "://" not in text and "&" not in text):
+        return _mask_secrets_patterns(text, found_types)
+    if not _URLISH_RE.search(text):
         return _mask_secrets_patterns(text, found_types)
 
     # Full URL
