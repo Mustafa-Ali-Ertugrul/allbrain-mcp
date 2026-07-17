@@ -19,7 +19,10 @@ from allbrain.server.tools.tasks import get_task_graph_impl
 def _parse_iso(value: Any) -> datetime | None:
     if not isinstance(value, str) or not value:
         return None
-    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=UTC)
     return parsed

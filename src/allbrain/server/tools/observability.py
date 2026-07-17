@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 from allbrain.api.observability_api import ObservabilityAPI
-from allbrain.models.schemas import OrchestratorInput, ToolResult
+from allbrain.models.schemas import OrchestratorInput, ToolResult, UserInputError
 from allbrain.observability import ObservabilityBuilder
 from allbrain.reliability.metrics import ReliabilityMetrics
 from allbrain.server.context import BrainContext
@@ -33,12 +33,22 @@ def replay_workflow_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     project_path, limit = observability_project_and_limit(context, kwargs)
     bound_session_id = bind_session_id(context, None)
     events = context.repository.list_events(project_path=project_path, limit=limit)
+    try:
+        cursor = int(kwargs.get("cursor", 0) or 0)
+    except (TypeError, ValueError) as exc:
+        raise UserInputError(f"invalid cursor: {exc}") from exc
+    step_count = kwargs.get("step_count")
+    if step_count is not None:
+        try:
+            step_count = int(step_count)
+        except (TypeError, ValueError) as exc:
+            raise UserInputError(f"invalid step_count: {exc}") from exc
     replay = ObservabilityAPI().replay(
         events,
         workflow_id=kwargs.get("workflow_id"),
         task_id=kwargs.get("task_id"),
-        cursor=int(kwargs.get("cursor", 0) or 0),
-        step_count=kwargs.get("step_count"),
+        cursor=cursor,
+        step_count=step_count,
         deterministic=bool(kwargs.get("deterministic", True)),
     )
     viz = replay.get("visualization", {})
