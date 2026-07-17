@@ -177,41 +177,35 @@ def inspect_all_clients(project: Path) -> list[dict[str, Any]]:
 
 
 def agent_event_freshness(db_path: Path | str | None, *, hours: int = 24) -> list[dict[str, Any]]:
-    """Per-agent last event time and event counts from a shared SQLite DB."""
+    """Per-agent last event time and event counts from a shared SQLite DB.
+
+    Uses stdlib sqlite3 only (ops layer must not import allbrain.storage).
+    """
     if db_path is None:
         return []
     path = Path(db_path).expanduser()
     if not path.is_file():
         return []
-    try:
-        from sqlalchemy import text
+    import sqlite3
 
-        from allbrain.storage import create_engine_for_path
-    except ImportError:
-        return []
-
-    engine = create_engine_for_path(path)
+    win = f"-{int(hours)} hours"
     try:
-        with engine.connect() as conn:
+        with sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True) as conn:
             rows = conn.execute(
-                text(
-                    """
-                    SELECT agent_id,
-                           COUNT(*) AS events_total,
-                           MAX(created_at) AS last_event_at,
-                           SUM(CASE WHEN created_at >= datetime('now', :win) THEN 1 ELSE 0 END) AS events_window
-                    FROM event
-                    WHERE agent_id IS NOT NULL AND agent_id != ''
-                    GROUP BY agent_id
-                    ORDER BY last_event_at DESC
-                    """
-                ),
-                {"win": f"-{int(hours)} hours"},
+                """
+                SELECT agent_id,
+                       COUNT(*) AS events_total,
+                       MAX(created_at) AS last_event_at,
+                       SUM(CASE WHEN created_at >= datetime('now', ?) THEN 1 ELSE 0 END) AS events_window
+                FROM event
+                WHERE agent_id IS NOT NULL AND agent_id != ''
+                GROUP BY agent_id
+                ORDER BY last_event_at DESC
+                """,
+                (win,),
             ).fetchall()
-    except Exception:
+    except sqlite3.Error:
         return []
-    finally:
-        engine.dispose()
 
     out: list[dict[str, Any]] = []
     for agent_id, total, last_at, window_count in rows:
