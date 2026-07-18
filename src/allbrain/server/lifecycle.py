@@ -37,7 +37,7 @@ def create_lifespan(context: BrainContext):
         ]
         try:
             yield {"brain_context": context}
-        except BaseException:
+        except Exception:
             try:
                 finalize_active_session(context, status="failed", reason="server_error")
             except Exception:
