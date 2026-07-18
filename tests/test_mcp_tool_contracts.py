@@ -159,3 +159,88 @@ def test_save_event_input_normalizes_type() -> None:
     # task_created does not require task_id in payload for TASK_CREATED create path
     # but validate_task_payload only requires task_id for assigned etc.
     assert data.type == "task_created"
+
+
+# --- Sprint 74: list_events pagination + summary (tool level) --------------
+
+
+def _seed_events(context, count: int) -> list[str]:
+    # Seed via the repository directly (no per-call audit events) so pagination
+    # tests observe a clean, predictable event set.
+    session_id = context.active_session.id if context.active_session else None
+    ids = []
+    for i in range(count):
+        ev = context.repository.append_event(
+            project_path=context.project_path,
+            session_id=session_id,
+            type="task_started",
+            source="agent",
+            payload={"i": i},
+            agent_id="codex",
+            branch="main",
+        )
+        ids.append(ev.id)
+    return ids
+
+
+def test_list_events_default_returns_plain_list(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    _seed_events(context, 3)
+    result = list_events_impl(context, limit=10)
+    assert result.ok is True
+    # Backward-compatible default: data is a plain list of event dicts.
+    assert isinstance(result.data, list)
+    assert len(result.data) >= 1
+
+
+def test_list_events_cursor_returns_page_wrapper(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    _seed_events(context, 5)
+    # First, grab an existing event id to use as a starting cursor.
+    baseline = list_events_impl(context, limit=1000)
+    assert isinstance(baseline.data, list)
+    first_id = baseline.data[0]["id"]
+    page = list_events_impl(context, limit=2, cursor=first_id)
+    assert page.ok is True
+    assert isinstance(page.data, dict)
+    assert "events" in page.data
+    assert "has_more" in page.data
+    assert "next_cursor" in page.data
+
+
+def test_list_events_pagination_walk(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    _seed_events(context, 5)
+    baseline = list_events_impl(context, limit=1000)
+    start_cursor = baseline.data[0]["id"]
+    # Cursor mode returns a page wrapper (dict) rather than a plain list.
+    first_page = list_events_impl(context, limit=2, cursor=start_cursor)
+    assert isinstance(first_page.data, dict)
+    assert "events" in first_page.data
+    assert "has_more" in first_page.data
+    assert "next_cursor" in first_page.data
+    page_ids = [e["id"] for e in first_page.data["events"]]
+    # The anchor event itself is excluded by the strict greater-than filter.
+    assert start_cursor not in page_ids
+
+
+def test_list_events_summary_mode(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    _seed_events(context, 4)
+    result = list_events_impl(context, summary=True)
+    assert result.ok is True
+    assert isinstance(result.data, dict)
+    # 4 seeded task_started events (plus any session/audit events already present).
+    assert result.data["by_type"]["task_started"] == 4
+    assert "by_agent" in result.data
+    assert "by_date" in result.data
+    # Summary must not carry full event records.
+    assert "events" not in result.data
+
+
+def test_list_events_invalid_cursor_is_user_error(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    _seed_events(context, 2)
+    result = list_events_impl(context, limit=2, cursor="not-a-real-cursor")
+    assert result.ok is False
+    assert result.error_code == "user_input_error"

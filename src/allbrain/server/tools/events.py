@@ -7,6 +7,8 @@ from typing import Any
 
 from allbrain.models.schemas import (
     ListEventsInput,
+    ListEventsPage,
+    ListEventsSummary,
     SaveEventInput,
     ToolResult,
 )
@@ -71,31 +73,71 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     """List events from project history with optional filtering.
 
     Supports filtering by session_id and event type, with configurable limit.
+    Opt-in cursor pagination (``cursor``) and aggregate summary mode
+    (``summary``) keep large result sets within client payload limits.
     Rate limited to prevent abuse.
 
     Returns:
-        ToolResult with list of events or error message.
+        ToolResult whose data is either a plain event list (backward-compatible
+        default), a ListEventsPage (when ``cursor`` is provided), or a
+        ListEventsSummary (when ``summary`` is true).
     """
     check_tool_rate("list_events")
     data = ListEventsInput.model_validate(kwargs)
     bound_session_id = bind_session_id(context, None)
-    events = context.repository.list_events(
-        project_path=context.project_path,
-        session_id=data.session_id,
-        agent_id=data.agent_id,
-        type=data.type,
-        branch=data.branch,
-        since=data.since,
-        until=data.until,
-        limit=data.limit,
-    )
+
+    if data.summary:
+        summary = context.repository.summarize_events(
+            project_path=context.project_path,
+            session_id=data.session_id,
+            agent_id=data.agent_id,
+            type=data.type,
+            branch=data.branch,
+            since=data.since,
+            until=data.until,
+        )
+        result_data: Any = ListEventsSummary.model_validate(summary).model_dump(mode="json")
+    elif data.cursor is not None:
+        events, has_more = context.repository.list_events_paginated(
+            project_path=context.project_path,
+            session_id=data.session_id,
+            agent_id=data.agent_id,
+            type=data.type,
+            branch=data.branch,
+            since=data.since,
+            until=data.until,
+            cursor=data.cursor,
+            limit=data.limit,
+        )
+        next_cursor = events[-1].id if (has_more and events) else None
+        page = ListEventsPage(
+            events=events,
+            next_cursor=next_cursor,
+            has_more=has_more,
+            truncated=has_more,
+        )
+        result_data = page.model_dump(mode="json")
+    else:
+        # Backward-compatible default: plain list ordered oldest-first.
+        events = context.repository.list_events(
+            project_path=context.project_path,
+            session_id=data.session_id,
+            agent_id=data.agent_id,
+            type=data.type,
+            branch=data.branch,
+            since=data.since,
+            until=data.until,
+            limit=data.limit,
+        )
+        result_data = [event.model_dump(mode="json") for event in events]
+
     audit_tool_call(
         context,
         tool_name="list_events",
         tool_args=data.model_dump(mode="json"),
         session_id=bound_session_id,
     )
-    return ToolResult(ok=True, data=[event.model_dump(mode="json") for event in events])
+    return ToolResult(ok=True, data=result_data)
 
 
 def register_tools(mcp, context: BrainContext) -> None:
@@ -166,8 +208,26 @@ def register_tools(mcp, context: BrainContext) -> None:
         since: str | None = None,
         until: str | None = None,
         limit: int = 50,
+        cursor: str | None = None,
+        summary: bool = False,
     ) -> dict[str, Any]:
-        """Query event log (filters: session_id, type, agent_id, branch, since, until, limit)."""
+        """Query event log with optional filtering, pagination, and summary mode.
+
+        Filters: session_id, type, agent_id, branch, since, until, limit.
+
+        Pagination: pass a ``cursor`` (an event ID from a previous page's
+        ``next_cursor``) to fetch events after it. When a cursor is used the
+        response is a page object ``{events, next_cursor, has_more, truncated}``;
+        keep calling with the returned ``next_cursor`` until ``has_more`` is
+        false. Use this for large windows to stay within client payload limits.
+
+        Summary mode: pass ``summary=true`` to receive aggregate counts
+        ``{total, by_type, by_agent, by_date, first_event_at, last_event_at}``
+        instead of full event records — ideal for large time ranges.
+
+        Without ``cursor`` or ``summary`` the tool returns a plain list of
+        events (backward-compatible default).
+        """
         result = list_events_impl(
             context,
             session_id=session_id,
@@ -177,5 +237,7 @@ def register_tools(mcp, context: BrainContext) -> None:
             since=since,
             until=until,
             limit=limit,
+            cursor=cursor,
+            summary=summary,
         )
         return result.model_dump(mode="json")

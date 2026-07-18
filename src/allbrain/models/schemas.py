@@ -53,6 +53,23 @@ def _coerce_iso_datetime(value: Any) -> Any:
     return value
 
 
+def _coerce_bool(value: Any) -> Any:
+    """Coerce common truthy/falsey string forms into ``bool``.
+
+    MCP clients may transmit boolean flags as JSON strings (e.g. ``"true"``),
+    which Pydantic v2 ``strict=True`` rejects. This helper accepts the usual
+    string spellings while leaving real booleans and other types unchanged so
+    invalid values still raise a validation error.
+    """
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "1", "yes", "on"}:
+            return True
+        if lowered in {"false", "0", "no", "off"}:
+            return False
+    return value
+
+
 def _check_null_bytes_recursive(obj: Any) -> None:
     """Reject null bytes in strings, dict keys/values, and list items."""
     if isinstance(obj, str):
@@ -194,11 +211,19 @@ class ListEventsInput(BaseInputModel):
     since: datetime | None = None
     until: datetime | None = None
     limit: int = Field(default=50, ge=1, le=1000)
+    # Sprint 74: cursor pagination + summary mode.
+    cursor: str | None = Field(default=None, max_length=64)
+    summary: bool = False
 
     @field_validator("since", "until", mode="before")
     @classmethod
     def coerce_iso_datetime(cls, value: Any) -> Any:
         return _coerce_iso_datetime(value)
+
+    @field_validator("summary", mode="before")
+    @classmethod
+    def coerce_summary_flag(cls, value: Any) -> Any:
+        return _coerce_bool(value)
 
     @field_validator("type")
     @classmethod
@@ -554,3 +579,34 @@ class ToolResult(BaseModel):
     data: Any | None = None
     error: str | None = None
     error_code: str | None = None
+
+
+class ListEventsPage(BaseModel):
+    """Paginated ``list_events`` response (Sprint 74).
+
+    Returned when the caller opts into pagination via a ``cursor`` argument.
+    ``next_cursor`` is the ID of the last event in this page; pass it back on
+    the next call to fetch the following page. ``has_more`` (and its alias
+    ``truncated``) indicate that additional events exist beyond this page.
+    """
+
+    events: list[EventRead]
+    next_cursor: str | None = None
+    has_more: bool = False
+    truncated: bool = False
+
+
+class ListEventsSummary(BaseModel):
+    """Aggregated ``list_events`` response (Sprint 74).
+
+    Returned when ``summary=True``. Provides counts grouped by type, agent,
+    and calendar date without transmitting individual event records, keeping
+    the payload small for large time windows.
+    """
+
+    total: int
+    by_type: dict[str, int] = Field(default_factory=dict)
+    by_agent: dict[str, int] = Field(default_factory=dict)
+    by_date: dict[str, int] = Field(default_factory=dict)
+    first_event_at: datetime | None = None
+    last_event_at: datetime | None = None
