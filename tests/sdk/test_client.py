@@ -9,16 +9,50 @@ from allbrain_sdk import (
     AllBrainToolError,
     EventRecord,
 )
+from mcp.types import TextContent
 
 
 class FakeMCPClient:
-    def __init__(self, responses: list[object]) -> None:
-        self.responses = responses
+    def __init__(self, responses: list[object] | None = None) -> None:
+        self.responses = responses or []
         self.calls: list[tuple[str, dict[str, object]]] = []
+        self.resource_calls: list[str] = []
+        self.prompt_calls: list[tuple[str, dict[str, object]]] = []
 
     async def call_tool(self, name: str, arguments: dict[str, object]):
         self.calls.append((name, arguments))
         return self.responses.pop(0)
+
+    async def list_resources(self):
+        return [
+            SimpleNamespace(uri="project://resume", name="resume", mimeType="application/json"),
+            SimpleNamespace(uri="tasks://graph", name="tasks_graph", mimeType="application/json"),
+            SimpleNamespace(uri="git://fingerprint", name="git_fingerprint", mimeType="application/json"),
+        ]
+
+    async def list_resource_templates(self):
+        return [
+            SimpleNamespace(uri_template="session://{session_id}/summary", name="summary"),
+            SimpleNamespace(uri_template="event://{event_id}", name="event"),
+        ]
+
+    async def list_prompts(self):
+        return [
+            SimpleNamespace(name="resume_project", description=None, arguments=[]),
+            SimpleNamespace(name="task_handoff", description=None, arguments=[]),
+            SimpleNamespace(name="investigate_conflict", description=None, arguments=[]),
+        ]
+
+    async def read_resource(self, uri: str):
+        self.resource_calls.append(uri)
+        return [SimpleNamespace(uri=uri, mimeType="application/json", text=f"data-for-{uri}", blob=None)]
+
+    async def get_prompt(self, name: str, arguments: dict[str, object] | None = None):
+        self.prompt_calls.append((name, arguments or {}))
+        return SimpleNamespace(
+            description=None,
+            messages=[SimpleNamespace(role="user", content=TextContent(type="text", text=f"prompt-{name}"))],
+        )
 
 
 def response(data: object, *, is_error: bool = False):
