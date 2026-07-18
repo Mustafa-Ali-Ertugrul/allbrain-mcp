@@ -479,6 +479,131 @@ class BrainRepository:
             events = list(reversed(db.exec(statement).all()))
             return [event_to_read(event) for event in events]
 
+    def list_events_paginated(
+        self,
+        *,
+        project_path: str | Path | None,
+        session_id: int | None = None,
+        agent_id: str | None = None,
+        type: str | None = None,
+        branch: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
+        cursor: str | None = None,
+        limit: int = 50,
+    ) -> tuple[list[EventRead], bool]:
+        """Return a forward page of events plus a ``has_more`` flag.
+
+        Events are ordered by ``stream_position`` ascending. When ``cursor`` is
+        provided it must be the ID of a prior event; only events after that
+        cursor (by stream position) are returned. ``has_more`` is ``True`` when
+        additional events exist beyond the returned page.
+        """
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return [], False
+        with open_session(self.engine) as db:
+            statement = select(Event).where(Event.project_id == project.id)
+            if session_id is not None:
+                statement = statement.where(Event.session_id == session_id)
+            if agent_id is not None:
+                statement = statement.where(Event.agent_id == agent_id)
+            if type is not None:
+                statement = statement.where(Event.type == type)
+            if branch is not None:
+                statement = statement.where(Event.branch == branch)
+            if since is not None:
+                statement = statement.where(col(Event.created_at) >= since)
+            if until is not None:
+                statement = statement.where(col(Event.created_at) <= until)
+            if cursor is not None:
+                cursor_position = self._cursor_stream_position(
+                    db,
+                    project_id=project.id or 0,
+                    event_cursor=cursor,
+                    cursor_name="cursor",
+                )
+                statement = statement.where(col(Event.stream_position) > cursor_position)
+            # Fetch one extra row to detect whether more pages exist.
+            statement = statement.order_by(col(Event.stream_position)).limit(limit + 1)
+            rows = db.exec(statement).all()
+            has_more = len(rows) > limit
+            page = rows[:limit]
+            return [event_to_read(event) for event in page], has_more
+
+    def summarize_events(
+        self,
+        *,
+        project_path: str | Path | None,
+        session_id: int | None = None,
+        agent_id: str | None = None,
+        type: str | None = None,
+        branch: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Return aggregate counts for matching events without loading records.
+
+        Groups are computed in the database (``GROUP BY``) so large windows do
+        not stream every row to the caller. Returns total count and counts by
+        type, agent, and calendar date, plus the first/last event timestamps.
+        """
+        project = self.get_project_by_path(project_path)
+        empty: dict[str, Any] = {
+            "total": 0,
+            "by_type": {},
+            "by_agent": {},
+            "by_date": {},
+            "first_event_at": None,
+            "last_event_at": None,
+        }
+        if project is None:
+            return empty
+
+        def _apply_filters(statement: Any) -> Any:
+            statement = statement.where(Event.project_id == project.id)
+            if session_id is not None:
+                statement = statement.where(Event.session_id == session_id)
+            if agent_id is not None:
+                statement = statement.where(Event.agent_id == agent_id)
+            if type is not None:
+                statement = statement.where(Event.type == type)
+            if branch is not None:
+                statement = statement.where(Event.branch == branch)
+            if since is not None:
+                statement = statement.where(col(Event.created_at) >= since)
+            if until is not None:
+                statement = statement.where(col(Event.created_at) <= until)
+            return statement
+
+        with open_session(self.engine) as db:
+            type_rows = db.exec(_apply_filters(select(Event.type, func.count()).group_by(col(Event.type)))).all()
+            by_type = {str(row[0]): int(row[1]) for row in type_rows}
+
+            agent_rows = db.exec(
+                _apply_filters(select(Event.agent_id, func.count()).group_by(col(Event.agent_id)))
+            ).all()
+            by_agent = {(row[0] if row[0] is not None else "unknown"): int(row[1]) for row in agent_rows}
+
+            day_expr = func.date(col(Event.created_at))
+            date_rows = db.exec(_apply_filters(select(day_expr, func.count()).group_by(day_expr))).all()
+            by_date = {str(row[0]): int(row[1]) for row in date_rows if row[0] is not None}
+
+            bounds = db.exec(
+                _apply_filters(select(func.min(col(Event.created_at)), func.max(col(Event.created_at))))
+            ).first()
+            first_at, last_at = (bounds[0], bounds[1]) if bounds is not None else (None, None)
+
+            total = sum(by_type.values())
+            return {
+                "total": total,
+                "by_type": by_type,
+                "by_agent": by_agent,
+                "by_date": by_date,
+                "first_event_at": first_at,
+                "last_event_at": last_at,
+            }
+
     def list_events_after(
         self,
         *,

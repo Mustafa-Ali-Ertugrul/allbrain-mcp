@@ -211,7 +211,6 @@ async def test_run_decision_pipeline_proxies_flags() -> None:
         {"goal": "ship v1"},
         enable_counterfactual=True,
         enable_foresight=True,
-        foresight_limit=5,
     )
     assert result.run_id == "run-1"
     assert fake.calls[0][0] == "run_decision_pipeline"
@@ -219,8 +218,6 @@ async def test_run_decision_pipeline_proxies_flags() -> None:
     assert args["objective"] == {"goal": "ship v1"}
     assert args["enable_counterfactual"] is True
     assert args["enable_foresight"] is True
-    # foresight_limit is a server-side param; keep default in client wrapper
-    assert "foresight_limit" not in args
 
 
 @pytest.mark.asyncio

@@ -70,8 +70,10 @@ def _session_summary(context: BrainContext, session_id: int) -> dict[str, Any]:
         return {**_ERROR_RESPONSE, "error": "Project not found"}
     with open_session(context.repository.engine) as db:
         session = context.repository.get_session(db, session_id)
-    if session is None or session.project_id != project.id:
-        return {**_ERROR_RESPONSE, "error": "Session not found"}
+        if session is None or session.project_id != project.id:
+            return {**_ERROR_RESPONSE, "error": "Session not found"}
+        agent_name = session.agent_name
+        status = session.status
     events = context.repository.list_events(
         project_path=context.project_path,
         session_id=session_id,
@@ -80,8 +82,8 @@ def _session_summary(context: BrainContext, session_id: int) -> dict[str, Any]:
     return {
         "ok": True,
         "session_id": session_id,
-        "agent_name": session.agent_name,
-        "status": session.status,
+        "agent_name": agent_name,
+        "status": status,
         "event_count": len(events),
         "event_types": sorted({e.type for e in events}),
     }

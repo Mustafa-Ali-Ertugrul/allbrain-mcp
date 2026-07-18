@@ -190,7 +190,6 @@ class AllBrainClient:
         enable_uncertainty: bool = False,
         enable_information_seeking: bool = False,
         limit: int = 5000,
-        foresight_limit: int = 5,
     ) -> DecisionPipelineResult:
         arguments = {
             "objective": objective,

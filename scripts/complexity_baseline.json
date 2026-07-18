@@ -99,7 +99,7 @@
     },
     "allbrain/server/prompts.py::register_prompts": {
       "complexity": 1,
-      "lines": 137
+      "lines": 130
     },
     "allbrain/server/queueing.py::QueueCoordinator.enqueue_pipeline_result": {
       "complexity": 16,

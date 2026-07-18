@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -22,6 +22,52 @@ class UserInputError(ValueError):
 
 _MAX_PAYLOAD_BYTES = 250_000
 _MAX_DICT_BYTES = 50_000
+
+
+def _coerce_iso_datetime(value: Any) -> Any:
+    """Coerce ISO 8601 strings into ``datetime`` for strict-mode models.
+
+    MCP clients transmit datetime fields as JSON strings, but Pydantic v2
+    ``strict=True`` rejects ``str`` for ``datetime`` fields. This helper is used
+    by ``mode="before"`` validators so that strings such as
+    ``"2026-07-17T00:00:00Z"``, ``"2026-07-17T23:59:59+03:00"`` and naive ISO
+    timestamps are accepted, while invalid strings still raise a validation
+    error and non-string inputs (e.g. real ``datetime`` objects) pass through
+    unchanged.
+
+    Naive datetimes (whether parsed from a string or passed directly) are
+    assumed to be UTC so that downstream range comparisons never mix
+    offset-naive and offset-aware values.
+    """
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return value
+        # ``datetime.fromisoformat`` accepts "+00:00" but historically not the
+        # trailing "Z"; normalize it for broad ISO 8601 compatibility.
+        if text.endswith(("Z", "z")):
+            text = f"{text[:-1]}+00:00"
+        value = datetime.fromisoformat(text)
+    if isinstance(value, datetime) and value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value
+
+
+def _coerce_bool(value: Any) -> Any:
+    """Coerce common truthy/falsey string forms into ``bool``.
+
+    MCP clients may transmit boolean flags as JSON strings (e.g. ``"true"``),
+    which Pydantic v2 ``strict=True`` rejects. This helper accepts the usual
+    string spellings while leaving real booleans and other types unchanged so
+    invalid values still raise a validation error.
+    """
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "1", "yes", "on"}:
+            return True
+        if lowered in {"false", "0", "no", "off"}:
+            return False
+    return value
 
 
 def _check_null_bytes_recursive(obj: Any) -> None:
@@ -164,7 +210,20 @@ class ListEventsInput(BaseInputModel):
     branch: str | None = Field(default=None, max_length=255)
     since: datetime | None = None
     until: datetime | None = None
-    limit: int = Field(default=50, ge=1, le=500)
+    limit: int = Field(default=50, ge=1, le=1000)
+    # Sprint 74: cursor pagination + summary mode.
+    cursor: str | None = Field(default=None, max_length=64)
+    summary: bool = False
+
+    @field_validator("since", "until", mode="before")
+    @classmethod
+    def coerce_iso_datetime(cls, value: Any) -> Any:
+        return _coerce_iso_datetime(value)
+
+    @field_validator("summary", mode="before")
+    @classmethod
+    def coerce_summary_flag(cls, value: Any) -> Any:
+        return _coerce_bool(value)
 
     @field_validator("type")
     @classmethod
@@ -232,6 +291,11 @@ class WorkSummaryInput(BaseInputModel):
     since: datetime | None = None
     until: datetime | None = None
     limit: int = Field(default=100, ge=1, le=1000)
+
+    @field_validator("since", "until", mode="before")
+    @classmethod
+    def coerce_iso_datetime(cls, value: Any) -> Any:
+        return _coerce_iso_datetime(value)
 
     @model_validator(mode="after")
     def validate_window(self) -> WorkSummaryInput:
@@ -515,3 +579,34 @@ class ToolResult(BaseModel):
     data: Any | None = None
     error: str | None = None
     error_code: str | None = None
+
+
+class ListEventsPage(BaseModel):
+    """Paginated ``list_events`` response (Sprint 74).
+
+    Returned when the caller opts into pagination via a ``cursor`` argument.
+    ``next_cursor`` is the ID of the last event in this page; pass it back on
+    the next call to fetch the following page. ``has_more`` (and its alias
+    ``truncated``) indicate that additional events exist beyond this page.
+    """
+
+    events: list[EventRead]
+    next_cursor: str | None = None
+    has_more: bool = False
+    truncated: bool = False
+
+
+class ListEventsSummary(BaseModel):
+    """Aggregated ``list_events`` response (Sprint 74).
+
+    Returned when ``summary=True``. Provides counts grouped by type, agent,
+    and calendar date without transmitting individual event records, keeping
+    the payload small for large time windows.
+    """
+
+    total: int
+    by_type: dict[str, int] = Field(default_factory=dict)
+    by_agent: dict[str, int] = Field(default_factory=dict)
+    by_date: dict[str, int] = Field(default_factory=dict)
+    first_event_at: datetime | None = None
+    last_event_at: datetime | None = None
