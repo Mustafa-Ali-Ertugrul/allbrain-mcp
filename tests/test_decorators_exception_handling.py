@@ -19,6 +19,18 @@ _DECORATORS_PY = Path(__file__).resolve().parent.parent / "src" / "allbrain" / "
 
 def _load_decorators() -> ModuleType:
     """Import decorators.py directly, bypassing the heavy __init__ chain."""
+    saved: dict[str, object] = {}
+    for name in [
+        "allbrain",
+        "allbrain.models",
+        "allbrain.server",
+        "allbrain.server.tools",
+        "allbrain.security",
+        "allbrain.models.schemas",
+        "allbrain.security.redaction",
+    ]:
+        saved[name] = sys.modules.get(name)
+
     # Ensure parent packages are importable as namespace packages
     for name in [
         "allbrain",
@@ -60,6 +72,14 @@ def _load_decorators() -> ModuleType:
     mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
     sys.modules["allbrain.server.tools.decorators"] = mod
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
+
+    # Restore original modules so other tests get the real implementations
+    for name, original in saved.items():
+        if original is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = original
+
     return mod
 
 

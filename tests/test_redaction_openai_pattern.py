@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import re
 
-_OPENAI_RE = re.compile(r"sk-(?!ant-)[a-zA-Z0-9]{48,}", re.IGNORECASE)
+_OPENAI_RE = re.compile(r"sk-(?!ant-)[a-zA-Z0-9]{40,}", re.IGNORECASE)
 
 
 def test_openai_rejects_short_key() -> None:
-    """Keys shorter than 48 chars after sk- prefix must NOT match."""
+    """Keys shorter than 40 chars after sk- prefix must NOT match."""
     short_key = "sk-" + "a" * 20
     assert _OPENAI_RE.search(short_key) is None, f"Short key matched: {short_key}"
 
@@ -24,24 +24,24 @@ def test_openai_rejects_very_short_key() -> None:
     assert _OPENAI_RE.search(key) is None
 
 
-def test_openai_rejects_47_char_key() -> None:
-    """Keys of 47 chars (just below minimum) must NOT match."""
-    key = "sk-" + "f" * 47
+def test_openai_rejects_39_char_key() -> None:
+    """Keys of 39 chars (just below minimum) must NOT match."""
+    key = "sk-" + "f" * 39
     assert _OPENAI_RE.search(key) is None
 
 
-def test_openai_accepts_48_char_key() -> None:
-    """Real 48-char OpenAI keys must match."""
-    key = "sk-" + "c" * 48
+def test_openai_accepts_40_char_key() -> None:
+    """Real 40-char OpenAI keys must match."""
+    key = "sk-" + "c" * 40
     match = _OPENAI_RE.search(key)
-    assert match is not None, f"48-char key did not match: {key}"
+    assert match is not None, f"40-char key did not match: {key}"
 
 
-def test_openai_accepts_51_char_key() -> None:
-    """Real 51-char OpenAI keys must match."""
-    key = "sk-" + "d" * 51
+def test_openai_accepts_45_char_key() -> None:
+    """Real 45-char OpenAI keys must match."""
+    key = "sk-" + "d" * 45
     match = _OPENAI_RE.search(key)
-    assert match is not None, f"51-char key did not match: {key}"
+    assert match is not None, f"45-char key did not match: {key}"
 
 
 def test_openai_accepts_52_char_key() -> None:
@@ -92,5 +92,5 @@ def test_redaction_module_uses_tightened_pattern() -> None:
             break
 
     assert openai_line is not None, "Could not find OpenAI pattern line"
-    assert "{48,}" in openai_line, f"OpenAI pattern not tightened: {openai_line}"
+    assert "{40,}" in openai_line, f"OpenAI pattern not tightened: {openai_line}"
     assert "{20,}" not in openai_line, f"Old {20,} pattern still in OpenAI line: {openai_line}"

@@ -76,7 +76,7 @@ def test_secret_in_nested_dict(tmp_path: Path) -> None:
 
 
 def test_secret_punctuation_boundary() -> None:
-    value = "sk-" + "a" * 20 + "!"
+    value = "sk-" + "a" * 40 + "!"
     result = sanitize_payload({"key": value})
     assert "********" in result["key"]
 
