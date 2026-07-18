@@ -137,9 +137,12 @@ def test_list_events_limit_zero(tmp_path: Path) -> None:
     assert not result.ok
 
 
-def test_list_events_limit_above_500(tmp_path: Path) -> None:
+def test_list_events_limit_above_max(tmp_path: Path) -> None:
     context = make_context(tmp_path)
-    result = list_events_impl(context, limit=501)
+    # Sprint 73 raised the documented upper bound from 500 to 1000.
+    ok = list_events_impl(context, limit=1000)
+    assert ok.ok
+    result = list_events_impl(context, limit=1001)
     assert not result.ok
 
 

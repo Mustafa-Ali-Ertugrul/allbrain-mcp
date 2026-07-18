@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -22,6 +22,35 @@ class UserInputError(ValueError):
 
 _MAX_PAYLOAD_BYTES = 250_000
 _MAX_DICT_BYTES = 50_000
+
+
+def _coerce_iso_datetime(value: Any) -> Any:
+    """Coerce ISO 8601 strings into ``datetime`` for strict-mode models.
+
+    MCP clients transmit datetime fields as JSON strings, but Pydantic v2
+    ``strict=True`` rejects ``str`` for ``datetime`` fields. This helper is used
+    by ``mode="before"`` validators so that strings such as
+    ``"2026-07-17T00:00:00Z"``, ``"2026-07-17T23:59:59+03:00"`` and naive ISO
+    timestamps are accepted, while invalid strings still raise a validation
+    error and non-string inputs (e.g. real ``datetime`` objects) pass through
+    unchanged.
+
+    Naive datetimes (whether parsed from a string or passed directly) are
+    assumed to be UTC so that downstream range comparisons never mix
+    offset-naive and offset-aware values.
+    """
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return value
+        # ``datetime.fromisoformat`` accepts "+00:00" but historically not the
+        # trailing "Z"; normalize it for broad ISO 8601 compatibility.
+        if text.endswith(("Z", "z")):
+            text = f"{text[:-1]}+00:00"
+        value = datetime.fromisoformat(text)
+    if isinstance(value, datetime) and value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value
 
 
 def _check_null_bytes_recursive(obj: Any) -> None:
@@ -164,7 +193,12 @@ class ListEventsInput(BaseInputModel):
     branch: str | None = Field(default=None, max_length=255)
     since: datetime | None = None
     until: datetime | None = None
-    limit: int = Field(default=50, ge=1, le=500)
+    limit: int = Field(default=50, ge=1, le=1000)
+
+    @field_validator("since", "until", mode="before")
+    @classmethod
+    def coerce_iso_datetime(cls, value: Any) -> Any:
+        return _coerce_iso_datetime(value)
 
     @field_validator("type")
     @classmethod
@@ -232,6 +266,11 @@ class WorkSummaryInput(BaseInputModel):
     since: datetime | None = None
     until: datetime | None = None
     limit: int = Field(default=100, ge=1, le=1000)
+
+    @field_validator("since", "until", mode="before")
+    @classmethod
+    def coerce_iso_datetime(cls, value: Any) -> Any:
+        return _coerce_iso_datetime(value)
 
     @model_validator(mode="after")
     def validate_window(self) -> WorkSummaryInput:

@@ -41,10 +41,13 @@ def test_list_events_accepts_screaming_alias(tmp_path: Path) -> None:
 
 def test_list_events_limit_max_documented(tmp_path: Path) -> None:
     context = make_context(tmp_path)
-    bad = list_events_impl(context, limit=501)
+    # Upper bound raised to 1000 in Sprint 73; 1000 is accepted, 1001 rejected.
+    ok = list_events_impl(context, limit=1000)
+    assert ok.ok is True
+    bad = list_events_impl(context, limit=1001)
     assert bad.ok is False
     assert bad.error_code == "validation_error"
-    assert "limit" in (bad.error or "").lower() or "500" in (bad.error or "")
+    assert "limit" in (bad.error or "").lower() or "1000" in (bad.error or "")
 
 
 def test_save_event_unknown_type_has_validation_code(tmp_path: Path) -> None:
@@ -146,9 +149,9 @@ def test_core_tool_names_registered() -> None:
 
 def test_list_events_input_schema_max() -> None:
     with pytest.raises(ValidationError):
-        ListEventsInput.model_validate({"limit": 501})
-    ok = ListEventsInput.model_validate({"limit": 500})
-    assert ok.limit == 500
+        ListEventsInput.model_validate({"limit": 1001})
+    ok = ListEventsInput.model_validate({"limit": 1000})
+    assert ok.limit == 1000
 
 
 def test_save_event_input_normalizes_type() -> None:
