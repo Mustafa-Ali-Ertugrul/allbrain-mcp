@@ -18,6 +18,19 @@ def _json_text(payload: dict[str, Any]) -> str:
     return json.dumps(payload, default=str, sort_keys=True)
 
 
+def _build_conflict_summary(session_id: int, agent_name: str, events: list[Any]) -> str:
+    conflict_types = ("conflict_detected", "resolve_conflicts", "handoff_created")
+    conflict_events = [e for e in events if e.type in conflict_types]
+    return _json_text(
+        {
+            "session_id": session_id,
+            "agent_name": agent_name,
+            "total_events": len(events),
+            "conflict_events": [{"id": e.id, "type": e.type, "payload": e.payload} for e in conflict_events],
+        }
+    )
+
+
 def register_prompts(mcp: Any, context: BrainContext) -> None:
     @mcp.prompt
     def resume_project(limit: int = 5000) -> list[dict[str, str]]:
@@ -133,15 +146,7 @@ def register_prompts(mcp: Any, context: BrainContext) -> None:
             session_id=session_id,
             limit=500,
         )
-        conflict_events = [e for e in events if e.type in ("conflict_detected", "resolve_conflicts", "handoff_created")]
-        summary = _json_text(
-            {
-                "session_id": session_id,
-                "agent_name": agent_name,
-                "total_events": len(events),
-                "conflict_events": [{"id": e.id, "type": e.type, "payload": e.payload} for e in conflict_events],
-            }
-        )
+        summary = _build_conflict_summary(session_id, agent_name, events)
         return [
             {
                 "role": "user",
