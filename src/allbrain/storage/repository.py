@@ -13,7 +13,7 @@ from sqlmodel import col, select
 from uuid6 import uuid7
 
 from allbrain.config import canonicalize_project_path
-from allbrain.events.schemas import normalize_event_type_name
+from allbrain.events.schemas import _EVENT_TYPE_ALIASES, EventType
 from allbrain.foundations.versioning import (
     current_payload_version,
     get_default_upcaster,
@@ -705,6 +705,19 @@ class BrainRepository:
         return grouped
 
 
+def _normalize_type_for_read(raw_type: str) -> str:
+    """Best-effort normalization: resolve known aliases, pass unknowns through."""
+    alias = _EVENT_TYPE_ALIASES.get(raw_type) or _EVENT_TYPE_ALIASES.get(raw_type.upper())
+    for candidate in (alias, raw_type, raw_type.lower()):
+        if candidate is None:
+            continue
+        try:
+            return EventType(candidate).value
+        except ValueError:
+            continue
+    return raw_type
+
+
 def event_to_read(event: Event) -> EventRead:
     stored_version = getattr(event, "payload_version", 1) or 1
     payload, achieved_version = get_default_upcaster().migrate(
@@ -716,7 +729,7 @@ def event_to_read(event: Event) -> EventRead:
         project_id=event.project_id,
         session_id=event.session_id,
         agent_id=event.agent_id,
-        type=normalize_event_type_name(event.type),
+        type=_normalize_type_for_read(event.type),
         source=event.source,
         file_path=event.file_path,
         payload=payload,
