@@ -577,9 +577,7 @@ class BrainRepository:
             return statement
 
         with open_session(self.engine) as db:
-            type_rows = db.exec(
-                _apply_filters(select(Event.type, func.count()).group_by(col(Event.type)))
-            ).all()
+            type_rows = db.exec(_apply_filters(select(Event.type, func.count()).group_by(col(Event.type)))).all()
             by_type = {str(row[0]): int(row[1]) for row in type_rows}
 
             agent_rows = db.exec(
@@ -588,9 +586,7 @@ class BrainRepository:
             by_agent = {(row[0] if row[0] is not None else "unknown"): int(row[1]) for row in agent_rows}
 
             day_expr = func.date(col(Event.created_at))
-            date_rows = db.exec(
-                _apply_filters(select(day_expr, func.count()).group_by(day_expr))
-            ).all()
+            date_rows = db.exec(_apply_filters(select(day_expr, func.count()).group_by(day_expr))).all()
             by_date = {str(row[0]): int(row[1]) for row in date_rows if row[0] is not None}
 
             bounds = db.exec(
@@ -607,7 +603,6 @@ class BrainRepository:
                 "first_event_at": first_at,
                 "last_event_at": last_at,
             }
-
 
     def list_events_after(
         self,
