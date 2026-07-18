@@ -93,4 +93,4 @@ def test_redaction_module_uses_tightened_pattern() -> None:
 
     assert openai_line is not None, "Could not find OpenAI pattern line"
     assert "{40,}" in openai_line, f"OpenAI pattern not tightened: {openai_line}"
-    assert "{20,}" not in openai_line, f"Old {20,} pattern still in OpenAI line: {openai_line}"
+    assert "{20,}" not in openai_line, f"Old {(20,)} pattern still in OpenAI line: {openai_line}"

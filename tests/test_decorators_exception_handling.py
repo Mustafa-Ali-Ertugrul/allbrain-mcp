@@ -105,6 +105,7 @@ def test_decorators_exception_handler_still_present() -> None:
 
 def test_decorators_handles_value_error_as_general_exception() -> None:
     """Behavioral: ValueError from a tool is caught by except Exception."""
+
     @_handle_tool_errors
     def _raise_value_error() -> _ToolResult:
         raise ValueError("bad value")
@@ -141,6 +142,7 @@ def test_decorators_still_catches_validation_error() -> None:
 
 def test_decorators_still_catches_user_input_error() -> None:
     """Ensure UserInputError is caught and returned as user_input_error."""
+
     @_handle_tool_errors
     def _raise_user_input() -> _ToolResult:
         raise _mod.UserInputError("bad input")  # type: ignore[attr-defined]
@@ -152,6 +154,7 @@ def test_decorators_still_catches_user_input_error() -> None:
 
 def test_decorators_passes_success_through() -> None:
     """Successful tool calls are not intercepted."""
+
     @_handle_tool_errors
     def _success() -> _ToolResult:
         return _ToolResult(ok=True, data={"result": 42})

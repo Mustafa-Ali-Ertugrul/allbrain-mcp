@@ -236,9 +236,7 @@ def _mask_secrets_patterns(text: str, found_types: dict[str, int]) -> str:
     return text
 
 
-def _sanitize_payload_impl(
-    obj: Any, found_types: dict[str, int], *, depth: int = 0
-) -> Any:
+def _sanitize_payload_impl(obj: Any, found_types: dict[str, int], *, depth: int = 0) -> Any:
     """Core recursive walk with field-name redaction."""
     if depth >= _MAX_SANITIZE_DEPTH:
         return obj

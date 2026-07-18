@@ -18,8 +18,7 @@ def test_lifespan_does_not_catch_base_exception() -> None:
     """The except clause must be ``except Exception``, not ``except BaseException``."""
     content = _LIFECYCLE_PY.read_text(encoding="utf-8")
     assert "except BaseException" not in content, (
-        f"{_LIFECYCLE_PY} still contains ``except BaseException`` "
-        "— should be ``except Exception``"
+        f"{_LIFECYCLE_PY} still contains ``except BaseException`` — should be ``except Exception``"
     )
     assert "except Exception" in content
 
@@ -34,13 +33,11 @@ def test_lifespan_exception_type_after_yield() -> None:
         stripped = line.strip()
         if "def lifespan" in stripped:
             in_lifespan = True
-        if in_lifespan and stripped == "yield {\"brain_context\": context}":
+        if in_lifespan and stripped == 'yield {"brain_context": context}':
             found_yield = True
             continue
         if found_yield and stripped.startswith("except "):
-            assert stripped == "except Exception:", (
-                f"Expected ``except Exception:``, got ``{stripped}``"
-            )
+            assert stripped == "except Exception:", f"Expected ``except Exception:``, got ``{stripped}``"
             return
 
     pytest.fail("Could not locate the except clause after yield in lifespan")
