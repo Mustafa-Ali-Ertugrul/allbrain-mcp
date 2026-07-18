@@ -6,6 +6,46 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+
+class ResourceRead(BaseModel):
+    uri: str
+    mime_type: str | None = None
+    text: str | None = None
+    blob: bytes | None = None
+
+
+class ResourceDescriptor(BaseModel):
+    uri: str
+    name: str
+    description: str | None = None
+    mime_type: str | None = None
+
+
+class ResourceTemplateDescriptor(BaseModel):
+    uri_template: str
+    name: str
+    description: str | None = None
+    mime_type: str | None = None
+    parameters: list[str] = Field(default_factory=list)
+
+
+class PromptMessage(BaseModel):
+    role: str
+    content: str
+
+
+class PromptResult(BaseModel):
+    name: str
+    description: str | None = None
+    messages: list[PromptMessage] = Field(default_factory=list)
+
+
+class PromptDescriptor(BaseModel):
+    name: str
+    description: str | None = None
+    arguments: list[dict[str, Any]] = Field(default_factory=list)
+
+
 ToolProfile = Literal["minimal", "memory", "collaboration", "reasoning", "core", "full"]
 
 

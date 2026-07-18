@@ -61,3 +61,54 @@ def build_resource_inventory(context: Any = None) -> list[dict[str, Any]]:
 
 def build_prompt_inventory(context: Any = None) -> list[dict[str, Any]]:
     return PROMPT_INVENTORY
+
+
+def verify_inventory_against_server(client: Any) -> dict[str, Any]:
+    """Compare the static resource/prompt inventory against a live MCP server.
+
+    ``client`` is an ``allbrain_sdk.AllBrainClient`` (connected, or usable via
+    ``async with``).  Returns a structured report with ``ok``, ``matched``,
+    ``missing`` and ``extra`` lists for both resources and prompts.
+    """
+    import asyncio
+
+    async def _collect() -> tuple[set[str], set[str], set[str]]:
+        resources = {str(r.uri) for r in await client.list_resources()}
+        templates = {str(t.uri_template) for t in await client.list_resource_templates()}
+        prompts = {p.name for p in await client.list_prompts()}
+        return resources | templates, prompts, set()
+
+    try:
+        live_resources, live_prompts, _ = asyncio.run(_collect())
+    except Exception as exc:  # noqa: BLE001 - surface as a failed verification
+        return {
+            "ok": False,
+            "error": str(exc),
+            "resources": {"matched": [], "missing": [], "extra": []},
+            "prompts": {"matched": [], "missing": [], "extra": []},
+        }
+
+    static_resources = {item["uri"] for item in RESOURCE_INVENTORY}
+    static_prompts = {item["name"] for item in PROMPT_INVENTORY}
+
+    resource_matched = sorted(static_resources & live_resources)
+    resource_missing = sorted(static_resources - live_resources)
+    resource_extra = sorted(live_resources - static_resources)
+
+    prompt_matched = sorted(static_prompts & live_prompts)
+    prompt_missing = sorted(static_prompts - live_prompts)
+    prompt_extra = sorted(live_prompts - static_prompts)
+
+    return {
+        "ok": not resource_missing and not resource_extra and not prompt_missing and not prompt_extra,
+        "resources": {
+            "matched": resource_matched,
+            "missing": resource_missing,
+            "extra": resource_extra,
+        },
+        "prompts": {
+            "matched": prompt_matched,
+            "missing": prompt_missing,
+            "extra": prompt_extra,
+        },
+    }

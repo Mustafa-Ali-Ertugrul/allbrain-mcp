@@ -36,6 +36,7 @@ def slim_resume_view(data: dict[str, Any]) -> dict[str, Any]:
         "working_files": working if isinstance(working, list) else [],
         "next_step": data.get("next_step") or decision.get("next_step"),
         "conflict_count": int(conflict.get("count") or 0),
+        "conflict_view": conflict,
         "git": git_slim,
     }
 

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Self
 
 from fastmcp import Client
 from fastmcp.client.transports import StdioTransport
+from mcp.types import TextContent
 from pydantic import ValidationError
 
 from allbrain_sdk.errors import AllBrainProtocolError, AllBrainToolError
@@ -17,6 +19,12 @@ from allbrain_sdk.models import (
     CreateTaskResult,
     DecisionPipelineResult,
     EventRecord,
+    PromptDescriptor,
+    PromptMessage,
+    PromptResult,
+    ResourceDescriptor,
+    ResourceRead,
+    ResourceTemplateDescriptor,
     ResumeProjectResult,
     TaskGraphResult,
     ToolEnvelope,
@@ -242,6 +250,111 @@ class AllBrainClient:
         return ConflictResult.model_validate(
             await self._call("detect_conflicts", {"limit": limit, "threshold": threshold})
         )
+
+    async def list_resources(self) -> list[ResourceDescriptor]:
+        if self._client is None:
+            raise AllBrainProtocolError("Client is not connected; use 'async with' or await connect()")
+        resources = await self._client.list_resources()
+        return [
+            ResourceDescriptor(
+                uri=str(item.uri),
+                name=item.name,
+                description=item.description,
+                mime_type=item.mimeType,
+            )
+            for item in resources
+        ]
+
+    async def list_resource_templates(self) -> list[ResourceTemplateDescriptor]:
+        if self._client is None:
+            raise AllBrainProtocolError("Client is not connected; use 'async with' or await connect()")
+        templates = await self._client.list_resource_templates()
+        return [
+            ResourceTemplateDescriptor(
+                uri_template=str(item.uriTemplate),
+                name=item.name,
+                description=item.description,
+                mime_type=item.mimeType,
+            )
+            for item in templates
+        ]
+
+    async def list_prompts(self) -> list[PromptDescriptor]:
+        if self._client is None:
+            raise AllBrainProtocolError("Client is not connected; use 'async with' or await connect()")
+        prompts = await self._client.list_prompts()
+        return [
+            PromptDescriptor(
+                name=item.name,
+                description=item.description,
+                arguments=[arg.model_dump() for arg in item.arguments] if item.arguments else [],
+            )
+            for item in prompts
+        ]
+
+    async def read_resource(self, uri: str) -> ResourceRead:
+        if self._client is None:
+            raise AllBrainProtocolError("Client is not connected; use 'async with' or await connect()")
+        contents = await self._client.read_resource(uri)
+        first = contents[0] if contents else None
+        if first is None:
+            raise AllBrainProtocolError(f"MCP resource '{uri}' returned no content")
+        return ResourceRead(
+            uri=str(getattr(first, "uri", uri)),
+            mime_type=getattr(first, "mimeType", None),
+            text=getattr(first, "text", None),
+            blob=getattr(first, "blob", None),
+        )
+
+    async def get_prompt(self, name: str, /, **arguments: Any) -> PromptResult:
+        if self._client is None:
+            raise AllBrainProtocolError("Client is not connected; use 'async with' or await connect()")
+        result = await self._client.get_prompt(name, arguments=arguments or None)
+        parsed_messages: list[PromptMessage] = []
+        for message in result.messages:
+            content = message.content
+            if isinstance(content, TextContent):
+                text = content.text
+            else:
+                text = json.dumps(content.model_dump(mode="json"), default=str, sort_keys=True)
+            parsed_messages.append(PromptMessage(role=message.role, content=text))
+        return PromptResult(
+            name=name,
+            description=result.description,
+            messages=parsed_messages,
+        )
+
+    async def project_resume_raw(self) -> ResourceRead:
+        return await self.read_resource("project://resume")
+
+    async def tasks_graph_raw(self) -> ResourceRead:
+        return await self.read_resource("tasks://graph")
+
+    async def git_fingerprint_raw(self) -> ResourceRead:
+        return await self.read_resource("git://fingerprint")
+
+    async def session_summary(self, session_id: int) -> ResourceRead:
+        return await self.read_resource(f"session://{session_id}/summary")
+
+    async def event_by_id(self, event_id: str) -> ResourceRead:
+        return await self.read_resource(f"event://{event_id}")
+
+    async def resume_project_prompt(self, limit: int = 5000) -> PromptResult:
+        return await self.get_prompt("resume_project", limit=limit)
+
+    async def task_handoff_prompt(
+        self,
+        task_id: str,
+        from_agent: str,
+        reason: str | None = None,
+    ) -> PromptResult:
+        arguments: dict[str, Any] = {"task_id": task_id, "from_agent": from_agent}
+        if reason is not None:
+            arguments["reason"] = reason
+        return await self.get_prompt("task_handoff", **arguments)
+
+    async def investigate_conflict_prompt(self, session_id: int) -> PromptResult:
+        return await self.get_prompt("investigate_conflict", session_id=session_id)
 
     async def _call(self, tool_name: str, arguments: dict[str, Any]) -> Any:
         if self._client is None:
