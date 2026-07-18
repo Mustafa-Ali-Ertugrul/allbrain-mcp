@@ -446,11 +446,22 @@ def doctor(
         bool,
         typer.Option("--clients", help="Inspect MCP client configs and running AllBrain processes."),
     ] = False,
+    inventory: Annotated[
+        bool,
+        typer.Option("--inventory", help="Show registered MCP resources and prompts inventory."),
+    ] = False,
+    verify: Annotated[
+        bool,
+        typer.Option("--verify", help="Verify the static inventory against a live MCP server."),
+    ] = False,
     json_output: Annotated[bool, typer.Option("--json", help="Emit machine-readable JSON.")] = False,
 ) -> None:
     """Check database health; optionally inspect multi-client MCP installs."""
     if clients:
         _doctor_clients(project=project, json_output=json_output, db_path=db_path)
+        return
+    if inventory or verify:
+        _doctor_inventory(project=project, verify=verify, json_output=json_output)
         return
 
     resolved_db = _resolve_db(db_path)
@@ -534,20 +545,59 @@ def doctor(
 
     engine.dispose()
 
-    from allbrain.ops.inventory import build_prompt_inventory, build_resource_inventory
-
-    resources = build_resource_inventory()
-    prompts = build_prompt_inventory()
-    console.print(f"PASS  Resources: {len(resources)} registered")
-    for res in resources:
-        console.print(f"      - {res['uri']} ({res['name']})")
-    console.print(f"PASS  Prompts:   {len(prompts)} registered")
-    for prm in prompts:
-        console.print(f"      - {prm['name']}({', '.join(prm['parameters'])})")
-
     if not health:
         raise typer.Exit(code=1)
     console.print("\nAll checks passed.")
+
+
+def _doctor_inventory(*, project: Path, verify: bool, json_output: bool) -> None:
+    from allbrain.ops.inventory import (
+        build_prompt_inventory,
+        build_resource_inventory,
+        verify_inventory_against_server,
+    )
+
+    resources = build_resource_inventory()
+    prompts = build_prompt_inventory()
+
+    if not verify:
+        report = {
+            "resources": [{"uri": r["uri"], "name": r["name"]} for r in resources],
+            "prompts": [{"name": p["name"], "parameters": p["parameters"]} for p in prompts],
+        }
+        if json_output:
+            console.print_json(data=report)
+            return
+        console.print(f"PASS  Resources: {len(resources)} registered")
+        for res in resources:
+            console.print(f"      - {res['uri']} ({res['name']})")
+        console.print(f"PASS  Prompts:   {len(prompts)} registered")
+        for prm in prompts:
+            console.print(f"      - {prm['name']}({', '.join(prm['parameters'])})")
+        return
+
+    client = _live_inventory_client(project)
+    result = verify_inventory_against_server(client)
+    if json_output:
+        console.print_json(data=result)
+    else:
+        console.print("Inventory verification against live MCP server:")
+        console.print(f"  Resources matched: {len(result['resources']['matched'])}")
+        console.print(f"  Resources missing:  {len(result['resources']['missing'])}")
+        console.print(f"  Resources extra:    {len(result['resources']['extra'])}")
+        console.print(f"  Prompts matched:    {len(result['prompts']['matched'])}")
+        console.print(f"  Prompts missing:    {len(result['prompts']['missing'])}")
+        console.print(f"  Prompts extra:      {len(result['prompts']['extra'])}")
+    if not result["ok"]:
+        raise typer.Exit(code=1)
+    console.print("\nInventory matches server.")
+
+
+def _live_inventory_client(project: Path):
+    from allbrain_sdk import AllBrainClient
+
+    client = AllBrainClient(project=str(project), agent="cli-verify")
+    return client
 
 
 @app.command()

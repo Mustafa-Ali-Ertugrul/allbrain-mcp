@@ -14,6 +14,7 @@ from allbrain.ops.inventory import (
     RESOURCE_INVENTORY,
     build_prompt_inventory,
     build_resource_inventory,
+    verify_inventory_against_server,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "inspect_client",
     "kill_allbrain_processes",
     "list_allbrain_processes",
+    "verify_inventory_against_server",
 ]

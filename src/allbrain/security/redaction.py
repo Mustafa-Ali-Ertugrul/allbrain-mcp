@@ -284,7 +284,7 @@ def sanitize_text(text: str) -> str:
 # without losing the error type / location.  Example match:
 #   "Input should be a valid string [type=string_type, input_value='sk-abc...', input_type=str]"
 #   → "Input should be a valid string [type=string_type, input_type=str]"
-_PYDANTIC_INPUT_RE = re.compile(r",?\s*input_value=(?:[^,\]]|,(?!\s*\w+=))*")
+_PYDANTIC_INPUT_RE = re.compile(r",?\s*input_value=(?:(?!,\s*\w+=|\])[^]])*")
 
 
 def sanitize_valerr_msg(msg: str) -> str:
