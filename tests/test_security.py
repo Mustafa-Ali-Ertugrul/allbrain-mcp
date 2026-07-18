@@ -58,7 +58,8 @@ def test_project_path_ignored_not_redirected(tmp_path: Path) -> None:
     # Event is stored under the context project, not the attacker path.
     listed = list_events_impl(context, limit=10)
     assert listed.ok
-    assert any(e.get("type") == "file_modified" for e in (listed.data or []))
+    events = listed.data.get("events", []) if isinstance(listed.data, dict) else listed.data
+    assert any(e.get("type") == "file_modified" for e in events)
 
 
 def test_assign_task_accepts_legacy_project_path_kwarg(tmp_path: Path) -> None:

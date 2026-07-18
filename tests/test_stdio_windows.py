@@ -69,7 +69,7 @@ def test_stdio_json_rpc_uses_lf_and_preserves_tool_descriptions(tmp_path: Path) 
         assert tools_raw.endswith(b"\n")
         assert not tools_raw.endswith(b"\r\n")
         tools = tools_response["result"]["tools"]  # type: ignore[index]
-        assert len(tools) == 50
+        assert len(tools) == 51
         assert all(tool.get("description", "").strip() for tool in tools)
     finally:
         process.terminate()
