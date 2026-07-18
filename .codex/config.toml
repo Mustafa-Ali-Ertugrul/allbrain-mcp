@@ -3,17 +3,17 @@ command = "uv"
 args = [
     "run",
     "--project",
-    "C:\\Users\\Ali\\OneDrive\\Masa\u00fcst\u00fc\\AllBrain MCP",
+    ".",
     "allbrain",
     "start",
     "--project",
-    "C:\\Users\\Ali\\OneDrive\\Masa\u00fcst\u00fc\\AllBrain MCP",
+    ".",
     "--agent",
     "codex",
     "--db-path",
-    "C:\\Users\\Ali\\.allbrain\\allbrain.db",
+    ".allbrain.db",
 ]
-cwd = "C:\\Users\\Ali\\OneDrive\\Masa\u00fcst\u00fc\\AllBrain MCP"
+cwd = "."
 startup_timeout_sec = 60
 tool_timeout_sec = 120
 enabled = true
