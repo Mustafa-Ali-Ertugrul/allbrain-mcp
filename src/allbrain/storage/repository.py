@@ -13,6 +13,7 @@ from sqlmodel import col, select
 from uuid6 import uuid7
 
 from allbrain.config import canonicalize_project_path
+from allbrain.events.schemas import normalize_event_type_name
 from allbrain.foundations.versioning import (
     current_payload_version,
     get_default_upcaster,
@@ -715,7 +716,7 @@ def event_to_read(event: Event) -> EventRead:
         project_id=event.project_id,
         session_id=event.session_id,
         agent_id=event.agent_id,
-        type=event.type,
+        type=normalize_event_type_name(event.type),
         source=event.source,
         file_path=event.file_path,
         payload=payload,
