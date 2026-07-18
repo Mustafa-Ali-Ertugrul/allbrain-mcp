@@ -10,10 +10,11 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 logger = logging.getLogger(__name__)
 
 _MAX_ENV_PATTERN_LENGTH = 512
+_MAX_SANITIZE_DEPTH = 32
 
 _BUILTIN_SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"sk-ant-[a-zA-Z0-9_-]{20,}", re.IGNORECASE), "anthropic"),
-    (re.compile(r"sk-(?!ant-)[a-zA-Z0-9]{20,}", re.IGNORECASE), "openai"),
+    (re.compile(r"sk-(?!ant-)[a-zA-Z0-9]{40,}", re.IGNORECASE), "openai"),
     (re.compile(r"ghp_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_pat"),
     (re.compile(r"gho_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_oauth"),
     (re.compile(r"ghu_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_user"),
@@ -235,8 +236,10 @@ def _mask_secrets_patterns(text: str, found_types: dict[str, int]) -> str:
     return text
 
 
-def _sanitize_payload_impl(obj: Any, found_types: dict[str, int]) -> Any:
+def _sanitize_payload_impl(obj: Any, found_types: dict[str, int], *, depth: int = 0) -> Any:
     """Core recursive walk with field-name redaction."""
+    if depth >= _MAX_SANITIZE_DEPTH:
+        return obj
     if isinstance(obj, dict):
         out: dict[str, Any] = {}
         for k, v in obj.items():
@@ -246,10 +249,10 @@ def _sanitize_payload_impl(obj: Any, found_types: dict[str, int]) -> Any:
             elif isinstance(v, str):
                 out[k] = _mask_url_or_text(v, found_types)
             else:
-                out[k] = _sanitize_payload_impl(v, found_types)
+                out[k] = _sanitize_payload_impl(v, found_types, depth=depth + 1)
         return out
     if isinstance(obj, list):
-        return [_sanitize_payload_impl(v, found_types) for v in obj]
+        return [_sanitize_payload_impl(v, found_types, depth=depth + 1) for v in obj]
     if isinstance(obj, str):
         return _mask_url_or_text(obj, found_types)
     return obj
