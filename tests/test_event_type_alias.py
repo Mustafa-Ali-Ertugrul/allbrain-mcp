@@ -7,12 +7,10 @@ clients that may still send the old name.
 
 from __future__ import annotations
 
-import pytest
-
 from allbrain.events.schemas import (
+    _EVENT_TYPE_ALIASES,
     EventType,
     normalize_event_type_name,
-    _EVENT_TYPE_ALIASES,
 )
 
 

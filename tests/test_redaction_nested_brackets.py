@@ -76,7 +76,8 @@ def test_sanitize_valerr_msg_strips_and_redacts() -> None:
     """Integration: sanitize_valerr_msg strips input_value then redacts secrets."""
     from allbrain.security.redaction import sanitize_valerr_msg
 
-    msg = "Error [type=string_type, input_value='sk-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMN', input_type=str]"
+    secret = "sk-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMN"
+    msg = f"Error [type=string_type, input_value='{secret}', input_type=str]"
     result = sanitize_valerr_msg(msg)
     assert "sk-" not in result
     assert "type=string_type" in result
