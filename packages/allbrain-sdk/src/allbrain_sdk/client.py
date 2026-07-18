@@ -135,7 +135,9 @@ class AllBrainClient:
         if until is not None:
             arguments["until"] = until
         payload = await self._call("list_events", arguments)
-        return [EventRecord.model_validate(item) for item in payload]
+        # list_events now returns a ListEventsPage dict (events key contains the list)
+        events = payload.get("events", []) if isinstance(payload, dict) else payload
+        return [EventRecord.model_validate(item) for item in events]
 
     async def resume_project(
         self,

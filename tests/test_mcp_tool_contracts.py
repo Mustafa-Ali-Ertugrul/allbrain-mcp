@@ -36,7 +36,9 @@ def test_list_events_accepts_screaming_alias(tmp_path: Path) -> None:
     listed = list_events_impl(context, type="TASK_CREATED", limit=10)
     assert listed.ok is True, listed.error
     assert listed.error_code is None
-    assert any(item.get("type") == "task_created" for item in (listed.data or []))
+    # data is now a ListEventsPage dict (events key contains the list)
+    events = listed.data.get("events", []) if isinstance(listed.data, dict) else listed.data
+    assert any(item.get("type") == "task_created" for item in events)
 
 
 def test_list_events_limit_max_documented(tmp_path: Path) -> None:
@@ -183,23 +185,44 @@ def _seed_events(context, count: int) -> list[str]:
     return ids
 
 
-def test_list_events_default_returns_plain_list(tmp_path: Path) -> None:
+def test_list_events_default_returns_page_wrapper(tmp_path: Path) -> None:
     context = make_context(tmp_path)
     _seed_events(context, 3)
     result = list_events_impl(context, limit=10)
     assert result.ok is True
-    # Backward-compatible default: data is a plain list of event dicts.
-    assert isinstance(result.data, list)
-    assert len(result.data) >= 1
+    # Default (no cursor/summary) is now served through the paginated path and
+    # returns a ListEventsPage wrapper rather than a bare list.
+    assert isinstance(result.data, dict)
+    assert "events" in result.data
+    assert "next_cursor" in result.data
+    assert "has_more" in result.data
+    assert "truncated" in result.data
+    assert len(result.data["events"]) == 3
+    assert result.data["has_more"] is False
+    assert result.data["truncated"] is False
+
+
+def test_list_events_default_truncates_large_window(tmp_path: Path) -> None:
+    context = make_context(tmp_path)
+    _seed_events(context, 5)
+    # limit < count → default path must truncate and expose next_cursor.
+    result = list_events_impl(context, limit=2)
+    assert result.ok is True
+    assert isinstance(result.data, dict)
+    assert result.data["has_more"] is True
+    assert result.data["truncated"] is True
+    assert result.data["next_cursor"] is not None
+    assert len(result.data["events"]) == 2
 
 
 def test_list_events_cursor_returns_page_wrapper(tmp_path: Path) -> None:
     context = make_context(tmp_path)
     _seed_events(context, 5)
-    # First, grab an existing event id to use as a starting cursor.
+    # Default path returns a ListEventsPage dict (events key contains list).
     baseline = list_events_impl(context, limit=1000)
-    assert isinstance(baseline.data, list)
-    first_id = baseline.data[0]["id"]
+    assert isinstance(baseline.data, dict)
+    assert "events" in baseline.data
+    first_id = baseline.data["events"][0]["id"]
     page = list_events_impl(context, limit=2, cursor=first_id)
     assert page.ok is True
     assert isinstance(page.data, dict)
@@ -212,7 +235,9 @@ def test_list_events_pagination_walk(tmp_path: Path) -> None:
     context = make_context(tmp_path)
     _seed_events(context, 5)
     baseline = list_events_impl(context, limit=1000)
-    start_cursor = baseline.data[0]["id"]
+    # baseline is now a ListEventsPage dict
+    events = baseline.data.get("events", []) if isinstance(baseline.data, dict) else baseline.data
+    start_cursor = events[0]["id"]
     # Cursor mode returns a page wrapper (dict) rather than a plain list.
     first_page = list_events_impl(context, limit=2, cursor=start_cursor)
     assert isinstance(first_page.data, dict)

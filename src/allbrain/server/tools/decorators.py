@@ -48,9 +48,6 @@ def handle_tool_errors(func: Callable[..., ToolResult]) -> Callable[..., ToolRes
                 error=sanitize_text(str(exc)),
                 error_code="user_input_error",
             )
-        except ValueError:
-            logger.exception("Tool rejected an unexpected value")
-            return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
         except Exception:
             logger.exception("Tool failed")
             return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
