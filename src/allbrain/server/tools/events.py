@@ -167,33 +167,28 @@ def register_tools(mcp, context: BrainContext) -> None:
     ) -> dict[str, Any]:
         """Append an event to the shared event log with optional metadata.
 
-        Use this to record agent actions, decisions, and state changes. All events
-        are append-only with stable UUIDv7 ordering, enabling deterministic replay.
+        Records agent actions, decisions, and state changes. All events are
+        append-only with stable UUIDv7 ordering for deterministic replay.
 
-        Side effects: Creates a new event in the SQLite event log. Triggers an
-        automatic snapshot when the event threshold is reached. This is the primary
-        write operation for the event-sourced architecture.
+        Side effects: Creates a new event in the SQLite event log. Triggers
+        an automatic snapshot when the event threshold is reached.
 
         Args:
             type: Event type identifier in snake_case (e.g., "task_created",
                 "task_assigned", "tool_call", "file_modified"). SCREAMING_SNAKE
                 aliases such as "TASK_CREATED" are also accepted.
-            payload: Event data as a JSON-serializable dict. Should contain the
-                relevant state or information being recorded.
+            payload: Event data as a JSON-serializable dict.
             file_path: Optional source file path (for code-related events).
-            source: Event source label (default "agent"). Use "allbrain" for
-                system-generated events, or the agent name for agent actions.
-            session_id: Optional session ID to associate with (for multi-agent tracing).
+            source: Event source label (default "agent").
+            session_id: Optional session ID to associate with.
             task_hint: Optional task hint string (helps with memory building).
-            importance: Optional importance rating (1-5); higher values may trigger
-                more frequent snapshots.
+            importance: Optional importance rating (1-5).
             impact_score: Optional impact score for decision events.
-            caused_by: Optional causal event reference (creates event provenance).
+            caused_by: Optional causal event reference.
             branch: Optional branch name (for git-based project tracking).
 
         Returns:
-            The created event as a JSON-serializable dict with id, type, timestamp,
-            payload, and all metadata fields.
+            The created event as a JSON-serializable dict.
         """
         result = save_event_impl(
             context,
@@ -224,23 +219,13 @@ def register_tools(mcp, context: BrainContext) -> None:
     ) -> dict[str, Any]:
         """Query event log with optional filtering, pagination, and summary mode.
 
-        Filters: session_id, type, agent_id, branch, since, until, limit.
-
-        Pagination: pass a ``cursor`` (an event ID from a previous page's
-        ``next_cursor``) to fetch events after it. When a cursor is used the
-        response is a page object ``{events, next_cursor, has_more, truncated}``;
-        keep calling with the returned ``next_cursor`` until ``has_more`` is
-        false. Use this for large windows to stay within client payload limits.
+        Pagination: pass a ``cursor`` (from a previous page's ``next_cursor``)
+        to fetch the next page. The response is always a page object
+        ``{events, next_cursor, has_more, truncated}`` — keep calling with the
+        returned ``next_cursor`` until ``has_more`` is false.
 
         Summary mode: pass ``summary=true`` to receive aggregate counts
-        ``{total, by_type, by_agent, by_date, first_event_at, last_event_at}``
         instead of full event records — ideal for large time ranges.
-
-        Without ``cursor`` or ``summary`` the tool still returns a page object
-        ``{events, next_cursor, has_more, truncated}``. The default window is
-        truncated (``truncated=true``) when it exceeds ``limit``, so callers
-        must follow ``next_cursor`` for full coverage. Use ``summary=true`` to
-        receive aggregate counts instead of event records.
         """
         result = list_events_impl(
             context,
