@@ -45,6 +45,7 @@ from allbrain.storage.database import open_write_session
 
 # ── Core tool utilities (session binding, audit, atomic write) ────────────
 
+
 def bind_session_id(context: BrainContext, session_id: int | None) -> int:
     from allbrain.storage.database import open_session
 

@@ -102,9 +102,19 @@ def test_apply_events_single_pass_equivalence() -> None:
     old_result = _apply_events_double_pass(base_state, events, git={"branch": "main"})
     new_result = StateEngine().apply_events(base_state, events, git={"branch": "main"})
 
-    for key in ["goal", "working_files", "open_tasks", "completed_tasks",
-                 "blocked", "failures", "tool_usage", "last_event_id",
-                 "last_working_file", "event_count", "git"]:
+    for key in [
+        "goal",
+        "working_files",
+        "open_tasks",
+        "completed_tasks",
+        "blocked",
+        "failures",
+        "tool_usage",
+        "last_event_id",
+        "last_working_file",
+        "event_count",
+        "git",
+    ]:
         assert old_result[key] == new_result[key], f"Mismatch on key '{key}'"
 
 

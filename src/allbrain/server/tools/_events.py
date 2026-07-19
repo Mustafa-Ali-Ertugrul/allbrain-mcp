@@ -39,9 +39,7 @@ def iter_events_through_cursor(repository, *, project_path: str | Path, batch_si
 
 def load_events_through_cursor(repository, *, project_path: str | Path, batch_size: int) -> list:
     """Load complete project history through a stable high-water event cursor."""
-    return list(iter_events_through_cursor(
-        repository, project_path=project_path, batch_size=batch_size
-    ))
+    return list(iter_events_through_cursor(repository, project_path=project_path, batch_size=batch_size))
 
 
 def iter_event_pages_through_cursor(
