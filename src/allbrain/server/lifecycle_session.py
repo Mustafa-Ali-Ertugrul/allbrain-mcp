@@ -136,14 +136,9 @@ def record_git_changes(
     confidence: str = "low",
 ) -> dict[str, Any]:
     """Persist Git deltas observed since the previous session checkpoint."""
+    # Lock briefly to read baseline + recorded cache (state reads only).
     with context._session_lock:
-        git = GitBrain(context.project_path)
-        final_fingerprint = git.build_fingerprint()
         baseline = context.git_baseline
-        if baseline is None:
-            context.git_baseline = final_fingerprint
-            return final_fingerprint
-        changes = git.changed_paths_between(baseline, final_fingerprint)
         recorded = context._recorded_git_keys
         if recorded is None:
             events = context.repository.list_session_events(session.id or 0)
@@ -153,6 +148,20 @@ def record_git_changes(
                 if event.type == EventType.FILE_MODIFIED.value
             }
             context._recorded_git_keys = recorded
+
+    # Expensive I/O outside the lock: subprocess calls (~50-200ms).
+    git = GitBrain(context.project_path)
+    final_fingerprint = git.build_fingerprint()
+
+    if baseline is None:
+        with context._session_lock:
+            context.git_baseline = final_fingerprint
+        return final_fingerprint
+
+    changes = git.changed_paths_between(baseline, final_fingerprint)
+
+    # Lock again for state mutation: write events + update baseline.
+    with context._session_lock:
         branch = final_fingerprint.get("branch") or context.agent_name
         fingerprints = dict(final_fingerprint.get("files") or {})
         for change in changes:
@@ -179,7 +188,7 @@ def record_git_changes(
             )
             recorded.add(key)
         context.git_baseline = final_fingerprint
-        return final_fingerprint
+    return final_fingerprint
 
 
 def _project_path_for_session(context: BrainContext, session: Session) -> str:

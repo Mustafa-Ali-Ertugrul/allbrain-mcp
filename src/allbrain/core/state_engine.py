@@ -29,14 +29,14 @@ class StateEngine:
             return state
 
         final_machine = StateMachine(ProjectState.from_dict(base_state))
-        for event in events:
-            final_machine.apply(event)
-        final_state = final_machine.get_state().to_dict()
-
         delta_machine = StateMachine()
         for event in events:
+            final_machine.apply(event)
             delta_machine.apply(event)
+        final_state = final_machine.get_state().to_dict()
         delta_state = delta_machine.get_state().to_dict()
+
+        # Override delta fields where merger needs final_state values
         delta_state["goal"] = final_state["goal"]
         delta_state["working_files"] = final_state["working_files"]
         delta_state["open_tasks"] = final_state["open_tasks"]
