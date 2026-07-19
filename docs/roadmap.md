@@ -2,6 +2,16 @@
 
 This roadmap outlines the targets for the upcoming versions, distinguishing between new features and technical debt reduction.
 
+## v0.2.5 Backlog
+
+* **Snapshot Generation Optimization:**
+  * Wide `SnapshotEngine.build_snapshot()` to accept `Iterable[EventRecord]` instead of `list`.
+  * Update `_snapshot.py` to use lazy `iter_events_through_cursor()` generator instead of list materialization.
+* **Shared Facade Cleanup:**
+  * Add deprecation warnings (`DeprecationWarning`) to remaining public re-exports in `_shared.py` facade, prompting direct imports from `_events`, `_snapshot`, and `_tasks`.
+* **MCP Resource Subscriptions:**
+  * Implement MCP resource subscription handling once FastMCP upstream adds native subscription support.
+
 ## 1. Technical Debt Reduction
 
 * **PipelineServices Refactoring:**
