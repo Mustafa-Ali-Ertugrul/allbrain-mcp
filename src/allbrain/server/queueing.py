@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 from datetime import UTC, timedelta
 from typing import Any
 
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import col, select
 from uuid6 import uuid7
 
@@ -12,7 +12,9 @@ from allbrain.events import EventType
 from allbrain.models.entities import QueueItemRecord, WorkerLeaseRecord, utc_now
 from allbrain.security.redaction import sanitize_payload
 from allbrain.server.context import BrainContext
-from allbrain.storage.database import open_session
+from allbrain.storage._json import dumps as _dumps_json
+from allbrain.storage._json import loads as _loads_json
+from allbrain.storage.database import open_session, open_write_session
 
 
 class QueueCoordinator:
@@ -86,30 +88,37 @@ class QueueCoordinator:
             "metadata": meta,
         }
         key = f"{idempotency_prefix}:{resolved_workflow}:{task_id}:{agent_id}"
-        with open_session(self.context.repository.engine) as db:
-            existing = db.exec(select(QueueItemRecord).where(QueueItemRecord.idempotency_key == key)).first()
-            if existing is not None:
-                return self._record_data(existing)
-            record = QueueItemRecord(
-                id=str(uuid7()),
-                idempotency_key=key,
-                workflow_id=resolved_workflow,
-                task_id=task_id,
-                node_id=resolved_node,
-                agent_id=agent_id,
-                state="queued",
-                payload_json=json.dumps(sanitize_payload(payload), ensure_ascii=True, sort_keys=True),
-            )
-            db.add(record)
-            self._event(
-                db,
-                EventType.QUEUE_ITEM_ENQUEUED.value,
-                record,
-                {"queue_backend": "sqlite", "idempotency_key": key},
-            )
-            db.commit()
-            db.refresh(record)
-            return self._record_data(record)
+        try:
+            with open_write_session(self.context.repository.engine) as db:
+                existing = db.exec(select(QueueItemRecord).where(QueueItemRecord.idempotency_key == key)).first()
+                if existing is not None:
+                    return self._record_data(existing)
+                record = QueueItemRecord(
+                    id=str(uuid7()),
+                    idempotency_key=key,
+                    workflow_id=resolved_workflow,
+                    task_id=task_id,
+                    node_id=resolved_node,
+                    agent_id=agent_id,
+                    state="queued",
+                    payload_json=_dumps_json(sanitize_payload(payload)),
+                )
+                db.add(record)
+                self._event(
+                    db,
+                    EventType.QUEUE_ITEM_ENQUEUED.value,
+                    record,
+                    {"queue_backend": "sqlite", "idempotency_key": key},
+                )
+                db.commit()
+                db.refresh(record)
+                return self._record_data(record)
+        except IntegrityError:
+            with open_session(self.context.repository.engine) as db:
+                existing = db.exec(select(QueueItemRecord).where(QueueItemRecord.idempotency_key == key)).first()
+                if existing is not None:
+                    return self._record_data(existing)
+                raise
 
     def claim(
         self,
@@ -176,7 +185,7 @@ class QueueCoordinator:
                 self._event(db, EventType.QUEUE_ITEM_DEQUEUED.value, record, {"queue_backend": "sqlite"})
                 db.commit()
                 data = self._record_data(record)
-                data["payload"] = json.loads(record.payload_json)
+                data["payload"] = _loads_json(record.payload_json)
                 return data
         return None
 

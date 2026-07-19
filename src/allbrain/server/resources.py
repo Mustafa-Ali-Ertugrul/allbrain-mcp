@@ -6,6 +6,7 @@ import json
 import logging
 from typing import Any
 
+from allbrain.security.redaction import sanitize_payload
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import load_task_projection
 from allbrain.storage.database import open_session
@@ -101,7 +102,10 @@ def _event_by_id(context: BrainContext, event_id: str) -> dict[str, Any]:
         "agent_id": event.agent_id,
         "type": event.type,
         "source": event.source,
-        "payload": event.payload,
+        # Defense-in-depth: re-sanitize the persisted payload before it is
+        # surfaced through the resource endpoint, so any secret that slipped
+        # past the storage-layer redaction cannot leak to clients.
+        "payload": sanitize_payload(event.payload),
         "created_at": event.created_at,
     }
 

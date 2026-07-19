@@ -10,20 +10,21 @@ from pathlib import Path
 import pytest
 
 from allbrain.security.redaction import sanitize_payload
+from tests._helpers import make_openai_key
 
 
 def test_lowercase_openai_key_masked() -> None:
-    result = sanitize_payload({"key": "sk-" + "a" * 40})
+    result = sanitize_payload({"key": make_openai_key()})
     assert result["key"] == "********"
 
 
 def test_uppercase_openai_key_masked() -> None:
-    result = sanitize_payload({"key": "SK-" + "A" * 40})
+    result = sanitize_payload({"key": "SK-" + "A" * 48})
     assert result["key"] == "********"
 
 
 def test_mixed_case_openai_key_masked() -> None:
-    result = sanitize_payload({"key": "Sk-" + "A" * 40})
+    result = sanitize_payload({"key": "Sk-" + "A" * 48})
     assert result["key"] == "********"
 
 
@@ -50,7 +51,7 @@ def test_newline_breaks_pattern() -> None:
 
 
 def test_secret_in_sentence_masked_only_part() -> None:
-    value = "my key is sk-" + "a" * 40 + " please keep it safe"
+    value = "my key is " + make_openai_key() + " please keep it safe"
     result = sanitize_payload({"key": value})
     assert "********" in result["key"]
     assert "my key is" in result["key"]
@@ -58,25 +59,25 @@ def test_secret_in_sentence_masked_only_part() -> None:
 
 
 def test_multiple_overlapping_patterns(tmp_path: Path) -> None:
-    value = "sk-" + "a" * 40 + " and ghp_" + "b" * 36
+    value = make_openai_key() + " and ghp_" + "b" * 36
     result1 = sanitize_payload({"key": value})
     assert result1["key"].count("********") == 2
 
 
 def test_short_secret_not_masked() -> None:
-    """sk- with fewer than 20 chars is too short — not masked."""
-    result = sanitize_payload({"key": "sk-" + "a" * 19})
-    assert result["key"] == "sk-" + "a" * 19
+    """sk- with fewer than 40 chars is too short — not masked."""
+    result = sanitize_payload({"key": "sk-" + "a" * 39})
+    assert result["key"] == "sk-" + "a" * 39
 
 
 def test_secret_in_nested_dict(tmp_path: Path) -> None:
-    payload = {"a": {"b": ["sk-" + "a" * 40]}}
+    payload = {"a": {"b": [make_openai_key()]}}
     result = sanitize_payload(payload)
     assert result["a"]["b"][0] == "********"
 
 
 def test_secret_punctuation_boundary() -> None:
-    value = "sk-" + "a" * 40 + "!"
+    value = make_openai_key() + "!"
     result = sanitize_payload({"key": value})
     assert "********" in result["key"]
 

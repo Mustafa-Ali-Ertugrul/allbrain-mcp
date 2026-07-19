@@ -15,28 +15,33 @@ logger = logging.getLogger(__name__)
 
 
 def ensure_session_started(context: BrainContext) -> Session:
+    session = context.ensure_active_session()
+    need_init = False
     with context._session_lock:
-        created = context.active_session is None
-        session = context.ensure_active_session()
-        if created:
-            context.git_baseline = GitBrain(context.project_path).build_fingerprint()
-            context.repository.append_event(
-                project_path=context.project_path,
-                session_id=session.id or 0,
-                type=EventType.SESSION_STARTED.value,
-                source="allbrain",
-                payload={
-                    "session_id": session.id,
-                    "agent": context.agent_name,
-                    "client_name": context.client_name,
-                    "client_version": context.client_version,
-                    "server_instance_id": context.server_instance_id,
-                    "git": context.git_baseline,
-                },
-                agent_id=context.agent_name,
-                branch=context.agent_name,
-            )
-        return session
+        if context.git_baseline is None:
+            context.git_baseline = {}
+            need_init = True
+    if need_init:
+        git_baseline = GitBrain(context.project_path).build_fingerprint()
+        context.repository.append_event(
+            project_path=context.project_path,
+            session_id=session.id or 0,
+            type=EventType.SESSION_STARTED.value,
+            source="allbrain",
+            payload={
+                "session_id": session.id,
+                "agent": context.agent_name,
+                "client_name": context.client_name,
+                "client_version": context.client_version,
+                "server_instance_id": context.server_instance_id,
+                "git": git_baseline,
+            },
+            agent_id=context.agent_name,
+            branch=context.agent_name,
+        )
+        with context._session_lock:
+            context.git_baseline = git_baseline
+    return session
 
 
 def finalize_active_session(
@@ -134,12 +139,15 @@ def record_git_changes(
             context.git_baseline = final_fingerprint
             return final_fingerprint
         changes = git.changed_paths_between(baseline, final_fingerprint)
-        events = context.repository.list_session_events(session.id or 0)
-        recorded = {
-            (event.file_path, event.payload.get("fingerprint"), event.payload.get("change_kind"))
-            for event in events
-            if event.type == EventType.FILE_MODIFIED.value
-        }
+        recorded = context._recorded_git_keys
+        if recorded is None:
+            events = context.repository.list_session_events(session.id or 0)
+            recorded = {
+                (event.file_path, event.payload.get("fingerprint"), event.payload.get("change_kind"))
+                for event in events
+                if event.type == EventType.FILE_MODIFIED.value
+            }
+            context._recorded_git_keys = recorded
         branch = final_fingerprint.get("branch") or context.agent_name
         fingerprints = dict(final_fingerprint.get("files") or {})
         for change in changes:
@@ -164,6 +172,7 @@ def record_git_changes(
                 agent_id=context.agent_name,
                 branch=str(branch),
             )
+            recorded.add(key)
         context.git_baseline = final_fingerprint
         return final_fingerprint
 

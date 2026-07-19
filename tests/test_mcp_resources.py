@@ -109,3 +109,24 @@ class TestDeterminism:
         parsed = json.loads(out)
         keys = list(parsed.keys())
         assert keys == sorted(keys)
+
+
+class TestEventByIdRedaction:
+    def test_payload_secrets_are_masked(self, tmp_path: Path) -> None:
+        """Persisted payloads must be re-sanitized before being surfaced."""
+        ctx = make_context(tmp_path)
+        ctx.repository.append_event(
+            project_path=ctx.project_path,
+            session_id=ctx.active_session_id,
+            type="task_created",
+            source="allbrain",
+            payload={"api_key": "sk-ant-SUPERSECRETBYTE0123456789", "goal": "x"},
+        )
+        events = ctx.repository.list_events(project_path=ctx.project_path, limit=1)
+        event_id = events[-1].id
+        result = _event_by_id(ctx, event_id)
+        assert result["ok"] is True
+        assert "sk-ant-" not in str(result["payload"])
+        assert result["payload"]["api_key"] == "********"
+        # non-secret fields preserved
+        assert result["payload"]["goal"] == "x"

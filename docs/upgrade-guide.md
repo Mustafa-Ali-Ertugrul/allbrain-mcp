@@ -1,101 +1,26 @@
-# Upgrade Guide
+# AllBrain MCP v0.2.3 Upgrade & Compatibility Guide
 
-## Versioning
+This guide details the steps to upgrade from v0.2.2 to v0.2.3, along with environment constraints and compatibility metrics.
 
-AllBrain MCP uses [Semantic Versioning](https://semver.org/):
+## 1. Compatibility Matrix
 
-- **Patch** (`0.2.3` → `0.2.4`): bug fixes, internal refactors, no CLI or tool API changes
-- **Minor** (`0.2.0` → `0.3.0`): new tools, CLI commands, or profiles; backward-compatible
-- **Major** (`0.2.0` → `1.0.0`): breaking changes to tool signatures, CLI commands, or storage format
+| Environment | Supported Version | Notes |
+|-------------|-------------------|-------|
+| **Python** | `3.12` to `3.13` | CI validates against Python 3.13.14 |
+| **OS** | Windows, macOS, Linux | Platform-agnostic (Alembic/SQLModel) |
+| **SQLite** | `>= 3.35.0` | Required for window functions and returning clause |
+| **Clients** | Codex, Claude Code, Cursor, VS Code, OpenCode, Zed, Windsurf, Kiro | Standard stdio protocol |
 
-Current release line is **0.2.3**. Pre-1.0 versions use the minor number for breaking changes (e.g., `0.3.0` could include migration steps).
+## 2. Upgrade Steps (v0.2.2 → v0.2.3)
 
-## Before upgrading
+### Environment Variable Update
+The path-traversal project root filter has been standardized.
+* **Deprecated:** `ALLOWED_PROJECT_ROOTS`
+* **New:** `ALLBRAIN_ALLOWED_PROJECT_ROOTS`
+* *Action:* Rename your environment variable to `ALLBRAIN_ALLOWED_PROJECT_ROOTS`. If you keep the legacy name, the server will emit a `DeprecationWarning`.
 
-1. **Back up your database:**
-   ```shell
-   allbrain backup
-   ```
-   This creates a timestamped copy at `~/.allbrain/allbrain.db.bak.<timestamp>`.
+### Configuration Update
+For clients utilizing absolute database configurations (e.g. Codex `.codex/config.toml` or Cursor `.cursor/mcp.json`), ensure the DB path points to the standardized central location `~/.allbrain/allbrain.db` to prevent local project database duplication.
 
-2. **Check the changelog** for any manual migration steps.
-
-3. **Test in an isolated copy** if you run multiple agents against the same database.
-
-## Upgrade via PyPI
-
-```shell
-pipx upgrade allbrain-agent-runtime
-```
-
-Or if you use `uvx`:
-
-```shell
-uvx allbrain-agent-runtime@latest install --codex --verify
-```
-
-The `install` command updates the client configuration to the new version path.
-
-## Upgrade from source
-
-```shell
-git pull
-uv sync
-./scripts/install-mcp.sh --all --verify
-```
-
-## After upgrading
-
-1. Restart your MCP clients (Codex, Claude Code, etc.).
-2. Run `allbrain doctor` to confirm the server starts and the database is healthy.
-3. Run `allbrain verify` for a product-level connectivity check.
-
-## Rollback
-
-### PyPI install
-
-```shell
-pipx install allbrain-agent-runtime==0.2.0
-allbrain-mcp install --codex
-```
-
-### Source install
-
-```shell
-git checkout v0.2.0
-uv sync
-./scripts/install-mcp.sh --all
-```
-
-### Database rollback
-
-AllBrain does not apply automatic destructive migrations. If a version introduces an incompatible schema change, the upgrade guide for that version will include explicit migration or rebuild instructions.
-
-To revert to a backup:
-
-```shell
-# Stop all agents using the database
-# Replace with your backup
-cp ~/.allbrain/allbrain.db.bak.<timestamp> ~/.allbrain/allbrain.db
-# Restart clients
-```
-
-## Migration notes by version
-
-### 0.2.0 — First public release
-
-- Initial event store schema (SQLite)
-- Tool profiles: `full`, `core`
-- CLI commands: `install`, `start`
-
-### 0.3.0 (planned)
-
-- Expanded tool profiles: `minimal`, `memory`, `collaboration`, `reasoning`
-- CLI commands: `verify`, `status`, `backup`, `doctor`, `uninstall`
-- No storage migration required.
-
-## Semver policy for the event store
-
-- Adding a new event type or reducer method is NOT a breaking change (event store is append-only).
-- Changing the primary key scheme or stream-ordering algorithm IS a breaking change.
-- Dropping a table or column without a migration window IS a breaking change.
+### Migration Steps
+No manual database schema migrations are required. The Alembic upgrade will stamp the database schema automatically upon server start.
