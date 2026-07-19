@@ -38,13 +38,17 @@ def semantic_event_count(events) -> int:
     return sum(1 for event in events if event.type != "tool_call")
 
 
-def load_events_through_cursor(repository, *, project_path: str | Path, batch_size: int):
-    """Load complete project history through a stable high-water event cursor."""
+def iter_events_through_cursor(repository, *, project_path: str | Path, batch_size: int) -> Iterator:
+    """Yield events through a stable high-water cursor without full materialization.
+
+    This is a generator alternative to :func:`load_events_through_cursor` that
+    avoids holding the complete event list in memory. Callers that need random
+    access or ``len()`` should use the list-returning version.
+    """
     high_water_events = repository.list_events(project_path=project_path, limit=1)
     if not high_water_events:
-        return []
+        return
     high_water_cursor = high_water_events[-1].id
-    events = []
     cursor = None
     while True:
         batch = repository.list_events_after(
@@ -54,12 +58,18 @@ def load_events_through_cursor(repository, *, project_path: str | Path, batch_si
             limit=batch_size,
         )
         if not batch:
-            break
-        events.extend(batch)
+            return
+        yield from batch
         cursor = batch[-1].id
         if cursor == high_water_cursor:
-            break
-    return events
+            return
+
+
+def load_events_through_cursor(repository, *, project_path: str | Path, batch_size: int) -> list:
+    """Load complete project history through a stable high-water event cursor."""
+    return list(iter_events_through_cursor(
+        repository, project_path=project_path, batch_size=batch_size
+    ))
 
 
 def iter_event_pages_through_cursor(

@@ -140,6 +140,10 @@ _SENSITIVE_SUFFIXES: tuple[str, ...] = (
 )
 
 # Exact normalized names that look suffix-sensitive but are not secrets.
+# NOTE: "key" and "keys" removed from denylist — they are handled by
+# value-based fallback in _is_sensitive_key to avoid false positives on
+# safe values like {"key": "user-theme"} while still catching secrets
+# like {"key": "sk-ant-api03-..."}.
 _SAFE_KEY_DENYLIST: set[str] = {
     "task_key",
     "foreign_key",
@@ -147,8 +151,6 @@ _SAFE_KEY_DENYLIST: set[str] = {
     "primary_key",
     "public_key",
     "keyboard",
-    "key",
-    "keys",
 }
 
 MASK = "********"
@@ -163,10 +165,22 @@ def _normalize_key(key: str) -> str:
     return re.sub(r"[-.\s]+", "_", lowered)
 
 
-def _is_sensitive_key(key: str, *, for_query: bool = False) -> bool:
+def _matches_any_secret_pattern(value: Any) -> bool:
+    """Check if a string value matches any known secret pattern."""
+    if not isinstance(value, str):
+        return False
+    return any(pattern.search(value) for pattern, _ in SECRET_PATTERNS)
+
+
+def _is_sensitive_key(key: str, *, value: Any = None, for_query: bool = False) -> bool:
     if not isinstance(key, str) or not key:
         return False
     normalized = _normalize_key(key)
+    # Value-based fallback for ambiguous generic keys like "key"/"keys":
+    # These are too generic to flag by name alone, but if the value itself
+    # matches a known secret pattern, the entire value should be masked.
+    if normalized in ("key", "keys"):
+        return value is not None and _matches_any_secret_pattern(value)
     if normalized in _SAFE_KEY_DENYLIST:
         return False
     names = _SENSITIVE_QUERY_NAMES if for_query else _SENSITIVE_FIELD_NAMES
@@ -243,7 +257,7 @@ def _sanitize_payload_impl(obj: Any, found_types: dict[str, int], *, depth: int 
     if isinstance(obj, dict):
         out: dict[str, Any] = {}
         for k, v in obj.items():
-            if isinstance(k, str) and _is_sensitive_key(k):
+            if isinstance(k, str) and _is_sensitive_key(k, value=v):
                 found_types["field_name"] = found_types.get("field_name", 0) + 1
                 out[k] = MASK
             elif isinstance(v, str):

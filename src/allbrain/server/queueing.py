@@ -131,7 +131,7 @@ class QueueCoordinator:
         if lease_ttl_seconds < 30 or lease_ttl_seconds > 3600:
             raise ValueError("lease_ttl_seconds must be between 30 and 3600")
         for _ in range(5):
-            with open_session(self.context.repository.engine) as db:
+            with open_write_session(self.context.repository.engine) as db:
                 self._recover_expired(db)
                 statement = (
                     select(QueueItemRecord)
