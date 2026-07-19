@@ -4,12 +4,11 @@ Covers:
 - Step 1: StateEngine.apply_events() single-pass equivalence
 - Step 3: _SAFE_KEY_DENYLIST value-based fallback
 - Step 4: iter_events_through_cursor generator
-- Step 5: open_write_session uses threading.Event().wait()
+- Step 5: open_write_session uses time.sleep for backoff
 """
 
 from __future__ import annotations
 
-import threading
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -229,16 +228,15 @@ def test_iter_events_through_cursor_is_lazy(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Step 5: threading.Event().wait() in open_write_session
+# Step 5: open_write_session uses time.sleep for backoff
 # ---------------------------------------------------------------------------
 
 
-def test_open_write_session_uses_threading_event() -> None:
-    """Verify open_write_session uses threading.Event().wait() for backoff."""
+def test_open_write_session_uses_time_sleep() -> None:
+    """Verify open_write_session uses time.sleep for backoff (honest, not misleading Event)."""
     import inspect
 
     import allbrain.storage.database as db_mod
 
     source = inspect.getsource(db_mod.open_write_session)
-    assert "threading.Event().wait(delay)" in source
-    assert "time.sleep" not in source
+    assert "time.sleep(delay)" in source
