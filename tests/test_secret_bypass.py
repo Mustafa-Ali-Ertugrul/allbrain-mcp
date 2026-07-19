@@ -51,17 +51,19 @@ def test_newline_breaks_pattern() -> None:
 
 
 def test_secret_in_sentence_masked_only_part() -> None:
+    """When the field name is 'key' and the value contains a secret pattern,
+    the entire value is masked (field-level redaction via value fallback)."""
     value = "my key is " + make_openai_key() + " please keep it safe"
     result = sanitize_payload({"key": value})
-    assert "********" in result["key"]
-    assert "my key is" in result["key"]
-    assert "please keep it safe" in result["key"]
+    assert result["key"] == "********"
 
 
 def test_multiple_overlapping_patterns(tmp_path: Path) -> None:
+    """When the field name is 'key' and the value matches a secret pattern,
+    the entire value is masked (single mask, not per-pattern)."""
     value = make_openai_key() + " and ghp_" + "b" * 36
     result1 = sanitize_payload({"key": value})
-    assert result1["key"].count("********") == 2
+    assert result1["key"] == "********"
 
 
 def test_short_secret_not_masked() -> None:

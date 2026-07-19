@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-import time
+import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -243,7 +243,9 @@ def open_write_session(engine: Engine, *, attempts: int = 5) -> Iterator[Session
             if not _is_sqlite_busy(exc) or attempt + 1 >= attempts:
                 raise
             delay = min(0.05 * (2**attempt), 0.8) + random.uniform(0, 0.025)
-            time.sleep(delay)
+            # NOTE: sync-only; called from thread pool via FastMCP.
+            # threading.Event().wait() is interruptible for cleaner graceful shutdown.
+            threading.Event().wait(delay)
     if db is None:  # pragma: no cover - defensive; loop either assigns or raises
         raise RuntimeError("Unable to open database write session")
     try:

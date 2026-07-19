@@ -75,6 +75,14 @@ jobs:
           skip-existing: true
 
       - name: Publish to PyPI (production)
+        id: publish
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
         uses: pypa/gh-action-pypi-publish@release/v1
         continue-on-error: true
+
+      - name: Alert on PyPI publish failure
+        if: steps.publish.outcome == 'failure'
+        run: |
+          echo "::warning::PyPI publish failed. Check if Trusted Publisher configuration is missing on PyPI for this repository."
+          echo "### ⚠️ PyPI Publish Failed" >> $GITHUB_STEP_SUMMARY
+          echo "PyPI publish step failed. This usually indicates that PyPI Trusted Publisher is not configured for this repository/workflow." >> $GITHUB_STEP_SUMMARY
