@@ -352,8 +352,9 @@ def test_git_fingerprint_computed_outside_lock(tmp_path: Path) -> None:
     def fake_changed_paths(self, baseline, final):  # noqa: ANN001
         return []
 
-    with patch("allbrain.gitbrain.parser.GitBrain.build_fingerprint", fake_fingerprint), patch(
-        "allbrain.gitbrain.parser.GitBrain.changed_paths_between", fake_changed_paths
+    with (
+        patch("allbrain.gitbrain.parser.GitBrain.build_fingerprint", fake_fingerprint),
+        patch("allbrain.gitbrain.parser.GitBrain.changed_paths_between", fake_changed_paths),
     ):
         record_git_changes(context, session, confidence="low")
 
