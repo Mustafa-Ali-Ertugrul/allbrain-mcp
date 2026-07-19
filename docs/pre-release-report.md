@@ -1,9 +1,13 @@
 # AllBrain MCP v0.2.3 Pre-Release Raporu
 
 ## 1. Executive Summary
-* **Durum:** AllBrain MCP v0.2.3 sürüm öncesi doğrulama tamam. 2849 test geçti, 3 test atlandı. Windows dosya kilitlemesi nedeniyle 2 entegrasyon testi yalnızca çevresel koşullarda başarısız olabiliyor. Kritik bulgular çözüldü.
+* **Durum:** AllBrain MCP v0.2.3 sürüm öncesi doğrulama tamam. 2849 test geçti, 3 test atlandı. Windows dosya kilitlemesi nedeniyle 2 entegrasyon testi yalnızca çevresel koşullarda başarısız olabiliyor. PyPI üzerinde Trusted Publisher yapılandırması eksik/hatalı olduğundan otomatik yayınlama adımı (Publish to PyPI) kimlik doğrulama hatası almaktadır (Dışsal Blocker).
 
 ## 2. Critical Issues
+* **Bulgu:** PyPI otomatik yayınlama adımında (`Publish to PyPI`) OIDC Trusted Publisher kimlik doğrulama hatası (`invalid-publisher`).
+* **Konum:** `.github/workflows/publish.yml`
+* **Durum:** Açık (Dışsal Blocker)
+* **Çözüm:** PyPI üzerinde `Mustafa-Ali-Ertugrul/allbrain-mcp` reposu ve `publish.yml` iş akışı için Trusted Publisher tanımlanmalıdır. İş akışına standart PyPI `environment: pypi` bildirimi eklenmiştir.
 * **Bulgu:** OpenAI Key redaction regex pattern ({48,}) eski 40 karakter test key'lerle uyuşmuyordu, 15 test başarısız oluyordu.
 * **Konum:** `src/allbrain/security/redaction.py`, `tests/test_redaction.py`, `tests/test_secret_bypass.py`
 * **Durum:** Çözüldü
