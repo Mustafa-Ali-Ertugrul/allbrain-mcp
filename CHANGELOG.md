@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-07-19
+
+### Added
+- 14 regression tests in `tests/test_v024_fixes.py` protecting performance, safety, and concurrency changes.
+
+### Changed
+- **StateEngine Single-Pass Loop:** Merged `final_machine` and `delta_machine` loops in `StateEngine.apply_events()` to eliminate redundant iteration ($O(2n) \to O(n)$).
+- **QueueCoordinator claim() Locking:** Switched `claim()` from `open_session` to `open_write_session` to enforce SQLite `BEGIN IMMEDIATE` transaction locking and prevent concurrent double-assignments.
+- **Redaction Value-Based Fallback:** Removed generic `"key"` and `"keys"` from `_SAFE_KEY_DENYLIST` to evaluate them dynamically. If the value matches a secret pattern, the value is masked; safe values remain untouched.
+- **Lazy Event Streaming:** Added `iter_events_through_cursor()` generator for batched, memory-efficient event streaming without full list materialization.
+- **Interruptible DB Backoff:** Replaced `time.sleep` with `threading.Event().wait()` in the database retry loop (then reverted to honest `time.sleep` with clear retry purpose following code review).
+- **Subprocess Lock Scope Reduction:** Moved the blocking `GitBrain.build_fingerprint()` subprocess call out of the `_session_lock` mutex in `record_git_changes()`.
+- **Shared Facade Decomposition:** Split the 460-line monolithic `_shared.py` file into four focused domain submodules: `_events.py` (cursor batching), `_snapshot.py` (lease management), `_tasks.py` (selection decisions & metrics), and `_shared.py` (facade with core tool utilities). Removed unused private re-exports.
+
 ## [0.2.3] - 2026-07-19
 
 ### Added
