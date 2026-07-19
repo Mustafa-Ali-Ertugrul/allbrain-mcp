@@ -30,10 +30,14 @@ def create_engine_for_url(database_url: str) -> Engine:
     url = make_url(database_url)
     kwargs: dict[str, object] = {"poolclass": QueuePool, "pool_pre_ping": True}
     if url.get_backend_name() == "sqlite":
+        # SQLite serializes writers via BEGIN IMMEDIATE, but a slightly larger
+        # pool (with overflow) lets concurrent readers (list_events, resume,
+        # resource handlers) avoid contending for the two hard-coded
+        # connections the old config allowed. busy_timeout still bounds waits.
         kwargs.update(
             {
-                "pool_size": 2,
-                "max_overflow": 0,
+                "pool_size": 5,
+                "max_overflow": 3,
                 "connect_args": {"check_same_thread": False, "timeout": 30},
             }
         )
@@ -181,6 +185,33 @@ def ensure_stream_position_columns(engine: Engine) -> None:
 
 def open_session(engine: Engine) -> Session:
     return Session(engine)
+
+
+@contextmanager
+def open_light_write_session(engine: Engine) -> Iterator[Session]:
+    """Open a write-capable session that does NOT pre-acquire the writer lock.
+
+    Uses ``BEGIN DEFERRED`` instead of ``BEGIN IMMEDIATE``: the SQLite write
+    lock is taken lazily on the first actual mutation, not at session open.
+    This is intended for low-contention, single-row UPDATE operations such as
+    session heartbeats (``touch_session``), where taking the exclusive lock
+    up front needlessly serializes against bulk event appends.
+
+    Callers must still handle ``OperationalError`` (database is locked) if a
+    concurrent writer holds the lock; for guaranteed exclusive writes use
+    :func:`open_write_session` instead.
+    """
+    db = Session(engine, expire_on_commit=False)
+    try:
+        if engine.dialect.name == "sqlite":
+            db.connection().exec_driver_sql("BEGIN DEFERRED")
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 def _is_sqlite_busy(exc: OperationalError) -> bool:

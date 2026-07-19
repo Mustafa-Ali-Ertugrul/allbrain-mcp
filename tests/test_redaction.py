@@ -2,10 +2,11 @@ from copy import deepcopy
 from logging import INFO
 
 from allbrain.security.redaction import sanitize_payload
+from tests._helpers import make_openai_key
 
 
 def test_openai_key_masked() -> None:
-    result = sanitize_payload({"key": "sk-" + "a" * 40})
+    result = sanitize_payload({"key": make_openai_key()})
     assert result["key"] == "********"
 
 
@@ -55,24 +56,24 @@ def test_slack_bot_token_masked() -> None:
 
 
 def test_nested_dict_secrets_masked() -> None:
-    result = sanitize_payload({"outer": {"inner": "sk-" + "a" * 40}})
+    result = sanitize_payload({"outer": {"inner": make_openai_key()}})
     assert result["outer"]["inner"] == "********"
 
 
 def test_list_of_secrets_all_masked() -> None:
-    result = sanitize_payload({"tokens": ["sk-" + "a" * 40, "ghp_" + "b" * 36]})
+    result = sanitize_payload({"tokens": [make_openai_key(), "ghp_" + "b" * 36]})
     assert result["tokens"] == ["********", "********"]
 
 
 def test_partial_secret_in_string() -> None:
-    result = sanitize_payload({"text": "token=sk-" + "a" * 40})
+    result = sanitize_payload({"text": "token=" + make_openai_key()})
     assert "token=" in result["text"]
     assert "sk-" not in result["text"]
     assert result["text"] == "token=********"
 
 
 def test_multiple_secrets_in_one_string() -> None:
-    key_a = "sk-" + "a" * 40
+    key_a = make_openai_key()
     key_b = "ghp_" + "b" * 36
     result = sanitize_payload({"text": f"{key_a} {key_b}"})
     assert result["text"] == "******** ********"
@@ -146,7 +147,7 @@ def test_non_string_passthrough() -> None:
 
 
 def test_original_payload_not_mutated() -> None:
-    original = {"key": "sk-" + "a" * 40}
+    original = {"key": make_openai_key()}
     expected = deepcopy(original)
     sanitize_payload(original)
     assert original == expected, "sanitize_payload mutated the input in-place"
@@ -185,11 +186,12 @@ def test_log_does_not_leak_secret(caplog) -> None:
     # verify the logger exists and capture doesn't throw
     _ = logger
 
-    payload = {"key": "sk-" + "a" * 40}
+    key = make_openai_key()
+    payload = {"key": key}
     sanitize_payload(payload)
 
     log_text = caplog.text
-    assert "sk-" + "a" * 40 not in log_text
+    assert key not in log_text
     assert "secret_redacted" in log_text
 
 
@@ -217,7 +219,7 @@ def test_url_query_sensitive_params_masked() -> None:
 
 
 def test_url_openai_key_in_query_still_masked() -> None:
-    secret = "sk-" + "a" * 40
+    secret = make_openai_key()
     result = sanitize_payload({"url": f"https://x.com?q={secret}"})
     assert secret not in result["url"]
     assert "********" in result["url"]
@@ -241,7 +243,7 @@ def test_sanitize_text_url_query() -> None:
 def test_sanitize_valerr_msg_masks_residual_secret_pattern() -> None:
     from allbrain.security.redaction import sanitize_valerr_msg
 
-    secret = "sk-" + "b" * 40
+    secret = make_openai_key(length=48)
     msg = f"boom detail without input_value but has {secret}"
     cleaned = sanitize_valerr_msg(msg)
     assert secret not in cleaned

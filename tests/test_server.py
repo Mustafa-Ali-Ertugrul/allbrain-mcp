@@ -194,3 +194,26 @@ def test_quality_gate_agent_switch_simulation_reconstructs_context(tmp_path: Pat
         "save_event",
         "save_event",
     ]
+
+
+def test_middleware_result_outcome_extracts_from_dict_correctly() -> None:
+    from allbrain.server.lifecycle_middleware import _result_outcome
+
+    # Dict with ok=True
+    ok, error = _result_outcome({"ok": True, "data": "yes"})
+    assert ok is True
+    assert error is None
+
+    # Dict with ok=False
+    ok, error = _result_outcome({"ok": False, "error": "failed"})
+    assert ok is False
+    assert error == "failed"
+
+    # Fallback to model object
+    class DummyResult:
+        is_error = True
+        structured_content = None
+
+    ok, error = _result_outcome(DummyResult())
+    assert ok is False
+    assert error == "MCP tool result marked as error"

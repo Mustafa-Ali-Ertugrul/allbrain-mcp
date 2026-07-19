@@ -131,6 +131,8 @@ def _tool_request(message: Any) -> tuple[str, dict[str, Any]]:
 
 
 def _result_outcome(result: Any) -> tuple[bool, str | None]:
+    if isinstance(result, dict) and "ok" in result:
+        return bool(result.get("ok")), _as_text(result.get("error"))
     if bool(getattr(result, "is_error", False) or getattr(result, "isError", False)):
         return False, "MCP tool result marked as error"
     structured = getattr(result, "structured_content", None) or getattr(result, "structuredContent", None)

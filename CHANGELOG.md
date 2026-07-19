@@ -7,17 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- **Breaking (default):** `resume_project` and `orchestrate_project` now default to `detail="slim"`. Pass `detail="full"` for the previous dump (still soft-capped). Prefer `get_context_pack` for day-to-day agent context.
-
-### Fixed
-
-- Production hardening: event stream unique invariant on ORM model; redaction key normalize (headers/query); independent snapshot check interval.
-- Installer verify probes `get_context_pack`; `doctor --clients` shows per-agent event freshness (24h).
-- Regression matrix ensures legacy `project_path` kwargs never `extra=forbid`-fail.
-
-## [0.2.3] - 2026-07-16
+## [0.2.3] - 2026-07-19
 
 ### Added
 
@@ -25,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-agent claim loop: `create_task(enqueue=…)` and queue coordinator wiring.
 - Ops: `allbrain doctor --clients` and `allbrain restart --all`.
 - MCP contract polish: event type aliases, `ToolResult.error_code`, slim resume/orchestrate detail mode.
+- **Env Variable Prefixing:** `ALLBRAIN_ALLOWED_PROJECT_ROOTS` eklendi, eski değişken için `DeprecationWarning` eklendi.
 
 ### Changed (Glama)
 
@@ -36,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Production hardening: event stream unique invariant on ORM model; redaction key normalize (headers/query); independent snapshot check interval.
+- **Security Hardening (M7 & M8):** OpenAI key redaction pattern tightened to `{40,}`, recursive payload redaction depth limit (`_MAX_SANITIZE_DEPTH = 32`) to prevent stack overflow.
+- **Queue Coordinator Concurrency:** `QueueCoordinator.enqueue_task` rewritten to use `open_write_session` and catch `IntegrityError` to resolve concurrent idempotency races.
+- **Session Lock Optimization:** `ensure_session_started` kilit süresi daraltıldı. Git fingerprinting ve veritabanı yazımları kilit dışına çıkarıldı.
+- **Git Observer Cache:** `record_git_changes` için `context._recorded_git_keys` cache'i eklenerek her tool çağrısında oluşan O(n) disk okuma yükü kaldırıldı.
+- **Telemetry Dict Outcome:** `_result_outcome` telemetry parsing'i dict sonuçları düzgün okuyacak şekilde güncellendi.
 - Restart ops: process match no longer treats `restart` as `start`; installer resolves real package repo root.
 
 ## [0.2.1] - 2026-07-03

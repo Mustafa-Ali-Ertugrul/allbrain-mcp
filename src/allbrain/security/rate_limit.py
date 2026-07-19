@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import os
 import threading
 import time
 from collections import deque
+
+logger = logging.getLogger(__name__)
 
 
 class RateLimitError(ValueError):
@@ -98,8 +101,28 @@ class SlidingWindowCounter:
 # Override via env vars:
 #   ALLBRAIN_RATE_LIMIT_RPM   — requests per minute  (default 100000)
 #   ALLBRAIN_RATE_LIMIT_RPS   — requests per second  (default 1000)
-_DEFAULT_RPM = int(os.environ.get("ALLBRAIN_RATE_LIMIT_RPM", "100000"))
-_DEFAULT_RPS = int(os.environ.get("ALLBRAIN_RATE_LIMIT_RPS", "1000"))
+def _env_int(name: str, default: int) -> int:
+    """Read an int env var, falling back to *default* on missing/invalid values.
+
+    A malformed value (e.g. ``ALLBRAIN_RATE_LIMIT_RPM=not-a-number``) must not
+    crash server boot, so we swallow ``ValueError`` and clamp negatives.
+    """
+    raw = os.environ.get(name)
+    if not raw:
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        logger.warning("Invalid integer for %s=%r; using default %d", name, raw, default)
+        return default
+    if value < 1:
+        logger.warning("%s=%d must be >= 1; using default %d", name, value, default)
+        return default
+    return value
+
+
+_DEFAULT_RPM = _env_int("ALLBRAIN_RATE_LIMIT_RPM", 100_000)
+_DEFAULT_RPS = _env_int("ALLBRAIN_RATE_LIMIT_RPS", 1_000)
 
 _MINUTE_LIMITER = SlidingWindowCounter(window_seconds=60.0, max_events=_DEFAULT_RPM)
 _BURST_LIMITER = SlidingWindowCounter(window_seconds=1.0, max_events=_DEFAULT_RPS)

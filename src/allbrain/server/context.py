@@ -64,6 +64,7 @@ class BrainContext:
         self.__dict__["_client_name"] = client_name
         self.__dict__["_client_version"] = client_version
         self.__dict__["_git_baseline"]: dict[str, Any] | None = None
+        self.__dict__["_recorded_git_keys"]: set[tuple[str | None, str | None, str | None]] | None = None
         self.__dict__["_event_count"]: int = 0
 
     # ── properties ──
@@ -84,6 +85,8 @@ class BrainContext:
         """Set the current active session (thread-safe, locked)."""
         with self._session_lock:
             self._active_session = value
+            self._recorded_git_keys = None
+            self._git_baseline = None
 
     @property
     def active_session_id(self) -> int | None:

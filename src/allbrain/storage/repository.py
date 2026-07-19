@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -21,7 +20,9 @@ from allbrain.foundations.versioning import (
 from allbrain.models.entities import Event, Project, QueueItemRecord, Session, SnapshotRecord, utc_now
 from allbrain.models.schemas import EventRead, UserInputError
 from allbrain.security.redaction import sanitize_payload
-from allbrain.storage.database import open_session, open_write_session
+from allbrain.storage._json import dumps as _dumps_json
+from allbrain.storage._json import loads as _loads_json
+from allbrain.storage.database import open_light_write_session, open_session, open_write_session
 
 
 class BrainRepository:
@@ -115,7 +116,10 @@ class BrainRepository:
         return db.get(Session, session_id)
 
     def touch_session(self, session_id: int, *, at: datetime | None = None) -> Session | None:
-        with open_write_session(self.engine) as db:
+        # Heartbeats are low-contention single-row UPDATEs; use a DEFERRED
+        # transaction so we don't pre-acquire the SQLite writer lock and
+        # contend with bulk event appends on the write path.
+        with open_light_write_session(self.engine) as db:
             session = db.get(Session, session_id)
             if session is None:
                 return None
@@ -432,7 +436,7 @@ class BrainRepository:
             type=type,
             source=source,
             file_path=file_path,
-            payload_json=json.dumps(payload, ensure_ascii=True, sort_keys=True),
+            payload_json=_dumps_json(payload),
             payload_version=current_payload_version(),
             task_hint=task_hint,
             importance=importance,
@@ -721,7 +725,7 @@ def _normalize_type_for_read(raw_type: str) -> str:
 def event_to_read(event: Event) -> EventRead:
     stored_version = getattr(event, "payload_version", 1) or 1
     payload, achieved_version = get_default_upcaster().migrate(
-        json.loads(event.payload_json),
+        _loads_json(event.payload_json),
         from_version=stored_version,
     )
     return EventRead(
