@@ -22,25 +22,30 @@ def ensure_session_started(context: BrainContext) -> Session:
             context.git_baseline = {}
             need_init = True
     if need_init:
-        git_baseline = GitBrain(context.project_path).build_fingerprint()
-        context.repository.append_event(
-            project_path=context.project_path,
-            session_id=session.id or 0,
-            type=EventType.SESSION_STARTED.value,
-            source="allbrain",
-            payload={
-                "session_id": session.id,
-                "agent": context.agent_name,
-                "client_name": context.client_name,
-                "client_version": context.client_version,
-                "server_instance_id": context.server_instance_id,
-                "git": git_baseline,
-            },
-            agent_id=context.agent_name,
-            branch=context.agent_name,
-        )
-        with context._session_lock:
-            context.git_baseline = git_baseline
+        try:
+            git_baseline = GitBrain(context.project_path).build_fingerprint()
+            context.repository.append_event(
+                project_path=context.project_path,
+                session_id=session.id or 0,
+                type=EventType.SESSION_STARTED.value,
+                source="allbrain",
+                payload={
+                    "session_id": session.id,
+                    "agent": context.agent_name,
+                    "client_name": context.client_name,
+                    "client_version": context.client_version,
+                    "server_instance_id": context.server_instance_id,
+                    "git": git_baseline,
+                },
+                agent_id=context.agent_name,
+                branch=context.agent_name,
+            )
+            with context._session_lock:
+                context.git_baseline = git_baseline
+        except Exception:
+            with context._session_lock:
+                context.git_baseline = None
+            raise
     return session
 
 
