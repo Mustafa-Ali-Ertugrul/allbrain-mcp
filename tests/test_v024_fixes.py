@@ -177,7 +177,7 @@ def test_fp_task_key_still_not_masked() -> None:
 
 def test_iter_events_through_cursor_yields_all_events(tmp_path: Path) -> None:
     """iter_events_through_cursor must yield the same events as load_events_through_cursor."""
-    from allbrain.server.tools._shared import iter_events_through_cursor, load_events_through_cursor
+    from allbrain.server.tools._events import iter_events_through_cursor, load_events_through_cursor
 
     repo, project_root = make_repo(tmp_path)
     session_id = repo.create_session(project_root, "test").id or 0
@@ -200,7 +200,7 @@ def test_iter_events_through_cursor_yields_all_events(tmp_path: Path) -> None:
 
 def test_iter_events_through_cursor_is_lazy(tmp_path: Path) -> None:
     """iter_events_through_cursor should not materialize everything upfront."""
-    from allbrain.server.tools._shared import iter_events_through_cursor
+    from allbrain.server.tools._events import iter_events_through_cursor
 
     repo, project_root = make_repo(tmp_path)
     session_id = repo.create_session(project_root, "test").id or 0
