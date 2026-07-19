@@ -27,14 +27,16 @@ from allbrain.orchestrator import (
 from allbrain.security.rate_limit import check_tool_rate
 from allbrain.server.context import BrainContext
 from allbrain.server.queueing import QueueCoordinator
+from allbrain.server.tools._events import load_task_projection
 from allbrain.server.tools._shared import (
-    append_selection_decision,
     atomic_write,
     audit_tool_call,
     bind_session_id,
+)
+from allbrain.server.tools._snapshot import maybe_auto_snapshot
+from allbrain.server.tools._tasks import (
+    append_selection_decision,
     get_task_or_raise,
-    load_task_projection,
-    maybe_auto_snapshot,
 )
 from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.storage.repository import event_to_read

@@ -15,8 +15,8 @@ from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
-    maybe_auto_snapshot,
 )
+from allbrain.server.tools._snapshot import maybe_auto_snapshot
 from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.storage.repository import event_to_read
 from allbrain.world import WorldModel

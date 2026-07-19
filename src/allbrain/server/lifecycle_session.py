@@ -90,7 +90,7 @@ def finalize_active_session(
         if closed is not None:
             context.active_session = closed
         try:
-            from allbrain.server.tools._shared import maybe_auto_snapshot
+            from allbrain.server.tools._snapshot import maybe_auto_snapshot
 
             maybe_auto_snapshot(context, project_path=context.project_path, force_baseline=True)
         except Exception:

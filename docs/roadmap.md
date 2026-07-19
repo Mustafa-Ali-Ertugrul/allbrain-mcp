@@ -4,13 +4,13 @@ This roadmap outlines the targets for the upcoming versions, distinguishing betw
 
 ## v0.2.5 Backlog
 
-* **Snapshot Generation Optimization:**
-  * Wide `SnapshotEngine.build_snapshot()` to accept `Iterable[EventRecord]` instead of `list`.
-  * Update `_snapshot.py` to use lazy `iter_events_through_cursor()` generator instead of list materialization.
-* **Shared Facade Cleanup:**
-  * Add deprecation warnings (`DeprecationWarning`) to remaining public re-exports in `_shared.py` facade, prompting direct imports from `_events`, `_snapshot`, and `_tasks`.
+* **Snapshot Generation Optimization:** ✅ DONE
+  * `SnapshotEngine.build_snapshot()` now accepts `Iterable[EventRecord]` (internally materializes once via `list(events)` for the builder and cursor lookup).
+  * `_snapshot.py` uses lazy `iter_events_through_cursor()` generator instead of list materialization.
+* **Shared Facade Cleanup:** ✅ DONE
+  * Deprecated re-exports in `_shared.py` facade now emit `DeprecationWarning` (via `__getattr__` lazy loader) prompting direct imports from `_events`, `_snapshot`, and `_tasks`. Internal modules migrated to direct imports. These re-exports will be removed in v0.3.0.
 * **MCP Resource Subscriptions:**
-  * Implement MCP resource subscription handling once FastMCP upstream adds native subscription support.
+  * Implement MCP resource subscription handling once FastMCP upstream adds native subscription support. (Deferred — FastMCP does not yet fully support it.)
 
 ## 1. Technical Debt Reduction
 

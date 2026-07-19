@@ -26,12 +26,12 @@ from allbrain.runtime_core.constants import (
 )
 from allbrain.server.context import BrainContext
 from allbrain.server.queueing import QueueCoordinator
+from allbrain.server.tools._events import load_task_projection
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
-    load_task_projection,
-    maybe_auto_snapshot,
 )
+from allbrain.server.tools._snapshot import maybe_auto_snapshot
 from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.server.tools.projections import slim_orchestrate_view
 

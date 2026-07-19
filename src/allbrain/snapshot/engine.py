@@ -23,8 +23,9 @@ class SnapshotEngine:
         self.snapshot_repo = snapshot_repo
 
     def build_snapshot(self, *, project_id: int, events):
-        state, metadata = self.builder.build(events)
-        event_cursor = events[-1].id if events else None
+        events_list = list(events)
+        state, metadata = self.builder.build(events_list)
+        event_cursor = events_list[-1].id if events_list else None
         return self.snapshot_repo.save(
             project_id=project_id,
             event_cursor=event_cursor,

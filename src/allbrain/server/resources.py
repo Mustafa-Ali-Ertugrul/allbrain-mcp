@@ -8,7 +8,7 @@ from typing import Any
 
 from allbrain.security.redaction import sanitize_payload
 from allbrain.server.context import BrainContext
-from allbrain.server.tools._shared import load_task_projection
+from allbrain.server.tools._events import load_task_projection
 from allbrain.storage.database import open_session
 
 logger = logging.getLogger(__name__)

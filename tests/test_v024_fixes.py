@@ -342,11 +342,31 @@ def test_git_fingerprint_computed_outside_lock(tmp_path: Path) -> None:
     )
     session = ensure_session_started(context)
 
+    # Track lock acquisition depth without relying on RLock._is_owned(),
+    # which is a CPython implementation detail absent on some builds.
+    real_lock = context._session_lock
+    lock_state = {"depth": 0}
+
+    class _TrackingRLock:
+        def __enter__(self):
+            lock_state["depth"] += 1
+            real_lock.__enter__()
+            return self
+
+        def __exit__(self, *exc):
+            real_lock.__exit__(*exc)
+            lock_state["depth"] -= 1
+            return False
+
+        def __getattr__(self, name):
+            return getattr(real_lock, name)
+
+    context._session_lock = _TrackingRLock()
+
     lock_held_at_fingerprint: list[bool] = []
 
     def fake_fingerprint(self):  # noqa: ANN001
-        # RLock has no public .locked(); _is_owned() reports if the current thread holds it.
-        lock_held_at_fingerprint.append(context._session_lock._is_owned())
+        lock_held_at_fingerprint.append(lock_state["depth"] > 0)
         return {"is_repo": False, "head": None, "branch": None, "files": {}}
 
     def fake_changed_paths(self, baseline, final):  # noqa: ANN001

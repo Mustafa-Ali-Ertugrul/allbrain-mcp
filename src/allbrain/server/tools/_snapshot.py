@@ -53,7 +53,7 @@ def _build_snapshot_if_due(
     project_path: str | Path,
     force_baseline: bool,
 ) -> None:
-    from allbrain.server.tools._events import load_events_through_cursor
+    from allbrain.server.tools._events import iter_events_through_cursor
 
     with profile_stage("snapshot.project_lookup"):
         project = context.repository.get_project_by_path(project_path)
@@ -89,10 +89,7 @@ def _build_snapshot_if_due(
     if not baseline_due and weight < context.auto_snapshot_threshold:
         return
     with profile_stage("snapshot.build"):
-        # TODO(v0.2.5): SnapshotEngine.build_snapshot() requires a materialized
-        # list today; switch to iter_events_through_cursor() once its signature
-        # accepts Iterable[EventRecord].
-        all_events = load_events_through_cursor(
+        all_events = iter_events_through_cursor(
             context.repository,
             project_path=context.project_path,
             batch_size=MAX_SNAPSHOT_EVENT_COUNT,

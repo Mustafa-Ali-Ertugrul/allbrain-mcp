@@ -16,30 +16,53 @@ from typing import Any
 from allbrain.models.schemas import UserInputError
 from allbrain.server.context import BrainContext
 
-# ── Re-exports from submodules (backward-compatible) ──────────────────────
-# Only public symbols are re-exported. Private helpers (``_advisory_lock_key``,
-# ``_force_remove_lease``, ``_snapshot_lease``, ``_try_create_lease`` …) live in
-# their owning submodule and are imported from there directly.
-from allbrain.server.tools._events import (  # noqa: F401
-    iter_event_pages_through_cursor,
-    iter_events_through_cursor,
-    load_events_through_cursor,
-    load_task_projection,
-)
-from allbrain.server.tools._snapshot import (  # noqa: F401
-    maybe_auto_snapshot,
-    snapshot_to_dict,
-)
-from allbrain.server.tools._tasks import (  # noqa: F401
-    append_selection_decision,
-    datetime_now_iso,
-    filter_observability_events,
-    get_task_or_raise,
-    merge_agent_metrics,
-    observability_project_and_limit,
-    semantic_event_count,
-)
-from allbrain.storage.database import open_write_session
+# ── Deprecated re-exports (v0.3.0 removal) ────────────────────────────────
+# Symbols that now live in domain submodules. Importing them from this facade
+# still works but emits a DeprecationWarning so callers migrate before v0.3.0.
+_DEPRECATED_REEXPORTS: dict[str, str] = {
+    "iter_event_pages_through_cursor": "allbrain.server.tools._events",
+    "iter_events_through_cursor": "allbrain.server.tools._events",
+    "load_events_through_cursor": "allbrain.server.tools._events",
+    "load_task_projection": "allbrain.server.tools._events",
+    "maybe_auto_snapshot": "allbrain.server.tools._snapshot",
+    "snapshot_to_dict": "allbrain.server.tools._snapshot",
+    "append_selection_decision": "allbrain.server.tools._tasks",
+    "datetime_now_iso": "allbrain.server.tools._tasks",
+    "filter_observability_events": "allbrain.server.tools._tasks",
+    "get_task_or_raise": "allbrain.server.tools._tasks",
+    "merge_agent_metrics": "allbrain.server.tools._tasks",
+    "observability_project_and_limit": "allbrain.server.tools._tasks",
+    "semantic_event_count": "allbrain.server.tools._tasks",
+}
+
+import warnings  # noqa: E402
+
+__all__ = [
+    "bind_session_id",
+    "audit_tool_call",
+    "atomic_write",
+    "open_write_session",
+    *list(_DEPRECATED_REEXPORTS),
+]
+
+
+def __getattr__(name: str):  # noqa: N807
+    """Lazily resolve deprecated re-exports with a warning."""
+    target = _DEPRECATED_REEXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    warnings.warn(
+        f"Importing {name!r} from 'allbrain.server.tools._shared' is deprecated; "
+        f"import it from '{target}' instead. This re-export will be removed in v0.3.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    import importlib
+
+    return getattr(importlib.import_module(target), name)
+
+
+from allbrain.storage.database import open_write_session  # noqa: E402
 
 # ── Core tool utilities (session binding, audit, atomic write) ────────────
 
@@ -69,6 +92,8 @@ def audit_tool_call(
     session_id: int,
     _session: Any | None = None,
 ) -> None:
+    from allbrain.server.tools._tasks import datetime_now_iso
+
     if getattr(context, "central_audit_enabled", False):
         return
     context.repository.append_event(

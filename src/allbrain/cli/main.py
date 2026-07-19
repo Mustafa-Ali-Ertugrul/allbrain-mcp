@@ -284,7 +284,7 @@ def rebuild_snapshots(
         console.print("Refusing to rebuild without --yes (event log is kept; snapshot rows are deleted).")
         raise typer.Exit(code=1)
 
-    from allbrain.server.tools._shared import load_events_through_cursor
+    from allbrain.server.tools._events import load_events_through_cursor
     from allbrain.snapshot import SnapshotBuilder, SnapshotEngine
     from allbrain.snapshot.constants import MAX_SNAPSHOT_EVENT_COUNT
     from allbrain.storage.snapshot_repo import SnapshotRepo

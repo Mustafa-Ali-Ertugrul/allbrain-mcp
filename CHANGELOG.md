@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Interruptible DB Backoff:** Replaced `time.sleep` with `threading.Event().wait()` in the database retry loop (then reverted to honest `time.sleep` with clear retry purpose following code review).
 - **Subprocess Lock Scope Reduction:** Moved the blocking `GitBrain.build_fingerprint()` subprocess call out of the `_session_lock` mutex in `record_git_changes()`.
 - **Shared Facade Decomposition:** Split the 460-line monolithic `_shared.py` file into four focused domain submodules: `_events.py` (cursor batching), `_snapshot.py` (lease management), `_tasks.py` (selection decisions & metrics), and `_shared.py` (facade with core tool utilities). Removed unused private re-exports.
+- **SnapshotEngine Iterable Acceptance:** `SnapshotEngine.build_snapshot()` now accepts `Iterable[EventRecord]` and materializes it once internally; `_snapshot.py` switched from `load_events_through_cursor()` (eager list) to the lazy `iter_events_through_cursor()` generator. Closes the v0.2.5 backlog TODO.
+- **Deprecated Facade Re-exports:** Public re-exports in `_shared.py` now emit `DeprecationWarning` via a `__getattr__` lazy loader, prompting direct imports from `_events`, `_snapshot`, and `_tasks`. Internal tool modules migrated to direct imports. These re-exports will be removed in v0.3.0.
 
 ## [0.2.3] - 2026-07-19
 
