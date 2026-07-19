@@ -36,7 +36,7 @@ AllBrain gives every agent a shared workbench. Each tool call is recorded in an 
 - **Conflict detection** — automatic surface of conflicting state updates
 - **Decision pipelines** — counterfactual reasoning, scenario planning, foresight
 - **Deterministic replay** — rebuild project state from raw events
-- **50 tools** in full profile across 18 domain modules (start with 3, enable more as needed)
+- **51 tools** in full profile across 18 domain modules (start with 3, enable more as needed)
 
 ## 30-second demo
 
@@ -104,7 +104,7 @@ Start with `--tool-profile minimal` (3 tools) and expand when needed:
 | `collaboration` | memory + task/conflict/resolution tools | Multi-agent handoff |
 | `reasoning` | memory + decision pipeline tools | Planning and analysis |
 | `core` | save_event, list_events, retrieve_memory, git_info, create_task, get_task_graph, orchestrate_project, run_decision_pipeline, create_snapshot, resume_project | Essential workflow |
-| `full` | 50 tools | Everything |
+| `full` | 51 tools | Everything |
 
 ```shell
 uv run allbrain start --project . --agent my-agent --tool-profile memory
@@ -203,7 +203,7 @@ AllBrain stores events, sessions, and audit logs in local SQLite. Data never lea
 
 ## Status
 
-- 2849 passed tests, 3 skipped tests (highly robust)
+- 2826 passed tests, 3 skipped tests (highly robust)
 - stdio MCP handshake verified
 - Python 3.12+ (CI at 3.13)
-- Coverage: 80.72% (enforced threshold 80%)
+- Coverage: 81.52% (enforced threshold 80%)

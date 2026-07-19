@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.5] - 2026-07-19
+## [0.2.6] - 2026-07-19
+
+### Changed
+- **SnapshotEngine Iterable Acceptance:** `SnapshotEngine.build_snapshot()` now accepts `Iterable[EventRecord]` and materializes it once internally; `_snapshot.py` switched from `load_events_through_cursor()` (eager list) to the lazy `iter_events_through_cursor()` generator. Closes the v0.2.5 backlog TODO.
+- **Deprecated Facade Re-exports:** Public re-exports in `_shared.py` now emit `DeprecationWarning` via a `__getattr__` lazy loader, prompting direct imports from `_events`, `_snapshot`, and `_tasks`. Internal tool modules migrated to direct imports. These re-exports will be removed in v0.3.0.
+- **README Consistency:** Full-profile tool count corrected to 51 (was inconsistently 50/51), matching the authoritative registration count.
+
+### Fixed
+- **Test `test_git_fingerprint_computed_outside_lock`:** Replaced the `RLock._is_owned()` call (absent on some Python builds → `AttributeError`) with a lock-depth tracking wrapper that verifies `GitBrain.build_fingerprint()` runs outside the session mutex.
+
+
 
 ### Added
 - 14 regression tests in `tests/test_v024_fixes.py` protecting performance, safety, and concurrency changes.
