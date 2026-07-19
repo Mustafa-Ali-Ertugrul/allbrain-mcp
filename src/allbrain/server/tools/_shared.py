@@ -17,6 +17,9 @@ from allbrain.models.schemas import UserInputError
 from allbrain.server.context import BrainContext
 
 # ── Re-exports from submodules (backward-compatible) ──────────────────────
+# Only public symbols are re-exported. Private helpers (``_advisory_lock_key``,
+# ``_force_remove_lease``, ``_snapshot_lease``, ``_try_create_lease`` …) live in
+# their owning submodule and are imported from there directly.
 from allbrain.server.tools._events import (  # noqa: F401
     iter_event_pages_through_cursor,
     iter_events_through_cursor,
@@ -24,11 +27,6 @@ from allbrain.server.tools._events import (  # noqa: F401
     load_task_projection,
 )
 from allbrain.server.tools._snapshot import (  # noqa: F401
-    _advisory_lock_key,
-    _force_remove_lease,
-    _snapshot_age_seconds,
-    _snapshot_lease,
-    _try_create_lease,
     maybe_auto_snapshot,
     snapshot_to_dict,
 )

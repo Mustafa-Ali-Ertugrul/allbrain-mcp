@@ -2,15 +2,19 @@
 
 Covers:
 - Step 1: StateEngine.apply_events() single-pass equivalence
+- Step 2: QueueCoordinator.claim() uses open_write_session (concurrent safety)
 - Step 3: _SAFE_KEY_DENYLIST value-based fallback
 - Step 4: iter_events_through_cursor generator
 - Step 5: open_write_session uses time.sleep for backoff
+- Step 6: record_git_changes computes git fingerprint outside _session_lock
 """
 
 from __future__ import annotations
 
+import threading
 from datetime import UTC, datetime
 from pathlib import Path
+from unittest.mock import patch
 
 from allbrain.core import StateEngine
 from allbrain.models.schemas import EventRead
@@ -240,3 +244,120 @@ def test_open_write_session_uses_time_sleep() -> None:
 
     source = inspect.getsource(db_mod.open_write_session)
     assert "time.sleep(delay)" in source
+
+
+# ---------------------------------------------------------------------------
+# Step 2: QueueCoordinator.claim() uses open_write_session (concurrent safety)
+# ---------------------------------------------------------------------------
+
+
+def test_concurrent_claim_no_double_assignment(tmp_path: Path) -> None:
+    """10 threads claiming concurrently must each win a distinct queued item.
+
+    Step 2 switched ``claim()`` to ``open_write_session`` (BEGIN IMMEDIATE) so the
+    conditional ``UPDATE ... WHERE state == 'queued'`` is atomic. Enqueue 5 items
+    for one agent; concurrent claims must yield exactly 5 distinct leases — no
+    item claimed twice, no item lost.
+    """
+    from allbrain.server import BrainContext
+    from allbrain.server.queueing import QueueCoordinator
+    from allbrain.storage import BrainRepository, create_engine_for_path, init_db
+
+    engine = create_engine_for_path(tmp_path / "allbrain.db")
+    init_db(engine)
+    repository = BrainRepository(engine)
+    project = tmp_path / "project"
+    project.mkdir()
+    project_path = str(project.resolve())
+    session = repository.create_session(project, "codex", server_instance_id="instance-a")
+    context = BrainContext(
+        repository=repository,
+        project_path=project_path,
+        active_session=session,
+        agent_name="codex",
+        server_instance_id="instance-a",
+    )
+    coordinator = QueueCoordinator(context)
+
+    n_tasks = 5
+    for i in range(n_tasks):
+        coordinator.enqueue_task(
+            task_id=f"task-{i}",
+            goal=f"goal-{i}",
+            agent_id="codex",
+            workflow_id="wf",
+            node_id=f"node-{i}",
+        )
+
+    claimed_ids: list[str] = []
+    barrier = threading.Barrier(10)
+    errors: list[BaseException] = []
+
+    def worker() -> None:
+        try:
+            barrier.wait()
+            result = coordinator.claim(agent_id="codex", server_instance_id="instance-a")
+            if result is not None:
+                claimed_ids.append(result["queue_item_id"])
+        except Exception as exc:  # pragma: no cover - defensive
+            errors.append(exc)
+
+    threads = [threading.Thread(target=worker) for _ in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors, f"Concurrent claim raised: {errors}"
+    assert len(claimed_ids) == n_tasks, f"expected {n_tasks} distinct claims, got {len(claimed_ids)}"
+    assert len(set(claimed_ids)) == n_tasks, "a queued item was assigned more than once"
+
+
+# ---------------------------------------------------------------------------
+# Step 6: record_git_changes computes git fingerprint outside _session_lock
+# ---------------------------------------------------------------------------
+
+
+def test_git_fingerprint_computed_outside_lock(tmp_path: Path) -> None:
+    """build_fingerprint() (subprocess I/O) must run outside the session lock.
+
+    Step 6 moved the expensive ``GitBrain.build_fingerprint()`` call out of the
+    ``with context._session_lock:`` block. This asserts the fingerprint is built
+    while the RLock is NOT held.
+    """
+    from allbrain.server import BrainContext
+    from allbrain.server.lifecycle import ensure_session_started, record_git_changes
+    from allbrain.storage import BrainRepository, create_engine_for_path, init_db
+
+    engine = create_engine_for_path(tmp_path / "allbrain.db")
+    init_db(engine)
+    repository = BrainRepository(engine)
+    project = tmp_path / "project"
+    project.mkdir()
+    context = BrainContext(
+        repository=repository,
+        project_path=str(project.resolve()),
+        agent_name="codex",
+        server_instance_id="instance-a",
+    )
+    session = ensure_session_started(context)
+
+    lock_held_at_fingerprint: list[bool] = []
+
+    def fake_fingerprint(self):  # noqa: ANN001
+        # RLock has no public .locked(); _is_owned() reports if the current thread holds it.
+        lock_held_at_fingerprint.append(context._session_lock._is_owned())
+        return {"is_repo": False, "head": None, "branch": None, "files": {}}
+
+    def fake_changed_paths(self, baseline, final):  # noqa: ANN001
+        return []
+
+    with patch("allbrain.gitbrain.parser.GitBrain.build_fingerprint", fake_fingerprint), patch(
+        "allbrain.gitbrain.parser.GitBrain.changed_paths_between", fake_changed_paths
+    ):
+        record_git_changes(context, session, confidence="low")
+
+    assert lock_held_at_fingerprint, "build_fingerprint was never called"
+    assert lock_held_at_fingerprint == [False], (
+        "build_fingerprint ran while _session_lock was held; it must run outside the lock"
+    )

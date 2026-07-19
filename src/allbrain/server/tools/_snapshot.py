@@ -9,6 +9,8 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
+
+# NOTE: filesystem retry (lease dir/file ops), NOT DB backoff — keep time.sleep/time.
 from time import sleep, time
 from typing import Any
 
@@ -87,6 +89,9 @@ def _build_snapshot_if_due(
     if not baseline_due and weight < context.auto_snapshot_threshold:
         return
     with profile_stage("snapshot.build"):
+        # TODO(v0.2.5): SnapshotEngine.build_snapshot() requires a materialized
+        # list today; switch to iter_events_through_cursor() once its signature
+        # accepts Iterable[EventRecord].
         all_events = load_events_through_cursor(
             context.repository,
             project_path=context.project_path,
