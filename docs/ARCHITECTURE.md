@@ -1,227 +1,227 @@
-# AllBrain System Architecture
+# AllBrain Architecture — Bounded Contexts
 
-## 1. Overview
+This document maps the 73 top-level domain packages into 6 bounded
+contexts. The `allbrain.domains.*` namespace (created in v0.3.0)
+is the forward-compatible home for the eventual mass migration, which lands
+in **v0.4.0**. Phase 1 (v0.3.0) is **scaffold + docs only**:
+no module moves yet.
 
-AllBrain is an **event-sourced multi-agent memory and orchestration server**. Durable agent actions are appended to an application-level immutable event log. State is derived deterministically by replaying that log, which gives the system replay equivalence, auditability, and crash recovery.
+## Dependency Rule (Golden Rule)
 
-**Design principles:**
+- Bounded contexts MAY depend only on **infrastructure**: `core/`, `models/`,
+  `events/`, `storage/`, `security/`, `server/`, `snapshot/`, `orchestrator/`,
+  `reducers/`, `config/`, `cli/`, `install/`, `ops/`.
+- **Cross-context imports are FORBIDDEN.** If two contexts need to
+  share logic, that logic moves into `core/` or `models/`.
 
-- **Event log = single source of truth.** All durable state derives from replayed events. Projections and caches may be invalidated.
-- **Database stream ordering.** UUIDv7 identifies events. SQLite/PostgreSQL atomically assigns a project-local `stream_position`, so cursor reads cannot lose a later commit because another host's clock is behind.
-- **Replay equivalence.** Replaying the same events in the same order produces identical derived state. This is enforced by deterministic reducers.
-- **Domain boundaries.** Import rules are CI-enforced (`check_architecture`). Server and storage adapters sit at the boundary; domain packages never import them.
-- **Opt-in reasoning.** World simulation, counterfactual analysis, scenario planning, foresight, meta-reasoning, uncertainty estimation, and information seeking are all off by default and activated per pipeline run.
-- **Production-readiness progression.** SQLite is the default backend. PostgreSQL is the CI compatibility target. Redis and RabbitMQ adapters are experimental.
+> `orchestrator/` and `reducers/` are explicitly exempt from the rule:
+> they are cross-cutting infrastructure layers (scheduling + reducers), not
+> domains. The reducer files (`reducers/<domain>.py`) already mirror
+> these context boundaries internally.
 
----
+## Infrastructure (untouched)
 
-## 2. Repository Layout & Bounded Contexts
-
-`src/allbrain/` contains **85 top-level packages**. They group into 11 bounded contexts  
-(see [package-maturity.md](package-maturity.md) for production vs opt-in vs experimental):
-
-| Context | Key packages | Responsibility |
-|---|---|---|
-| **Runtime Core** | `runtime_core`, `core`, `events`, `models`, `replay`, `workflow`, `foundations`, `decision`, `intent`, `reducers`, `resume`, `snapshot`, `context`, `objective_system` | Pipeline orchestration, event bus, state machine, replay engine, decision/resume/snapshot sub-systems |
-| **World Model & Simulation** | `world`, `counterfactual`, `scenarios`, `foresight` | State simulation, what-if analysis, scenario generation (world-simulation modules live under `runtime_core/` — `simulation.py`, `execution.py`, `economics.py`) |
-| **Meta/Reflective Reasoning** | `meta_reasoning`, `uncertainty`, `information_seeking`, `meta_policy`, `meta_scoring`, `meta_optimizer`, `meta_meta_scoring` | Self-evaluation, confidence estimation, information-gap detection |
-| **Learning & Capability** | `capabilities`, `learning`, `learning_graph`, `dynamics`, `fusion`, `attribution`, `causal` | Capability tracking, signal fusion, learning graph |
-| **Agent Selection & Routing** | `routing`, `policy_routing`, `orchestrator` | Agent dispatch, policy family selection |
-| **Governance & Policy** | `governance`, `policy`, `value_alignment`, `policy_competition`, `conflict` | Pre-checks, alignment, strategy arbitration, conflict resolution |
-| **Recovery & Reliability** | `resilience`, `recovery_consensus`, `adaptive_recovery`, `self_repair`, `soft_repair`, `failure_memory`, `predictive_failure`, `mitigation_learning`, `learning_safety`, `reliability` | Failure detection, consensus, strategy chaining, self-repair |
-| **Memory & State** | `memory`, `episodic`, `semantic`, `workspace`, `attention`, `belief`, `evidence`, `revision`, `calibration`, `contradiction`, `compression`, `graph` | Short/long-term memory, belief maintenance, contradiction resolution |
-| **Execution & Economics** | `tradeoff_engine` | Action execution, cost evaluation (execution/economics logic lives under `runtime_core/`) |
-| **Server & Adapters** | `server`, `storage`, `agents`, `cli`, `gitbrain`, `security`, `ui`, `telemetry`, `metrics`, `api`, `observability`, `distributed` | System boundary — MCP server, persistence, CLI, observability |
-| **Evolution** | `evolution`, `coevolution`, `self_play`, `collaboration`, `merge`, `reputation`, `arbitration` | Self-modification, multi-agent collaboration, reputation scoring |
-
-**Boundary rules** (enforced by `check_architecture` in CI):
-- Domain packages (`runtime_core`, `world`, `routing`, etc.) must not import `server` or `storage`.
-- `server` may import domain packages but not vice versa.
-- `runtime_core` defines the `EventStore` protocol; `storage` provides the SQLAlchemy-backed `BrainRepository`.
-- `resume` defines its own event repository and snapshot store protocols; server adapters inject concrete storage implementations.
-
----
-
-## 3. Event Sourcing Model
-
-### Event Store
-
-AllBrain uses an append-only event log. Events are stored as rows with the following core schema:
-
-```
-event_id    UUIDv7 (primary key, identity)
-stream_position  int (database-assigned, unique within project)
-event_type  str (e.g. "pipeline_run_started", "objective_received")
-payload     JSON blob
-session_id  int (required)
-created_at  datetime
-```
-
-### Core Types
-
-- **`EventType`** — `StrEnum` covering core, pipeline, and domain event types.
-- **`EventRead`** — Pydantic read model for the normalized storage row.
-- **`EventStore`** — Minimal runtime protocol for appending and listing events; repository-specific cursor reads remain on `BrainRepository`.
-- **`BrainRepository`** — SQLAlchemy-backed `EventStore` implementation shared by SQLite and PostgreSQL.
-- **`RuntimeEventBus`** — Thin adapter over `BrainRepository.append_event` used by the runtime pipeline.
-
-### Key Invariants
-
-1. **Application append-only.** Repository APIs never update or delete events; direct database administration remains outside this guarantee.
-2. **Deterministic replay.** Replaying events by project-local `stream_position` produces identical derived state. Legacy/external events without a position fall back to deterministic ID ordering.
-3. **Unknown-event tolerance.** The reducer silently skips unknown event types — safe for forward compatibility.
-4. **Payload versioning.** Registered one-version-at-a-time upcasters normalize older payloads on read.
-
----
-
-## 4. Runtime Pipeline
-
-### Pipeline Stages
-
-The `SystemDecisionPipeline` runs an objective through these stages:
-
-```
-input_objective
-  -> governance_precheck
-  -> economic_evaluation
-  -> strategic_planning
-  -> goal_decomposition
-  -> execution_planning
-  -> arbitration_if_needed
-  -> final_decision
-  -> scheduler_execution
-  -> runtime_feedback
-  -> closed_loop_learning
-```
-
-The facade currently executes four step objects (`DecisionPreparationStep`, `ReasoningStep`, `ExecutionFeedbackStep`, and `LearningCompletionStep`). Those steps emit the finer-grained stage events shown above through `RuntimeEventBus`; engines and adapters are carried by `PipelineServices`.
-
-### State Machine
-
-```
-INIT -> PLANNING -> EVALUATION -> DECISION -> EXECUTION -> FEEDBACK -> EVOLUTION -> COMPLETED
-```
-
-Transitions:
-- `INIT` after receiving `objective_received`.
-- Blocked or unsafe decisions → `BLOCKED`.
-- Unexpected runtime failures → `FAILED`.
-
-### Opt-in Reasoning Layers
-
-Each reasoning layer is activated by the user's `execute_mode` and `*_threshold` parameters:
-
-| Layer | Threshold param | Default | Description |
-|---|---|---|---|
-| World simulation | `risk_threshold` | off | Observe predicted world state from history |
-| Counterfactual | `regret_threshold` | off | What-if analysis on alternative actions |
-| Scenario planning | `scenario_recommendation_threshold` | off | Generate multiple future scenarios |
-| Strategic foresight | `foresight_limit` | off | Multi-step horizon planning |
-| Meta-reasoning | — | off | Self-evaluation of reasoning quality |
-| Uncertainty estimation | — | off | Estimate confidence in predictions |
-| Information seeking | — | off | Identify information gaps |
-
-When activated, layers run as sub-steps within the `EVALUATION` state, emitting intermediate events.
-
-### PipelineServices
-
-`PipelineServices` is a frozen dataclass carrying all engine dependencies:
-
-- `world`, `counterfactual`, `scenarios`, `foresight` — simulation engines
-- `governance` — `AutonomousGovernanceCoordinator`
-- `scheduler` — `DeterministicScheduler`
-- `simulation` — `SimulationOrchestrator` facade (delegates to `simulation_steps/`)
-- `memory` — `MemoryBuilder` for cross-run fusion
-
-### Execution Modes
-
-| Mode | Behavior |
+| Package | Role |
 |---|---|
-| `event_only` | No external agent execution; records planned runtime feedback |
-| `mock_runtime` | Deterministic mock execution feedback for tests and local simulation |
-| `queued_runtime` | Records planned feedback and enqueues the selected task through the server queue integration |
+| `core/` | Event-sourcing core (state_engine, state_machine, merge) |
+| `storage/` | DB layer (database, repository, snapshot_repo) |
+| `security/` | Redaction, rate limiting, input guard |
+| `events/` | Event type definitions, domain matching |
+| `models/` | SQLModel entities, Pydantic schemas |
+| `server/` | MCP server (app, context, lifecycle, tools/) |
+| `snapshot/` | SnapshotEngine, SnapshotBuilder |
+| `orchestrator/` | Task graph, scheduling, handoff (infrastructure) |
+| `reducers/` | Cross-cutting reducer layer (infrastructure) |
+| `config.py` | Path validation, configuration |
+| `cli/` | CLI entry point |
+| `install/` | Client installer |
+| `ops/` | Operational tooling |
 
----
+## Bounded Contexts
 
-## 5. Storage & Adapters
+### `domains.reasoning/` — decision-making & forward thinking (10)
 
-### Persistence
-
-| Backend | Status | Notes |
+| Module | Current Path | Key Exports |
 |---|---|---|
-| SQLite | **Default** | Single-file, zero-config, single-host storage |
-| PostgreSQL | **CI-validated scale-out target** | Selected with `--database-url` or `ALLBRAIN_DATABASE_URL` |
-| Redis | Experimental queue adapter | Not an authoritative event store |
-| RabbitMQ | Experimental queue adapter | Not an authoritative event store |
+| counterfactual | `allbrain.counterfactual` | `CounterfactualEngine`, `AlternativeRanker` |
+| scenarios | `allbrain.scenarios` | `ScenarioEngine`, `ScenarioAnalysis` |
+| foresight | `allbrain.foresight` | `ForesightInput`, generation |
+| meta_reasoning | `allbrain.meta_reasoning` | meta-reasoning |
+| uncertainty | `allbrain.uncertainty` | `observed_success_rate` |
+| decision | `allbrain.decision` | decision pipeline |
+| information_seeking | `allbrain.information_seeking` | `InformationSeekingManager` |
+| intent | `allbrain.intent` | `IntentExtractor`, `IntentStore` |
+| objective_system | `allbrain.objective_system` | objective mgmt |
+| tradeoff_engine | `allbrain.tradeoff_engine` | tradeoff analysis |
 
-### Queue Adapters
+### `domains.governance/` — safety, alignment, self-repair (12)
 
-AllBrain supports three queue backends for event publishing:
+| Module | Current Path | Key Exports |
+|---|---|---|
+| policy | `allbrain.policy` | `RoutingEngine` |
+| policy_competition | `allbrain.policy_competition` | competing policies |
+| policy_routing | `allbrain.policy_routing` | policy selection |
+| value_alignment | `allbrain.value_alignment` | value alignment |
+| governance | `allbrain.governance` | `AutonomousGovernanceCoordinator` |
+| self_repair | `allbrain.self_repair` | self-repair |
+| soft_repair | `allbrain.soft_repair` | soft repair |
+| adaptive_recovery | `allbrain.adaptive_recovery` | adaptive recovery |
+| recovery_consensus | `allbrain.recovery_consensus` | recovery consensus |
+| mitigation_learning | `allbrain.mitigation_learning` | mitigation learning |
+| reliability | `allbrain.reliability` | `ReliabilityMetrics` |
+| resilience | `allbrain.resilience` | resilience |
 
-1. **InMemoryQueue** — default for tests and single-process runs.
-2. **SQLiteQueue** — persistent queue using SQLite (same DB as event store).
-3. **Experimental** — Redis and RabbitMQ adapters have real-service round-trip, acknowledgement, reconnect, and deterministic lease/requeue contract tests, but still require sustained-load validation before production use.
+### `domains.learning/` — meta-learning & adaptation (12)
 
-### MCP Server
+| Module | Current Path | Key Exports |
+|---|---|---|
+| learning | `allbrain.learning` | `CapabilityLearningManager` |
+| learning_graph | `allbrain.learning_graph` | learning graph |
+| learning_safety | `allbrain.learning_safety` | safe learning |
+| meta_optimizer | `allbrain.meta_optimizer` | meta-optimizer |
+| meta_scoring | `allbrain.meta_scoring` | meta-scoring |
+| meta_meta_scoring | `allbrain.meta_meta_scoring` | meta-meta-scoring |
+| meta_policy | `allbrain.meta_policy` | meta-policy |
+| calibration | `allbrain.calibration` | calibration |
+| capabilities | `allbrain.capabilities` | capability tracking |
+| evolution | `allbrain.evolution` | evolutionary strategies |
+| coevolution | `allbrain.coevolution` | co-evolution |
+| self_play | `allbrain.self_play` | self-play |
 
-The `allbrain start` command starts a **FastMCP stdio server** that exposes `save_event`, `list_events`, `resume_project`, `detect_conflicts`, and other tools. The server is the only entry point; all business logic lives in domain packages.
+### `domains.collaboration/` — multi-agent coordination (10)
 
----
+| Module | Current Path | Key Exports |
+|---|---|---|
+| collaboration | `allbrain.collaboration` | `CollaborationManager` |
+| conflict | `allbrain.conflict` | `ConflictDetector`, `ConflictResolver` |
+| merge | `allbrain.merge` | `EventMergeEngine`, `StateMerger` |
+| arbitration | `allbrain.arbitration` | `ArbitrationManager` |
+| reputation | `allbrain.reputation` | reputation |
+| distributed | `allbrain.distributed` | distributed coordination |
+| workflow | `allbrain.workflow` | `WorkflowSnapshotBuilder` |
+| workspace | `allbrain.workspace` | shared workspace |
+| agents | `allbrain.agents` | agent management |
+| routing | `allbrain.routing` | routing |
 
-## 6. Security Boundaries
+### `domains.analysis/` — situation understanding & anomaly (17)
 
-- **Input validation.** `security/input_guard.py` validates all tool inputs at the MCP boundary.
-- **Redaction.** Sensitive payload fields are redacted before logging/persistence.
-- **Rate limiting.** Built into the server adapter layer.
-- **Path traversal protection.** File operations are restricted to allowed directories.
-- **Git environment sanitization.** Git operations strip environment variables that could leak credentials.
-- **Domain isolation.** CI enforces that domain packages never import server or storage adapters, preventing accidental privilege escalation.
+| Module | Current Path | Key Exports |
+|---|---|---|
+| causal | `allbrain.causal` | `simulate_intervention` |
+| belief | `allbrain.belief` | `BeliefManager` |
+| evidence | `allbrain.evidence` | evidence |
+| contradiction | `allbrain.contradiction` | `ContradictionDetector` |
+| drift | `allbrain.drift` | drift detection |
+| dynamics | `allbrain.dynamics` | capability dynamics |
+| attention | `allbrain.attention` | attention |
+| attribution | `allbrain.attribution` | attribution |
+| compression | `allbrain.compression` | `EventCompressor` |
+| episodic | `allbrain.episodic` | episodic memory |
+| failure_memory | `allbrain.failure_memory` | failure memory |
+| predictive_failure | `allbrain.predictive_failure` | predictive failure |
+| semantic | `allbrain.semantic` | semantic analysis |
+| world | `allbrain.world` | `WorldModel` |
+| context | `allbrain.context` | `ParallelContextBuilder` |
+| graph | `allbrain.graph` | graph analysis |
+| fusion | `allbrain.fusion` | data fusion |
 
-See [SUMMARY.md](../SUMMARY.md) for the current security hardening coverage status.
+### `domains.memory/` — persistence, recall, observability (12)
 
----
+| Module | Current Path | Key Exports |
+|---|---|---|
+| memory | `allbrain.memory` | `MemoryBuilder`, `MemoryRetriever` |
+| replay | `allbrain.replay` | deterministic replay |
+| resume | `allbrain.resume` | `OrchestratedResumeEngine` |
+| telemetry | `allbrain.telemetry` | telemetry |
+| observability | `allbrain.observability` | `ObservabilityBuilder` |
+| metrics | `allbrain.metrics` | metrics |
+| foundations | `allbrain.foundations` | `canonical_event_sort` |
+| runtime_core | `allbrain.runtime_core` | `SystemDecisionPipeline` |
+| gitbrain | `allbrain.gitbrain` | `GitBrain` |
+| revision | `allbrain.revision` | revision tracking |
+| ui | `allbrain.ui` | `TraceViewer`, `GraphExplorer` |
+| api | `allbrain.api` | API layer |
 
-## 7. Production Readiness & Known Limitations
+## Dependency Graph
 
-### Production-ready
+```mermaid
+graph TD
+    subgraph Infrastructure
+        core[core/]
+        storage[storage/]
+        security[security/]
+        events[events/]
+        models[models/]
+        server[server/]
+        snapshot[snapshot/]
+        orchestrator[orchestrator/]
+        reducers[reducers/]
+    end
 
-- SQLite event store with deterministic replay
-- MCP stdio handshake and tool execution
-- Multi-agent write/read/conflict flows
-- Integrated CI pipeline: ruff → bandit → complexity → architecture → pytest + coverage
-- Coverage fail-under 80%, defined once in `pyproject.toml`
-- Python 3.12 compatibility CI and Python 3.13 coverage CI
+    subgraph "Bounded Contexts (v0.4.0)"
+        reasoning[reasoning/<br/>10 modules]
+        governance[governance/<br/>12 modules]
+        learning[learning/<br/>12 modules]
+        collaboration[collaboration/<br/>10 modules]
+        analysis[analysis/<br/>17 modules]
+        memory[memory/<br/>12 modules]
+    end
 
-### Experimental / Not production-ready
+    reasoning --> core
+    reasoning --> models
+    reasoning --> events
+    governance --> core
+    governance --> models
+    learning --> core
+    learning --> models
+    collaboration --> core
+    collaboration --> server
+    analysis --> core
+    analysis --> events
+    memory --> core
+    memory --> storage
 
-- Redis and RabbitMQ queue adapters (contract-tested, still awaiting sustained-load production validation)
-- All reasoning layers except world simulation are off by default
-- Simulation orchestrator runs in `event_only` mode — no live world actions
-- PostgreSQL is a CI compatibility target but not the default
-- Self-modification (`evolution`, `self_play`) is inactive
+    server --> reasoning
+    server --> governance
+    server --> learning
+    server --> collaboration
+    server --> analysis
+    server --> memory
 
-### Monitoring & Observability
+    style reasoning fill:#4a9eff,color:#fff
+    style governance fill:#ff6b6b,color:#fff
+    style learning fill:#51cf66,color:#fff
+    style collaboration fill:#ffd43b,color:#333
+    style analysis fill:#cc5de8,color:#fff
+    style memory fill:#ff922b,color:#fff
+```
 
-- `telemetry` package collects pipeline metrics
-- `metrics` package provides counters and gauges
-- CLI (`allbrain`) supports `start`, `dump`, and diagnostic subcommands
-- Logging via standard `logging` with structured event emission
+> **Golden Rule:** Bounded contexts may depend ONLY on Infrastructure.
+> Context-to-context imports are forbidden.
 
----
+## Module Coupling Ranking (v0.3.0 baseline)
 
-## 8. References
+External importer counts (excluding each module's own package and the
+cross-cutting `reducers/` layer), plus test importers. Modules with
+the lowest coupling are the safest v0.4.0 removal candidates.
 
-- [docs/index.md](index.md) — full document index with sprint history table
-- [code-quality-audit.md](code-quality-audit.md) — dated verification commands, corrected claims, and current quality policy
-- [docs/domain_boundaries.md](domain_boundaries.md) — import rules and ownership
-- [docs/setup.md](setup.md) — installation and troubleshooting
-- [docs/database_scaling_policy.md](database_scaling_policy.md) — storage backends
-- [docs/repository_context_aware_api.md](repository_context_aware_api.md) — multi-repo API
-- [sprint32](sprints/sprint32_system_integration_runtime_core_architecture.md) — runtime core initial design
-- [sprint41](sprints/sprint41_foundations_hardening.md) — foundations hardening and invariants
-- [sprint33–39](sprints/sprint33_world_model.md) — reasoning layer designs
-- [sprint52–57](sprints/sprint52_capabilities.md) — learning and capability signal designs
-- [sprint13–14](sprints/sprint13_reliability_architecture.md) — reliability and resilience designs
-- [sprint64–69](sprints/sprint64_failure_memory.md) — recovery subsystem designs
-- [sprint21–31](sprints/sprint21_policy_engine_architecture.md) — governance and policy designs
-- [sprint51](sprints/sprint51_routing.md) — routing architecture
+| src importers (excl. reducers) | test importers | module |
+|---:|---:|---|
+| 0 | 2 | `drift` |
+| 0 | 3 | `learning_graph` |
+| 1 | 0 | `api` |
+| 1 | 1 | `compression` |
+| 1 | 1 | `distributed` |
+| 1 | 1 | `policy` |
+| 1 | 3 | `soft_repair` |
+| 1 | 4 | `reputation` |
+| 1 | 4 | `self_play` |
+| 1 | 4 | `semantic` |
+| 1 | 4 | `workspace` |
+
+> **Note:** A strict "unused module" analysis (zero importers outside
+> `reducers/`, zero in `server/tools/`, `cli/`, `install/`, tests) found
+> **zero** modules — every domain package is reachable. The table above
+> lists the lowest-coupling modules; `drift` and `learning_graph` have
+> no production importer outside the reducer layer and are the leading
+> v0.4.0 cleanup candidates.

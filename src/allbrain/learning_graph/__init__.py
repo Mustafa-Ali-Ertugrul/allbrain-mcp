@@ -1,3 +1,20 @@
+"""DEPRECATED: low-coupling module.
+
+``allbrain.learning_graph`` has no server-tool, CLI, or public-API
+importer (only the cross-cutting ``reducers/`` layer consumes it).
+It remains functional but is slated for removal in v0.4.0. Migrate
+any learning-graph usage to ``allbrain.domains.learning`` when available.
+"""
+import warnings
+
+warnings.warn(
+    "allbrain.learning_graph is deprecated and slated for removal in v0.4.0. "
+    "It has no server-tool, CLI, or public-API importers (reducers/ only). "
+    "Use allbrain.domains.learning from v0.4.0.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from allbrain.learning_graph.graph import LearningGraph
 from allbrain.learning_graph.model import (
     LEARNING_GRAPH_MIN_DELTA,

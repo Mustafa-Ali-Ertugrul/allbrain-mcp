@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.6] - 2026-07-19
+## [0.3.0] - 2026-07-19
+
+### Added
+- **Bounded Context Scaffold:** New `allbrain.domains.*` namespace with 6 contexts (`reasoning`, `governance`, `learning`, `collaboration`, `analysis`, `memory`) documenting the v0.4.0 module-consolidation target. No module moves yet — Phase 1 is scaffold + docs.
+- **Architecture Doc:** `docs/architecture.md` with the full 73-module → 6-context mapping table, a Mermaid dependency diagram, and a coupling ranking for v0.4.0 cleanup candidates.
+
+### Deprecated
+- `allbrain.drift` and `allbrain.learning_graph` now emit `DeprecationWarning` at import time. Both are reducer-only (no server-tool, CLI, or public-API importers) and are slated for removal in v0.4.0.
+
+
 
 ### Changed
 - **SnapshotEngine Iterable Acceptance:** `SnapshotEngine.build_snapshot()` now accepts `Iterable[EventRecord]` and materializes it once internally; `_snapshot.py` switched from `load_events_through_cursor()` (eager list) to the lazy `iter_events_through_cursor()` generator. Closes the v0.2.5 backlog TODO.
