@@ -168,7 +168,9 @@ def test_revision_quality_gate_no_uuid7_or_now_or_random_in_determinism_path():
         assert "time.time" not in content, f"{filename} uses time.time — must be deterministic"
 
     uncertainty_critical = ["estimator.py"]
-    base_u = Path("src/allbrain/uncertainty")
+    base_u = Path("src/allbrain/domains/reasoning/uncertainty")
+    if not base_u.exists():
+        base_u = Path("src/allbrain/uncertainty")
     for filename in uncertainty_critical:
         content = (base_u / filename).read_text(encoding="utf-8")
         assert "uuid7" not in content, f"uncertainty/{filename} uses uuid7 — must be deterministic hash"

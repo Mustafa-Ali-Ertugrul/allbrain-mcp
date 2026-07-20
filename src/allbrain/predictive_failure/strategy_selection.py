@@ -4,20 +4,20 @@ import hashlib
 from typing import Any
 
 import allbrain.predictive_failure.mitigation_planner as mitigation_planner
-from allbrain.events.schemas import EventType
-from allbrain.meta_meta_scoring import make_evaluator_profile_updated_payload
-from allbrain.objective_system.events import make_objective_updated_payload
-from allbrain.objective_system.model import FAULT_TYPE_SAFETY_THRESHOLDS
-from allbrain.objective_system.objective import Objective
-from allbrain.objective_system.objective_store import ObjectiveStore
-from allbrain.policy_competition import PolicyCandidate
-from allbrain.predictive_failure.model import STRATEGY_URGENCY, MitigationPlan
-from allbrain.tradeoff_engine import (
+from allbrain.domains.reasoning.objective_system.events import make_objective_updated_payload
+from allbrain.domains.reasoning.objective_system.model import FAULT_TYPE_SAFETY_THRESHOLDS
+from allbrain.domains.reasoning.objective_system.objective import Objective
+from allbrain.domains.reasoning.objective_system.objective_store import ObjectiveStore
+from allbrain.domains.reasoning.tradeoff_engine import (
     ParetoAnalyzer,
     UtilityFunction,
     make_tradeoff_analyzed_payload,
     make_utility_computed_payload,
 )
+from allbrain.events.schemas import EventType
+from allbrain.meta_meta_scoring import make_evaluator_profile_updated_payload
+from allbrain.policy_competition import PolicyCandidate
+from allbrain.predictive_failure.model import STRATEGY_URGENCY, MitigationPlan
 from allbrain.value_alignment import AlignmentResult, make_alignment_failed_payload
 
 
@@ -317,3 +317,4 @@ class StrategySelectionCoordinator:
                 "expected_risk_reduction": mitigation.expected_risk_reduction,
             }
         )
+

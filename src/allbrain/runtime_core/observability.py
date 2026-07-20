@@ -83,7 +83,7 @@ class ObservabilityCollector:
         Returns:
             Historical success rate (0.0-1.0), defaults to 0.7 on error
         """
-        from allbrain.uncertainty import observed_success_rate
+        from allbrain.domains.reasoning.uncertainty import observed_success_rate
 
         resolved = project_path or getattr(context, "project_path", None)
         if not resolved:
@@ -114,3 +114,4 @@ class ObservabilityCollector:
             Action string, defaults to 'execute'
         """
         return str(objective.get("kind", "execute"))
+

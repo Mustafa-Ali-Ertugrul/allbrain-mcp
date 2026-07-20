@@ -6,11 +6,13 @@ from typing import Any
 
 from uuid6 import uuid7
 
-from allbrain.counterfactual import CounterfactualEngine
-from allbrain.foresight import ForesightEngine
+from allbrain.domains.reasoning.counterfactual import CounterfactualEngine
+from allbrain.domains.reasoning.foresight import ForesightEngine
+from allbrain.domains.reasoning.information_seeking import InformationSeekingManager
+from allbrain.domains.reasoning.meta_reasoning import MetaReasoningManager
+from allbrain.domains.reasoning.scenarios import ScenarioEngine
+from allbrain.domains.reasoning.uncertainty import UncertaintyManager
 from allbrain.governance import AutonomousGovernanceCoordinator
-from allbrain.information_seeking import InformationSeekingManager
-from allbrain.meta_reasoning import MetaReasoningManager
 from allbrain.runtime_core.arbitration import ArbitrationBridge
 from allbrain.runtime_core.contracts import EconomicEvaluator, StrategicPlanner
 from allbrain.runtime_core.economics import EconomicEvaluationBridge
@@ -18,8 +20,6 @@ from allbrain.runtime_core.execution import ExecutionPlanningBridge
 from allbrain.runtime_core.learning import ClosedLoopLearningEngine
 from allbrain.runtime_core.planning import GoalDecompositionBridge, StrategicPlanningBridge
 from allbrain.runtime_core.simulation import SimulationOrchestrator
-from allbrain.scenarios import ScenarioEngine
-from allbrain.uncertainty import UncertaintyManager
 from allbrain.world import WorldModel
 
 
@@ -82,3 +82,4 @@ class PipelineServices:
             information_seeking=InformationSeekingManager(),
             bridge_timeout_ms=bridge_timeout_ms,
         )
+

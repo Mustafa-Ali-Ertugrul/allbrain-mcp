@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.domains.reasoning.objective_system import make_objective_rebalanced_payload
 from allbrain.events.schemas import EventType
-from allbrain.objective_system import make_objective_rebalanced_payload
 
 
 class LearningRepairCoordinator:
@@ -427,3 +427,4 @@ class LearningRepairCoordinator:
     def _advance_rollback(self) -> None:
         if self.owner._rollback_engine is not None:
             self.owner._rollback_engine.advance_cycle()
+

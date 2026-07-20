@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from allbrain.counterfactual import AlternativeRanker, CounterfactualEngine
-from allbrain.counterfactual.models import recommendation_severity
+from allbrain.domains.reasoning.counterfactual import AlternativeRanker, CounterfactualEngine
+from allbrain.domains.reasoning.counterfactual.models import recommendation_severity
 from allbrain.events import EventType
 from allbrain.models.schemas import (
     AlternativeRankingInput,
@@ -190,3 +190,4 @@ def register_tools(mcp, context: BrainContext) -> None:
         """
         result = rank_alternatives_impl(context, actions=actions, limit=limit)
         return result.model_dump(mode="json")
+

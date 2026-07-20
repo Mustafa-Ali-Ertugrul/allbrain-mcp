@@ -12,9 +12,9 @@ from allbrain.runtime_core.event_bus import RuntimeEventBus
 from allbrain.runtime_core.observability import ObservabilityCollector
 
 if TYPE_CHECKING:
-    from allbrain.counterfactual import CounterfactualEngine
-    from allbrain.foresight import ForesightEngine
-    from allbrain.scenarios import ScenarioEngine
+    from allbrain.domains.reasoning.counterfactual import CounterfactualEngine
+    from allbrain.domains.reasoning.foresight import ForesightEngine
+    from allbrain.domains.reasoning.scenarios import ScenarioEngine
     from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,7 @@ class SimulationOrchestrator:
         Returns:
             Tuple of (counterfactual payload, last event ID, emitted events)
         """
-        from allbrain.counterfactual import recommendation_severity
+        from allbrain.domains.reasoning.counterfactual import recommendation_severity
 
         current_state = self.world.observe()
         observed_event = bus.publish(
@@ -203,7 +203,7 @@ class SimulationOrchestrator:
         Returns:
             Tuple of (foresight payload, last event ID, emitted events)
         """
-        from allbrain.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
+        from allbrain.domains.reasoning.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
 
         current_state = self.world.observe()
         observed_event = bus.publish(
@@ -289,7 +289,7 @@ class SimulationOrchestrator:
         Returns:
             Tuple of (scenario payload, last event ID, emitted events)
         """
-        from allbrain.scenarios import SCENARIO_TEMPLATE_VERSION
+        from allbrain.domains.reasoning.scenarios import SCENARIO_TEMPLATE_VERSION
 
         current_state = self.world.observe()
         observed_event = bus.publish(
@@ -358,3 +358,4 @@ class SimulationOrchestrator:
         last_event_id = recommendation_event.id
         emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events, recommendation_event]
         return summary, last_event_id, emitted_events
+

@@ -4,8 +4,8 @@ from allbrain.arbitration.reducer import ArbitrationReducer
 from allbrain.belief.reducer import BeliefReducer
 from allbrain.calibration.reducer import CalibrationReducer
 from allbrain.contradiction.reducer import ContradictionReducer
-from allbrain.decision.reducer import DecisionReducer
-from allbrain.objective_system.reducer import ObjectiveSystemReducer
+from allbrain.domains.reasoning.decision.reducer import DecisionReducer
+from allbrain.domains.reasoning.objective_system.reducer import ObjectiveSystemReducer
 from allbrain.value_alignment.reducer import ValueAlignmentReducer
 
 __all__ = [
@@ -17,3 +17,4 @@ __all__ = [
     "ObjectiveSystemReducer",
     "ValueAlignmentReducer",
 ]
+

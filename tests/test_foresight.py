@@ -4,8 +4,7 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
-from allbrain.events import EventType
-from allbrain.foresight import (
+from allbrain.domains.reasoning.foresight import (
     DEPLOY_PLANS,
     FORESIGHT_TEMPLATE_VERSION,
     ActionPlanner,
@@ -17,6 +16,7 @@ from allbrain.foresight import (
     PlanEvaluator,
     PlanRanker,
 )
+from allbrain.events import EventType
 from allbrain.replay import EventReplayEngine
 from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.foresight import (
@@ -215,7 +215,7 @@ def test_confidence_decay_per_step() -> None:
 def test_projection_stops_below_threshold() -> None:
     # Hardcoded confidence values: deploy=0.95, run_tests=0.95
     # With decay=0.90 and threshold=0.35:
-    # After 10 steps: 0.95 * 0.90^10 ≈ 0.330 < 0.35
+    # After 10 steps: 0.95 * 0.90^10 â‰ˆ 0.330 < 0.35
     # So should stop after 10 steps
     state = WorldState(
         timestamp=datetime.now(UTC),
@@ -227,7 +227,7 @@ def test_projection_stops_below_threshold() -> None:
     final_state, predictions, step_states = simulator.simulate(state, actions)
 
     # Should stop before completing all 11 actions (after 10 steps, confidence < 0.35)
-    assert len(predictions) == 9  # Steps 1-9: confidence 0.368 > 0.35, step 10: 0.331 < 0.35 → break
+    assert len(predictions) == 9  # Steps 1-9: confidence 0.368 > 0.35, step 10: 0.331 < 0.35 â†’ break
     # Last prediction (step 9) should be just above threshold
     assert predictions[-1].confidence > 0.35
 
@@ -292,3 +292,4 @@ def test_mcp_evaluate_plan_custom(tmp_path) -> None:
     all_events = events(context)
     event_types = [event.type for event in all_events]
     assert event_types.count(EventType.FORESIGHT_EVALUATED.value) == 1
+

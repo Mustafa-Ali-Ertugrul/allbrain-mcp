@@ -131,7 +131,7 @@ class TestAttributionReplay:
         assert f["attribution"] == {}
 
     def test_mixed_with_decision(self):
-        from allbrain.decision import make_decision_payload
+        from allbrain.domains.reasoning.decision import make_decision_payload
 
         evts = [
             E(
@@ -148,3 +148,4 @@ class TestAttributionReplay:
         f = EventReplayEngine().replay(evts)["final_state"]
         assert "decision" in f
         assert "attribution" in f
+

@@ -7,7 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.6] - 2026-07-19
+## [0.4.0] - 2026-07-20
+
+### Changed
+- **BREAKING (0.x semver):** Migrated all 10 reasoning modules to `allbrain.domains.reasoning.*`:
+  `counterfactual`, `scenarios`, `foresight`, `meta_reasoning`, `uncertainty`, `decision`, `information_seeking`, `intent`, `objective_system`, `tradeoff_engine`.
+- **Backward-Compatible Shims:** Top-level `allbrain.<mod>` files re-export public APIs with `DeprecationWarning` (slated for removal in v0.5.0).
+- **Internal Imports Migrated:** `server/tools/`, `snapshot/`, `contradiction/`, `predictive_failure/`, `replay/`, `runtime_core/`, `reducers/`, and `tests/` now import directly from `allbrain.domains.reasoning.*`.
+- **Reasoning Context Facade:** `allbrain.domains.reasoning.__init__.py` re-exports all 10 modules and declares them in `__all__`.
+
+### Added
+- `WorldModel.from_events()` classmethod: rebuild WorldModel state from event history for pipeline warm-starting (API surface, pipeline integration ships in v0.4.1).
+- `WorldModel.serialize_transitions()` method: serialize learned transition/prediction state for event-store persistence.
+- `docs/ARCHITECTURE.md` **Design Philosophy** section: 5-layer cognitive architecture (Bayesian Epistemology → Metacognition → World Modeling → Decision → Memory).
+- `docs/adr/` — 6 Architecture Decision Records (ADR-001 through ADR-006) documenting key migration, compatibility, and infrastructure decisions.
+- `tests/test_domains_migration.py`: 4 regression tests verifying new-path imports, shim deprecation warnings, context facade re-exports, and Golden Rule isolation.
+
+## [0.3.0] - 2026-07-19
+
+### Added
+- **Bounded Context Scaffold:** New `allbrain.domains.*` namespace with 6 contexts (`reasoning`, `governance`, `learning`, `collaboration`, `analysis`, `memory`) documenting the v0.4.0 module-consolidation target. No module moves yet — Phase 1 is scaffold + docs.
+- **Architecture Doc:** `docs/architecture.md` with the full 73-module → 6-context mapping table, a Mermaid dependency diagram, and a coupling ranking for v0.4.0 cleanup candidates.
+
+### Deprecated
+- `allbrain.drift` and `allbrain.learning_graph` now emit `DeprecationWarning` at import time. Both are reducer-only (no server-tool, CLI, or public-API importers) and are slated for removal in v0.4.0.
+
+
 
 ### Changed
 - **SnapshotEngine Iterable Acceptance:** `SnapshotEngine.build_snapshot()` now accepts `Iterable[EventRecord]` and materializes it once internally; `_snapshot.py` switched from `load_events_through_cursor()` (eager list) to the lazy `iter_events_through_cursor()` generator. Closes the v0.2.5 backlog TODO.

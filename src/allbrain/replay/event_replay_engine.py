@@ -12,30 +12,33 @@ from allbrain.capabilities import CapabilityReducer
 from allbrain.causal import CausalReducer
 from allbrain.collaboration import CollaborationStateBuilder
 from allbrain.contradiction import ContradictionReducer
-from allbrain.counterfactual import CounterfactualProjection
-from allbrain.decision import DecisionReducer
+from allbrain.domains.reasoning.counterfactual import CounterfactualProjection
+from allbrain.domains.reasoning.decision import DecisionReducer
+from allbrain.domains.reasoning.foresight import ForesightProjection
+from allbrain.domains.reasoning.information_seeking import InformationSeekingProjection
+from allbrain.domains.reasoning.meta_reasoning import MetaReasoningProjection
+from allbrain.domains.reasoning.objective_system import ObjectiveSystemReducer
+from allbrain.domains.reasoning.scenarios import ScenarioProjection
+from allbrain.domains.reasoning.tradeoff_engine import TradeoffReducer
+from allbrain.domains.reasoning.uncertainty import UncertaintyProjection
 from allbrain.dynamics import CapabilityDynamicsReducer
 from allbrain.episodic import EpisodicReducer
 from allbrain.events import EventType
 from allbrain.evidence import EvidenceReducer
 from allbrain.evolution import LearningStateBuilder
 from allbrain.failure_memory import FailureMemoryReducer
-from allbrain.foresight import ForesightProjection
 from allbrain.foundations import canonical_event_sort
 from allbrain.foundations import is_known_event as _is_known_event
 from allbrain.fusion import FusionReducer
 from allbrain.governance import GovernanceStateBuilder
-from allbrain.information_seeking import InformationSeekingProjection
 from allbrain.learning import CapabilityLearningReducer
 from allbrain.learning_safety import LearningSafetyReducer
 from allbrain.meta_meta_scoring import MetaMetaScoringReducer
 from allbrain.meta_optimizer import MetaOptimizerReducer
 from allbrain.meta_policy import MetaPolicyReducer
-from allbrain.meta_reasoning import MetaReasoningProjection
 from allbrain.meta_scoring import MetaScoringReducer
 from allbrain.mitigation_learning import MitigationLearningReducer
 from allbrain.models.schemas import EventRead
-from allbrain.objective_system import ObjectiveSystemReducer
 from allbrain.policy_competition import PolicyCompetitionReducer
 from allbrain.policy_routing import PolicyRoutingReducer
 from allbrain.predictive_failure import PredictiveFailureReducer
@@ -45,14 +48,11 @@ from allbrain.resilience import ResilienceReducer
 from allbrain.revision import RevisionReducer
 from allbrain.routing import RoutingReducer
 from allbrain.runtime_core import RuntimeCoreStateBuilder
-from allbrain.scenarios import ScenarioProjection
 from allbrain.self_play import SelfPlayReducer
 from allbrain.self_repair import SelfRepairReducer
 from allbrain.semantic import SemanticReducer
 from allbrain.soft_repair import SoftRepairReducer
 from allbrain.telemetry import TelemetryReducer
-from allbrain.tradeoff_engine import TradeoffReducer
-from allbrain.uncertainty import UncertaintyProjection
 from allbrain.value_alignment import ValueAlignmentReducer
 from allbrain.workspace import WorkspaceReducer
 from allbrain.world import WorldStateBuilder
@@ -606,3 +606,4 @@ def _dict_delta(left: dict[str, Any], right: dict[str, Any]) -> dict[str, dict[s
 
 def _list_delta(left: list[dict[str, Any]], right: list[dict[str, Any]]) -> dict[str, Any]:
     return {"left_count": len(left), "right_count": len(right), "changed": left != right}
+

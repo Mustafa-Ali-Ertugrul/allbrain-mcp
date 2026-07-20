@@ -5,10 +5,7 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
-from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
-from allbrain.scenarios import (
+from allbrain.domains.reasoning.scenarios import (
     DEFAULT_TEMPLATES,
     SCENARIO_TEMPLATE_VERSION,
     ScenarioAnalysis,
@@ -20,6 +17,9 @@ from allbrain.scenarios import (
     ScenarioResult,
     apply_overlay,
 )
+from allbrain.events import EventType
+from allbrain.replay import EventReplayEngine
+from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
 from allbrain.server.tools.scenarios import (
     evaluate_scenarios_impl,
@@ -245,3 +245,4 @@ def test_mcp_evaluate_scenarios_custom(tmp_path) -> None:
     assert event_types.count(EventType.SCENARIO_EVALUATED.value) == 2
     assert result.data["best_case"]["scenario"] == "aggressive"
     assert result.data["worst_case"]["scenario"] == "conservative"
+

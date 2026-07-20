@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.decision import (
+from allbrain.domains.reasoning.decision import (
     DecisionContext,
     DecisionEngine,
     build_debug_trace,
@@ -73,3 +73,4 @@ class TestExplainability:
         r1 = DecisionEngine().decide(ctx)
         r2 = DecisionEngine().decide(ctx)
         assert r1.score == r2.score
+

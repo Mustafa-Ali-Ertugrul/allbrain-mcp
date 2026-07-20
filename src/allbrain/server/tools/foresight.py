@@ -5,10 +5,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from allbrain.domains.reasoning.foresight import ForesightEngine
+from allbrain.domains.reasoning.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis
+from allbrain.domains.reasoning.meta_reasoning import ConfidenceEngine, MetaReasoningManager
+from allbrain.domains.reasoning.uncertainty import observed_success_rate
 from allbrain.events import EventType
-from allbrain.foresight import ForesightEngine
-from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis
-from allbrain.meta_reasoning import ConfidenceEngine, MetaReasoningManager
 from allbrain.models.schemas import (
     EstimateConfidenceInput,
     EvaluatePlanInput,
@@ -23,7 +24,6 @@ from allbrain.server.tools._shared import (
 )
 from allbrain.server.tools._snapshot import maybe_auto_snapshot
 from allbrain.server.tools.decorators import handle_tool_errors
-from allbrain.uncertainty import observed_success_rate
 from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
@@ -213,7 +213,7 @@ def explain_decision_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     plan_payload, lookup = _lookup_foresight_plan(context, data.plan_id, bound_session_id, project_path)
     if plan_payload is None or lookup is None:
         return ToolResult(ok=False, error=f"plan_id '{data.plan_id}' not found in foresight events")
-    from allbrain.foresight.models import FuturePlan
+    from allbrain.domains.reasoning.foresight.models import FuturePlan
 
     selected_plan = FuturePlan.model_validate(plan_payload)
     candidates = [FuturePlan.model_validate(c) for c in lookup["candidates"]]
@@ -238,7 +238,7 @@ def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult
     plan_payload, lookup = _lookup_foresight_plan(context, data.plan_id, bound_session_id, project_path)
     if plan_payload is None or lookup is None:
         return ToolResult(ok=False, error=f"plan_id '{data.plan_id}' not found in foresight events")
-    from allbrain.foresight.models import FuturePlan
+    from allbrain.domains.reasoning.foresight.models import FuturePlan
 
     selected_plan = FuturePlan.model_validate(plan_payload)
     try:
@@ -260,7 +260,7 @@ def estimate_confidence_impl(context: BrainContext, **kwargs: Any) -> ToolResult
 def _dummy_foresight_result(selected_plan, analysis_id: str):
     from uuid6 import uuid7
 
-    from allbrain.foresight.models import ForesightAnalysis
+    from allbrain.domains.reasoning.foresight.models import ForesightAnalysis
 
     return ForesightAnalysis(
         analysis_id=uuid7(),
@@ -416,3 +416,4 @@ def register_tools(mcp, context: BrainContext) -> None:
             limit=limit,
         )
         return result.model_dump(mode="json")
+
