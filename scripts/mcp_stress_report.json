@@ -1,100 +1,175 @@
 {
   "mode": "mcp_protocol_stress",
-  "agents_started": 5,
-  "agents_configured": 5,
-  "events_per_agent": 50,
-  "total_events_attempted": 250,
-  "total_ok": 250,
+  "agents_started": 10,
+  "agents_configured": 10,
+  "events_per_agent": 200,
+  "total_events_attempted": 2000,
+  "total_ok": 2000,
   "total_rate_limited": 0,
   "total_db_locked": 0,
   "total_other_errors": 0,
-  "duration_seconds": 79.554,
+  "duration_seconds": 270.341,
   "deterministic_fields_match": true,
   "latency_global": {
-    "p50": 1.5127,
-    "p95": 1.8952,
-    "p99": 3.056,
-    "mean": 1.5592
+    "p50": 0.6437,
+    "p95": 2.8046,
+    "p99": 5.7833,
+    "mean": 1.3156
   },
   "service_level": {
-    "p95_budget_seconds": 0.25,
-    "p99_budget_seconds": 1.5,
-    "within_budget": false
+    "p95_budget_seconds": 5.0,
+    "p99_budget_seconds": 10.0,
+    "within_budget": true
   },
   "per_agent": [
     {
       "agent": "agent-00",
-      "ok": 50,
+      "ok": 200,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.5089,
-        "p95": 1.8631,
-        "p99": 2.9628,
-        "mean": 1.5593,
-        "min": 1.3634,
-        "max": 2.9628
+        "p50": 0.6506,
+        "p95": 2.8605,
+        "p99": 5.7833,
+        "mean": 1.2897,
+        "min": 0.3101,
+        "max": 7.2973
       }
     },
     {
       "agent": "agent-01",
-      "ok": 50,
+      "ok": 200,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.514,
-        "p95": 1.8952,
-        "p99": 3.0681,
-        "mean": 1.5593,
-        "min": 1.3835,
-        "max": 3.0681
+        "p50": 0.6517,
+        "p95": 2.8786,
+        "p99": 5.8236,
+        "mean": 1.339,
+        "min": 0.2972,
+        "max": 12.826
       }
     },
     {
       "agent": "agent-02",
-      "ok": 50,
+      "ok": 200,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.5144,
-        "p95": 1.7814,
-        "p99": 3.0964,
-        "mean": 1.559,
-        "min": 1.3739,
-        "max": 3.0964
+        "p50": 0.712,
+        "p95": 2.7683,
+        "p99": 5.3582,
+        "mean": 1.3035,
+        "min": 0.3177,
+        "max": 5.894
       }
     },
     {
       "agent": "agent-03",
-      "ok": 50,
+      "ok": 200,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.5103,
-        "p95": 2.0056,
-        "p99": 2.9975,
-        "mean": 1.5591,
-        "min": 1.333,
-        "max": 2.9975
+        "p50": 0.6341,
+        "p95": 2.8644,
+        "p99": 6.225,
+        "mean": 1.3152,
+        "min": 0.3643,
+        "max": 12.2201
       }
     },
     {
       "agent": "agent-04",
-      "ok": 50,
+      "ok": 200,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.5136,
-        "p95": 2.0061,
-        "p99": 3.056,
-        "mean": 1.5593,
-        "min": 1.3793,
-        "max": 3.056
+        "p50": 0.6931,
+        "p95": 2.713,
+        "p99": 6.4346,
+        "mean": 1.3055,
+        "min": 0.344,
+        "max": 11.056
+      }
+    },
+    {
+      "agent": "agent-05",
+      "ok": 200,
+      "rate_limited": 0,
+      "db_locked": 0,
+      "error_count": 0,
+      "latency": {
+        "p50": 0.705,
+        "p95": 2.8309,
+        "p99": 9.2827,
+        "mean": 1.3487,
+        "min": 0.2844,
+        "max": 9.9989
+      }
+    },
+    {
+      "agent": "agent-06",
+      "ok": 200,
+      "rate_limited": 0,
+      "db_locked": 0,
+      "error_count": 0,
+      "latency": {
+        "p50": 0.6304,
+        "p95": 2.8305,
+        "p99": 6.1717,
+        "mean": 1.3219,
+        "min": 0.3371,
+        "max": 14.26
+      }
+    },
+    {
+      "agent": "agent-07",
+      "ok": 200,
+      "rate_limited": 0,
+      "db_locked": 0,
+      "error_count": 0,
+      "latency": {
+        "p50": 0.6397,
+        "p95": 2.8795,
+        "p99": 6.1013,
+        "mean": 1.3047,
+        "min": 0.3213,
+        "max": 8.1083
+      }
+    },
+    {
+      "agent": "agent-08",
+      "ok": 200,
+      "rate_limited": 0,
+      "db_locked": 0,
+      "error_count": 0,
+      "latency": {
+        "p50": 0.6103,
+        "p95": 2.8405,
+        "p99": 6.2111,
+        "mean": 1.3237,
+        "min": 0.3225,
+        "max": 13.8812
+      }
+    },
+    {
+      "agent": "agent-09",
+      "ok": 200,
+      "rate_limited": 0,
+      "db_locked": 0,
+      "error_count": 0,
+      "latency": {
+        "p50": 0.6548,
+        "p95": 2.7415,
+        "p99": 5.5947,
+        "mean": 1.3037,
+        "min": 0.31,
+        "max": 11.1436
       }
     }
   ]

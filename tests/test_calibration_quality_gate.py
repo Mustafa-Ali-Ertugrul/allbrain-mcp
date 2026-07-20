@@ -45,7 +45,7 @@ def test_drift_module_no_nondeterminism():
       - events.py (payload validation/creation)
     """
     for filename in ("detector.py", "events.py"):
-        _assert_no_nondeterminism_tokens("src/allbrain/drift", filename)
+        _assert_no_nondeterminism_tokens("src/allbrain/domains/analysis/drift", filename)
 
 
 def test_revision_manager_reads_calibration_and_drift_from_event_log_only():
