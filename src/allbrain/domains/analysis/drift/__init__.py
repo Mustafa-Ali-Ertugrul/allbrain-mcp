@@ -1,15 +1,16 @@
 """DEPRECATED: low-coupling module.
 
-``allbrain.domains.analysis.drift`` has no server-tool, CLI, or public-API importer
-(only the cross-cutting ``reducers/`` layer consumes it). It remains
-functional but is slated for removal in v0.5.0.
+``allbrain.drift`` is deprecated and slated for removal in v0.5.0.
+It has no server-tool, CLI, or public-API importers (reducers/ only).
+Use ``allbrain.domains.analysis.drift`` instead.
 """
 
 import warnings
 
 warnings.warn(
     "allbrain.drift is deprecated and slated for removal in v0.5.0. "
-    "It has no server-tool, CLI, or public-API importers (reducers/ only).",
+    "It has no server-tool, CLI, or public-API importers (reducers/ only). "
+    "Use allbrain.domains.analysis.drift instead.",
     DeprecationWarning,
     stacklevel=2,
 )
