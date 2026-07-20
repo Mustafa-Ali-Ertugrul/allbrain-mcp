@@ -1,6 +1,24 @@
 from allbrain_sdk.client import AllBrainClient
 from allbrain_sdk.errors import AllBrainProtocolError, AllBrainSDKError, AllBrainToolError
-from allbrain_sdk.models import AllBrainConfig, EventRecord, ResumeProjectResult, ToolProfile
+from allbrain_sdk.models import (
+    AllBrainConfig,
+    Assignment,
+    AssignTaskResult,
+    ConflictResult,
+    ContextPackResult,
+    CreateTaskResult,
+    DecisionPipelineResult,
+    EventRecord,
+    PromptDescriptor,
+    PromptMessage,
+    PromptResult,
+    ResourceDescriptor,
+    ResourceRead,
+    ResourceTemplateDescriptor,
+    ResumeProjectResult,
+    TaskGraphResult,
+    ToolProfile,
+)
 
 __all__ = [
     "AllBrainClient",
@@ -8,7 +26,20 @@ __all__ = [
     "AllBrainProtocolError",
     "AllBrainSDKError",
     "AllBrainToolError",
+    "Assignment",
+    "AssignTaskResult",
+    "ConflictResult",
+    "ContextPackResult",
+    "CreateTaskResult",
+    "DecisionPipelineResult",
     "EventRecord",
+    "PromptDescriptor",
+    "PromptMessage",
+    "PromptResult",
+    "ResourceDescriptor",
+    "ResourceRead",
+    "ResourceTemplateDescriptor",
     "ResumeProjectResult",
+    "TaskGraphResult",
     "ToolProfile",
 ]

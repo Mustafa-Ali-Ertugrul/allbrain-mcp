@@ -5,10 +5,9 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
-from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
-from allbrain.scenarios import (
+from allbrain.domains.analysis.world import PredictionBridge, StateTransitionBridge, WorldState
+from allbrain.domains.analysis.world.simulation import SimulationBridge
+from allbrain.domains.reasoning.scenarios import (
     DEFAULT_TEMPLATES,
     SCENARIO_TEMPLATE_VERSION,
     ScenarioAnalysis,
@@ -20,13 +19,14 @@ from allbrain.scenarios import (
     ScenarioResult,
     apply_overlay,
 )
+from allbrain.events import EventType
+from allbrain.replay import EventReplayEngine
+from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
 from allbrain.server.tools.scenarios import (
     evaluate_scenarios_impl,
     generate_scenarios_impl,
 )
-from allbrain.world import PredictionBridge, StateTransitionBridge, WorldState
-from allbrain.world.simulation import SimulationBridge
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 

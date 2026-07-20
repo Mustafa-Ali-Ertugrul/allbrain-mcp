@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from allbrain.world import (
+from allbrain.domains.analysis.world import (
     BetaPredictor,
     LearnedPredictionBridge,
     LearnedTransitionBridge,
@@ -17,7 +17,7 @@ from allbrain.world import (
     TransitionLearner,
     WorldState,
 )
-from allbrain.world.manager import WorldModel
+from allbrain.domains.analysis.world.manager import WorldModel
 
 # ---------------------------------------------------------------------------
 # Helpers

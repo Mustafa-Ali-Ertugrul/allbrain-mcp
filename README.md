@@ -36,7 +36,7 @@ AllBrain gives every agent a shared workbench. Each tool call is recorded in an 
 - **Conflict detection** — automatic surface of conflicting state updates
 - **Decision pipelines** — counterfactual reasoning, scenario planning, foresight
 - **Deterministic replay** — rebuild project state from raw events
-- **50 tools** in full profile across 18 domain modules (start with 3, enable more as needed)
+- **51 tools** in full profile across 18 domain modules (start with 3, enable more as needed)
 
 ## 30-second demo
 
@@ -104,7 +104,7 @@ Start with `--tool-profile minimal` (3 tools) and expand when needed:
 | `collaboration` | memory + task/conflict/resolution tools | Multi-agent handoff |
 | `reasoning` | memory + decision pipeline tools | Planning and analysis |
 | `core` | save_event, list_events, retrieve_memory, git_info, create_task, get_task_graph, orchestrate_project, run_decision_pipeline, create_snapshot, resume_project | Essential workflow |
-| `full` | 50 tools | Everything |
+| `full` | 51 tools | Everything |
 
 ```shell
 uv run allbrain start --project . --agent my-agent --tool-profile memory
@@ -162,12 +162,25 @@ Switch to another client, call `list_events()` again — the same event appears.
 
 ## Tool count and supported clients
 
-> **Note:** Glama evaluates the balanced 10-tool `core` profile. The full profile remains available for local development.
+> **Note:** Glama evaluates the balanced 11-tool `core` profile. The full profile remains available for local development.
 
-- 50 tools in the full MCP profile across 18 domain tool modules
+- 51 tools in the full MCP profile across 18 domain tool modules
 - Default profile (`full`) registers all tools
 - `minimal` profile: 3 tools (`save_event`, `list_events`, `resume_project`)
 - `core` profile: 11 tools (essential workflow + reasoning + context pack)
+
+## What's New in v0.2.3
+
+### 1. Concurrency Hardening (Queue & Session)
+* **Atomic Queue Idempotency:** `QueueCoordinator` now utilizes `open_write_session` (SQLite `BEGIN IMMEDIATE`) and catches `IntegrityError` to safely handle concurrent task enqueues from multi-agent worker pools.
+* **Narrowed Lock Contention:** `ensure_session_started` lock boundaries are optimized. Heavy Git fingerprinting and DB event logging are moved outside the main context locks, drastically improving throughput.
+* **Git Observer Cache:** Active session tracking now caches `_recorded_git_keys` in the execution context, eliminating redundant O(n) database queries of session events on every tool call.
+
+### 2. Security & Redaction Updates
+* **OpenAI Key Boundary:** Regex pattern updated to target greedy bounds (`{40,}` minimum length) for robust secret redaction while preventing false positives.
+* **Recursion Guard:** A hard limit of `_MAX_SANITIZE_DEPTH = 32` prevents stack overflow attacks on deeply nested malicious payloads.
+* **Env Variable Prefixing:** Standardized path limits environment variable to `ALLBRAIN_ALLOWED_PROJECT_ROOTS` (with deprecation fallback).
+* **Double Sanitization:** Resource endpoints now re-sanitize persisted events before exposure, providing defense-in-depth against data leakage.
 
 ## Data lifecycle and security
 
@@ -190,7 +203,7 @@ AllBrain stores events, sessions, and audit logs in local SQLite. Data never lea
 
 ## Status
 
-- 2695 tests collected (see scripts/update_readme_test_count.py)
+- 2826 passed tests, 3 skipped tests (highly robust)
 - stdio MCP handshake verified
 - Python 3.12+ (CI at 3.13)
-- Coverage: 80.72% (enforced threshold 80%)
+- Coverage: 81.52% (enforced threshold 80%)

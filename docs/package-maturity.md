@@ -38,6 +38,7 @@ These are required for the supported product loop: install → MCP tools → eve
 | `objective_system` | Objective helpers used by pipeline entry |
 | `runtime_core` | Decision pipeline, event bus, execution glue |
 | `observability` | Metrics / agent comparison views |
+| `domains` | Consolidated bounded context namespace |
 | `api` | Observability API surfaces used by tools |
 | `agents` | Agent queue adapters (SQLite path is default) |
 | `metrics` | Agent performance metrics reducers |

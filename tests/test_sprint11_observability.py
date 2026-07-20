@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from allbrain.domains.analysis.graph import GraphQueryEngine, WorkflowGraphBuilder
 from allbrain.events import EventType
-from allbrain.graph import GraphQueryEngine, WorkflowGraphBuilder
 from allbrain.metrics import AdvancedMetrics, AgentRanking
 from allbrain.observability import SpanExporter, Tracer
 from allbrain.replay import EventReplayEngine, FailureAnalyzer

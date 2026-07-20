@@ -5,11 +5,15 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from allbrain.belief import BeliefManager
+from allbrain.domains.analysis.belief import BeliefManager
+from allbrain.domains.reasoning.information_seeking import InformationSeekingManager
+from allbrain.domains.reasoning.information_seeking.evaluator import ACTION_VOI_TABLE, InformationSeekingEvaluator
+from allbrain.domains.reasoning.information_seeking.models import (
+    INFORMATION_SEEKING_TEMPLATE_VERSION,
+    InformationAction,
+)
+from allbrain.domains.reasoning.uncertainty import UncertaintyManager, observed_success_rate
 from allbrain.events import EventType
-from allbrain.information_seeking import InformationSeekingManager
-from allbrain.information_seeking.evaluator import ACTION_VOI_TABLE, InformationSeekingEvaluator
-from allbrain.information_seeking.models import INFORMATION_SEEKING_TEMPLATE_VERSION, InformationAction
 from allbrain.memory import MemoryBuilder, MemoryRetriever
 from allbrain.models.schemas import (
     DetectKnowledgeGapsInput,
@@ -23,9 +27,9 @@ from allbrain.models.schemas import (
 )
 from allbrain.policy import RoutingEngine
 from allbrain.server.context import BrainContext
-from allbrain.server.tools._shared import audit_tool_call, bind_session_id, observability_project_and_limit
+from allbrain.server.tools._shared import audit_tool_call, bind_session_id
+from allbrain.server.tools._tasks import observability_project_and_limit
 from allbrain.server.tools.decorators import handle_tool_errors
-from allbrain.uncertainty import UncertaintyManager, observed_success_rate
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +99,7 @@ def identify_information_needs_impl(context: BrainContext, **kwargs: Any) -> Too
     gaps_payload = _lookup_uncertainty_gaps(context, data.decision_id, project_path)
     if not gaps_payload:
         return ToolResult(ok=False, error=f"no knowledge gaps found for decision_id '{data.decision_id}'")
-    from allbrain.uncertainty.models import KnowledgeGap
+    from allbrain.domains.reasoning.uncertainty.models import KnowledgeGap
 
     gaps = [KnowledgeGap.model_validate(g) for g in gaps_payload]
     manager = InformationSeekingManager()
@@ -240,8 +244,8 @@ def register_tools(mcp, context: BrainContext) -> None:
     def estimate_uncertainty(decision_id: str, limit: int = 5000) -> dict[str, Any]:
         """Estimate epistemic and aleatoric uncertainty around a prior decision.
 
-        Returns calibrated uncertainty scores — separate epistemic (model knowledge)
-        and aleatoric (inherent randomness) components — along with drift metrics.
+        Returns calibrated uncertainty scores â€” separate epistemic (model knowledge)
+        and aleatoric (inherent randomness) components â€” along with drift metrics.
         High uncertainty suggests more information gathering before acting.
 
         Call this after `run_decision_pipeline` to understand reliability of outputs.
@@ -290,7 +294,7 @@ def register_tools(mcp, context: BrainContext) -> None:
         """List specific information items needed to make a well-informed decision.
 
         Returns actionable questions to resolve, data sources to consult, and analyses
-        to run — structured as an investigation plan. Builds on knowledge gaps found
+        to run â€” structured as an investigation plan. Builds on knowledge gaps found
         by `detect_knowledge_gaps` and prioritizes by expected information gain.
 
         Use during decision preparation to systematically enumerate what must be

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+from allbrain.domains.analysis.predictive_failure.learning_repair import LearningRepairCoordinator
+from allbrain.domains.analysis.predictive_failure.model import MitigationPlan
+from allbrain.domains.analysis.predictive_failure.strategy_selection import StrategySelectionCoordinator
 from allbrain.events.schemas import EventType
-from allbrain.predictive_failure.learning_repair import LearningRepairCoordinator
-from allbrain.predictive_failure.model import MitigationPlan
-from allbrain.predictive_failure.strategy_selection import StrategySelectionCoordinator
 
 
 class Planner:

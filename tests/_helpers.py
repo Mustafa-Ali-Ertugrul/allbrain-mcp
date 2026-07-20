@@ -94,3 +94,8 @@ def make_repo(tmp_path: Path) -> tuple[BrainRepository, Path]:
     project_root = tmp_path / "project"
     project_root.mkdir()
     return repo, project_root
+
+
+def make_openai_key(length: int = 48) -> str:
+    """Generate a dummy OpenAI key for testing."""
+    return "sk-" + ("a" * length)

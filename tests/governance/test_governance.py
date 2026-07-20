@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta, timezone
 from typing import Any
 
+from allbrain.domains.analysis.graph import WorkflowGraphBuilder
 from allbrain.events import EventType
 from allbrain.governance import (
     AutonomousGovernanceCoordinator,
@@ -11,7 +12,6 @@ from allbrain.governance import (
     GovernanceStateBuilder,
     SelfModificationGuard,
 )
-from allbrain.graph import WorkflowGraphBuilder
 from allbrain.memory import MemoryBuilder
 from allbrain.observability import DashboardDataBuilder
 from allbrain.replay import EventReplayEngine

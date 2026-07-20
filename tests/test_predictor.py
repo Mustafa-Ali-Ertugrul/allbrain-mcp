@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from allbrain.predictive_failure.model import (
+from allbrain.domains.analysis.predictive_failure.model import (
     LEVEL_FAILURE,
     LEVEL_SAFE,
     LEVEL_WARNING,
     FailurePrediction,
 )
-from allbrain.predictive_failure.predictor import Predictor
+from allbrain.domains.analysis.predictive_failure.predictor import Predictor
 
 
 class TestPredictor:

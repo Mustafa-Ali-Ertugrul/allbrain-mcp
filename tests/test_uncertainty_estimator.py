@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.uncertainty import (
+from allbrain.domains.reasoning.uncertainty import (
     UNCERTAINTY_COMPUTED_TEMPLATE_VERSION,
     composite_uncertainty,
     make_payload,

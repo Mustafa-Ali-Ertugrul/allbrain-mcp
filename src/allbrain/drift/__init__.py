@@ -1,18 +1,18 @@
-from allbrain.drift.detector import (
-    DRIFT_TEMPLATE_VERSION,
-    DRIFT_THRESHOLD,
-    REASONS,
-    DriftSample,
-    detect_drift,
-)
-from allbrain.drift.events import make_payload, validate_payload
+"""Deprecated compatibility shim for allbrain.drift.
 
-__all__ = [
-    "DRIFT_TEMPLATE_VERSION",
-    "DRIFT_THRESHOLD",
-    "REASONS",
-    "DriftSample",
-    "detect_drift",
-    "make_payload",
-    "validate_payload",
-]
+Moved to allbrain.domains.analysis.drift in v0.4.1.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.analysis.drift",
+    submodules=(
+        "detector",
+        "events",
+    ),
+)

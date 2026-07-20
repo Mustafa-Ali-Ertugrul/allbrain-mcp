@@ -28,21 +28,21 @@ class StateEngine:
             state["git"] = git or {}
             return state
 
-        next_machine = StateMachine(ProjectState.from_dict(base_state))
+        final_machine = StateMachine(ProjectState.from_dict(base_state))
+        delta_machine = StateMachine()
         for event in events:
-            next_machine.apply(event)
-        next_state = next_machine.get_state().to_dict()
+            final_machine.apply(event)
+            delta_machine.apply(event)
+        final_state = final_machine.get_state().to_dict()
+        delta_state = delta_machine.get_state().to_dict()
 
-        machine = StateMachine()
-        for event in events:
-            machine.apply(event)
-        delta_state = machine.get_state().to_dict()
-        delta_state["goal"] = next_state["goal"]
-        delta_state["working_files"] = next_state["working_files"]
-        delta_state["open_tasks"] = next_state["open_tasks"]
-        delta_state["open_task_refs"] = next_state.get("open_task_refs", {})
-        delta_state["last_event_id"] = next_state["last_event_id"]
-        delta_state["last_working_file"] = next_state["last_working_file"]
+        # Override delta fields where merger needs final_state values
+        delta_state["goal"] = final_state["goal"]
+        delta_state["working_files"] = final_state["working_files"]
+        delta_state["open_tasks"] = final_state["open_tasks"]
+        delta_state["open_task_refs"] = final_state.get("open_task_refs", {})
+        delta_state["last_event_id"] = final_state["last_event_id"]
+        delta_state["last_working_file"] = final_state["last_working_file"]
         delta_state["event_count"] = len(events)
         delta_state["git"] = git or {}
         return self.merger.merge(base_state, delta_state)

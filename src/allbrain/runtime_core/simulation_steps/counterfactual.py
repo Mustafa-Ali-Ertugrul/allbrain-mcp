@@ -10,8 +10,8 @@ from allbrain.models.schemas import EventRead
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 
 if TYPE_CHECKING:
-    from allbrain.counterfactual import CounterfactualEngine
-    from allbrain.world import WorldModel
+    from allbrain.domains.analysis.world import WorldModel
+    from allbrain.domains.reasoning.counterfactual import CounterfactualEngine
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ def execute(
     Returns:
         Tuple of (counterfactual payload, last event ID, emitted events)
     """
-    from allbrain.counterfactual import recommendation_severity
+    from allbrain.domains.reasoning.counterfactual import recommendation_severity
 
     current_state = world.observe()
     observed_event = bus.publish(

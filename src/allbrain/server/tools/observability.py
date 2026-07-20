@@ -10,7 +10,8 @@ from allbrain.models.schemas import OrchestratorInput, ToolResult, UserInputErro
 from allbrain.observability import ObservabilityBuilder
 from allbrain.reliability.metrics import ReliabilityMetrics
 from allbrain.server.context import BrainContext
-from allbrain.server.tools._shared import audit_tool_call, bind_session_id, observability_project_and_limit
+from allbrain.server.tools._shared import audit_tool_call, bind_session_id
+from allbrain.server.tools._tasks import observability_project_and_limit
 from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.snapshot.constants import NON_SEMANTIC_EVENT_TYPES
 

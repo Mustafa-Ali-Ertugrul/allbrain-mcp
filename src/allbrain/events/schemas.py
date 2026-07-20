@@ -6,6 +6,8 @@ from enum import StrEnum
 _EVENT_TYPE_ALIASES: dict[str, str] = {
     "TOOL_CALLED": "tool_call",
     "tool_called": "tool_call",
+    "weights_adapated": "weights_adapted",
+    "WEIGHTS_ADAPATED": "weights_adapted",
 }
 
 
@@ -261,7 +263,7 @@ class EventType(StrEnum):
     FAMILY_CANDIDATE_EVALUATED = "family_candidate_evaluated"
     SCORING_PROFILE_UPDATED = "scoring_profile_updated"
     MATCH_PLAYED = "match_played"
-    WEIGHTS_ADAPTED = "weights_adapated"
+    WEIGHTS_ADAPTED = "weights_adapted"
     META_OPTIMIZER_GUARDED = "meta_optimizer_guarded"
     EVALUATOR_PROFILE_UPDATED = "evaluator_profile_updated"
     LEARNING_NODE_UPDATED = "learning_node_updated"

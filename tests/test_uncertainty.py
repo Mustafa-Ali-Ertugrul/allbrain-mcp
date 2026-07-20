@@ -4,16 +4,9 @@ from datetime import datetime, timezone
 
 import pytest
 
-from allbrain.events import EventType
-from allbrain.foresight import ForesightEngine
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
-from allbrain.server.tools.knowledge import (
-    detect_knowledge_gaps_impl,
-    estimate_uncertainty_impl,
-)
-from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
-from allbrain.uncertainty import (
+from allbrain.domains.analysis.world import WorldState
+from allbrain.domains.reasoning.foresight import ForesightEngine
+from allbrain.domains.reasoning.uncertainty import (
     UNCERTAINTY_TEMPLATE_VERSION,
     ConfidenceComponent,
     KnowledgeGap,
@@ -26,7 +19,14 @@ from allbrain.uncertainty import (
     estimate,
     observed_success_rate,
 )
-from allbrain.world import WorldState
+from allbrain.events import EventType
+from allbrain.replay import EventReplayEngine
+from allbrain.runtime_core import SystemDecisionPipeline
+from allbrain.server.tools.knowledge import (
+    detect_knowledge_gaps_impl,
+    estimate_uncertainty_impl,
+)
+from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 

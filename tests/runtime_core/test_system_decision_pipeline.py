@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from allbrain.domains.analysis.graph import WorkflowGraphBuilder
 from allbrain.events import EventType
-from allbrain.graph import WorkflowGraphBuilder
 from allbrain.memory import MemoryBuilder
 from allbrain.observability import DashboardDataBuilder
 from allbrain.replay import EventReplayEngine

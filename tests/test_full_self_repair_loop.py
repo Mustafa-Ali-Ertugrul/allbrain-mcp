@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.domains.analysis.predictive_failure.manager import PredictiveFailureManager
+from allbrain.domains.analysis.predictive_failure.model import RiskSignal
 from allbrain.events.schemas import EventType
 from allbrain.mitigation_learning import (
     LearningEngine,
     OutcomeTracker,
     PolicyStore,
 )
-from allbrain.predictive_failure.manager import PredictiveFailureManager
-from allbrain.predictive_failure.model import RiskSignal
 from allbrain.self_repair import (
     PolicyHealthMonitor,
     PolicySnapshotManager,

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.domains.analysis.predictive_failure.manager import PredictiveFailureManager
+from allbrain.domains.analysis.predictive_failure.model import RiskSignal
 from allbrain.events.schemas import EventType
 from allbrain.learning_safety import (
     DriftGuard,
@@ -15,8 +17,6 @@ from allbrain.mitigation_learning import (
     PolicyStore,
     StrategyOptimizer,
 )
-from allbrain.predictive_failure.manager import PredictiveFailureManager
-from allbrain.predictive_failure.model import RiskSignal
 
 
 def _event_types(events):

@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.conflict import ConflictDetector, ConflictResolver
-from allbrain.context import ParallelContextBuilder
 from allbrain.core import StateEngine
+from allbrain.domains.analysis.context import ParallelContextBuilder
 from allbrain.merge import EventMergeEngine
 from allbrain.models.schemas import EventRead
 from allbrain.resume.incremental import IncrementalResumeEngine

@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.calibration.estimator import calibrated_trust, mean_calibration_error
+from allbrain.domains.reasoning.uncertainty.events import validate_payload as validate_uncertainty_payload
 from allbrain.events.schemas import EventType
 from allbrain.revision.estimator import _stable_revision_id, revise
 from allbrain.revision.events import validate_payload
 from allbrain.revision.policies import REVISION_TEMPLATE_VERSION, RevisionPolicy
 from allbrain.revision.state import RevisionState
-from allbrain.uncertainty.events import validate_payload as validate_uncertainty_payload
 
 
 class RevisionReducer:
@@ -22,7 +22,7 @@ class RevisionReducer:
       - UNCERTAINTY_COMPUTED in the trailing slice updates the uncertainty
         value (last-wins authoritative).
       - TRUST_UPDATED in the trailing slice updates the trust_score
-        (last-wins authoritative, default 1.0 if absent — Yol B).
+        (last-wins authoritative, default 1.0 if absent â€” Yol B).
       - CALIBRATION_UPDATED in the log contributes (confidence, outcome)
         samples to the per-context calibration list (Sprint 47).
       - BELIEF_DRIFT_DETECTED in the log increments the drift_count for

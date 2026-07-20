@@ -7,6 +7,8 @@ from typing import Any
 
 from allbrain.models.schemas import (
     ListEventsInput,
+    ListEventsPage,
+    ListEventsSummary,
     SaveEventInput,
     ToolResult,
 )
@@ -15,8 +17,8 @@ from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
-    maybe_auto_snapshot,
 )
+from allbrain.server.tools._snapshot import maybe_auto_snapshot
 from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.storage.database import open_write_session
 from allbrain.storage.repository import event_to_read
@@ -70,32 +72,84 @@ def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     """List events from project history with optional filtering.
 
-    Supports session_id, type, agent_id, branch, since, until, and limit.
+    Supports filtering by session_id, type, agent_id, branch, since, until,
+    and limit. Cursor pagination (``cursor``) and aggregate summary mode
+    (``summary``) keep large result sets within client payload limits.
     Rate limited to prevent abuse.
 
     Returns:
-        ToolResult with list of events or error message.
+        ToolResult whose data is a ListEventsPage. The default window (no
+        cursor) is also served through the paginated path and is truncated
+        (``truncated=True`` + ``next_cursor``) when it exceeds the requested
+        limit, so very large windows never overflow the client. When
+        ``summary`` is true the data is a ListEventsSummary instead.
     """
     check_tool_rate("list_events")
     data = ListEventsInput.model_validate(kwargs)
     bound_session_id = bind_session_id(context, None)
-    events = context.repository.list_events(
-        project_path=context.project_path,
-        session_id=data.session_id,
-        agent_id=data.agent_id,
-        type=data.type,
-        branch=data.branch,
-        since=data.since,
-        until=data.until,
-        limit=data.limit,
-    )
+
+    if data.summary:
+        summary = context.repository.summarize_events(
+            project_path=context.project_path,
+            session_id=data.session_id,
+            agent_id=data.agent_id,
+            type=data.type,
+            branch=data.branch,
+            since=data.since,
+            until=data.until,
+        )
+        result_data: Any = ListEventsSummary.model_validate(summary).model_dump(mode="json")
+    elif data.cursor is not None:
+        events, has_more = context.repository.list_events_paginated(
+            project_path=context.project_path,
+            session_id=data.session_id,
+            agent_id=data.agent_id,
+            type=data.type,
+            branch=data.branch,
+            since=data.since,
+            until=data.until,
+            cursor=data.cursor,
+            limit=data.limit,
+        )
+        next_cursor = events[-1].id if (has_more and events) else None
+        page = ListEventsPage(
+            events=events,
+            next_cursor=next_cursor,
+            has_more=has_more,
+            truncated=has_more,
+        )
+        result_data = page.model_dump(mode="json")
+    else:
+        # Backward-compatible default still uses the plain event list, but is
+        # now served through the paginated path so an over-large window is
+        # truncated (with next_cursor) instead of overflowing the client.
+        events, has_more = context.repository.list_events_paginated(
+            project_path=context.project_path,
+            session_id=data.session_id,
+            agent_id=data.agent_id,
+            type=data.type,
+            branch=data.branch,
+            since=data.since,
+            until=data.until,
+            cursor=None,
+            limit=data.limit,
+        )
+        next_cursor = events[-1].id if (has_more and events) else None
+        page = ListEventsPage(
+            events=events,
+            next_cursor=next_cursor,
+            has_more=has_more,
+            truncated=has_more,
+        )
+        result_data = page.model_dump(mode="json")
+
     audit_tool_call(
         context,
         tool_name="list_events",
         tool_args=data.model_dump(mode="json"),
         session_id=bound_session_id,
     )
-    return ToolResult(ok=True, data=[event.model_dump(mode="json") for event in events])
+    return ToolResult(ok=True, data=result_data)
 
 
 def _register_save_event(mcp, context: BrainContext) -> None:
@@ -114,33 +168,28 @@ def _register_save_event(mcp, context: BrainContext) -> None:
     ) -> dict[str, Any]:
         """Append an event to the shared event log with optional metadata.
 
-        Use this to record agent actions, decisions, and state changes. All events
-        are append-only with stable UUIDv7 ordering, enabling deterministic replay.
+        Records agent actions, decisions, and state changes. All events are
+        append-only with stable UUIDv7 ordering for deterministic replay.
 
-        Side effects: Creates a new event in the SQLite event log. Triggers an
-        automatic snapshot when the event threshold is reached. This is the primary
-        write operation for the event-sourced architecture.
+        Side effects: Creates a new event in the SQLite event log. Triggers
+        an automatic snapshot when the event threshold is reached.
 
         Args:
             type: Event type identifier in snake_case (e.g., "task_created",
                 "task_assigned", "tool_call", "file_modified"). SCREAMING_SNAKE
                 aliases such as "TASK_CREATED" are also accepted.
-            payload: Event data as a JSON-serializable dict. Should contain the
-                relevant state or information being recorded.
+            payload: Event data as a JSON-serializable dict.
             file_path: Optional source file path (for code-related events).
-            source: Event source label (default "agent"). Use "allbrain" for
-                system-generated events, or the agent name for agent actions.
-            session_id: Optional session ID to associate with (for multi-agent tracing).
+            source: Event source label (default "agent").
+            session_id: Optional session ID to associate with.
             task_hint: Optional task hint string (helps with memory building).
-            importance: Optional importance rating (1-5); higher values may trigger
-                more frequent snapshots.
+            importance: Optional importance rating (1-5).
             impact_score: Optional impact score for decision events.
-            caused_by: Optional causal event reference (creates event provenance).
+            caused_by: Optional causal event reference.
             branch: Optional branch name (for git-based project tracking).
 
         Returns:
-            The created event as a JSON-serializable dict with id, type, timestamp,
-            payload, and all metadata fields.
+            The created event as a JSON-serializable dict.
         """
         result = save_event_impl(
             context,
@@ -168,6 +217,8 @@ def _register_list_events(mcp, context: BrainContext) -> None:
         since: str | None = None,
         until: str | None = None,
         limit: int = 50,
+        cursor: str | None = None,
+        summary: bool = False,
     ) -> dict[str, Any]:
         """Query and filter recorded events from the append-only event log.
 
@@ -187,10 +238,13 @@ def _register_list_events(mcp, context: BrainContext) -> None:
             since: Optional ISO-8601 lower bound on event created_at (inclusive).
             until: Optional ISO-8601 upper bound on event created_at (inclusive).
             limit: Maximum number of events to return (default 50, maximum 500).
+            cursor: Optional pagination cursor (from previous next_cursor).
+            summary: When true, return aggregate counts instead of event records.
 
         Returns:
-            List of events as JSON-serializable dicts, each containing id, type,
-            timestamp, source, payload, and optional metadata fields.
+            A page object with ``events``, ``next_cursor``, ``has_more``,
+            and ``truncated``. When ``summary`` is true, returns aggregate
+            counts instead of full event records.
         """
         result = list_events_impl(
             context,
@@ -201,6 +255,8 @@ def _register_list_events(mcp, context: BrainContext) -> None:
             since=since,
             until=until,
             limit=limit,
+            cursor=cursor,
+            summary=summary,
         )
         return result.model_dump(mode="json")
 

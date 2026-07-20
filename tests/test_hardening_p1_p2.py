@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 from allbrain.orchestrator.capabilities import CapabilityRegistry
 from allbrain.orchestrator.scheduler import DeterministicScheduler
-from allbrain.server.tools._shared import (
+from allbrain.server.tools._snapshot import (
     _advisory_lock_key,
     _force_remove_lease,
     _try_create_lease,

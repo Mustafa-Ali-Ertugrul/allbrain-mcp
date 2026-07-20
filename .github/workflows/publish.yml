@@ -3,75 +3,246 @@ name: Publish
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
+
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: "Publish to TestPyPI instead of production"
+      tag:
+        description: "Publish edilecek tag (orn. v0.4.2)"
         required: true
-        default: false
-        type: boolean
+        type: string
+      target:
+        description: "Publish hedefi"
+        required: true
+        type: choice
+        default: "pypi"
+        options:
+          - pypi
+          - testpypi
 
 permissions:
   contents: read
-  id-token: write
+
+concurrency:
+  group: publish-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 env:
   UV_VERSION: "0.6.x"
   PYTHON_VERSION: "3.13"
 
 jobs:
-  checks:
-    name: Pre-publish checks
+  build-and-validate:
+    name: Build and validate
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      expected-tag: ${{ steps.version.outputs.expected_tag }}
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          version: ${{ env.UV_VERSION }}
-          python-version: ${{ env.PYTHON_VERSION }}
-          enable-cache: true
-      - run: uv sync --group dev
-      - run: uv run ruff check src/ tests/
-      - run: uv run ruff format --check src/ tests/
-      - run: uv run pytest -q tests/test_merge_server_regression.py tests/test_sdist_contents.py
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          fetch-depth: 1
 
-  build-and-publish:
-    name: Build & publish
-    runs-on: ubuntu-latest
-    needs: [checks]
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: astral-sh/setup-uv@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
         with:
           version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
 
-      - run: uv sync --group dev
+      - name: Install dependencies
+        run: uv sync --group dev
 
-      - run: uv build
+      - name: Lint
+        run: uv run ruff check src/ tests/
 
-      - name: Verify sdist has no node_modules
+      - name: Format check
+        run: uv run ruff format --check src/ tests/
+
+      - name: Critical path tests
+        run: uv run pytest -x -q tests/test_merge_server_regression.py tests/test_sdist_contents.py
+
+      - name: Extract version
+        id: version
         run: |
-          sdist=$(ls dist/*.tar.gz)
-          if tar -tzf "$sdist" | grep -q "node_modules"; then
-            echo "::error::sdist contains node_modules"
+          version=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "expected_tag=v${version}" >> $GITHUB_OUTPUT
+
+      - name: Validate tag matches version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            actual_tag="${{ inputs.tag }}"
+          else
+            actual_tag="${GITHUB_REF_NAME}"
+          fi
+
+          expected_tag="${{ steps.version.outputs.expected_tag }}"
+
+          echo "Expected tag: ${expected_tag}"
+          echo "Actual tag:   ${actual_tag}"
+
+          if [ "${actual_tag}" != "${expected_tag}" ]; then
+            echo "Tag mismatch: expected '${expected_tag}', got '${actual_tag}'. Refusing to publish." >&2
             exit 1
           fi
 
-      - name: Wheel smoke — install and CLI help
+      - name: Build package
+        run: uv build
+
+      - name: Verify sdist contents
         run: |
-          uvx --from dist/*.whl allbrain --help
+          sdist=$(ls dist/*.tar.gz)
+          for forbidden in "node_modules" "\.git/" "__pycache__" "\.env$"; do
+            if tar -tzf "$sdist" | grep -qE "$forbidden"; then
+              echo "::error::sdist contains forbidden pattern: $forbidden"
+              exit 1
+            fi
+          done
 
-      - name: Publish to TestPyPI (dry-run)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Wheel smoke — CLI help
+        run: |
+          wheel=$(ls dist/*.whl)
+          uvx --from "$wheel" allbrain --help
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
         with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
 
-      - name: Publish to PyPI (production)
-        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
-        uses: pypa/gh-action-pypi-publish@release/v1
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: build-and-validate
+    runs-on: ubuntu-latest
+    if: |
+      always() &&
+      needs.build-and-validate.result == 'success' &&
+      (
+        github.event_name == 'push' ||
+        (github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi')
+      )
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/allbrain-agent-runtime/
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        run: uv publish --publish-url https://test.pypi.org/legacy/ --trusted-publishing always dist/*
+
+      - name: Verify install from TestPyPI
+        run: |
+          version="${{ needs.build-and-validate.outputs.version }}"
+          uv venv /tmp/verify-venv
+
+          for attempt in 1 2 3 4 5; do
+            echo "TestPyPI verification attempt ${attempt} for allbrain-agent-runtime==${version}"
+
+            if uv pip install --python /tmp/verify-venv/bin/python \
+              --default-index https://test.pypi.org/simple/ \
+              --no-deps \
+              "allbrain-agent-runtime==${version}"; then
+
+              installed_version=$(/tmp/verify-venv/bin/python -c "import importlib.metadata as md; print(md.version('allbrain-agent-runtime'))")
+
+              if [ "${installed_version}" = "${version}" ]; then
+                echo "Successfully verified allbrain-agent-runtime==${installed_version} from TestPyPI"
+                exit 0
+              fi
+
+              echo "Installed version mismatch: expected ${version}, got ${installed_version}" >&2
+            fi
+
+            echo "Retrying in 15 seconds..."
+            sleep 15
+          done
+
+          echo "TestPyPI verification failed for allbrain-agent-runtime==${version}" >&2
+          exit 1
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [build-and-validate, publish-testpypi]
+    runs-on: ubuntu-latest
+    if: |
+      always() &&
+      needs.build-and-validate.result == 'success' &&
+      (needs.publish-testpypi.result == 'success' || needs.publish-testpypi.result == 'skipped') &&
+      (
+        github.event_name == 'push' ||
+        (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
+      )
+
+    environment:
+      name: pypi
+      url: https://pypi.org/project/allbrain-agent-runtime/
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        run: uv publish --trusted-publishing always dist/*
+
+      - name: Verify install from PyPI
+        run: |
+          version="${{ needs.build-and-validate.outputs.version }}"
+          uv venv /tmp/verify-venv
+
+          for attempt in 1 2 3 4 5; do
+            echo "PyPI verification attempt ${attempt} for allbrain-agent-runtime==${version}"
+
+            if uv pip install --python /tmp/verify-venv/bin/python "allbrain-agent-runtime==${version}"; then
+              installed_version=$(/tmp/verify-venv/bin/python -c "import importlib.metadata as md; print(md.version('allbrain-agent-runtime'))")
+
+              if [ "${installed_version}" = "${version}" ]; then
+                echo "Successfully verified allbrain-agent-runtime==${installed_version} from PyPI"
+                exit 0
+              fi
+
+              echo "Installed version mismatch: expected ${version}, got ${installed_version}" >&2
+            fi
+
+            echo "Retrying in 15 seconds..."
+            sleep 15
+          done
+
+          echo "PyPI verification failed for allbrain-agent-runtime==${version}" >&2
+          exit 1

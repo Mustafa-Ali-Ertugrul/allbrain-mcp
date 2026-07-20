@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from allbrain.contradiction import (
+from allbrain.domains.analysis.contradiction import (
     CONTRADICTION_TEMPLATE_VERSION,
     INCOMPATIBLE_LIFECYCLE,
     SEVERITY_GOAL_DIVERGENCE,
@@ -14,12 +14,12 @@ from allbrain.contradiction import (
     ContradictionReducer,
     dedup_contradictions,
 )
-from allbrain.contradiction.estimator import (
+from allbrain.domains.analysis.contradiction.estimator import (
     _contradiction_key_of,
     _stable_contradiction_id,
 )
+from allbrain.domains.reasoning.intent.models import Intent
 from allbrain.events import EventType
-from allbrain.intent.models import Intent
 from allbrain.replay import EventReplayEngine
 
 
@@ -198,7 +198,7 @@ def test_stable_contradiction_id():
 
 def test_contradiction_key_of_deterministic():
     """Zorunlu 2: _contradiction_key_of must NOT use frozenset.__repr__
-    (PYTHONHASHSEED-dependent). Sorted join only — replay-safe."""
+    (PYTHONHASHSEED-dependent). Sorted join only â€” replay-safe."""
     k1 = _contradiction_key_of(["intent_a", "intent_b"])
     k2 = _contradiction_key_of(["intent_b", "intent_a"])
     k3 = _contradiction_key_of(["intent_a", "intent_c"])
@@ -261,7 +261,7 @@ def test_contradiction_reducer_idempotency():
 
 
 def test_contradiction_replay_round_trip_exact_equality():
-    """Netleştirme 2: exact shape equality.
+    """NetleÅŸtirme 2: exact shape equality.
 
     final_state["contradiction"][context_key] == manager.query(events, context_key).model_dump()
 
@@ -371,13 +371,13 @@ def test_contradiction_lifecycle_bound_to_event_type():
 def test_contradiction_detector_failure_lifecycle_matches_extractor():
     """Zorunlu 3 lock: a contradiction over (task_completed, failure) lifecycle
     must be detected when the intents carry the exact sub_goal strings that
-    IntentExtractor produces — i.e. "task_completed" and "failure", never
+    IntentExtractor produces â€” i.e. "task_completed" and "failure", never
     "task_failed".
 
     The detector's INCOMPATIBLE_LIFECYCLE set is the same set that
-    IntentExtractor populates via sub_goal — they MUST agree by construction.
+    IntentExtractor populates via sub_goal â€” they MUST agree by construction.
     """
-    from allbrain.intent.extractor import IntentExtractor
+    from allbrain.domains.reasoning.intent.extractor import IntentExtractor
 
     a = _make_intent("i1", "codex", "JWT refactor", EventType.TASK_COMPLETED.value, ["auth.py"])
     b = _make_intent("i2", "claude", "JWT refactor", EventType.FAILURE.value, ["auth.py"])
@@ -391,12 +391,14 @@ def test_contradiction_detector_failure_lifecycle_matches_extractor():
 
 def test_contradiction_quality_gate_no_uuid7_or_now_in_determinism_path():
     """Quality gate: estimator.py, reducer.py, manager.py must not use uuid7()
-    or datetime.now() — deterministic hash only. The pipeline write-path
+    or datetime.now() â€” deterministic hash only. The pipeline write-path
     (and the detector itself) is exempt because it runs at runtime, not
     replay."""
     determinism_critical = ["estimator.py", "reducer.py", "manager.py"]
-    base = Path("src/allbrain/contradiction")
+    base = Path("src/allbrain/domains/analysis/contradiction")
+    if not base.exists():
+        base = Path("src/allbrain/contradiction")
     for filename in determinism_critical:
         content = (base / filename).read_text(encoding="utf-8")
-        assert "uuid7" not in content, f"{filename} uses uuid7 — must be deterministic hash"
-        assert "datetime.now" not in content, f"{filename} uses datetime.now — must be deterministic"
+        assert "uuid7" not in content, f"{filename} uses uuid7 â€” must be deterministic hash"
+        assert "datetime.now" not in content, f"{filename} uses datetime.now â€” must be deterministic"

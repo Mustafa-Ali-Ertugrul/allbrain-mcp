@@ -1,6 +1,6 @@
 """Tests for predictive_failure/coevolution.py."""
 
-from allbrain.predictive_failure.coevolution import (
+from allbrain.domains.analysis.predictive_failure.coevolution import (
     COEVOLUTION_MAX_STRENGTH,
     COEVOLUTION_MIN_STRENGTH,
     CoEvolutionState,

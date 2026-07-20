@@ -13,7 +13,17 @@ _ALLOWED_PROJECT_ROOTS: list[Path] | None = None
 
 
 def _parse_allowed_roots() -> list[Path]:
-    raw = os.environ.get("ALLOWED_PROJECT_ROOTS", "").strip()
+    import warnings
+
+    raw = os.environ.get("ALLBRAIN_ALLOWED_PROJECT_ROOTS", "").strip()
+    if not raw:
+        raw = os.environ.get("ALLOWED_PROJECT_ROOTS", "").strip()
+        if raw:
+            warnings.warn(
+                "ALLOWED_PROJECT_ROOTS is deprecated. Use ALLBRAIN_ALLOWED_PROJECT_ROOTS instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
     if not raw:
         # Default: user home (safe — prevents traversal into system dirs)
         return [Path.home()]

@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 
 import pytest
 
-from allbrain.world.models import WorldState
-from allbrain.world.prediction_learner import (
+from allbrain.domains.analysis.world.models import WorldState
+from allbrain.domains.analysis.world.prediction_learner import (
     BetaPredictor,
     LearnedPredictionBridge,
 )

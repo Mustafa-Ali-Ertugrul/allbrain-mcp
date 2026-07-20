@@ -7,15 +7,15 @@
         "uv",
         "run",
         "--project",
-        "C:\\Users\\Ali\\OneDrive\\Masaüstü\\AllBrain MCP\\src",
+        ".",
         "allbrain",
         "start",
         "--project",
-        "C:\\Users\\Ali\\OneDrive\\Masaüstü\\AllBrain MCP",
+        ".",
         "--agent",
         "opencode",
         "--db-path",
-        "C:\\Users\\Ali\\.allbrain\\opencode.db"
+        ".allbrain.db"
       ],
       "enabled": true,
       "timeout": 120000

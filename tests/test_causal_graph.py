@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.causal.graph import (
+from allbrain.domains.analysis.causal.graph import (
     build_causal_graph,
     causal_chain_types,
     count_edges,

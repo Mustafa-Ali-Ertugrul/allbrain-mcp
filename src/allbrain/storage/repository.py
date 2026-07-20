@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -13,6 +12,7 @@ from sqlmodel import col, select
 from uuid6 import uuid7
 
 from allbrain.config import canonicalize_project_path
+from allbrain.events.schemas import _EVENT_TYPE_ALIASES, EventType
 from allbrain.foundations.versioning import (
     current_payload_version,
     get_default_upcaster,
@@ -20,7 +20,9 @@ from allbrain.foundations.versioning import (
 from allbrain.models.entities import Event, Project, QueueItemRecord, Session, SnapshotRecord, utc_now
 from allbrain.models.schemas import EventRead, UserInputError
 from allbrain.security.redaction import sanitize_payload
-from allbrain.storage.database import open_session, open_write_session
+from allbrain.storage._json import dumps as _dumps_json
+from allbrain.storage._json import loads as _loads_json
+from allbrain.storage.database import open_light_write_session, open_session, open_write_session
 
 
 class BrainRepository:
@@ -114,7 +116,10 @@ class BrainRepository:
         return db.get(Session, session_id)
 
     def touch_session(self, session_id: int, *, at: datetime | None = None) -> Session | None:
-        with open_write_session(self.engine) as db:
+        # Heartbeats are low-contention single-row UPDATEs; use a DEFERRED
+        # transaction so we don't pre-acquire the SQLite writer lock and
+        # contend with bulk event appends on the write path.
+        with open_light_write_session(self.engine) as db:
             session = db.get(Session, session_id)
             if session is None:
                 return None
@@ -431,7 +436,7 @@ class BrainRepository:
             type=type,
             source=source,
             file_path=file_path,
-            payload_json=json.dumps(payload, ensure_ascii=True, sort_keys=True),
+            payload_json=_dumps_json(payload),
             payload_version=current_payload_version(),
             task_hint=task_hint,
             importance=importance,
@@ -478,6 +483,131 @@ class BrainRepository:
             statement = statement.order_by(col(Event.stream_position).desc()).limit(limit)
             events = list(reversed(db.exec(statement).all()))
             return [event_to_read(event) for event in events]
+
+    def list_events_paginated(
+        self,
+        *,
+        project_path: str | Path | None,
+        session_id: int | None = None,
+        agent_id: str | None = None,
+        type: str | None = None,
+        branch: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
+        cursor: str | None = None,
+        limit: int = 50,
+    ) -> tuple[list[EventRead], bool]:
+        """Return a forward page of events plus a ``has_more`` flag.
+
+        Events are ordered by ``stream_position`` ascending. When ``cursor`` is
+        provided it must be the ID of a prior event; only events after that
+        cursor (by stream position) are returned. ``has_more`` is ``True`` when
+        additional events exist beyond the returned page.
+        """
+        project = self.get_project_by_path(project_path)
+        if project is None:
+            return [], False
+        with open_session(self.engine) as db:
+            statement = select(Event).where(Event.project_id == project.id)
+            if session_id is not None:
+                statement = statement.where(Event.session_id == session_id)
+            if agent_id is not None:
+                statement = statement.where(Event.agent_id == agent_id)
+            if type is not None:
+                statement = statement.where(Event.type == type)
+            if branch is not None:
+                statement = statement.where(Event.branch == branch)
+            if since is not None:
+                statement = statement.where(col(Event.created_at) >= since)
+            if until is not None:
+                statement = statement.where(col(Event.created_at) <= until)
+            if cursor is not None:
+                cursor_position = self._cursor_stream_position(
+                    db,
+                    project_id=project.id or 0,
+                    event_cursor=cursor,
+                    cursor_name="cursor",
+                )
+                statement = statement.where(col(Event.stream_position) > cursor_position)
+            # Fetch one extra row to detect whether more pages exist.
+            statement = statement.order_by(col(Event.stream_position)).limit(limit + 1)
+            rows = db.exec(statement).all()
+            has_more = len(rows) > limit
+            page = rows[:limit]
+            return [event_to_read(event) for event in page], has_more
+
+    def summarize_events(
+        self,
+        *,
+        project_path: str | Path | None,
+        session_id: int | None = None,
+        agent_id: str | None = None,
+        type: str | None = None,
+        branch: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Return aggregate counts for matching events without loading records.
+
+        Groups are computed in the database (``GROUP BY``) so large windows do
+        not stream every row to the caller. Returns total count and counts by
+        type, agent, and calendar date, plus the first/last event timestamps.
+        """
+        project = self.get_project_by_path(project_path)
+        empty: dict[str, Any] = {
+            "total": 0,
+            "by_type": {},
+            "by_agent": {},
+            "by_date": {},
+            "first_event_at": None,
+            "last_event_at": None,
+        }
+        if project is None:
+            return empty
+
+        def _apply_filters(statement: Any) -> Any:
+            statement = statement.where(Event.project_id == project.id)
+            if session_id is not None:
+                statement = statement.where(Event.session_id == session_id)
+            if agent_id is not None:
+                statement = statement.where(Event.agent_id == agent_id)
+            if type is not None:
+                statement = statement.where(Event.type == type)
+            if branch is not None:
+                statement = statement.where(Event.branch == branch)
+            if since is not None:
+                statement = statement.where(col(Event.created_at) >= since)
+            if until is not None:
+                statement = statement.where(col(Event.created_at) <= until)
+            return statement
+
+        with open_session(self.engine) as db:
+            type_rows = db.exec(_apply_filters(select(Event.type, func.count()).group_by(col(Event.type)))).all()
+            by_type = {str(row[0]): int(row[1]) for row in type_rows}
+
+            agent_rows = db.exec(
+                _apply_filters(select(Event.agent_id, func.count()).group_by(col(Event.agent_id)))
+            ).all()
+            by_agent = {(row[0] if row[0] is not None else "unknown"): int(row[1]) for row in agent_rows}
+
+            day_expr = func.date(col(Event.created_at))
+            date_rows = db.exec(_apply_filters(select(day_expr, func.count()).group_by(day_expr))).all()
+            by_date = {str(row[0]): int(row[1]) for row in date_rows if row[0] is not None}
+
+            bounds = db.exec(
+                _apply_filters(select(func.min(col(Event.created_at)), func.max(col(Event.created_at))))
+            ).first()
+            first_at, last_at = (bounds[0], bounds[1]) if bounds is not None else (None, None)
+
+            total = sum(by_type.values())
+            return {
+                "total": total,
+                "by_type": by_type,
+                "by_agent": by_agent,
+                "by_date": by_date,
+                "first_event_at": first_at,
+                "last_event_at": last_at,
+            }
 
     def list_events_after(
         self,
@@ -579,10 +709,23 @@ class BrainRepository:
         return grouped
 
 
+def _normalize_type_for_read(raw_type: str) -> str:
+    """Best-effort normalization: resolve known aliases, pass unknowns through."""
+    alias = _EVENT_TYPE_ALIASES.get(raw_type) or _EVENT_TYPE_ALIASES.get(raw_type.upper())
+    for candidate in (alias, raw_type, raw_type.lower()):
+        if candidate is None:
+            continue
+        try:
+            return EventType(candidate).value
+        except ValueError:
+            continue
+    return raw_type
+
+
 def event_to_read(event: Event) -> EventRead:
     stored_version = getattr(event, "payload_version", 1) or 1
     payload, achieved_version = get_default_upcaster().migrate(
-        json.loads(event.payload_json),
+        _loads_json(event.payload_json),
         from_version=stored_version,
     )
     return EventRead(
@@ -590,7 +733,7 @@ def event_to_read(event: Event) -> EventRead:
         project_id=event.project_id,
         session_id=event.session_id,
         agent_id=event.agent_id,
-        type=event.type,
+        type=_normalize_type_for_read(event.type),
         source=event.source,
         file_path=event.file_path,
         payload=payload,

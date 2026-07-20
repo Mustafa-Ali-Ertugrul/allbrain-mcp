@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.decision import (
+from allbrain.domains.reasoning.decision import (
     DecisionContext,
     DecisionEngine,
     build_debug_trace,

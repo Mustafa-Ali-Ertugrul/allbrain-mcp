@@ -10,8 +10,8 @@ from allbrain.models.schemas import EventRead
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 
 if TYPE_CHECKING:
-    from allbrain.scenarios import ScenarioEngine
-    from allbrain.world import WorldModel
+    from allbrain.domains.analysis.world import WorldModel
+    from allbrain.domains.reasoning.scenarios import ScenarioEngine
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def execute(
     Returns:
         Tuple of (scenario payload, last event ID, emitted events)
     """
-    from allbrain.scenarios import SCENARIO_TEMPLATE_VERSION
+    from allbrain.domains.reasoning.scenarios import SCENARIO_TEMPLATE_VERSION
 
     current_state = world.observe()
     observed_event = bus.publish(

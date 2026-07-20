@@ -15,11 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 def ensure_session_started(context: BrainContext) -> Session:
+    session = context.ensure_active_session()
+    need_init = False
     with context._session_lock:
-        created = context.active_session is None
-        session = context.ensure_active_session()
-        if created:
-            context.git_baseline = GitBrain(context.project_path).build_fingerprint()
+        if context.git_baseline is None:
+            context.git_baseline = {}
+            need_init = True
+    if need_init:
+        try:
+            git_baseline = GitBrain(context.project_path).build_fingerprint()
             context.repository.append_event(
                 project_path=context.project_path,
                 session_id=session.id or 0,
@@ -31,12 +35,18 @@ def ensure_session_started(context: BrainContext) -> Session:
                     "client_name": context.client_name,
                     "client_version": context.client_version,
                     "server_instance_id": context.server_instance_id,
-                    "git": context.git_baseline,
+                    "git": git_baseline,
                 },
                 agent_id=context.agent_name,
                 branch=context.agent_name,
             )
-        return session
+            with context._session_lock:
+                context.git_baseline = git_baseline
+        except Exception:
+            with context._session_lock:
+                context.git_baseline = None
+            raise
+    return session
 
 
 def finalize_active_session(
@@ -80,7 +90,7 @@ def finalize_active_session(
         if closed is not None:
             context.active_session = closed
         try:
-            from allbrain.server.tools._shared import maybe_auto_snapshot
+            from allbrain.server.tools._snapshot import maybe_auto_snapshot
 
             maybe_auto_snapshot(context, project_path=context.project_path, force_baseline=True)
         except Exception:
@@ -126,20 +136,32 @@ def record_git_changes(
     confidence: str = "low",
 ) -> dict[str, Any]:
     """Persist Git deltas observed since the previous session checkpoint."""
+    # Lock briefly to read baseline + recorded cache (state reads only).
     with context._session_lock:
-        git = GitBrain(context.project_path)
-        final_fingerprint = git.build_fingerprint()
         baseline = context.git_baseline
-        if baseline is None:
+        recorded = context._recorded_git_keys
+        if recorded is None:
+            events = context.repository.list_session_events(session.id or 0)
+            recorded = {
+                (event.file_path, event.payload.get("fingerprint"), event.payload.get("change_kind"))
+                for event in events
+                if event.type == EventType.FILE_MODIFIED.value
+            }
+            context._recorded_git_keys = recorded
+
+    # Expensive I/O outside the lock: subprocess calls (~50-200ms).
+    git = GitBrain(context.project_path)
+    final_fingerprint = git.build_fingerprint()
+
+    if baseline is None:
+        with context._session_lock:
             context.git_baseline = final_fingerprint
-            return final_fingerprint
-        changes = git.changed_paths_between(baseline, final_fingerprint)
-        events = context.repository.list_session_events(session.id or 0)
-        recorded = {
-            (event.file_path, event.payload.get("fingerprint"), event.payload.get("change_kind"))
-            for event in events
-            if event.type == EventType.FILE_MODIFIED.value
-        }
+        return final_fingerprint
+
+    changes = git.changed_paths_between(baseline, final_fingerprint)
+
+    # Lock again for state mutation: write events + update baseline.
+    with context._session_lock:
         branch = final_fingerprint.get("branch") or context.agent_name
         fingerprints = dict(final_fingerprint.get("files") or {})
         for change in changes:
@@ -164,8 +186,9 @@ def record_git_changes(
                 agent_id=context.agent_name,
                 branch=str(branch),
             )
+            recorded.add(key)
         context.git_baseline = final_fingerprint
-        return final_fingerprint
+    return final_fingerprint
 
 
 def _project_path_for_session(context: BrainContext, session: Session) -> str:

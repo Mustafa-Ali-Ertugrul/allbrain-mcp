@@ -1,14 +1,14 @@
 import pytest
 
-from allbrain.belief.estimator import (
+from allbrain.domains.analysis.belief.estimator import (
     _context_key_of,
     _outcome_of,
     _stable_analysis_id,
     list_known_context_keys,
     tally_outcomes,
 )
-from allbrain.belief.models import BeliefState, OutcomeKind
-from allbrain.belief.updater import beta_info_gain, beta_mean, beta_variance, update_state
+from allbrain.domains.analysis.belief.models import BeliefState, OutcomeKind
+from allbrain.domains.analysis.belief.updater import beta_info_gain, beta_mean, beta_variance, update_state
 from allbrain.events.schemas import EventType
 
 

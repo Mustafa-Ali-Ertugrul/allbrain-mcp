@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.events.schemas import EventType
-from allbrain.mitigation_learning.model import StrategyStats
-from allbrain.objective_system import (
+from allbrain.domains.reasoning.objective_system import (
     FAULT_TYPE_SAFETY_THRESHOLDS,
     FAULT_TYPE_WEIGHTS,
     OBJECTIVE_DEFAULTS_GLOBAL,
@@ -19,6 +17,8 @@ from allbrain.objective_system import (
     validate_objective_rebalanced,
     validate_objective_updated,
 )
+from allbrain.events.schemas import EventType
+from allbrain.mitigation_learning.model import StrategyStats
 
 
 class TestObjective:

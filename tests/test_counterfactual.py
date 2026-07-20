@@ -4,7 +4,9 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
-from allbrain.counterfactual import (
+from allbrain.domains.analysis.world import PredictionBridge, StateTransitionBridge, WorldState
+from allbrain.domains.analysis.world.simulation import SimulationBridge
+from allbrain.domains.reasoning.counterfactual import (
     ACTION_MAP,
     AlternativeGenerator,
     AlternativeRanker,
@@ -23,8 +25,6 @@ from allbrain.server.tools.counterfactual import (
     rank_alternatives_impl,
 )
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
-from allbrain.world import PredictionBridge, StateTransitionBridge, WorldState
-from allbrain.world.simulation import SimulationBridge
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 
@@ -60,14 +60,14 @@ def test_pruning_fallback_without_simulator() -> None:
     result = generator.generate_with_pruning(
         "deploy", state, risk_threshold=0.3, confidence_threshold=0.5, cost_threshold=0.4
     )
-    assert result == ACTION_MAP["deploy"]  # no simulator → raw fallback
+    assert result == ACTION_MAP["deploy"]  # no simulator â†’ raw fallback
 
 
 def test_pruning_fallback_without_state() -> None:
     sim = SimulationBridge(StateTransitionBridge(), PredictionBridge())
     generator = AlternativeGenerator(simulator=sim)
     result = generator.generate_with_pruning("deploy", risk_threshold=0.3, confidence_threshold=0.5, cost_threshold=0.4)
-    assert result == ACTION_MAP["deploy"]  # no state → raw fallback
+    assert result == ACTION_MAP["deploy"]  # no state â†’ raw fallback
 
 
 def test_pruning_risk_threshold() -> None:

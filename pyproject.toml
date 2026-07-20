@@ -1,6 +1,6 @@
 [project]
 name = "allbrain-agent-runtime"
-version = "0.2.3"
+version = "0.4.1"
 description = "Event-sourced memory and orchestration server for multi-agent AI systems"
 authors = [{ name = "Mustafa Ali Ertuğrul", email = "mustafali1230@hotmail.com" }]
 keywords = ["mcp", "agent", "multi-agent", "orchestration", "memory", "event-sourcing", "ai"]
@@ -22,6 +22,7 @@ dependencies = [
     "alembic>=1.16.0,<2.0",
     "fastmcp>=3.4.2,<3.5",
     "GitPython>=3.1.0,<4.0",
+    "orjson>=3.10,<4.0",
     "psutil>=5.9.0,<6.0",
     "pydantic>=2.10,<3.0",
     "rich>=13.0.0,<14.0",
@@ -109,7 +110,7 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["F401", "SIM"]
+"tests/*" = ["F401", "SIM", "N806"]
 "__init__.py" = ["F401"]
 
 [tool.pyright]
@@ -117,6 +118,9 @@ include = [
     "src/allbrain/models",
     "src/allbrain/security",
     "src/allbrain/server/tools/decorators.py",
+    "src/allbrain/server/resources.py",
+    "src/allbrain/server/prompts.py",
+    "src/allbrain/ops/inventory.py",
     "packages/allbrain-sdk/src",
 ]
 pythonVersion = "3.12"

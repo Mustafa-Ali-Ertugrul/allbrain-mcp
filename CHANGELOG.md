@@ -7,17 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+## [0.4.1] - 2026-07-20
 
-- **Breaking (default):** `resume_project` and `orchestrate_project` now default to `detail="slim"`. Pass `detail="full"` for the previous dump (still soft-capped). Prefer `get_context_pack` for day-to-day agent context.
+### Changed
+- Migrated 17 analysis-domain packages to `allbrain.domains.analysis`:
+  `attention`, `attribution`, `belief`, `causal`, `compression`, `context`,
+  `contradiction`, `drift`, `dynamics`, `episodic`, `evidence`, `failure_memory`,
+  `fusion`, `graph`, `predictive_failure`, `semantic`, `world`.
+- Legacy analysis package imports remain available via `allbrain._compat.shim_package` shims.
+- Submodule imports like `allbrain.world.manager` continue to resolve seamlessly via shims.
+
+### Deprecated
+- Legacy top-level analysis imports (e.g., `allbrain.world`, `allbrain.causal`) emit `DeprecationWarning`.
+- Legacy analysis paths will be removed in `v0.5.0`.
+- Use canonical imports from `allbrain.domains.analysis` instead.
 
 ### Fixed
+- Fixed pre-existing ruff issues (UP037 and E501) in `src/allbrain/world/manager.py`.
 
-- Production hardening: event stream unique invariant on ORM model; redaction key normalize (headers/query); independent snapshot check interval.
-- Installer verify probes `get_context_pack`; `doctor --clients` shows per-agent event freshness (24h).
-- Regression matrix ensures legacy `project_path` kwargs never `extra=forbid`-fail.
+## [0.4.0] - 2026-07-20
 
-## [0.2.3] - 2026-07-16
+### Changed
+- **BREAKING (0.x semver):** Migrated all 10 reasoning modules to `allbrain.domains.reasoning.*`:
+  `counterfactual`, `scenarios`, `foresight`, `meta_reasoning`, `uncertainty`, `decision`, `information_seeking`, `intent`, `objective_system`, `tradeoff_engine`.
+- **Backward-Compatible Shims:** Top-level `allbrain.<mod>` files re-export public APIs with `DeprecationWarning` (slated for removal in v0.5.0).
+- **Internal Imports Migrated:** `server/tools/`, `snapshot/`, `contradiction/`, `predictive_failure/`, `replay/`, `runtime_core/`, `reducers/`, and `tests/` now import directly from `allbrain.domains.reasoning.*`.
+- **Reasoning Context Facade:** `allbrain.domains.reasoning.__init__.py` re-exports all 10 modules and declares them in `__all__`.
+
+### Added
+- `WorldModel.from_events()` classmethod: rebuild WorldModel state from event history for pipeline warm-starting (API surface, pipeline integration ships in v0.4.1).
+- `WorldModel.serialize_transitions()` method: serialize learned transition/prediction state for event-store persistence.
+- `docs/ARCHITECTURE.md` **Design Philosophy** section: 5-layer cognitive architecture (Bayesian Epistemology → Metacognition → World Modeling → Decision → Memory).
+- `docs/adr/` — 6 Architecture Decision Records (ADR-001 through ADR-006) documenting key migration, compatibility, and infrastructure decisions.
+- `tests/test_domains_migration.py`: 4 regression tests verifying new-path imports, shim deprecation warnings, context facade re-exports, and Golden Rule isolation.
+
+## [0.3.0] - 2026-07-19
+
+### Added
+- **Bounded Context Scaffold:** New `allbrain.domains.*` namespace with 6 contexts (`reasoning`, `governance`, `learning`, `collaboration`, `analysis`, `memory`) documenting the v0.4.0 module-consolidation target. No module moves yet — Phase 1 is scaffold + docs.
+- **Architecture Doc:** `docs/architecture.md` with the full 73-module → 6-context mapping table, a Mermaid dependency diagram, and a coupling ranking for v0.4.0 cleanup candidates.
+
+### Deprecated
+- `allbrain.drift` and `allbrain.learning_graph` now emit `DeprecationWarning` at import time. Both are reducer-only (no server-tool, CLI, or public-API importers) and are slated for removal in v0.4.0.
+
+
+
+### Changed
+- **SnapshotEngine Iterable Acceptance:** `SnapshotEngine.build_snapshot()` now accepts `Iterable[EventRecord]` and materializes it once internally; `_snapshot.py` switched from `load_events_through_cursor()` (eager list) to the lazy `iter_events_through_cursor()` generator. Closes the v0.2.5 backlog TODO.
+- **Deprecated Facade Re-exports:** Public re-exports in `_shared.py` now emit `DeprecationWarning` via a `__getattr__` lazy loader, prompting direct imports from `_events`, `_snapshot`, and `_tasks`. Internal tool modules migrated to direct imports. These re-exports will be removed in v0.3.0.
+- **README Consistency:** Full-profile tool count corrected to 51 (was inconsistently 50/51), matching the authoritative registration count.
+
+### Fixed
+- **Test `test_git_fingerprint_computed_outside_lock`:** Replaced the `RLock._is_owned()` call (absent on some Python builds → `AttributeError`) with a lock-depth tracking wrapper that verifies `GitBrain.build_fingerprint()` runs outside the session mutex.
+
+
+
+### Added
+- 14 regression tests in `tests/test_v024_fixes.py` protecting performance, safety, and concurrency changes.
+
+### Changed
+- **StateEngine Single-Pass Loop:** Merged `final_machine` and `delta_machine` loops in `StateEngine.apply_events()` to eliminate redundant iteration ($O(2n) \to O(n)$).
+- **QueueCoordinator claim() Locking:** Switched `claim()` from `open_session` to `open_write_session` to enforce SQLite `BEGIN IMMEDIATE` transaction locking and prevent concurrent double-assignments.
+- **Redaction Value-Based Fallback:** Removed generic `"key"` and `"keys"` from `_SAFE_KEY_DENYLIST` to evaluate them dynamically. If the value matches a secret pattern, the value is masked; safe values remain untouched.
+- **Lazy Event Streaming:** Added `iter_events_through_cursor()` generator for batched, memory-efficient event streaming without full list materialization.
+- **Interruptible DB Backoff:** Replaced `time.sleep` with `threading.Event().wait()` in the database retry loop (then reverted to honest `time.sleep` with clear retry purpose following code review).
+- **Subprocess Lock Scope Reduction:** Moved the blocking `GitBrain.build_fingerprint()` subprocess call out of the `_session_lock` mutex in `record_git_changes()`.
+- **Shared Facade Decomposition:** Split the 460-line monolithic `_shared.py` file into four focused domain submodules: `_events.py` (cursor batching), `_snapshot.py` (lease management), `_tasks.py` (selection decisions & metrics), and `_shared.py` (facade with core tool utilities). Removed unused private re-exports.
+- **SnapshotEngine Iterable Acceptance:** `SnapshotEngine.build_snapshot()` now accepts `Iterable[EventRecord]` and materializes it once internally; `_snapshot.py` switched from `load_events_through_cursor()` (eager list) to the lazy `iter_events_through_cursor()` generator. Closes the v0.2.5 backlog TODO.
+- **Deprecated Facade Re-exports:** Public re-exports in `_shared.py` now emit `DeprecationWarning` via a `__getattr__` lazy loader, prompting direct imports from `_events`, `_snapshot`, and `_tasks`. Internal tool modules migrated to direct imports. These re-exports will be removed in v0.3.0.
+
+## [0.2.3] - 2026-07-19
 
 ### Added
 
@@ -25,6 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-agent claim loop: `create_task(enqueue=…)` and queue coordinator wiring.
 - Ops: `allbrain doctor --clients` and `allbrain restart --all`.
 - MCP contract polish: event type aliases, `ToolResult.error_code`, slim resume/orchestrate detail mode.
+- **Env Variable Prefixing:** `ALLBRAIN_ALLOWED_PROJECT_ROOTS` eklendi, eski değişken için `DeprecationWarning` eklendi.
 
 ### Changed (Glama)
 
@@ -36,6 +96,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Production hardening: event stream unique invariant on ORM model; redaction key normalize (headers/query); independent snapshot check interval.
+- **Security Hardening (M7 & M8):** OpenAI key redaction pattern tightened to `{40,}`, recursive payload redaction depth limit (`_MAX_SANITIZE_DEPTH = 32`) to prevent stack overflow.
+- **Queue Coordinator Concurrency:** `QueueCoordinator.enqueue_task` rewritten to use `open_write_session` and catch `IntegrityError` to resolve concurrent idempotency races.
+- **Session Lock Optimization:** `ensure_session_started` kilit süresi daraltıldı. Git fingerprinting ve veritabanı yazımları kilit dışına çıkarıldı.
+- **Git Observer Cache:** `record_git_changes` için `context._recorded_git_keys` cache'i eklenerek her tool çağrısında oluşan O(n) disk okuma yükü kaldırıldı.
+- **Telemetry Dict Outcome:** `_result_outcome` telemetry parsing'i dict sonuçları düzgün okuyacak şekilde güncellendi.
 - Restart ops: process match no longer treats `restart` as `start`; installer resolves real package repo root.
 
 ## [0.2.1] - 2026-07-03

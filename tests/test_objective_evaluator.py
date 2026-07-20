@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.objective_system import (
+from allbrain.domains.reasoning.objective_system import (
     OBJECTIVE_REBALANCE_INTERVAL,
     Objective,
     ObjectiveEvaluator,

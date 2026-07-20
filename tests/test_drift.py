@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.drift import (
+from allbrain.domains.analysis.drift import (
     DRIFT_THRESHOLD,
     REASONS,
     DriftSample,

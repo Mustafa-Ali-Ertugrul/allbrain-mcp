@@ -4,6 +4,12 @@ from datetime import datetime
 
 import pytest
 
+from allbrain.domains.reasoning.uncertainty import (
+    make_payload as make_uncertainty_payload,
+)
+from allbrain.domains.reasoning.uncertainty import (
+    validate_payload as validate_uncertainty_payload,
+)
 from allbrain.events.schemas import EventType
 from allbrain.revision import (
     RevisionManager,
@@ -11,12 +17,6 @@ from allbrain.revision import (
 )
 from allbrain.revision import (
     make_payload as make_revision_payload,
-)
-from allbrain.uncertainty import (
-    make_payload as make_uncertainty_payload,
-)
-from allbrain.uncertainty import (
-    validate_payload as validate_uncertainty_payload,
 )
 
 
@@ -72,7 +72,7 @@ def test_uncertainty_payload_is_read_directly():
     """The UNCERTAINTY_COMPUTED payload's `uncertainty` field is read directly,
     not recomputed from belief.variance or contradiction_count.
 
-    This is the Zorunlu: 'Manager içerisinde: if uncertainty missing: recompute() yasaktır.'
+    This is the Zorunlu: 'Manager iÃ§erisinde: if uncertainty missing: recompute() yasaktÄ±r.'
     """
     revised = make_revision_payload(
         context_key="default",

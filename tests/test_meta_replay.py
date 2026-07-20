@@ -71,7 +71,7 @@ class TestMetaReplay:
         assert r1 == r2
 
     def test_mixed_with_decision_events(self):
-        from allbrain.decision import make_decision_payload
+        from allbrain.domains.reasoning.decision import make_decision_payload
 
         evts = [
             E(

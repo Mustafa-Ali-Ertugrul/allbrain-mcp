@@ -122,8 +122,8 @@ class LearningOrchestrator:
     ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
         """Emit AGENT_COUNTERFACTUAL_RUN + AGENT_CAUSAL_IMPACT_RECORDED events."""
         from allbrain.capabilities import CapabilityManager
-        from allbrain.causal import CausalManager, make_counterfactual_payload, make_impact_payload
-        from allbrain.causal.model import CAUSAL_IMPACT_THRESHOLD, CAUSAL_MIN_SAMPLES
+        from allbrain.domains.analysis.causal import CausalManager, make_counterfactual_payload, make_impact_payload
+        from allbrain.domains.analysis.causal.model import CAUSAL_IMPACT_THRESHOLD, CAUSAL_MIN_SAMPLES
 
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
 
@@ -207,7 +207,7 @@ class LearningOrchestrator:
     ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
         """Emit AGENT_CAPABILITY_DRIFT_DETECTED + TREND_UPDATED + FORECAST_UPDATED events."""
         from allbrain.capabilities import CapabilityManager
-        from allbrain.dynamics import CapabilityDynamicsManager
+        from allbrain.domains.analysis.dynamics import CapabilityDynamicsManager
 
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
 
@@ -256,8 +256,8 @@ class LearningOrchestrator:
     def _publish_dynamics(
         bus: RuntimeEventBus, aid: str, task_type: str, result: dict[str, Any], caused_by: str
     ) -> list[EventRead]:
-        from allbrain.dynamics import make_drift_payload, make_forecast_payload, make_trend_payload
-        from allbrain.dynamics.model import (
+        from allbrain.domains.analysis.dynamics import make_drift_payload, make_forecast_payload, make_trend_payload
+        from allbrain.domains.analysis.dynamics.model import (
             DRIFT_THRESHOLD,
             FORECAST_DEFAULT_HORIZON,
             MIN_OBSERVATIONS_FOR_DRIFT,
@@ -332,7 +332,7 @@ class LearningOrchestrator:
     ) -> tuple[dict[str, Any] | None, str, list[EventRead]]:
         """Emit FUSION_COMPUTED + SIGNAL_CALIBRATED events."""
         from allbrain.capabilities import CapabilityManager
-        from allbrain.fusion import FusionManager, make_calibration_payload, make_fusion_payload
+        from allbrain.domains.analysis.fusion import FusionManager, make_calibration_payload, make_fusion_payload
 
         task_id = str(scheduler_result.get("summary", {}).get("task_id", caused_by)) if scheduler_result else caused_by
 

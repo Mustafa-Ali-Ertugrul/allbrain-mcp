@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.attribution import (
+from allbrain.domains.analysis.attribution import (
     make_attribution_update_payload,
     make_credit_payload,
     make_importance_payload,
@@ -131,7 +131,7 @@ class TestAttributionReplay:
         assert f["attribution"] == {}
 
     def test_mixed_with_decision(self):
-        from allbrain.decision import make_decision_payload
+        from allbrain.domains.reasoning.decision import make_decision_payload
 
         evts = [
             E(

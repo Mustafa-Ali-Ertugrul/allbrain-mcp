@@ -1,67 +1,24 @@
-from allbrain.attention.allocator import allocate_budget
-from allbrain.attention.budget import compute_unused_budget, derive_adaptive_budget
-from allbrain.attention.estimator import estimate_signal_cost, estimate_signal_importance
-from allbrain.attention.events import (
-    make_attention_payload,
-    make_budget_payload,
-    make_reallocation_payload,
-    validate_attention,
-    validate_budget,
-    validate_reallocation,
-)
-from allbrain.attention.manager import AttentionManager
-from allbrain.attention.model import (
-    ATTENTION_BUDGET_DEFAULT,
-    ATTENTION_COST_CAP,
-    ATTENTION_DECAY,
-    ATTENTION_IMPORTANCE_ALPHA,
-    ATTENTION_MAX_ALLOCATION,
-    ATTENTION_MIN_ALLOCATION,
-    ATTENTION_REALLOCATION_THRESHOLD,
-    ATTENTION_TEMPLATE_VERSION,
-    SIGNAL_COST_CAPABILITY,
-    SIGNAL_COST_CAUSAL,
-    SIGNAL_COST_DYNAMICS,
-    SIGNAL_COST_LEARNING,
-    SIGNAL_COSTS,
-    AttentionSignal,
-    AttentionState,
-    AttentionWeight,
-    ResourceBudget,
-)
-from allbrain.attention.reducer import AttentionReducer
-from allbrain.attention.scheduler import schedule_attention
+"""Deprecated compatibility shim for allbrain.attention.
 
-__all__ = [
-    "AttentionManager",
-    "AttentionReducer",
-    "ATTENTION_TEMPLATE_VERSION",
-    "ATTENTION_MIN_ALLOCATION",
-    "ATTENTION_MAX_ALLOCATION",
-    "ATTENTION_BUDGET_DEFAULT",
-    "ATTENTION_IMPORTANCE_ALPHA",
-    "ATTENTION_COST_CAP",
-    "ATTENTION_REALLOCATION_THRESHOLD",
-    "ATTENTION_DECAY",
-    "SIGNAL_COST_CAPABILITY",
-    "SIGNAL_COST_LEARNING",
-    "SIGNAL_COST_DYNAMICS",
-    "SIGNAL_COST_CAUSAL",
-    "SIGNAL_COSTS",
-    "AttentionSignal",
-    "AttentionWeight",
-    "ResourceBudget",
-    "AttentionState",
-    "allocate_budget",
-    "compute_unused_budget",
-    "derive_adaptive_budget",
-    "estimate_signal_cost",
-    "estimate_signal_importance",
-    "make_attention_payload",
-    "make_budget_payload",
-    "make_reallocation_payload",
-    "schedule_attention",
-    "validate_attention",
-    "validate_budget",
-    "validate_reallocation",
-]
+Moved to allbrain.domains.analysis.attention in v0.4.1.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.analysis.attention",
+    submodules=(
+        "allocator",
+        "budget",
+        "estimator",
+        "events",
+        "manager",
+        "model",
+        "reducer",
+        "scheduler",
+    ),
+)

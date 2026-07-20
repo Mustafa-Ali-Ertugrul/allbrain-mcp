@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.decision import make_decision_payload, validate_decision
+from allbrain.domains.reasoning.decision import make_decision_payload, validate_decision
 from allbrain.events.schemas import EventType
 from allbrain.replay import EventReplayEngine
 

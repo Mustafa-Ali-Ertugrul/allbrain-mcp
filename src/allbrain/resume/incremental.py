@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.context import ContextBuilder
 from allbrain.core import StateEngine
+from allbrain.domains.analysis.context import ContextBuilder
 from allbrain.models.schemas import EventRead
 from allbrain.resume.engine import ResumeEngine
 from allbrain.resume.protocols import EventRepository, SnapshotStore

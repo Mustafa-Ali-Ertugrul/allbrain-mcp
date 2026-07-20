@@ -67,8 +67,8 @@ class TestWorkspaceReplay:
         assert r1 == r2
 
     def test_mixed_with_all(self):
-        from allbrain.attention import make_attention_payload
-        from allbrain.attribution import make_credit_payload
+        from allbrain.domains.analysis.attention import make_attention_payload
+        from allbrain.domains.analysis.attribution import make_credit_payload
 
         evts = [
             E(

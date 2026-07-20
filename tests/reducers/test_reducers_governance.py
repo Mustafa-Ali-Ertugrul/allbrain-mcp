@@ -64,7 +64,7 @@ class TestArbitrationReducer:
 
 class TestBeliefReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.belief.models import BeliefState
+        from allbrain.domains.analysis.belief.models import BeliefState
         from allbrain.reducers.governance import BeliefReducer
 
         reducer = BeliefReducer()
@@ -125,7 +125,7 @@ class TestCalibrationReducer:
 
 class TestContradictionReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.contradiction.models import ContradictionState
+        from allbrain.domains.analysis.contradiction.models import ContradictionState
         from allbrain.reducers.governance import ContradictionReducer
 
         reducer = ContradictionReducer()

@@ -11,7 +11,7 @@ from allbrain.recovery_consensus.model import (
 from allbrain.recovery_consensus.strategy_generator import StrategyGenerator
 
 if TYPE_CHECKING:
-    from allbrain.failure_memory.manager import FailureMemoryManager
+    from allbrain.domains.analysis.failure_memory.manager import FailureMemoryManager
 
 
 class RecoveryConsensusManager:

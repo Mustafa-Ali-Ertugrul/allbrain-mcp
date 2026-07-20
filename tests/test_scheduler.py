@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.attention import (
+from allbrain.domains.analysis.attention import (
     AttentionManager,
     AttentionWeight,
     allocate_budget,

@@ -4,6 +4,9 @@ from datetime import datetime
 
 import pytest
 
+from allbrain.domains.reasoning.uncertainty import (
+    make_payload as make_uncertainty_payload,
+)
 from allbrain.events.schemas import EventType
 from allbrain.replay import EventReplayEngine
 from allbrain.revision import (
@@ -13,9 +16,6 @@ from allbrain.revision import (
 )
 from allbrain.revision import (
     make_payload as make_revision_payload,
-)
-from allbrain.uncertainty import (
-    make_payload as make_uncertainty_payload,
 )
 
 
@@ -99,7 +99,7 @@ def test_no_uncertainty_defaults_to_zero():
 
 
 def test_replay_round_trip_with_uncertainty():
-    """Netleştirme 2: exact dict equality through the replay engine.
+    """NetleÅŸtirme 2: exact dict equality through the replay engine.
 
     final_state["revision"]["default"] == manager.query(events, "default").state-dict
     """

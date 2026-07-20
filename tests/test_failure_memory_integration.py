@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.failure_memory.manager import FailureMemoryManager
-from allbrain.failure_memory.model import DEFAULT_BIAS_WEIGHT, DEFAULT_NEUTRAL_BIAS
+from allbrain.domains.analysis.failure_memory.manager import FailureMemoryManager
+from allbrain.domains.analysis.failure_memory.model import DEFAULT_BIAS_WEIGHT, DEFAULT_NEUTRAL_BIAS
 from allbrain.recovery_consensus.evaluator import Evaluator
 from allbrain.recovery_consensus.model import CandidateStrategy
 

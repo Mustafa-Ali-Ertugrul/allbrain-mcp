@@ -4,6 +4,9 @@ from datetime import datetime
 
 import pytest
 
+from allbrain.domains.reasoning.uncertainty import (
+    make_payload as make_uncertainty_payload,
+)
 from allbrain.events.schemas import EventType
 from allbrain.revision import (
     RevisionManager,
@@ -11,9 +14,6 @@ from allbrain.revision import (
 )
 from allbrain.revision import (
     make_payload as make_revision_payload,
-)
-from allbrain.uncertainty import (
-    make_payload as make_uncertainty_payload,
 )
 
 

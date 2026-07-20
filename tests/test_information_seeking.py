@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.events import EventType
-from allbrain.information_seeking import (
+from allbrain.domains.reasoning.information_seeking import (
     ACTION_TO_GAPS,
     ACTION_VOI_TABLE,
     INFORMATION_SEEKING_TEMPLATE_VERSION,
@@ -15,6 +14,8 @@ from allbrain.information_seeking import (
     InformationSeekingManager,
     InformationSeekingProjection,
 )
+from allbrain.domains.reasoning.uncertainty.models import KnowledgeGap
+from allbrain.events import EventType
 from allbrain.replay import EventReplayEngine
 from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.knowledge import (
@@ -22,7 +23,6 @@ from allbrain.server.tools.knowledge import (
     identify_information_needs_impl,
 )
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
-from allbrain.uncertainty.models import KnowledgeGap
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 

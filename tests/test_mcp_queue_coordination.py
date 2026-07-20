@@ -91,3 +91,48 @@ def test_failed_claim_can_be_requeued(tmp_path: Path) -> None:
     reclaimed = coordinator.claim(agent_id="codex", server_instance_id="instance-a")
     assert reclaimed is not None
     assert reclaimed["attempts"] == 2
+
+
+def test_concurrent_enqueue_task_idempotence(tmp_path: Path) -> None:
+    import threading
+
+    context = make_context(tmp_path)
+    coordinator = QueueCoordinator(context)
+    result_list = []
+    errors = []
+
+    def target():
+        try:
+            res = coordinator.enqueue_task(
+                task_id="task-concurrent",
+                goal="test concurrent idempotency",
+                agent_id="codex",
+                workflow_id="wf-concurrent",
+                node_id="node-concurrent",
+            )
+            result_list.append(res)
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=target) for _ in range(20)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors, f"Concurrent enqueue threw errors: {errors}"
+    assert len(result_list) == 20
+    # All threads should get the same queue item ID
+    first_id = result_list[0]["queue_item_id"]
+    for res in result_list:
+        assert res["queue_item_id"] == first_id
+
+    # Verify only one queue item was created in DB
+    from sqlmodel import select
+
+    from allbrain.models.entities import QueueItemRecord
+    from allbrain.storage.database import open_session
+
+    with open_session(context.repository.engine) as db:
+        items = db.exec(select(QueueItemRecord).where(QueueItemRecord.task_id == "task-concurrent")).all()
+        assert len(items) == 1

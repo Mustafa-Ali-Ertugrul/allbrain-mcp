@@ -10,7 +10,7 @@ from allbrain.models.schemas import EventRead
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 
 if TYPE_CHECKING:
-    from allbrain.world import WorldModel
+    from allbrain.domains.analysis.world import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def execute(
     Returns:
         Tuple of (foresight payload, last event ID, emitted events)
     """
-    from allbrain.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
+    from allbrain.domains.reasoning.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
 
     current_state = world.observe()
     observed_event = bus.publish(

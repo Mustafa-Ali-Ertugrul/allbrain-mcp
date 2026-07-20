@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.predictive_failure.model import RiskSignal
-from allbrain.predictive_failure.risk_engine import RiskEngine
+from allbrain.domains.analysis.predictive_failure.model import RiskSignal
+from allbrain.domains.analysis.predictive_failure.risk_engine import RiskEngine
 
 
 class TestRiskEngine:

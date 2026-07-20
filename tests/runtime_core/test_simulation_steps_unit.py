@@ -285,7 +285,7 @@ def test_counterfactual_execute_below_threshold_no_recommendation() -> None:
 # ── foresight.execute ─────────────────────────────────────────────────────
 
 
-@patch("allbrain.foresight.ForesightEngine")
+@patch("allbrain.domains.reasoning.foresight.ForesightEngine")
 def test_foresight_execute(mock_foresight_engine: MagicMock) -> None:
     bus = _make_bus_mock()
     world = _make_world_mock()

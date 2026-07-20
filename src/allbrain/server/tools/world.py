@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from allbrain.domains.analysis.world import WorldModel
 from allbrain.events import EventType
 from allbrain.models.schemas import (
     ObserveWorldInput,
@@ -15,11 +16,10 @@ from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
     bind_session_id,
-    maybe_auto_snapshot,
 )
+from allbrain.server.tools._snapshot import maybe_auto_snapshot
 from allbrain.server.tools.decorators import handle_tool_errors
 from allbrain.storage.repository import event_to_read
-from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 

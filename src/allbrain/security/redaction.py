@@ -15,10 +15,11 @@ _REDOS_RISKY = re.compile(
     r"\([^)]*[+*][^)]*\)[+*{]"  # (x+)+ / (x*)* / (x+){2,}
     r"|\([^)]*\|[^)]*\)[+*]"  # (a|a)+ / (a|b)*
 )
+_MAX_SANITIZE_DEPTH = 32
 
 _BUILTIN_SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"sk-ant-[a-zA-Z0-9_-]{20,}", re.IGNORECASE), "anthropic"),
-    (re.compile(r"sk-(?!ant-)[a-zA-Z0-9]{20,}", re.IGNORECASE), "openai"),
+    (re.compile(r"sk-(?!ant-)[a-zA-Z0-9]{40,}", re.IGNORECASE), "openai"),
     (re.compile(r"ghp_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_pat"),
     (re.compile(r"gho_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_oauth"),
     (re.compile(r"ghu_[a-zA-Z0-9]{36}", re.IGNORECASE), "github_user"),
@@ -157,6 +158,10 @@ _SENSITIVE_SUFFIXES: tuple[str, ...] = (
 )
 
 # Exact normalized names that look suffix-sensitive but are not secrets.
+# NOTE: "key" and "keys" removed from denylist — they are handled by
+# value-based fallback in _is_sensitive_key to avoid false positives on
+# safe values like {"key": "user-theme"} while still catching secrets
+# like {"key": "sk-ant-api03-..."}.
 _SAFE_KEY_DENYLIST: set[str] = {
     "task_key",
     "foreign_key",
@@ -164,8 +169,6 @@ _SAFE_KEY_DENYLIST: set[str] = {
     "primary_key",
     "public_key",
     "keyboard",
-    "key",
-    "keys",
 }
 
 MASK = "********"
@@ -180,10 +183,22 @@ def _normalize_key(key: str) -> str:
     return re.sub(r"[-.\s]+", "_", lowered)
 
 
-def _is_sensitive_key(key: str, *, for_query: bool = False) -> bool:
+def _matches_any_secret_pattern(value: Any) -> bool:
+    """Check if a string value matches any known secret pattern."""
+    if not isinstance(value, str):
+        return False
+    return any(pattern.search(value) for pattern, _ in SECRET_PATTERNS)
+
+
+def _is_sensitive_key(key: str, *, value: Any = None, for_query: bool = False) -> bool:
     if not isinstance(key, str) or not key:
         return False
     normalized = _normalize_key(key)
+    # Value-based fallback for ambiguous generic keys like "key"/"keys":
+    # These are too generic to flag by name alone, but if the value itself
+    # matches a known secret pattern, the entire value should be masked.
+    if normalized in ("key", "keys"):
+        return value is not None and _matches_any_secret_pattern(value)
     if normalized in _SAFE_KEY_DENYLIST:
         return False
     names = _SENSITIVE_QUERY_NAMES if for_query else _SENSITIVE_FIELD_NAMES
@@ -253,21 +268,23 @@ def _mask_secrets_patterns(text: str, found_types: dict[str, int]) -> str:
     return text
 
 
-def _sanitize_payload_impl(obj: Any, found_types: dict[str, int]) -> Any:
+def _sanitize_payload_impl(obj: Any, found_types: dict[str, int], *, depth: int = 0) -> Any:
     """Core recursive walk with field-name redaction."""
+    if depth >= _MAX_SANITIZE_DEPTH:
+        return obj
     if isinstance(obj, dict):
         out: dict[str, Any] = {}
         for k, v in obj.items():
-            if isinstance(k, str) and _is_sensitive_key(k):
+            if isinstance(k, str) and _is_sensitive_key(k, value=v):
                 found_types["field_name"] = found_types.get("field_name", 0) + 1
                 out[k] = MASK
             elif isinstance(v, str):
                 out[k] = _mask_url_or_text(v, found_types)
             else:
-                out[k] = _sanitize_payload_impl(v, found_types)
+                out[k] = _sanitize_payload_impl(v, found_types, depth=depth + 1)
         return out
     if isinstance(obj, list):
-        return [_sanitize_payload_impl(v, found_types) for v in obj]
+        return [_sanitize_payload_impl(v, found_types, depth=depth + 1) for v in obj]
     if isinstance(obj, str):
         return _mask_url_or_text(obj, found_types)
     return obj
@@ -302,7 +319,7 @@ def sanitize_text(text: str) -> str:
 # without losing the error type / location.  Example match:
 #   "Input should be a valid string [type=string_type, input_value='sk-abc...', input_type=str]"
 #   → "Input should be a valid string [type=string_type, input_type=str]"
-_PYDANTIC_INPUT_RE = re.compile(r",?\s*input_value=(?:[^,\]]|,(?!\s*\w+=))*")
+_PYDANTIC_INPUT_RE = re.compile(r",?\s*input_value=(?:(?!,\s*\w+=|\])[^]])*")
 
 
 def sanitize_valerr_msg(msg: str) -> str:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import random
-import time
+import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -11,9 +10,17 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from sqlalchemy import event, inspect
 from sqlalchemy.engine import Engine, make_url
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import QueuePool
 from sqlmodel import Session, create_engine
+
+# Serializes SQLite write transactions within a single OS process. SQLite only
+# permits one writer at a time; when an MCP server handles tool calls on a
+# thread pool, multiple concurrent writers in the same process contend on the
+# shared engine. Holding this lock for the whole transaction bounds the
+# in-process writer count to one (cross-process contention is still resolved by
+# SQLite's lock + PRAGMA busy_timeout), which keeps "database is locked" from
+# surfacing under multi-agent load.
+_SQLITE_WRITE_LOCK = threading.Lock()
 
 
 def _set_sqlite_pragmas(dbapi_conn, _connection_record) -> None:
@@ -30,10 +37,14 @@ def create_engine_for_url(database_url: str) -> Engine:
     url = make_url(database_url)
     kwargs: dict[str, object] = {"poolclass": QueuePool, "pool_pre_ping": True}
     if url.get_backend_name() == "sqlite":
+        # SQLite serializes writers via BEGIN IMMEDIATE, but a slightly larger
+        # pool (with overflow) lets concurrent readers (list_events, resume,
+        # resource handlers) avoid contending for the two hard-coded
+        # connections the old config allowed. busy_timeout still bounds waits.
         kwargs.update(
             {
-                "pool_size": 2,
-                "max_overflow": 0,
+                "pool_size": 5,
+                "max_overflow": 3,
                 "connect_args": {"check_same_thread": False, "timeout": 30},
             }
         )
@@ -183,40 +194,58 @@ def open_session(engine: Engine) -> Session:
     return Session(engine)
 
 
-def _is_sqlite_busy(exc: OperationalError) -> bool:
-    message = str(exc).lower()
-    return "locked" in message or "busy" in message
+@contextmanager
+def open_light_write_session(engine: Engine) -> Iterator[Session]:
+    """Open a write-capable session that does NOT pre-acquire the writer lock.
+
+    Uses ``BEGIN DEFERRED`` instead of ``BEGIN IMMEDIATE``: the SQLite write
+    lock is taken lazily on the first actual mutation, not at session open.
+    This is intended for low-contention, single-row UPDATE operations such as
+    session heartbeats (``touch_session``), where taking the exclusive lock
+    up front needlessly serializes against bulk event appends.
+
+    Cross-process contention is handled by ``PRAGMA busy_timeout=30000``; the
+    in-process ``_SQLITE_WRITE_LOCK`` is NOT held here because DEFERRED
+    transactions acquire the writer lock lazily and the caller typically
+    mutates only a single row.
+    """
+    db = Session(engine, expire_on_commit=False)
+    try:
+        if engine.dialect.name == "sqlite":
+            db.connection().exec_driver_sql("BEGIN DEFERRED")
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 @contextmanager
-def open_write_session(engine: Engine, *, attempts: int = 5) -> Iterator[Session]:
-    """Open a write transaction after acquiring SQLite's single-writer lock.
+def open_write_session(engine: Engine) -> Iterator[Session]:
+    """Open a write transaction with ``BEGIN IMMEDIATE``.
 
-    Lock acquisition is retried before domain mutations begin, so a retry never
-    needs to reconstruct partially mutated ORM objects.
+    The in-process ``_SQLITE_WRITE_LOCK`` serializes concurrent writers
+    within a single OS process (e.g. a thread pool serving MCP tool calls).
+    Cross-process contention is handled by ``PRAGMA busy_timeout=30000``,
+    which lets SQLite queue writers for up to 30 seconds before raising
+    ``"database is locked"``.
+
+    A single attempt is made — no generator-level retry loop.  Retrying
+    inside a ``@contextmanager`` generator is unsafe because the context
+    manager calls ``generator.throw()`` when the body raises; re-yielding
+    after ``throw()`` causes ``RuntimeError("generator didn't stop after
+    throw()")``.  Any retry logic should be applied *outside* this context
+    manager at the call site.
     """
-
-    db: Session | None = None
-    if attempts < 1:
-        raise ValueError("attempts must be at least 1")
-    for attempt in range(attempts):
-        candidate = Session(engine, expire_on_commit=False)
-        try:
-            if engine.dialect.name == "sqlite":
-                candidate.connection().exec_driver_sql("BEGIN IMMEDIATE")
-            db = candidate
-            break
-        except OperationalError as exc:
-            candidate.rollback()
-            candidate.close()
-            if not _is_sqlite_busy(exc) or attempt + 1 >= attempts:
-                raise
-            delay = min(0.05 * (2**attempt), 0.8) + random.uniform(0, 0.025)
-            time.sleep(delay)
-    if db is None:  # pragma: no cover - defensive; loop either assigns or raises
-        raise RuntimeError("Unable to open database write session")
+    db = Session(engine, expire_on_commit=False)
     try:
-        yield db
+        if engine.dialect.name == "sqlite":
+            db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+        with _SQLITE_WRITE_LOCK:
+            yield db
+            db.commit()
     except Exception:
         db.rollback()
         raise
