@@ -48,7 +48,7 @@ class WorldModel:
         self.simulator = SimulationBridge(self._base_transitions, self._base_predictions)
 
     @classmethod
-    def from_events(cls, events: list) -> "WorldModel":
+    def from_events(cls, events: list) -> WorldModel:
         """Rebuild WorldModel state from event history.
 
         Scans events for ``world_model_updated`` payloads to restore
@@ -123,7 +123,10 @@ class WorldModel:
 
         if self._predictor is not None:
             result["predictors"] = {
-                action: {"alpha": self._predictor._alphas.get(action, 1.0), "beta": self._predictor._betas.get(action, 1.0)}
+                action: {
+                    "alpha": self._predictor._alphas.get(action, 1.0),
+                    "beta": self._predictor._betas.get(action, 1.0),
+                }
                 for action in self._predictor._alphas
             }
 
