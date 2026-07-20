@@ -54,4 +54,3 @@ class TestDecisionEvents:
         r1 = EventReplayEngine().replay(evts)["final_state"]["decision"]
         r2 = EventReplayEngine().replay(evts)["final_state"]["decision"]
         assert r1 == r2
-

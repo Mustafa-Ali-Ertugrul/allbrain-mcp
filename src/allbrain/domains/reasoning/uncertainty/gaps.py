@@ -61,4 +61,3 @@ def detect(
         )
 
     return gaps
-

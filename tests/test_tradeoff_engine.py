@@ -203,4 +203,3 @@ class TestUtilityEventPayloadForFailedSafety:
         validate_tradeoff_analyzed(payload)
         assert payload["frontier_size"] == 3
         assert payload["dominated_count"] == 2
-

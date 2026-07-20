@@ -65,4 +65,3 @@ class InformationPlanner:
             rationale=rationale,
             template_version=INFORMATION_SEEKING_TEMPLATE_VERSION,
         )
-

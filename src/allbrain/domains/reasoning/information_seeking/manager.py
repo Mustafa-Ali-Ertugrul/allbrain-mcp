@@ -24,4 +24,3 @@ class InformationSeekingManager:
     ) -> InformationPlan:
         needs = self.planner.needs_from_gaps(gaps)
         return self.planner.plan(needs, analysis_id=analysis_id)
-

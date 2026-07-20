@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.fusion import FUSION_MIN_VARIANCE_EPSILON, normalize_signal
+from allbrain.domains.analysis.fusion import FUSION_MIN_VARIANCE_EPSILON, normalize_signal
 
 
 class TestCalibration:

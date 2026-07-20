@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from allbrain.domains.analysis.fusion import make_calibration_payload, make_fusion_payload
 from allbrain.events.schemas import EventType
-from allbrain.fusion import make_calibration_payload, make_fusion_payload
 from allbrain.replay import EventReplayEngine
 
 
@@ -85,8 +85,8 @@ class TestFusionReplay:
 
     def test_mixed_with_all_reducers(self):
         from allbrain.capabilities.events import make_matched_payload
-        from allbrain.causal import make_counterfactual_payload
-        from allbrain.dynamics import make_drift_payload
+        from allbrain.domains.analysis.causal import make_counterfactual_payload
+        from allbrain.domains.analysis.dynamics import make_drift_payload
         from allbrain.learning import make_learned_payload
 
         evts = [

@@ -82,4 +82,3 @@ def legacy_backend(ctx: DecisionContext) -> tuple[float, dict[str, float]]:
         consensus_score=float(learn.get("consensus_score", 0.5)),
     )
     return score, {"legacy": 1.0}
-

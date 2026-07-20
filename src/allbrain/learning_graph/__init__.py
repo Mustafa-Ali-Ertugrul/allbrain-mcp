@@ -5,6 +5,7 @@ importer (only the cross-cutting ``reducers/`` layer consumes it).
 It remains functional but is slated for removal in v0.4.0. Migrate
 any learning-graph usage to ``allbrain.domains.learning`` when available.
 """
+
 import warnings
 
 warnings.warn(

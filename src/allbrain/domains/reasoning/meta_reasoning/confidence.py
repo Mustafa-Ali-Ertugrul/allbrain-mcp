@@ -17,4 +17,3 @@ class ConfidenceEngine:
             evidence_count=len(foresight_result.plans),
             uncertainty=round(1.0 - confidence, 6),
         )
-

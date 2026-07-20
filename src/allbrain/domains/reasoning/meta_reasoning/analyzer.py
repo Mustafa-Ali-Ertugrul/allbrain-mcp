@@ -47,4 +47,3 @@ class DecisionAnalyzer:
                 explanation=f"Historical success rate: {hist:.2f}",
             ),
         ]
-

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.predictive_failure.mitigation_planner import MitigationPlanner
-from allbrain.predictive_failure.model import (
+from allbrain.domains.analysis.predictive_failure.mitigation_planner import MitigationPlanner
+from allbrain.domains.analysis.predictive_failure.model import (
     LEVEL_FAILURE,
     LEVEL_SAFE,
     LEVEL_WARNING,

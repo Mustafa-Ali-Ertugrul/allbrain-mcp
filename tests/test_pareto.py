@@ -67,4 +67,3 @@ class TestSelector:
         s = Selector.select(r, f)
         assert s.winner is not None
         assert s.winner.safety >= 0.3
-

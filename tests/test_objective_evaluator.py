@@ -53,4 +53,3 @@ class TestObjectiveEvaluator:
         ev = ObjectiveEvaluator()
         assert ev.get_priority("safety").value == "critical"
         assert ev.get_priority("unknown").value == "optional"
-

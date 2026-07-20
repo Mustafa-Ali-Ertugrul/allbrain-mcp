@@ -43,4 +43,3 @@ def make_decision_payload(
     }
     validate_decision(p)
     return p
-

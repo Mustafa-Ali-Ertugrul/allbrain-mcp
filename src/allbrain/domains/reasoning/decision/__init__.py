@@ -38,4 +38,3 @@ __all__ = [
     "resolve_mode",
     "validate_decision",
 ]
-

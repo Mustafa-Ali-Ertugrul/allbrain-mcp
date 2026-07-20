@@ -62,4 +62,3 @@ class ObjectiveEvaluator:
 
     def get_priority(self, objective_name: str) -> ObjectivePriority:
         return OBJECTIVE_PRIORITY_DEFAULTS.get(objective_name, ObjectivePriority.OPTIONAL)
-

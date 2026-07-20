@@ -104,4 +104,3 @@ def test_validate_payload_accepts_valid():
 
 def test_template_version_constant():
     assert UNCERTAINTY_COMPUTED_TEMPLATE_VERSION == 1
-

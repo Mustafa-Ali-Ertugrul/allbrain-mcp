@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.graph import GraphQueryEngine, WorkflowGraphBuilder
+from allbrain.domains.analysis.graph import GraphQueryEngine, WorkflowGraphBuilder
 from allbrain.models.schemas import EventRead
 
 

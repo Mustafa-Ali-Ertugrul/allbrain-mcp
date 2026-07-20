@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from allbrain.domains.analysis.predictive_failure.manager import PredictiveFailureManager
+from allbrain.domains.analysis.predictive_failure.model import RiskSignal
 from allbrain.events.schemas import EventType
 from allbrain.mitigation_learning import (
     LearningEngine,
@@ -8,8 +10,6 @@ from allbrain.mitigation_learning import (
     StrategyOptimizer,
 )
 from allbrain.mitigation_learning.model import MIN_USES_FOR_DISABLE, POLICY_UPDATE_MIN_RECORDS
-from allbrain.predictive_failure.manager import PredictiveFailureManager
-from allbrain.predictive_failure.model import RiskSignal
 
 
 def _event_types(events):

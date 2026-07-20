@@ -30,4 +30,3 @@ class Selector:
             all_results=results,
             frontier=frontier,
         )
-

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from allbrain.domains.analysis.world import WorldState
+from allbrain.domains.analysis.world.simulation import SimulationBridge
 from allbrain.domains.reasoning.scenarios.generator import ScenarioTemplate
 from allbrain.domains.reasoning.scenarios.models import ScenarioResult
-from allbrain.world import WorldState
-from allbrain.world.simulation import SimulationBridge
 
 
 def apply_overlay(state: WorldState, template: ScenarioTemplate) -> WorldState:
@@ -30,4 +30,3 @@ class ScenarioEvaluator:
             prediction=simulation.prediction,
             confidence=template.confidence,
         )
-

@@ -10,8 +10,8 @@ from allbrain.models.schemas import EventRead
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 
 if TYPE_CHECKING:
+    from allbrain.domains.analysis.world import WorldModel
     from allbrain.domains.reasoning.counterfactual import CounterfactualEngine
-    from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -95,4 +95,3 @@ def execute(
     if recommendation_event is not None:
         emitted_events.append(recommendation_event)
     return summary, last_event_id, emitted_events
-

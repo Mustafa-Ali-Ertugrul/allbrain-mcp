@@ -20,4 +20,3 @@ class IntentGraph:
 
     def to_dict(self) -> dict:
         return {"nodes": self.nodes, "edges": dict(self.edges)}
-

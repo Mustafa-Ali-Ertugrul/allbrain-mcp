@@ -51,4 +51,3 @@ class TradeoffReducer:
 
     def all_snapshots(self) -> dict[str, dict[str, Any]]:
         return {"default": self.snapshot()}
-

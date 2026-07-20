@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from allbrain.domains.analysis.world import WorldModel
 from allbrain.domains.reasoning.scenarios import ScenarioAnalysis, ScenarioEngine
 from allbrain.events import EventType
 from allbrain.models.schemas import (
@@ -19,7 +20,6 @@ from allbrain.server.tools._shared import (
 )
 from allbrain.server.tools._snapshot import maybe_auto_snapshot
 from allbrain.server.tools.decorators import handle_tool_errors
-from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -211,4 +211,3 @@ def register_tools(mcp, context: BrainContext) -> None:
             limit=limit,
         )
         return result.model_dump(mode="json")
-

@@ -58,4 +58,3 @@ class TestDecisionRegression:
             r = DecisionEngine().decide(ctx)
             modes.add(r.mode)
         assert len(modes) >= 4
-

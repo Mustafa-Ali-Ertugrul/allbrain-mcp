@@ -5,6 +5,8 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
+from allbrain.domains.analysis.world import PredictionBridge, StateTransitionBridge, WorldState
+from allbrain.domains.analysis.world.simulation import SimulationBridge
 from allbrain.domains.reasoning.scenarios import (
     DEFAULT_TEMPLATES,
     SCENARIO_TEMPLATE_VERSION,
@@ -25,8 +27,6 @@ from allbrain.server.tools.scenarios import (
     evaluate_scenarios_impl,
     generate_scenarios_impl,
 )
-from allbrain.world import PredictionBridge, StateTransitionBridge, WorldState
-from allbrain.world.simulation import SimulationBridge
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 
@@ -245,4 +245,3 @@ def test_mcp_evaluate_scenarios_custom(tmp_path) -> None:
     assert event_types.count(EventType.SCENARIO_EVALUATED.value) == 2
     assert result.data["best_case"]["scenario"] == "aggressive"
     assert result.data["worst_case"]["scenario"] == "conservative"
-

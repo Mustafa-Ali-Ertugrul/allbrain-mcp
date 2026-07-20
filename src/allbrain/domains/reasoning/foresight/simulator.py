@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from allbrain.world.models import Prediction, WorldState
-from allbrain.world.simulation import SimulationBridge
+from allbrain.domains.analysis.world.models import Prediction, WorldState
+from allbrain.domains.analysis.world.simulation import SimulationBridge
 
 
 class MultiStepSimulator:

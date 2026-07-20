@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.attention import (
+from allbrain.domains.analysis.attention import (
     make_attention_payload,
     make_budget_payload,
     make_reallocation_payload,
@@ -70,7 +70,7 @@ class TestAttentionReplay:
         assert r1 == r2
 
     def test_mixed_with_attribution(self):
-        from allbrain.attribution import make_credit_payload
+        from allbrain.domains.analysis.attribution import make_credit_payload
 
         evts = [
             E(

@@ -20,4 +20,3 @@ __all__ = [
     "RankedAlternative",
     "recommendation_severity",
 ]
-

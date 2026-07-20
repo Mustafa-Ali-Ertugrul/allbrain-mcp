@@ -4,14 +4,7 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
-from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
-from allbrain.server.tools.world import (
-    observe_world_impl,
-    simulate_action_impl,
-)
-from allbrain.world import (
+from allbrain.domains.analysis.world import (
     EnvironmentTracker,
     Prediction,
     PredictionBridge,
@@ -22,6 +15,13 @@ from allbrain.world import (
     WorldModel,
     WorldState,
     WorldStateBuilder,
+)
+from allbrain.events import EventType
+from allbrain.replay import EventReplayEngine
+from allbrain.runtime_core import SystemDecisionPipeline
+from allbrain.server.tools.world import (
+    observe_world_impl,
+    simulate_action_impl,
 )
 from tests.test_sprint12_memory_policy_ui import events, make_context
 

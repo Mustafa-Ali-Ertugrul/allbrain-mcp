@@ -225,4 +225,3 @@ class ReflectionStep:
             "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
         }
         return summary, selected.id, events
-

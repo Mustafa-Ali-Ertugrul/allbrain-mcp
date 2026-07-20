@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+from allbrain.domains.analysis.world import WorldState
 from allbrain.domains.reasoning.foresight import ForesightEngine
 from allbrain.domains.reasoning.uncertainty import (
     UNCERTAINTY_TEMPLATE_VERSION,
@@ -26,7 +27,6 @@ from allbrain.server.tools.knowledge import (
     estimate_uncertainty_impl,
 )
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
-from allbrain.world import WorldState
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 
@@ -344,4 +344,3 @@ def test_mcp_estimate_uncertainty_and_detect_knowledge_gaps(tmp_path) -> None:
     topics = [gap["topic"] for gap in g_result.data["gaps"]]
     assert "missing_history" in topics
     assert "insufficient_samples" in topics
-

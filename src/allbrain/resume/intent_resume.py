@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.contradiction import ContradictionDetector
+from allbrain.domains.analysis.contradiction import ContradictionDetector
 from allbrain.domains.reasoning.intent import IntentExtractor, IntentStore
 from allbrain.models.schemas import EventRead
 from allbrain.resume.multi_agent import MultiAgentResumeEngine
@@ -75,4 +75,3 @@ class IntentResumeEngine:
             "required_action": "idle",
             "confidence": 1.0,
         }
-

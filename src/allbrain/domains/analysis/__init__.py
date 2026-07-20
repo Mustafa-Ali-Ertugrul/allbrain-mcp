@@ -1,13 +1,43 @@
-"""Analysis bounded context — situation understanding and anomaly detection.
+"""Analysis bounded context — situation understanding and anomaly detection."""
 
-Future home (v0.4.0) of:
-  causal, belief, evidence, contradiction, drift,
-  dynamics, attention, attribution, compression,
-  episodic, failure_memory, predictive_failure,
-  semantic, world, context, graph, fusion
+from __future__ import annotations
 
-Currently these modules live at ``allbrain.<name>``.
-See docs/architecture.md for the full mapping.
-"""
+from allbrain.domains.analysis import (
+    attention,
+    attribution,
+    belief,
+    causal,
+    compression,
+    context,
+    contradiction,
+    drift,
+    dynamics,
+    episodic,
+    evidence,
+    failure_memory,
+    fusion,
+    graph,
+    predictive_failure,
+    semantic,
+    world,
+)
 
-__all__: list[str] = []  # Phase 2 re-exports land here in v0.4.0
+__all__ = [
+    "attention",
+    "attribution",
+    "belief",
+    "causal",
+    "compression",
+    "context",
+    "contradiction",
+    "drift",
+    "dynamics",
+    "episodic",
+    "evidence",
+    "failure_memory",
+    "fusion",
+    "graph",
+    "predictive_failure",
+    "semantic",
+    "world",
+]

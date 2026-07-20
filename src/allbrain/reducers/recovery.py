@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from allbrain.adaptive_recovery.reducer import AdaptiveRecoveryReducer
-from allbrain.failure_memory.reducer import FailureMemoryReducer
+from allbrain.domains.analysis.failure_memory.reducer import FailureMemoryReducer
 from allbrain.mitigation_learning.reducer import MitigationLearningReducer
 from allbrain.recovery_consensus.reducer import RecoveryConsensusReducer
 from allbrain.resilience.reducer import ResilienceReducer

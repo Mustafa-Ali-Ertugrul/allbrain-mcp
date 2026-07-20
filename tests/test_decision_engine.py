@@ -85,4 +85,3 @@ class TestDecisionEngine:
         ctx = DecisionContext(agent_id="a", task_type="t", contract=_make_ctx().contract)
         r = DecisionEngine().decide(ctx, strict=False)
         assert 0.0 <= r.score <= 1.0
-

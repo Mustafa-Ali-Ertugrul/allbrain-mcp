@@ -115,4 +115,3 @@ def make_objective_rebalanced_payload(
     }
     validate_objective_rebalanced(p)
     return p
-

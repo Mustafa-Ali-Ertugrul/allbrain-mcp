@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from allbrain.episodic.manager import EpisodicManager
-from allbrain.episodic.model import MAX_EPISODES
+from allbrain.domains.analysis.episodic.manager import EpisodicManager
+from allbrain.domains.analysis.episodic.model import MAX_EPISODES
 
 
 class TestStoreEpisode:

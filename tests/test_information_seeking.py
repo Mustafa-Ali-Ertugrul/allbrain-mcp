@@ -323,4 +323,3 @@ def test_projection_build(tmp_path) -> None:
     assert projection["count"] >= 1
     assert projection["selection_count"] == 1
     assert len(projection["analysis_ids"]) == 1
-

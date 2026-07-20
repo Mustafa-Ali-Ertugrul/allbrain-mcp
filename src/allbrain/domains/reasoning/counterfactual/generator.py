@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from allbrain.world.models import WorldState
-from allbrain.world.simulation import SimulationBridge
+from allbrain.domains.analysis.world.models import WorldState
+from allbrain.domains.analysis.world.simulation import SimulationBridge
 
 ACTION_MAP: dict[str, list[str]] = {
     "deploy": ["run_tests", "delay_deploy", "rollback"],

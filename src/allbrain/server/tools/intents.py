@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from allbrain.contradiction.detector import ContradictionDetector
+from allbrain.domains.analysis.contradiction.detector import ContradictionDetector
 from allbrain.domains.reasoning.intent.extractor import IntentExtractor
 from allbrain.models.schemas import (
     IntentInput,
@@ -96,4 +96,3 @@ def register_tools(mcp, context: BrainContext) -> None:
         """
         result = detect_contradictions_impl(context, limit=limit)
         return result.model_dump(mode="json")
-

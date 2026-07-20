@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from allbrain.contradiction import ContradictionDetector
+from allbrain.domains.analysis.contradiction import ContradictionDetector
 from allbrain.domains.reasoning.intent import IntentExtractor, IntentStore
 from allbrain.resume import IncrementalResumeEngine, IntentResumeEngine, MultiAgentResumeEngine
 from allbrain.server.tools.events import save_event_impl
@@ -319,4 +319,3 @@ def test_snapshot_delta_intent_replay_equals_full_replay_for_graph_contradiction
     assert restored["intent_graph"] == full["intent_graph"]
     assert restored["contradiction_view"] == full["contradiction_view"]
     assert restored["decision_view"] == full["decision_view"]
-

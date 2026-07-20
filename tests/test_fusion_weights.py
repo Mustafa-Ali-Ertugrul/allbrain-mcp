@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.fusion import (
+from allbrain.domains.analysis.fusion import (
     FUSION_DEFAULT_WEIGHT,
     FUSION_HYSTERESIS,
     FUSION_MIN_WEIGHT,

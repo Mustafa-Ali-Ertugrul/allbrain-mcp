@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.semantic.events import (
+from allbrain.domains.analysis.semantic.events import (
     make_concept_created_payload,
     make_concept_forgotten_payload,
     make_concept_updated_payload,

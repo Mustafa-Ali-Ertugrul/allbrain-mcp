@@ -232,18 +232,18 @@ def test_iter_events_through_cursor_is_lazy(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Step 5: open_write_session uses time.sleep for backoff
+# Step 5: open_write_session uses _SQLITE_WRITE_LOCK for serialization
 # ---------------------------------------------------------------------------
 
 
-def test_open_write_session_uses_time_sleep() -> None:
-    """Verify open_write_session uses time.sleep for backoff (honest, not misleading Event)."""
+def test_open_write_session_uses_sqlite_write_lock() -> None:
+    """Verify open_write_session acquires _SQLITE_WRITE_LOCK for in-process serialization."""
     import inspect
 
     import allbrain.storage.database as db_mod
 
     source = inspect.getsource(db_mod.open_write_session)
-    assert "time.sleep(delay)" in source
+    assert "_SQLITE_WRITE_LOCK" in source
 
 
 # ---------------------------------------------------------------------------

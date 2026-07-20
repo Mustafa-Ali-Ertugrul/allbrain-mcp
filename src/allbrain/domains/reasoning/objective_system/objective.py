@@ -67,4 +67,3 @@ class Objective:
             success=result.success,
             efficiency=result.efficiency,
         )
-

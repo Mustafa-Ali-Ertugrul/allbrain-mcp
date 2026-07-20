@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-20
+
+### Changed
+- Migrated 17 analysis-domain packages to `allbrain.domains.analysis`:
+  `attention`, `attribution`, `belief`, `causal`, `compression`, `context`,
+  `contradiction`, `drift`, `dynamics`, `episodic`, `evidence`, `failure_memory`,
+  `fusion`, `graph`, `predictive_failure`, `semantic`, `world`.
+- Legacy analysis package imports remain available via `allbrain._compat.shim_package` shims.
+- Submodule imports like `allbrain.world.manager` continue to resolve seamlessly via shims.
+
+### Deprecated
+- Legacy top-level analysis imports (e.g., `allbrain.world`, `allbrain.causal`) emit `DeprecationWarning`.
+- Legacy analysis paths will be removed in `v0.5.0`.
+- Use canonical imports from `allbrain.domains.analysis` instead.
+
+### Fixed
+- Fixed pre-existing ruff issues (UP037 and E501) in `src/allbrain/world/manager.py`.
+
 ## [0.4.0] - 2026-07-20
 
 ### Changed

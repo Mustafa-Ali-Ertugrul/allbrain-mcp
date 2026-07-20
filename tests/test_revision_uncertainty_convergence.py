@@ -173,4 +173,3 @@ def test_uncertainty_in_payload_changes_confidence():
 
     # High uncertainty -> lower confidence (more penalty)
     assert s_high.confidence < s_low.confidence
-

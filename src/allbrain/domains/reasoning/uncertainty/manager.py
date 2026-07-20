@@ -118,4 +118,3 @@ class UncertaintyManager:
             observed_rate=observed,
             sample_count=sample_count,
         )
-

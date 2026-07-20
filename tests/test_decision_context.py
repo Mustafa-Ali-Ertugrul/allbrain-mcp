@@ -37,4 +37,3 @@ class TestDecisionContext:
         ctx = DecisionContext(agent_id="x", task_type="y", contract=make_contract(fusion=True))
         assert ctx.contract.has_signal("fusion")
         assert not ctx.contract.has_signal("causal")
-

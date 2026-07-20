@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from allbrain.contradiction import (
+from allbrain.domains.analysis.contradiction import (
     CONTRADICTION_TEMPLATE_VERSION,
     INCOMPATIBLE_LIFECYCLE,
     SEVERITY_GOAL_DIVERGENCE,
@@ -14,7 +14,7 @@ from allbrain.contradiction import (
     ContradictionReducer,
     dedup_contradictions,
 )
-from allbrain.contradiction.estimator import (
+from allbrain.domains.analysis.contradiction.estimator import (
     _contradiction_key_of,
     _stable_contradiction_id,
 )
@@ -395,9 +395,10 @@ def test_contradiction_quality_gate_no_uuid7_or_now_in_determinism_path():
     (and the detector itself) is exempt because it runs at runtime, not
     replay."""
     determinism_critical = ["estimator.py", "reducer.py", "manager.py"]
-    base = Path("src/allbrain/contradiction")
+    base = Path("src/allbrain/domains/analysis/contradiction")
+    if not base.exists():
+        base = Path("src/allbrain/contradiction")
     for filename in determinism_critical:
         content = (base / filename).read_text(encoding="utf-8")
         assert "uuid7" not in content, f"{filename} uses uuid7 â€” must be deterministic hash"
         assert "datetime.now" not in content, f"{filename} uses datetime.now â€” must be deterministic"
-

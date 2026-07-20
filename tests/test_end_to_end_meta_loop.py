@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.domains.analysis.predictive_failure import PredictiveFailureManager
+from allbrain.domains.analysis.predictive_failure.model import RiskSignal
 from allbrain.events.schemas import EventType
 from allbrain.learning_safety import EntropyCalculator, Explorer
 from allbrain.meta_optimizer import WeightOptimizer
@@ -14,8 +16,6 @@ from allbrain.mitigation_learning import (
 )
 from allbrain.policy_competition import CompetitionEngine
 from allbrain.policy_routing import MetaPolicyRouter
-from allbrain.predictive_failure import PredictiveFailureManager
-from allbrain.predictive_failure.model import RiskSignal
 from allbrain.self_play import MatchEngine, WinMatrix
 
 

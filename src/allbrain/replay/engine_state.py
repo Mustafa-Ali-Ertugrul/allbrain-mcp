@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.collaboration import CollaborationStateBuilder
+from allbrain.domains.analysis.world import WorldStateBuilder
 from allbrain.domains.reasoning.counterfactual import CounterfactualProjection
 from allbrain.domains.reasoning.foresight import ForesightProjection
 from allbrain.domains.reasoning.information_seeking import InformationSeekingProjection
@@ -31,7 +32,6 @@ from allbrain.replay.event_classifiers import (
     _is_world_event,
 )
 from allbrain.runtime_core import RuntimeCoreStateBuilder
-from allbrain.world import WorldStateBuilder
 
 
 def ordered(events: list[EventRead], *, deterministic: bool) -> list[EventRead]:
@@ -175,4 +175,3 @@ def apply(
     _apply_event_buffer_dispatch(state, event, event_buffers)
     _apply_unknown_event(state, event)
     _apply_selection_decision(state, event)
-

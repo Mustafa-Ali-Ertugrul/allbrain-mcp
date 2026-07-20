@@ -57,4 +57,3 @@ class UtilityFunction:
             efficiency=result.efficiency,
             safety_pass=True,
         )
-

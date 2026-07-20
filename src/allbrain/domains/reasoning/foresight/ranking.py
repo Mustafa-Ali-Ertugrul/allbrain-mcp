@@ -35,4 +35,3 @@ class PlanRanker:
             "strategy_uncertainty": round(1.0 - sum(c * p for c, p in zip(confidences, successes, strict=False)), 6),
             "horizon_risk": expected_plan.cumulative_risk,
         }
-

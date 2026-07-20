@@ -51,4 +51,3 @@ class ObjectiveStore:
             efficiency=round(e, 4),
             version=weights.version,
         )
-

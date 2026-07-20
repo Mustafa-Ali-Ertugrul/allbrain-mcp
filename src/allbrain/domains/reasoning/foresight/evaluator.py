@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from allbrain.domains.analysis.world.models import WorldState
 from allbrain.domains.reasoning.foresight.models import FuturePlan
 from allbrain.domains.reasoning.foresight.simulator import MultiStepSimulator
-from allbrain.world.models import WorldState
 
 
 class PlanEvaluator:
@@ -38,4 +38,3 @@ class PlanEvaluator:
             confidence=confidence,
             step_states=step_states,
         )
-

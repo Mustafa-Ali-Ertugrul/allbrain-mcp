@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from allbrain.dynamics import predict
-from allbrain.dynamics.model import FORECAST_CAP_PER_STEP
+from allbrain.domains.analysis.dynamics import predict
+from allbrain.domains.analysis.dynamics.model import FORECAST_CAP_PER_STEP
 
 
 class TestForecast:

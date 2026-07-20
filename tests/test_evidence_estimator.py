@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.evidence import (
+from allbrain.domains.analysis.evidence import (
     decay,
     evidence_weight,
     trust_score,
 )
-from allbrain.evidence.estimator import _stable_evidence_id
+from allbrain.domains.analysis.evidence.estimator import _stable_evidence_id
 
 
 def test_evidence_weight_basic_formula():

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from uuid6 import uuid7
 
+from allbrain.domains.analysis.world import PredictionBridge, SimulationBridge, StateTransitionBridge, WorldState
 from allbrain.domains.reasoning.scenarios.evaluator import ScenarioEvaluator
 from allbrain.domains.reasoning.scenarios.generator import ScenarioGenerator
 from allbrain.domains.reasoning.scenarios.models import SCENARIO_TEMPLATE_VERSION, ScenarioAnalysis, ScenarioResult
 from allbrain.domains.reasoning.scenarios.ranking import ScenarioRanker
-from allbrain.world import PredictionBridge, SimulationBridge, StateTransitionBridge, WorldState
 
 
 def _default_simulator() -> SimulationBridge:
@@ -69,4 +69,3 @@ class ScenarioEngine:
             template_version=templates[0].template_version if templates else SCENARIO_TEMPLATE_VERSION,
             results=list(results),
         )
-

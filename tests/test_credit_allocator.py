@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.attribution import (
+from allbrain.domains.analysis.attribution import (
     ATTRIBUTION_MIN_CONTRIBUTION,
     ATTRIBUTION_PROPORTIONAL_WEIGHT,
     allocate_credit,

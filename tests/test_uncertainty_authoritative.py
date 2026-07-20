@@ -173,4 +173,3 @@ def test_validate_payload_uncertainty_accepts_valid():
         evidence_count=10,
     )
     validate_uncertainty_payload(payload)
-

@@ -1,20 +1,20 @@
 {
   "mode": "mcp_protocol_stress",
-  "agents_started": 10,
-  "agents_configured": 10,
-  "events_per_agent": 200,
-  "total_events_attempted": 2000,
-  "total_ok": 2000,
+  "agents_started": 5,
+  "agents_configured": 5,
+  "events_per_agent": 50,
+  "total_events_attempted": 250,
+  "total_ok": 250,
   "total_rate_limited": 0,
   "total_db_locked": 0,
   "total_other_errors": 0,
-  "duration_seconds": 225.243,
+  "duration_seconds": 79.554,
   "deterministic_fields_match": true,
   "latency_global": {
-    "p50": 1.0652,
-    "p95": 1.4972,
-    "p99": 2.1752,
-    "mean": 1.1107
+    "p50": 1.5127,
+    "p95": 1.8952,
+    "p99": 3.056,
+    "mean": 1.5592
   },
   "service_level": {
     "p95_budget_seconds": 0.25,
@@ -24,152 +24,77 @@
   "per_agent": [
     {
       "agent": "agent-00",
-      "ok": 200,
+      "ok": 50,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.0624,
-        "p95": 1.4809,
-        "p99": 2.0765,
-        "mean": 1.1032,
-        "min": 0.6014,
-        "max": 2.2016
+        "p50": 1.5089,
+        "p95": 1.8631,
+        "p99": 2.9628,
+        "mean": 1.5593,
+        "min": 1.3634,
+        "max": 2.9628
       }
     },
     {
       "agent": "agent-01",
-      "ok": 200,
+      "ok": 50,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.0563,
-        "p95": 1.4713,
-        "p99": 2.0594,
-        "mean": 1.1027,
-        "min": 0.568,
-        "max": 2.1752
+        "p50": 1.514,
+        "p95": 1.8952,
+        "p99": 3.0681,
+        "mean": 1.5593,
+        "min": 1.3835,
+        "max": 3.0681
       }
     },
     {
       "agent": "agent-02",
-      "ok": 200,
+      "ok": 50,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.0427,
-        "p95": 1.6352,
-        "p99": 2.134,
-        "mean": 1.1052,
-        "min": 0.5951,
-        "max": 2.5289
+        "p50": 1.5144,
+        "p95": 1.7814,
+        "p99": 3.0964,
+        "mean": 1.559,
+        "min": 1.3739,
+        "max": 3.0964
       }
     },
     {
       "agent": "agent-03",
-      "ok": 200,
+      "ok": 50,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.0693,
-        "p95": 1.4715,
-        "p99": 2.1619,
-        "mean": 1.1129,
-        "min": 0.5908,
-        "max": 2.4289
+        "p50": 1.5103,
+        "p95": 2.0056,
+        "p99": 2.9975,
+        "mean": 1.5591,
+        "min": 1.333,
+        "max": 2.9975
       }
     },
     {
       "agent": "agent-04",
-      "ok": 200,
+      "ok": 50,
       "rate_limited": 0,
       "db_locked": 0,
       "error_count": 0,
       "latency": {
-        "p50": 1.064,
-        "p95": 1.4584,
-        "p99": 2.874,
-        "mean": 1.1073,
-        "min": 0.6157,
-        "max": 2.9728
-      }
-    },
-    {
-      "agent": "agent-05",
-      "ok": 200,
-      "rate_limited": 0,
-      "db_locked": 0,
-      "error_count": 0,
-      "latency": {
-        "p50": 1.0689,
-        "p95": 1.4504,
-        "p99": 2.5617,
-        "mean": 1.1127,
-        "min": 0.6077,
-        "max": 2.6764
-      }
-    },
-    {
-      "agent": "agent-06",
-      "ok": 200,
-      "rate_limited": 0,
-      "db_locked": 0,
-      "error_count": 0,
-      "latency": {
-        "p50": 1.0673,
-        "p95": 1.5361,
-        "p99": 2.242,
-        "mean": 1.1126,
-        "min": 0.5482,
-        "max": 2.2608
-      }
-    },
-    {
-      "agent": "agent-07",
-      "ok": 200,
-      "rate_limited": 0,
-      "db_locked": 0,
-      "error_count": 0,
-      "latency": {
-        "p50": 1.0741,
-        "p95": 1.4857,
-        "p99": 2.1985,
-        "mean": 1.1161,
-        "min": 0.5889,
-        "max": 2.222
-      }
-    },
-    {
-      "agent": "agent-08",
-      "ok": 200,
-      "rate_limited": 0,
-      "db_locked": 0,
-      "error_count": 0,
-      "latency": {
-        "p50": 1.0737,
-        "p95": 1.534,
-        "p99": 2.1968,
-        "mean": 1.1217,
-        "min": 0.4888,
-        "max": 2.2294
-      }
-    },
-    {
-      "agent": "agent-09",
-      "ok": 200,
-      "rate_limited": 0,
-      "db_locked": 0,
-      "error_count": 0,
-      "latency": {
-        "p50": 1.069,
-        "p95": 1.5445,
-        "p99": 2.3263,
-        "mean": 1.1129,
-        "min": 0.6069,
-        "max": 2.4204
+        "p50": 1.5136,
+        "p95": 2.0061,
+        "p99": 3.056,
+        "mean": 1.5593,
+        "min": 1.3793,
+        "max": 3.056
       }
     }
   ]

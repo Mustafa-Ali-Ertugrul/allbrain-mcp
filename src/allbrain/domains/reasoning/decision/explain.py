@@ -26,4 +26,3 @@ def build_debug_trace(result: DecisionResult, ctx: DecisionContext) -> dict:
             "fusion_active": ctx.fusion is not None,
         },
     }
-

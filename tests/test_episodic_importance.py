@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.episodic.importance import compute_importance, compute_novelty, jaccard_similarity
-from allbrain.episodic.model import Episode
+from allbrain.domains.analysis.episodic.importance import compute_importance, compute_novelty, jaccard_similarity
+from allbrain.domains.analysis.episodic.model import Episode
 
 
 class TestJaccardSimilarity:

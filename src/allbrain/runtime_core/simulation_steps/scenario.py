@@ -10,8 +10,8 @@ from allbrain.models.schemas import EventRead
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 
 if TYPE_CHECKING:
+    from allbrain.domains.analysis.world import WorldModel
     from allbrain.domains.reasoning.scenarios import ScenarioEngine
-    from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -106,4 +106,3 @@ def execute(
     last_event_id = recommendation_event.id
     emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events, recommendation_event]
     return summary, last_event_id, emitted_events
-

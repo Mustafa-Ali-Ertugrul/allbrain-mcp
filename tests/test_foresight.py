@@ -4,6 +4,8 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
+from allbrain.domains.analysis.world import PredictionBridge, StateTransitionBridge, WorldState
+from allbrain.domains.analysis.world.simulation import SimulationBridge
 from allbrain.domains.reasoning.foresight import (
     DEPLOY_PLANS,
     FORESIGHT_TEMPLATE_VERSION,
@@ -24,8 +26,6 @@ from allbrain.server.tools.foresight import (
     generate_future_plans_impl,
 )
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
-from allbrain.world import PredictionBridge, StateTransitionBridge, WorldState
-from allbrain.world.simulation import SimulationBridge
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 
@@ -292,4 +292,3 @@ def test_mcp_evaluate_plan_custom(tmp_path) -> None:
     all_events = events(context)
     event_types = [event.type for event in all_events]
     assert event_types.count(EventType.FORESIGHT_EVALUATED.value) == 1
-

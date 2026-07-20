@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.episodic.consolidation import should_store_episode
+from allbrain.domains.analysis.episodic.consolidation import should_store_episode
 
 
 class TestShouldStoreEpisode:

@@ -7,7 +7,7 @@ from typing import Any
 
 from allbrain.conflict.detector import ConflictDetector
 from allbrain.conflict.resolver import ConflictResolver
-from allbrain.context.parallel_builder import ParallelContextBuilder
+from allbrain.domains.analysis.context.parallel_builder import ParallelContextBuilder
 from allbrain.models.schemas import (
     ConflictInput,
     ToolResult,

@@ -38,4 +38,3 @@ class ScenarioRanker:
             "uncertainty": uncertainty,
             "confidence_total": round(sum(confidences), 6),
         }
-

@@ -66,4 +66,3 @@ def _make_event(t, p):
     ev.type = t
     ev.payload = p
     return ev
-

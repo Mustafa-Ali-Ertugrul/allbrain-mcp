@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.attention import (
+from allbrain.domains.analysis.attention import (
     ATTENTION_BUDGET_DEFAULT,
     compute_unused_budget,
     derive_adaptive_budget,
