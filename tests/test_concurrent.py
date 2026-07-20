@@ -433,3 +433,178 @@ def test_concurrent_mixed_operations(tmp_path: Path) -> None:
     assert created == 50
     # list_events should never crash, even during concurrent writes
     assert all(c >= 0 for c in list_counts)
+
+
+def test_concurrent_save_event_stress(tmp_path: Path) -> None:
+    """Stress test: 20 threads × 50 events = 1000 total events concurrently.
+
+    Verifies SQLite WAL mode + busy_timeout=30000 handles high-contention
+    concurrent writes without deadlock, data loss, or IntegrityError.
+    """
+    context = _shared_context(tmp_path)
+    errors: list[str] = []
+
+    def _write_events(thread_id: int) -> int:
+        count = 0
+        for i in range(50):
+            result = save_event_impl(
+                context,
+                type="file_modified",
+                payload={"thread": thread_id, "seq": i},
+                source="stress_test",
+            )
+            if result.ok:
+                count += 1
+            else:
+                errors.append(f"thread={thread_id} seq={i} err={result.error}")
+        return count
+
+    with ThreadPoolExecutor(max_workers=20) as pool:
+        futures = [pool.submit(_write_events, tid) for tid in range(20)]
+        total = sum(f.result() for f in as_completed(futures))
+
+    assert not errors, f"errors during concurrent stress write: {errors[:5]}"
+    assert total == 1000, f"expected 1000 events saved, got {total}"
+
+    # save_event_impl also emits an audit tool_call event per invocation (2000 total)
+    saved_events = context.repository.list_events(
+        project_path=context.project_path,
+        type="file_modified",
+        limit=50000,
+    )
+    assert len(saved_events) == 1000, f"expected 1000 file_modified events, got {len(saved_events)}"
+
+
+def test_concurrent_multi_agent_same_db(tmp_path: Path) -> None:
+    """5 concurrent agents writing to the same database.
+
+    Verifies 5 distinct agent sessions can write concurrently to the same repository
+    without cross-agent event contamination or attribution mismatch.
+    """
+    from allbrain.server import BrainContext
+
+    engine = create_engine_for_path(tmp_path / "allbrain.db")
+    init_db(engine)
+    repo = BrainRepository(engine)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+
+    agent_contexts = {}
+    for i in range(5):
+        agent_name = f"agent-{i}"
+        session = repo.create_session(project_root, agent_name)
+        agent_contexts[i] = BrainContext(
+            repository=repo,
+            project_path=str(project_root.resolve()),
+            active_session=session,
+            agent_name=agent_name,
+        )
+
+    errors: list[str] = []
+
+    def _agent_worker(agent_idx: int) -> int:
+        ctx = agent_contexts[agent_idx]
+        count = 0
+        agent_name = f"agent-{agent_idx}"
+        for i in range(20):
+            result = save_event_impl(
+                ctx,
+                type="task_created",
+                payload={"agent": agent_name, "seq": i},
+                source=agent_name,
+                agent_id=agent_name,
+            )
+            if result.ok:
+                count += 1
+            else:
+                errors.append(f"agent={agent_name} seq={i} err={result.error}")
+        return count
+
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        futures = [pool.submit(_agent_worker, i) for i in range(5)]
+        total = sum(f.result() for f in as_completed(futures))
+
+    assert not errors, f"errors during multi-agent concurrent writes: {errors[:5]}"
+    assert total == 100, f"expected 100 total events, got {total}"
+
+    task_events = repo.list_events(
+        project_path=str(project_root.resolve()),
+        type="task_created",
+        limit=50000,
+    )
+    assert len(task_events) == 100, f"expected 100 task_created events, got {len(task_events)}"
+
+    for i in range(5):
+        agent_name = f"agent-{i}"
+        agent_events = repo.list_events(
+            project_path=str(project_root.resolve()),
+            agent_id=agent_name,
+            type="task_created",
+            limit=50000,
+        )
+        assert len(agent_events) == 20, f"expected 20 events for {agent_name}, got {len(agent_events)}"
+        for event in agent_events:
+            assert event.agent_id == agent_name
+            assert event.payload["agent"] == agent_name
+
+
+def test_concurrent_snapshot_during_write(tmp_path: Path) -> None:
+    """Snapshot creation concurrent with active event writes.
+
+    Verifies create_snapshot_impl executes cleanly mid-stream under concurrent write
+    load, producing consistent snapshots and leaving all 100 written events intact.
+    """
+    from allbrain.server.tools.snapshots import create_snapshot_impl
+
+    context = _shared_context(tmp_path)
+    errors: list[str] = []
+    snapshots: list[Any] = []
+
+    def _writer(tid: int) -> int:
+        count = 0
+        for i in range(10):
+            result = save_event_impl(
+                context,
+                type="task_created",
+                payload={"writer": tid, "seq": i},
+                source="snap_writer",
+            )
+            if result.ok:
+                count += 1
+            else:
+                errors.append(f"writer={tid} seq={i} err={result.error}")
+        return count
+
+    def _snapshot_runner() -> int:
+        snap_count = 0
+        for _ in range(5):
+            res = create_snapshot_impl(context, force=True, limit=5000)
+            if res.ok:
+                snap_count += 1
+                snapshots.append(res.data)
+            else:
+                errors.append(f"snapshot err={res.error}")
+        return snap_count
+
+    with ThreadPoolExecutor(max_workers=11) as pool:
+        writer_futures = [pool.submit(_writer, tid) for tid in range(10)]
+        snap_future = pool.submit(_snapshot_runner)
+
+        total_written = sum(f.result() for f in as_completed(writer_futures))
+        total_snaps = snap_future.result()
+
+    assert not errors, f"errors during concurrent snapshot/write: {errors[:5]}"
+    assert total_written == 100, f"expected 100 written events, got {total_written}"
+    assert total_snaps > 0, "at least one snapshot must succeed"
+
+    written_events = context.repository.list_events(
+        project_path=context.project_path,
+        type="task_created",
+        limit=50000,
+    )
+    assert len(written_events) == 100, f"expected 100 task_created events, got {len(written_events)}"
+
+    for snap_data in snapshots:
+        assert snap_data is not None
+        assert "event_cursor" in snap_data or "id" in snap_data or "metadata" in snap_data
+
