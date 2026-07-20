@@ -121,8 +121,12 @@ jobs:
     needs: build-and-validate
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push') ||
-      (github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi')
+      always() &&
+      needs.build-and-validate.result == 'success' &&
+      (
+        github.event_name == 'push' ||
+        (github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi')
+      )
 
     environment:
       name: testpypi
@@ -184,9 +188,11 @@ jobs:
     needs: [build-and-validate, publish-testpypi]
     runs-on: ubuntu-latest
     if: |
+      always() &&
+      needs.build-and-validate.result == 'success' &&
       (needs.publish-testpypi.result == 'success' || needs.publish-testpypi.result == 'skipped') &&
       (
-        (github.event_name == 'push') ||
+        github.event_name == 'push' ||
         (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
       )
 
