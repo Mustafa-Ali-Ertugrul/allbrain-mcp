@@ -15,8 +15,8 @@ warnings.warn(
     stacklevel=2,
 )
 
-from allbrain.learning_graph.graph import LearningGraph
-from allbrain.learning_graph.model import (
+from allbrain.learning_graph.graph import LearningGraph  # noqa: E402
+from allbrain.learning_graph.model import (  # noqa: E402
     LEARNING_GRAPH_MIN_DELTA,
     LEARNING_GRAPH_PARAM_BOUND,
     LEARNING_GRAPH_REWRITE_INTERVAL,
@@ -24,8 +24,8 @@ from allbrain.learning_graph.model import (
     LearningNode,
     RewriteRecord,
 )
-from allbrain.learning_graph.node import NodeRegistry
-from allbrain.learning_graph.rewriter import GraphRewriter
+from allbrain.learning_graph.node import NodeRegistry  # noqa: E402
+from allbrain.learning_graph.rewriter import GraphRewriter  # noqa: E402
 
 __all__ = [
     "LEARNING_GRAPH_TEMPLATE_VERSION",

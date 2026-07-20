@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.decision import DecisionContext, DecisionEngine, make_contract
+from allbrain.domains.reasoning.decision import DecisionContext, DecisionEngine, make_contract
 
 
 class TestDecisionContext:
@@ -37,3 +37,4 @@ class TestDecisionContext:
         ctx = DecisionContext(agent_id="x", task_type="y", contract=make_contract(fusion=True))
         assert ctx.contract.has_signal("fusion")
         assert not ctx.contract.has_signal("causal")
+

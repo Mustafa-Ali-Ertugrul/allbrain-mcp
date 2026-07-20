@@ -5,13 +5,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from allbrain.domains.reasoning.scenarios import ScenarioAnalysis, ScenarioEngine
 from allbrain.events import EventType
 from allbrain.models.schemas import (
     EvaluateScenariosInput,
     GenerateScenariosInput,
     ToolResult,
 )
-from allbrain.scenarios import ScenarioAnalysis, ScenarioEngine
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import (
     audit_tool_call,
@@ -148,7 +148,7 @@ def register_tools(mcp, context: BrainContext) -> None:
 
         Each scenario describes a plausible future outcome with probability estimates,
         impact assessment, and key assumptions. Scenarios are richer than counterfactuals
-        — they include external context and branching assumptions (best-case, expected,
+        â€” they include external context and branching assumptions (best-case, expected,
         worst-case).
 
         Use this for exploring the range of possible futures before committing to a
@@ -211,3 +211,4 @@ def register_tools(mcp, context: BrainContext) -> None:
             limit=limit,
         )
         return result.model_dump(mode="json")
+

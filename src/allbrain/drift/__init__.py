@@ -15,14 +15,14 @@ warnings.warn(
     stacklevel=2,
 )
 
-from allbrain.drift.detector import (
+from allbrain.drift.detector import (  # noqa: E402
     DRIFT_TEMPLATE_VERSION,
     DRIFT_THRESHOLD,
     REASONS,
     DriftSample,
     detect_drift,
 )
-from allbrain.drift.events import make_payload, validate_payload
+from allbrain.drift.events import make_payload, validate_payload  # noqa: E402
 
 __all__ = [
     "DRIFT_TEMPLATE_VERSION",

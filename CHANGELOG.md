@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-20
+
+### Changed
+- **BREAKING (0.x semver):** Migrated all 10 reasoning modules to `allbrain.domains.reasoning.*`:
+  `counterfactual`, `scenarios`, `foresight`, `meta_reasoning`, `uncertainty`, `decision`, `information_seeking`, `intent`, `objective_system`, `tradeoff_engine`.
+- **Backward-Compatible Shims:** Top-level `allbrain.<mod>` files re-export public APIs with `DeprecationWarning` (slated for removal in v0.5.0).
+- **Internal Imports Migrated:** `server/tools/`, `snapshot/`, `contradiction/`, `predictive_failure/`, `replay/`, `runtime_core/`, `reducers/`, and `tests/` now import directly from `allbrain.domains.reasoning.*`.
+- **Reasoning Context Facade:** `allbrain.domains.reasoning.__init__.py` re-exports all 10 modules and declares them in `__all__`.
+
+### Added
+- `tests/test_domains_migration.py`: 4 regression tests verifying new-path imports, shim deprecation warnings, context facade re-exports, and Golden Rule isolation.
+- `docs/architecture.md`: updated with migration status table and canonical v0.4.0 paths.
+
 ## [0.3.0] - 2026-07-19
 
 ### Added

@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.domains.reasoning.foresight.models import ForesightAnalysis, FuturePlan
+from allbrain.domains.reasoning.information_seeking import INFORMATION_SEEKING_TEMPLATE_VERSION
+from allbrain.domains.reasoning.meta_reasoning import META_REASONING_TEMPLATE_VERSION
+from allbrain.domains.reasoning.uncertainty import UNCERTAINTY_TEMPLATE_VERSION
+from allbrain.domains.reasoning.uncertainty.models import KnowledgeGap
 from allbrain.events import EventType
-from allbrain.foresight.models import ForesightAnalysis, FuturePlan
-from allbrain.information_seeking import INFORMATION_SEEKING_TEMPLATE_VERSION
-from allbrain.meta_reasoning import META_REASONING_TEMPLATE_VERSION
 from allbrain.models.schemas import EventRead
 from allbrain.runtime_core.observability import ObservabilityCollector
 from allbrain.runtime_core.pipeline_models import PipelineRunState
 from allbrain.runtime_core.pipeline_services import PipelineServices
-from allbrain.uncertainty import UNCERTAINTY_TEMPLATE_VERSION
-from allbrain.uncertainty.models import KnowledgeGap
 
 
 class ReflectionStep:
@@ -225,3 +225,4 @@ class ReflectionStep:
             "template_version": INFORMATION_SEEKING_TEMPLATE_VERSION,
         }
         return summary, selected.id, events
+

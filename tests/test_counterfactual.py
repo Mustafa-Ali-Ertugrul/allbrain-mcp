@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
-from allbrain.counterfactual import (
+from allbrain.domains.reasoning.counterfactual import (
     ACTION_MAP,
     AlternativeGenerator,
     AlternativeRanker,
@@ -60,14 +60,14 @@ def test_pruning_fallback_without_simulator() -> None:
     result = generator.generate_with_pruning(
         "deploy", state, risk_threshold=0.3, confidence_threshold=0.5, cost_threshold=0.4
     )
-    assert result == ACTION_MAP["deploy"]  # no simulator → raw fallback
+    assert result == ACTION_MAP["deploy"]  # no simulator â†’ raw fallback
 
 
 def test_pruning_fallback_without_state() -> None:
     sim = SimulationBridge(StateTransitionBridge(), PredictionBridge())
     generator = AlternativeGenerator(simulator=sim)
     result = generator.generate_with_pruning("deploy", risk_threshold=0.3, confidence_threshold=0.5, cost_threshold=0.4)
-    assert result == ACTION_MAP["deploy"]  # no state → raw fallback
+    assert result == ACTION_MAP["deploy"]  # no state â†’ raw fallback
 
 
 def test_pruning_risk_threshold() -> None:
@@ -292,3 +292,4 @@ def test_mcp_rank_alternatives(tmp_path) -> None:
     assert len(result.data["ranked"]) == 3
     scores = [item["score"] for item in result.data["ranked"]]
     assert scores == sorted(scores, reverse=True)
+

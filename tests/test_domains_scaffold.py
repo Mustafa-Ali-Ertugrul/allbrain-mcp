@@ -35,15 +35,15 @@ def test_all_contexts_importable() -> None:
 
 
 def test_all_contexts_have_empty_all() -> None:
+    """Non-migrated contexts must have empty __all__; reasoning is migrated in v0.4.0."""
     import allbrain.domains.analysis as a
     import allbrain.domains.collaboration as c
     import allbrain.domains.governance as g
     import allbrain.domains.learning as l
     import allbrain.domains.memory as m
-    import allbrain.domains.reasoning as r
 
-    for ctx in (r, g, l, c, a, m):
-        assert ctx.__all__ == [], f"{ctx.__name__}.__all__ should be empty in Phase 1"
+    for ctx in (g, l, c, a, m):
+        assert ctx.__all__ == [], f"{ctx.__name__}.__all__ should be empty before migration"
 
 
 def test_architecture_mapping_matches_filesystem() -> None:

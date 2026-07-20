@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from allbrain.decision import DecisionContext, DecisionEngine, DecisionResult
+from allbrain.domains.reasoning.decision import DecisionContext, DecisionEngine, DecisionResult
 
 
 def _make_ctx(*, debug=False, fusion=False, causal=False, dynamics=False):
-    from allbrain.decision.resolver import make_contract
+    from allbrain.domains.reasoning.decision.resolver import make_contract
 
     contract = make_contract(debug=debug, fusion=fusion, causal=causal, dynamics=dynamics)
     return DecisionContext(
@@ -85,3 +85,4 @@ class TestDecisionEngine:
         ctx = DecisionContext(agent_id="a", task_type="t", contract=_make_ctx().contract)
         r = DecisionEngine().decide(ctx, strict=False)
         assert 0.0 <= r.score <= 1.0
+

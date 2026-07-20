@@ -36,7 +36,7 @@ def execute(
     Returns:
         Tuple of (foresight payload, last event ID, emitted events)
     """
-    from allbrain.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
+    from allbrain.domains.reasoning.foresight import FORESIGHT_TEMPLATE_VERSION, ForesightEngine
 
     current_state = world.observe()
     observed_event = bus.publish(
@@ -103,3 +103,4 @@ def execute(
     last_event_id = recommendation_event.id
     emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events, recommendation_event]
     return summary, last_event_id, emitted_events
+

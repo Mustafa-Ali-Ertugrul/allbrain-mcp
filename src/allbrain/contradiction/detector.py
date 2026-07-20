@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from allbrain.domains.reasoning.intent.models import Intent
 from allbrain.events import EventType
-from allbrain.intent.models import Intent
 
 SEVERITY_GOAL_DIVERGENCE = 50
 SEVERITY_LIFECYCLE_INCOMPATIBLE_SAME_GOAL = 85
@@ -97,3 +97,4 @@ class ContradictionDetector:
         a_risky = any(term in a for term in risky_terms)
         b_risky = any(term in b for term in risky_terms)
         return (a_support and b_risky) or (b_support and a_risky)
+

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.uncertainty import (
+from allbrain.domains.reasoning.uncertainty import (
     UNCERTAINTY_COMPUTED_TEMPLATE_VERSION,
     composite_uncertainty,
     make_payload,
@@ -104,3 +104,4 @@ def test_validate_payload_accepts_valid():
 
 def test_template_version_constant():
     assert UNCERTAINTY_COMPUTED_TEMPLATE_VERSION == 1
+

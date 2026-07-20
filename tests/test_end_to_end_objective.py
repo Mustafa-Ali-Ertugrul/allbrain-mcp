@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.domains.reasoning.objective_system import ObjectiveEvaluator, ObjectiveStore
+from allbrain.domains.reasoning.tradeoff_engine import Selector, UtilityFunction
 from allbrain.events.schemas import EventType
 from allbrain.learning_safety import EntropyCalculator, Explorer
 from allbrain.meta_scoring import MetaScorer, ProfileStore
@@ -11,13 +13,11 @@ from allbrain.mitigation_learning import (
     PolicyStore,
     StrategyOptimizer,
 )
-from allbrain.objective_system import ObjectiveEvaluator, ObjectiveStore
 from allbrain.policy_competition import CompetitionEngine
 from allbrain.policy_routing import MetaPolicyRouter
 from allbrain.predictive_failure import PredictiveFailureManager
 from allbrain.predictive_failure.model import RiskSignal
 from allbrain.self_repair import PolicySnapshotManager, ValidationGate
-from allbrain.tradeoff_engine import Selector, UtilityFunction
 from allbrain.value_alignment import AlignmentScoreTracker, ConstraintEngine
 
 
@@ -123,7 +123,8 @@ class TestEndToEndObjective:
             assert hasattr(EventType, name), f"{name} missing"
 
     def test_hierarchical_priorities(self):
-        from allbrain.objective_system import OBJECTIVE_PRIORITY_DEFAULTS, ObjectivePriority
+        from allbrain.domains.reasoning.objective_system import OBJECTIVE_PRIORITY_DEFAULTS, ObjectivePriority
 
         assert OBJECTIVE_PRIORITY_DEFAULTS["safety"] == ObjectivePriority.CRITICAL
         assert OBJECTIVE_PRIORITY_DEFAULTS["efficiency"] == ObjectivePriority.OPTIONAL
+

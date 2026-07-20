@@ -71,7 +71,7 @@ class TestMetaReplay:
         assert r1 == r2
 
     def test_mixed_with_decision_events(self):
-        from allbrain.decision import make_decision_payload
+        from allbrain.domains.reasoning.decision import make_decision_payload
 
         evts = [
             E(
@@ -104,3 +104,4 @@ class TestMetaReplay:
         mgr = MetaPolicyManager()
         r = mgr.update([], agent_id="a", mode="fusion", decision_id="d1", task_type="t")
         assert r is None
+

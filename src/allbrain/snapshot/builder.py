@@ -8,7 +8,7 @@ from allbrain.conflict import ConflictDetector, ConflictResolver
 from allbrain.context import ParallelContextBuilder
 from allbrain.contradiction import ContradictionDetector
 from allbrain.core import StateEngine
-from allbrain.intent import IntentExtractor, IntentStore
+from allbrain.domains.reasoning.intent import IntentExtractor, IntentStore
 from allbrain.merge import EventMergeEngine
 from allbrain.models.schemas import EventRead
 from allbrain.orchestrator import TaskGraphBuilder, TaskStateReducer
@@ -165,3 +165,4 @@ def _latest_git_fingerprint(events: list[EventRead]) -> dict[str, Any]:
         if isinstance(git, dict) and git:
             return dict(git)
     return {}
+

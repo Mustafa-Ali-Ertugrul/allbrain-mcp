@@ -5,9 +5,8 @@ from uuid import uuid4
 
 import pytest
 
-from allbrain.events import EventType
-from allbrain.foresight import ForesightAnalysis, ForesightEngine
-from allbrain.meta_reasoning import (
+from allbrain.domains.reasoning.foresight import ForesightAnalysis, ForesightEngine
+from allbrain.domains.reasoning.meta_reasoning import (
     HISTORICAL_SUCCESS_FALLBACK,
     META_REASONING_TEMPLATE_VERSION,
     ConfidenceEngine,
@@ -19,6 +18,7 @@ from allbrain.meta_reasoning import (
     RejectedAlternative,
     RejectionAnalyzer,
 )
+from allbrain.events import EventType
 from allbrain.replay import EventReplayEngine
 from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.foresight import (
@@ -67,7 +67,7 @@ def test_low_confidence_when_foresight_score_low() -> None:
 
 
 def test_no_evidence_uncertainty_high() -> None:
-    from allbrain.foresight.models import FORESIGHT_TEMPLATE_VERSION, FuturePlan
+    from allbrain.domains.reasoning.foresight.models import FORESIGHT_TEMPLATE_VERSION, FuturePlan
 
     empty_plan = FuturePlan(actions=["dummy"])
     analysis = ForesightAnalysis(
@@ -110,7 +110,7 @@ def test_rejection_higher_risk() -> None:
 
 
 def test_rejection_insufficient_evidence() -> None:
-    from allbrain.foresight.models import FuturePlan
+    from allbrain.domains.reasoning.foresight.models import FuturePlan
 
     long_plan = FuturePlan(actions=["a", "b", "c", "d", "e", "f", "g"], horizon=7)
     short_plan = FuturePlan(actions=["x"], horizon=1)
@@ -201,7 +201,7 @@ def test_replay_reasoning_state_copied(tmp_path) -> None:
 
 
 def test_negative_contribution_supported() -> None:
-    from allbrain.foresight.models import FuturePlan
+    from allbrain.domains.reasoning.foresight.models import FuturePlan
 
     selected = FuturePlan(
         actions=["deploy"],
@@ -272,3 +272,4 @@ def test_mcp_explain_decision_unknown_plan_id(tmp_path) -> None:
     result = explain_decision_impl(context, plan_id="nonexistent_plan_id")
     assert not result.ok
     assert "not found" in result.error
+

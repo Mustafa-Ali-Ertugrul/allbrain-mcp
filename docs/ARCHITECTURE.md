@@ -37,22 +37,33 @@ no module moves yet.
 | `install/` | Client installer |
 | `ops/` | Operational tooling |
 
+## Migration Status (v0.4.0)
+
+| Context | Modules | Status | Since | Path |
+|---|---|---|---|---|
+| `reasoning/` | 10 | ✅ **Migrated** | v0.4.0 | `allbrain.domains.reasoning.*` |
+| `analysis/` | 17 | ⏳ Pending | v0.4.1 | `allbrain.<mod>` (shim target: `allbrain.domains.analysis.*`) |
+| `governance/` | 12 | ⏳ Pending | v0.4.1 | `allbrain.<mod>` (shim target: `allbrain.domains.governance.*`) |
+| `learning/` | 12 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.learning.*`) |
+| `collaboration/` | 10 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
+| `memory/` | 12 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.memory.*`) |
+
 ## Bounded Contexts
 
-### `domains.reasoning/` — decision-making & forward thinking (10)
+### `domains.reasoning/` — decision-making & forward thinking (10) [MIGRATED v0.4.0]
 
-| Module | Current Path | Key Exports |
-|---|---|---|
-| counterfactual | `allbrain.counterfactual` | `CounterfactualEngine`, `AlternativeRanker` |
-| scenarios | `allbrain.scenarios` | `ScenarioEngine`, `ScenarioAnalysis` |
-| foresight | `allbrain.foresight` | `ForesightInput`, generation |
-| meta_reasoning | `allbrain.meta_reasoning` | meta-reasoning |
-| uncertainty | `allbrain.uncertainty` | `observed_success_rate` |
-| decision | `allbrain.decision` | decision pipeline |
-| information_seeking | `allbrain.information_seeking` | `InformationSeekingManager` |
-| intent | `allbrain.intent` | `IntentExtractor`, `IntentStore` |
-| objective_system | `allbrain.objective_system` | objective mgmt |
-| tradeoff_engine | `allbrain.tradeoff_engine` | tradeoff analysis |
+| Module | Canonical Path (v0.4.0+) | Legacy Shim Path (v0.4.0, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| counterfactual | `allbrain.domains.reasoning.counterfactual` | `allbrain.counterfactual` | `CounterfactualEngine`, `AlternativeRanker` |
+| scenarios | `allbrain.domains.reasoning.scenarios` | `allbrain.scenarios` | `ScenarioEngine`, `ScenarioAnalysis` |
+| foresight | `allbrain.domains.reasoning.foresight` | `allbrain.foresight` | `ForesightInput`, generation |
+| meta_reasoning | `allbrain.domains.reasoning.meta_reasoning` | `allbrain.meta_reasoning` | meta-reasoning |
+| uncertainty | `allbrain.domains.reasoning.uncertainty` | `allbrain.uncertainty` | `observed_success_rate` |
+| decision | `allbrain.domains.reasoning.decision` | `allbrain.decision` | decision pipeline |
+| information_seeking | `allbrain.domains.reasoning.information_seeking` | `allbrain.information_seeking` | `InformationSeekingManager` |
+| intent | `allbrain.domains.reasoning.intent` | `allbrain.intent` | `IntentExtractor`, `IntentStore` |
+| objective_system | `allbrain.domains.reasoning.objective_system` | `allbrain.objective_system` | objective mgmt |
+| tradeoff_engine | `allbrain.domains.reasoning.tradeoff_engine` | `allbrain.tradeoff_engine` | tradeoff analysis |
 
 ### `domains.governance/` — safety, alignment, self-repair (12)
 
