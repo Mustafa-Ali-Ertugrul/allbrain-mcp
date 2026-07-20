@@ -72,9 +72,10 @@ def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     """List events from project history with optional filtering.
 
-    Supports filtering by session_id and event type, with configurable limit.
-    Cursor pagination (``cursor``) and aggregate summary mode (``summary``)
-    keep large result sets within client payload limits. Rate limited.
+    Supports filtering by session_id, type, agent_id, branch, since, until,
+    and limit. Cursor pagination (``cursor``) and aggregate summary mode
+    (``summary``) keep large result sets within client payload limits.
+    Rate limited to prevent abuse.
 
     Returns:
         ToolResult whose data is a ListEventsPage. The default window (no
@@ -151,7 +152,7 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     return ToolResult(ok=True, data=result_data)
 
 
-def register_tools(mcp, context: BrainContext) -> None:
+def _register_save_event(mcp, context: BrainContext) -> None:
     @mcp.tool
     def save_event(
         type: str,
@@ -205,6 +206,8 @@ def register_tools(mcp, context: BrainContext) -> None:
         )
         return result.model_dump(mode="json")
 
+
+def _register_list_events(mcp, context: BrainContext) -> None:
     @mcp.tool
     def list_events(
         session_id: int | None = None,
@@ -217,15 +220,31 @@ def register_tools(mcp, context: BrainContext) -> None:
         cursor: str | None = None,
         summary: bool = False,
     ) -> dict[str, Any]:
-        """Query event log with optional filtering, pagination, and summary mode.
+        """Query and filter recorded events from the append-only event log.
 
-        Pagination: pass a ``cursor`` (from a previous page's ``next_cursor``)
-        to fetch the next page. The response is always a page object
-        ``{events, next_cursor, has_more, truncated}`` — keep calling with the
-        returned ``next_cursor`` until ``has_more`` is false.
+        Use this to inspect the history of agent actions and system state changes.
+        Events are ordered by the database-authoritative stream position for
+        consistent replay.
 
-        Summary mode: pass ``summary=true`` to receive aggregate counts
-        instead of full event records — ideal for large time ranges.
+        Side effects: Read-only operation; no data is modified.
+
+        Args:
+            session_id: Optional session ID to filter by (useful for multi-agent
+                debugging and isolation).
+            type: Optional event type filter in snake_case (e.g., "task_created",
+                "task_assigned", "tool_call"). SCREAMING_SNAKE aliases accepted.
+            agent_id: Optional agent id filter (same length rules as save_event).
+            branch: Optional branch name filter.
+            since: Optional ISO-8601 lower bound on event created_at (inclusive).
+            until: Optional ISO-8601 upper bound on event created_at (inclusive).
+            limit: Maximum number of events to return (default 50, maximum 500).
+            cursor: Optional pagination cursor (from previous next_cursor).
+            summary: When true, return aggregate counts instead of event records.
+
+        Returns:
+            A page object with ``events``, ``next_cursor``, ``has_more``,
+            and ``truncated``. When ``summary`` is true, returns aggregate
+            counts instead of full event records.
         """
         result = list_events_impl(
             context,
@@ -240,3 +259,8 @@ def register_tools(mcp, context: BrainContext) -> None:
             summary=summary,
         )
         return result.model_dump(mode="json")
+
+
+def register_tools(mcp, context: BrainContext) -> None:
+    _register_save_event(mcp, context)
+    _register_list_events(mcp, context)

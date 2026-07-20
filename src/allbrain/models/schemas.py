@@ -206,7 +206,8 @@ class ListEventsInput(BaseInputModel):
 
     session_id: int | None = None
     type: str | None = None
-    agent_id: str | None = Field(default=None, max_length=255)
+    # No max_length: match SaveEventInput.agent_id so long ids stay queryable.
+    agent_id: str | None = None
     branch: str | None = Field(default=None, max_length=255)
     since: datetime | None = None
     until: datetime | None = None

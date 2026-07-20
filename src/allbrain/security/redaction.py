@@ -10,6 +10,11 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 logger = logging.getLogger(__name__)
 
 _MAX_ENV_PATTERN_LENGTH = 512
+# Nested quantifiers / heavy alternation — common catastrophic-backtracking shapes.
+_REDOS_RISKY = re.compile(
+    r"\([^)]*[+*][^)]*\)[+*{]"  # (x+)+ / (x*)* / (x+){2,}
+    r"|\([^)]*\|[^)]*\)[+*]"  # (a|a)+ / (a|b)*
+)
 _MAX_SANITIZE_DEPTH = 32
 
 _BUILTIN_SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
@@ -37,6 +42,13 @@ _BUILTIN_SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\bAC[a-fA-F0-9]{32}\b", re.IGNORECASE), "twilio"),
     (re.compile(r"AIza[0-9A-Za-z_-]{35}"), "google_api_key"),
 ]
+
+
+def _is_risky_env_pattern(pattern: str) -> bool:
+    """Heuristic ReDoS guard for operator-supplied env regexes (no third-party deps)."""
+    if _REDOS_RISKY.search(pattern):
+        return True
+    return pattern.count("*") + pattern.count("+") > 8
 
 
 def _load_env_secret_patterns() -> list[tuple[re.Pattern, str]]:
@@ -67,6 +79,12 @@ def _load_env_secret_patterns() -> list[tuple[re.Pattern, str]]:
                 "ALLBRAIN_SECRET_PATTERNS_JSON[%s] pattern exceeds %s chars; skipping",
                 index,
                 _MAX_ENV_PATTERN_LENGTH,
+            )
+            continue
+        if _is_risky_env_pattern(pattern):
+            logger.warning(
+                "ALLBRAIN_SECRET_PATTERNS_JSON[%s] looks ReDoS-prone; skipping",
+                index,
             )
             continue
         if not isinstance(name, str) or not name:

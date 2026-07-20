@@ -29,3 +29,25 @@ def test_invalid_env_secret_patterns_are_ignored(monkeypatch) -> None:
     finally:
         monkeypatch.delenv("ALLBRAIN_SECRET_PATTERNS_JSON", raising=False)
         reload_secret_patterns()
+
+
+def test_redos_prone_env_patterns_are_skipped(monkeypatch) -> None:
+    monkeypatch.setenv(
+        "ALLBRAIN_SECRET_PATTERNS_JSON",
+        json.dumps([{"pattern": r"(a+)+$", "name": "evil"}]),
+    )
+    reload_secret_patterns()
+    try:
+        assert len(redaction.SECRET_PATTERNS) == len(redaction._BUILTIN_SECRET_PATTERNS)
+        assert not any(name == "evil" for _, name in redaction.SECRET_PATTERNS)
+    finally:
+        monkeypatch.delenv("ALLBRAIN_SECRET_PATTERNS_JSON", raising=False)
+        reload_secret_patterns()
+
+
+def test_list_events_accepts_long_agent_id() -> None:
+    from allbrain.models.schemas import ListEventsInput
+
+    long_id = "a" * 400
+    data = ListEventsInput(agent_id=long_id)
+    assert data.agent_id == long_id
