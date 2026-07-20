@@ -12,9 +12,6 @@ shim_package(
     __name__,
     "allbrain.domains.analysis.graph",
     submodules=(
-        "graph_domain_handlers",
-        "graph_node_helpers",
-        "graph_primary_handlers",
         "graph_query_engine",
         "state_graph",
         "workflow_graph_builder",
