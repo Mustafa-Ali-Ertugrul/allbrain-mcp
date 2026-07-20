@@ -230,10 +230,26 @@ class MCPClient:
                 timeout=30.0,
             )
             if result and isinstance(result, dict):
+                # Check for direct JSON-RPC structured return or content blocks
+                if "data" in result and isinstance(result["data"], dict):
+                    return result["data"]
                 content = result.get("content", []) or []
                 if isinstance(content, list) and len(content) > 0:
-                    txt = content[0].get("text", "") if isinstance(content[0], dict) else str(content[0])
-                    return json.loads(txt) if txt else {}
+                    first = content[0]
+                    if isinstance(first, dict):
+                        txt = first.get("text", "")
+                        if txt:
+                            try:
+                                return json.loads(txt)
+                            except Exception:
+                                pass
+                    elif isinstance(first, str):
+                        try:
+                            return json.loads(first)
+                        except Exception:
+                            pass
+                if isinstance(result, dict):
+                    return result
             return {}
         except Exception:
             traceback.print_exc()
