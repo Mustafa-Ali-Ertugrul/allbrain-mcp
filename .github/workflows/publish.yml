@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: publish-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+  group: publish-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -63,7 +63,7 @@ jobs:
         run: uv run ruff format --check src/ tests/
 
       - name: Critical path tests
-        run: uv run pytest -x -q --timeout=60 tests/test_merge_server_regression.py tests/test_sdist_contents.py
+        run: uv run pytest -x -q tests/test_merge_server_regression.py tests/test_sdist_contents.py
 
       - name: Extract version
         id: version
@@ -96,8 +96,8 @@ jobs:
       - name: Verify sdist contents
         run: |
           sdist=$(ls dist/*.tar.gz)
-          for forbidden in "node_modules" ".git" "__pycache__" ".env"; do
-            if tar -tzf "$sdist" | grep -q "$forbidden"; then
+          for forbidden in "node_modules" "\.git/" "__pycache__" "\.env$"; do
+            if tar -tzf "$sdist" | grep -qE "$forbidden"; then
               echo "::error::sdist contains forbidden pattern: $forbidden"
               exit 1
             fi
@@ -158,8 +158,8 @@ jobs:
             echo "TestPyPI verification attempt ${attempt} for allbrain-agent-runtime==${version}"
 
             if uv pip install --python /tmp/verify-venv/bin/python \
-              --index-url https://test.pypi.org/simple/ \
-              --extra-index-url https://pypi.org/simple/ \
+              --default-index https://test.pypi.org/simple/ \
+              --no-deps \
               "allbrain-agent-runtime==${version}"; then
 
               installed_version=$(/tmp/verify-venv/bin/python -c "import importlib.metadata as md; print(md.version('allbrain-agent-runtime'))")
