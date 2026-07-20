@@ -95,4 +95,3 @@ def _classify(sample_count: int, confidence: float, consistency_inputs: list[flo
     if confidence >= 0.7 and _agreement_score(consistency_inputs) >= 0.8:
         return UncertaintyType.ALEATORIC
     return UncertaintyType.MIXED
-

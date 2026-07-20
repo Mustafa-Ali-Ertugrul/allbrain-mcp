@@ -319,4 +319,3 @@ def test_snapshot_delta_intent_replay_equals_full_replay_for_graph_contradiction
     assert restored["intent_graph"] == full["intent_graph"]
     assert restored["contradiction_view"] == full["contradiction_view"]
     assert restored["decision_view"] == full["decision_view"]
-

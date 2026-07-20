@@ -86,4 +86,3 @@ class ForesightEngine:
 
     def evaluate_custom(self, state: WorldState, actions: list[str]) -> FuturePlan:
         return self.evaluator.evaluate(state, actions, confidence=0.5)
-

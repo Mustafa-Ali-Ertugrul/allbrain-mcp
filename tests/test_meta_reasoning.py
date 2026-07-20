@@ -272,4 +272,3 @@ def test_mcp_explain_decision_unknown_plan_id(tmp_path) -> None:
     result = explain_decision_impl(context, plan_id="nonexistent_plan_id")
     assert not result.ok
     assert "not found" in result.error
-

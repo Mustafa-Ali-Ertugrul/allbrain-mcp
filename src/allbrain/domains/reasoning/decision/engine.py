@@ -120,4 +120,3 @@ class DecisionEngine:
 def _stable_decision_id(agent_id: str, task_type: str, mode: str, score: float) -> str:
     d = hashlib.sha256(f"{agent_id}:{task_type}:{mode}:{score:.6f}".encode()).digest()
     return f"dec-{d.hex()[:12]}"
-

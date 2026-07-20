@@ -104,4 +104,3 @@ class TestMetaReplay:
         mgr = MetaPolicyManager()
         r = mgr.update([], agent_id="a", mode="fusion", decision_id="d1", task_type="t")
         assert r is None
-

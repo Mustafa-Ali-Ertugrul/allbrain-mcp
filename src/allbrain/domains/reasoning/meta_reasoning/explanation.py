@@ -26,4 +26,3 @@ class ExplanationGenerator:
             template_version=1,
             analysis_id=foresight_result.analysis_id,
         )
-

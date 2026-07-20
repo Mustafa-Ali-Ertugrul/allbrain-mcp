@@ -22,4 +22,3 @@ __all__ = [
     "ScenarioTemplate",
     "apply_overlay",
 ]
-

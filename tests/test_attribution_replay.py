@@ -148,4 +148,3 @@ class TestAttributionReplay:
         f = EventReplayEngine().replay(evts)["final_state"]
         assert "decision" in f
         assert "attribution" in f
-

@@ -20,4 +20,3 @@ class AlternativeRanker:
                 )
             )
         return sorted(results, key=lambda item: item.score, reverse=True)
-

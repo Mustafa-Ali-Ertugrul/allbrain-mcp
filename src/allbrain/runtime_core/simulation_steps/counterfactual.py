@@ -95,4 +95,3 @@ def execute(
     if recommendation_event is not None:
         emitted_events.append(recommendation_event)
     return summary, last_event_id, emitted_events
-

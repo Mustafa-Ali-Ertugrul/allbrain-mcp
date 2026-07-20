@@ -96,4 +96,3 @@ def register_tools(mcp, context: BrainContext) -> None:
         """
         result = detect_contradictions_impl(context, limit=limit)
         return result.model_dump(mode="json")
-

@@ -75,4 +75,3 @@ class IntentResumeEngine:
             "required_action": "idle",
             "confidence": 1.0,
         }
-

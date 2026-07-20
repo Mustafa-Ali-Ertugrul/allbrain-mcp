@@ -4,4 +4,3 @@ from allbrain.domains.reasoning.intent.models import Intent
 from allbrain.domains.reasoning.intent.store import IntentStore
 
 __all__ = ["Intent", "IntentExtractor", "IntentGraph", "IntentStore"]
-

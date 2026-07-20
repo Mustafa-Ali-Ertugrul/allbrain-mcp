@@ -103,4 +103,3 @@ def execute(
     last_event_id = recommendation_event.id
     emitted_events: list[EventRead] = [observed_event, generated_event, *evaluated_events, recommendation_event]
     return summary, last_event_id, emitted_events
-

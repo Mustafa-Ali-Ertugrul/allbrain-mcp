@@ -56,9 +56,22 @@ def test_no_cross_context_imports_in_reasoning() -> None:
     from pathlib import Path
 
     infra = {
-        "core", "storage", "security", "events", "models", "server",
-        "snapshot", "orchestrator", "reducers", "foundations", "config",
-        "cli", "install", "ops", "domains", "profiling",
+        "core",
+        "storage",
+        "security",
+        "events",
+        "models",
+        "server",
+        "snapshot",
+        "orchestrator",
+        "reducers",
+        "foundations",
+        "config",
+        "cli",
+        "install",
+        "ops",
+        "domains",
+        "profiling",
     }
     violations = []
     root = Path("src/allbrain/domains/reasoning")

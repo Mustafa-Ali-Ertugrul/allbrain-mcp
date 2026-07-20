@@ -73,4 +73,3 @@ class TestExplainability:
         r1 = DecisionEngine().decide(ctx)
         r2 = DecisionEngine().decide(ctx)
         assert r1.score == r2.score
-

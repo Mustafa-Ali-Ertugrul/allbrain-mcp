@@ -292,4 +292,3 @@ def test_mcp_rank_alternatives(tmp_path) -> None:
     assert len(result.data["ranked"]) == 3
     scores = [item["score"] for item in result.data["ranked"]]
     assert scores == sorted(scores, reverse=True)
-

@@ -86,4 +86,3 @@ class ParetoAnalyzer:
         all_ge = all(av >= bv for _, av, bv in dims)
         any_gt = any(av > bv for _, av, bv in dims)
         return all_ge and any_gt
-

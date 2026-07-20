@@ -69,4 +69,3 @@ class ScenarioGenerator:
                 )
             )
         return templates
-

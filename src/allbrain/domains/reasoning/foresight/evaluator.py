@@ -38,4 +38,3 @@ class PlanEvaluator:
             confidence=confidence,
             step_states=step_states,
         )
-

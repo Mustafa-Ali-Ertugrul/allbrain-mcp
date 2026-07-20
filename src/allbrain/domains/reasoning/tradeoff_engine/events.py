@@ -80,4 +80,3 @@ def make_utility_computed_payload(
     }
     validate_utility_computed(p)
     return p
-

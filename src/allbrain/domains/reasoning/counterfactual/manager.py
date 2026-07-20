@@ -49,4 +49,3 @@ class CounterfactualEngine:
 
     def rank(self, state, actions: list[str]) -> list:
         return self.ranker.rank(state, actions)
-

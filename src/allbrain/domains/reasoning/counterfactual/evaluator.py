@@ -23,4 +23,3 @@ class CounterfactualEvaluator:
             regret=regret,
             recommendation=recommendation,
         )
-

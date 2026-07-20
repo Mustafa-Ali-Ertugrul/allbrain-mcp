@@ -190,4 +190,3 @@ def register_tools(mcp, context: BrainContext) -> None:
         """
         result = rank_alternatives_impl(context, actions=actions, limit=limit)
         return result.model_dump(mode="json")
-

@@ -245,4 +245,3 @@ def test_mcp_evaluate_scenarios_custom(tmp_path) -> None:
     assert event_types.count(EventType.SCENARIO_EVALUATED.value) == 2
     assert result.data["best_case"]["scenario"] == "aggressive"
     assert result.data["worst_case"]["scenario"] == "conservative"
-

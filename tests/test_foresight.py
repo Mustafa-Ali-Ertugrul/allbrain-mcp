@@ -292,4 +292,3 @@ def test_mcp_evaluate_plan_custom(tmp_path) -> None:
     all_events = events(context)
     event_types = [event.type for event in all_events]
     assert event_types.count(EventType.FORESIGHT_EVALUATED.value) == 1
-

@@ -365,4 +365,3 @@ def register_tools(mcp, context: BrainContext) -> None:
         """
         result = recommend_policy_impl(context, task=task, limit=limit)
         return result.model_dump(mode="json")
-

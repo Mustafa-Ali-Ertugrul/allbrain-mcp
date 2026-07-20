@@ -49,4 +49,3 @@ class InformationSeekingEvaluator:
                 effective_gain = max(0.0, min(1.0, float(belief_gain)))
         voi = max(0.0, min(1.0, effective_gain - base["cost"]))
         return round(effective_gain, 6), round(base["cost"], 6), round(voi, 6)
-

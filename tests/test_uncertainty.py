@@ -344,4 +344,3 @@ def test_mcp_estimate_uncertainty_and_detect_knowledge_gaps(tmp_path) -> None:
     topics = [gap["topic"] for gap in g_result.data["gaps"]]
     assert "missing_history" in topics
     assert "insufficient_samples" in topics
-

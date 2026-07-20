@@ -165,4 +165,3 @@ def _latest_git_fingerprint(events: list[EventRead]) -> dict[str, Any]:
         if isinstance(git, dict) and git:
             return dict(git)
     return {}
-

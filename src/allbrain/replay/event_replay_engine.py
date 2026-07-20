@@ -606,4 +606,3 @@ def _dict_delta(left: dict[str, Any], right: dict[str, Any]) -> dict[str, dict[s
 
 def _list_delta(left: list[dict[str, Any]], right: list[dict[str, Any]]) -> dict[str, Any]:
     return {"left_count": len(left), "right_count": len(right), "changed": left != right}
-

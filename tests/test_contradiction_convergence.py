@@ -400,4 +400,3 @@ def test_contradiction_quality_gate_no_uuid7_or_now_in_determinism_path():
         content = (base / filename).read_text(encoding="utf-8")
         assert "uuid7" not in content, f"{filename} uses uuid7 â€” must be deterministic hash"
         assert "datetime.now" not in content, f"{filename} uses datetime.now â€” must be deterministic"
-

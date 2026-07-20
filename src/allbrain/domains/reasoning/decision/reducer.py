@@ -60,4 +60,3 @@ class DecisionReducer:
 
     def known_keys(self) -> set[str]:
         return set(self._scores.keys())
-

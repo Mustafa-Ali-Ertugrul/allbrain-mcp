@@ -317,4 +317,3 @@ class StrategySelectionCoordinator:
                 "expected_risk_reduction": mitigation.expected_risk_reduction,
             }
         )
-

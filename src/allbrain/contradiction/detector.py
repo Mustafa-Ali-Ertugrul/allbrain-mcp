@@ -97,4 +97,3 @@ class ContradictionDetector:
         a_risky = any(term in a for term in risky_terms)
         b_risky = any(term in b for term in risky_terms)
         return (a_support and b_risky) or (b_support and a_risky)
-

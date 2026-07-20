@@ -5,6 +5,7 @@
 functional but is slated for removal in v0.4.0. Migrate any
 drift-detection usage to ``allbrain.domains.analysis`` when available.
 """
+
 import warnings
 
 warnings.warn(

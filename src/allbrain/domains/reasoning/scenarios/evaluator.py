@@ -30,4 +30,3 @@ class ScenarioEvaluator:
             prediction=simulation.prediction,
             confidence=template.confidence,
         )
-

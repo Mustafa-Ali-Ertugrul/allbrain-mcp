@@ -226,4 +226,3 @@ class RevisionReducer:
             "capability_score": state.capability_score,
             "learned_capability": state.learned_capability,
         }
-

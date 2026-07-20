@@ -47,4 +47,3 @@ class MetaReasoningManager:
             confidence=confidence,
             foresight_result=foresight_result,
         )
-

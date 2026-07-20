@@ -114,4 +114,3 @@ class ObservabilityCollector:
             Action string, defaults to 'execute'
         """
         return str(objective.get("kind", "execute"))
-

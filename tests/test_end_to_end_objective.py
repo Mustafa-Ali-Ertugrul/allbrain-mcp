@@ -127,4 +127,3 @@ class TestEndToEndObjective:
 
         assert OBJECTIVE_PRIORITY_DEFAULTS["safety"] == ObjectivePriority.CRITICAL
         assert OBJECTIVE_PRIORITY_DEFAULTS["efficiency"] == ObjectivePriority.OPTIONAL
-

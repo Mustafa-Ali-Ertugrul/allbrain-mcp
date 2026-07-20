@@ -427,4 +427,3 @@ class LearningRepairCoordinator:
     def _advance_rollback(self) -> None:
         if self.owner._rollback_engine is not None:
             self.owner._rollback_engine.advance_cycle()
-

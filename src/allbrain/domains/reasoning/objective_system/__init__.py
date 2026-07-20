@@ -41,4 +41,3 @@ __all__ = [
     "make_objective_updated_payload",
     "make_objective_rebalanced_payload",
 ]
-

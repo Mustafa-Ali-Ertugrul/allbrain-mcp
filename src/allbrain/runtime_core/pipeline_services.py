@@ -82,4 +82,3 @@ class PipelineServices:
             information_seeking=InformationSeekingManager(),
             bridge_timeout_ms=bridge_timeout_ms,
         )
-

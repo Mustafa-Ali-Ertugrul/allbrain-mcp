@@ -27,4 +27,3 @@ class IntentStore:
                 graph.link(source_to_intent[event.caused_by], source_to_intent[event.id], "caused_by")
 
         return graph
-

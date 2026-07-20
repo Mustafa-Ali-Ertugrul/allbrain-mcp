@@ -211,4 +211,3 @@ def register_tools(mcp, context: BrainContext) -> None:
             limit=limit,
         )
         return result.model_dump(mode="json")
-

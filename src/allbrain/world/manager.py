@@ -111,10 +111,7 @@ class WorldModel:
 
         if self._learner is not None:
             result["transitions"] = {
-                "transitions": {
-                    f"{k[0]}||{k[1]}": dict(v)
-                    for k, v in self._learner._transitions.items()
-                },
+                "transitions": {f"{k[0]}||{k[1]}": dict(v) for k, v in self._learner._transitions.items()},
                 "action_counts": dict(self._learner._action_counts),
                 "state_samples": dict(self._learner._state_samples),
                 "next_state_samples": dict(self._learner._next_state_samples),

@@ -175,4 +175,3 @@ def apply(
     _apply_event_buffer_dispatch(state, event, event_buffers)
     _apply_unknown_event(state, event)
     _apply_selection_decision(state, event)
-

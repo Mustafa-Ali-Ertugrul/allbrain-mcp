@@ -37,4 +37,3 @@ def make_contract(
     if dynamics:
         signals.add("dynamics")
     return DecisionContract(version=version, active_signals=frozenset(signals), debug=debug)
-

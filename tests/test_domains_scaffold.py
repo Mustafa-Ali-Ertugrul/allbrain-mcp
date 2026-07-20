@@ -19,9 +19,20 @@ ARCHITECTURE_DOC = Path("docs/architecture.md")
 SRC_ROOT = Path("src/allbrain")
 
 INFRA = {
-    "core", "storage", "security", "events", "models", "server",
-    "snapshot", "orchestrator", "reducers", "config", "cli",
-    "install", "ops", "domains",
+    "core",
+    "storage",
+    "security",
+    "events",
+    "models",
+    "server",
+    "snapshot",
+    "orchestrator",
+    "reducers",
+    "config",
+    "cli",
+    "install",
+    "ops",
+    "domains",
 }
 
 
@@ -62,8 +73,7 @@ def test_architecture_mapping_matches_filesystem() -> None:
             missing.append(mod)
 
     assert not missing, (
-        f"docs/architecture.md references {len(missing)} module(s) "
-        f"not found in src/allbrain/: {missing}"
+        f"docs/architecture.md references {len(missing)} module(s) not found in src/allbrain/: {missing}"
     )
 
 

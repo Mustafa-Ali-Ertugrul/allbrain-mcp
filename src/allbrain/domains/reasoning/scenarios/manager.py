@@ -69,4 +69,3 @@ class ScenarioEngine:
             template_version=templates[0].template_version if templates else SCENARIO_TEMPLATE_VERSION,
             results=list(results),
         )
-
