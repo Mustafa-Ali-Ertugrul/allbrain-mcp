@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from allbrain.predictive_failure.model import MitigationPlan
-from allbrain.predictive_failure.proactive_executor import ProactiveExecutor
+from allbrain.domains.analysis.predictive_failure.model import MitigationPlan
+from allbrain.domains.analysis.predictive_failure.proactive_executor import ProactiveExecutor
 
 
 def _make_plan(

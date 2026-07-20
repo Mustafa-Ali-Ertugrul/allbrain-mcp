@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from allbrain.world.models import Prediction
+from allbrain.domains.analysis.world.models import Prediction
 
 SCENARIO_TEMPLATE_VERSION = 1
 

@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 
 from allbrain.calibration import make_payload as make_calibration_payload
-from allbrain.drift import make_payload as make_drift_payload
+from allbrain.domains.analysis.drift import make_payload as make_drift_payload
 from allbrain.events.schemas import EventType
 from allbrain.replay import EventReplayEngine
 from allbrain.revision import (

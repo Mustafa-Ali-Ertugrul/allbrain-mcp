@@ -4,14 +4,22 @@ from typing import Any
 
 from allbrain.adaptive_recovery import AdaptiveRecoveryReducer
 from allbrain.arbitration import ArbitrationReducer
-from allbrain.attention import AttentionReducer
-from allbrain.attribution import AttributionReducer
-from allbrain.belief import BeliefReducer
 from allbrain.calibration import CalibrationReducer
 from allbrain.capabilities import CapabilityReducer
-from allbrain.causal import CausalReducer
 from allbrain.collaboration import CollaborationStateBuilder
-from allbrain.contradiction import ContradictionReducer
+from allbrain.domains.analysis.attention import AttentionReducer
+from allbrain.domains.analysis.attribution import AttributionReducer
+from allbrain.domains.analysis.belief import BeliefReducer
+from allbrain.domains.analysis.causal import CausalReducer
+from allbrain.domains.analysis.contradiction import ContradictionReducer
+from allbrain.domains.analysis.dynamics import CapabilityDynamicsReducer
+from allbrain.domains.analysis.episodic import EpisodicReducer
+from allbrain.domains.analysis.evidence import EvidenceReducer
+from allbrain.domains.analysis.failure_memory import FailureMemoryReducer
+from allbrain.domains.analysis.fusion import FusionReducer
+from allbrain.domains.analysis.predictive_failure import PredictiveFailureReducer
+from allbrain.domains.analysis.semantic import SemanticReducer
+from allbrain.domains.analysis.world import WorldStateBuilder
 from allbrain.domains.reasoning.counterfactual import CounterfactualProjection
 from allbrain.domains.reasoning.decision import DecisionReducer
 from allbrain.domains.reasoning.foresight import ForesightProjection
@@ -21,15 +29,10 @@ from allbrain.domains.reasoning.objective_system import ObjectiveSystemReducer
 from allbrain.domains.reasoning.scenarios import ScenarioProjection
 from allbrain.domains.reasoning.tradeoff_engine import TradeoffReducer
 from allbrain.domains.reasoning.uncertainty import UncertaintyProjection
-from allbrain.dynamics import CapabilityDynamicsReducer
-from allbrain.episodic import EpisodicReducer
 from allbrain.events import EventType
-from allbrain.evidence import EvidenceReducer
 from allbrain.evolution import LearningStateBuilder
-from allbrain.failure_memory import FailureMemoryReducer
 from allbrain.foundations import canonical_event_sort
 from allbrain.foundations import is_known_event as _is_known_event
-from allbrain.fusion import FusionReducer
 from allbrain.governance import GovernanceStateBuilder
 from allbrain.learning import CapabilityLearningReducer
 from allbrain.learning_safety import LearningSafetyReducer
@@ -41,7 +44,6 @@ from allbrain.mitigation_learning import MitigationLearningReducer
 from allbrain.models.schemas import EventRead
 from allbrain.policy_competition import PolicyCompetitionReducer
 from allbrain.policy_routing import PolicyRoutingReducer
-from allbrain.predictive_failure import PredictiveFailureReducer
 from allbrain.recovery_consensus import RecoveryConsensusReducer
 from allbrain.reputation import ReputationReducer
 from allbrain.resilience import ResilienceReducer
@@ -50,12 +52,10 @@ from allbrain.routing import RoutingReducer
 from allbrain.runtime_core import RuntimeCoreStateBuilder
 from allbrain.self_play import SelfPlayReducer
 from allbrain.self_repair import SelfRepairReducer
-from allbrain.semantic import SemanticReducer
 from allbrain.soft_repair import SoftRepairReducer
 from allbrain.telemetry import TelemetryReducer
 from allbrain.value_alignment import ValueAlignmentReducer
 from allbrain.workspace import WorkspaceReducer
-from allbrain.world import WorldStateBuilder
 
 
 class EventReplayEngine:

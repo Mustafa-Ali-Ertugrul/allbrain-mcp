@@ -1,26 +1,25 @@
-from allbrain.world.environment import EnvironmentTracker
-from allbrain.world.history import WorldHistory
-from allbrain.world.manager import WorldModel, WorldStateBuilder
-from allbrain.world.models import Prediction, SimulationResult, WorldState
-from allbrain.world.prediction import PredictionBridge
-from allbrain.world.prediction_learner import BetaPredictor, LearnedPredictionBridge
-from allbrain.world.simulation import SimulationBridge
-from allbrain.world.transition_learner import TransitionLearner
-from allbrain.world.transitions import LearnedTransitionBridge, StateTransitionBridge
+"""Deprecated compatibility shim for allbrain.world.
 
-__all__ = [
-    "BetaPredictor",
-    "EnvironmentTracker",
-    "LearnedPredictionBridge",
-    "LearnedTransitionBridge",
-    "Prediction",
-    "PredictionBridge",
-    "SimulationBridge",
-    "SimulationResult",
-    "StateTransitionBridge",
-    "TransitionLearner",
-    "WorldHistory",
-    "WorldModel",
-    "WorldState",
-    "WorldStateBuilder",
-]
+Moved to allbrain.domains.analysis.world in v0.4.1.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.analysis.world",
+    submodules=(
+        "environment",
+        "history",
+        "manager",
+        "models",
+        "prediction",
+        "prediction_learner",
+        "simulation",
+        "transition_learner",
+        "transitions",
+    ),
+)

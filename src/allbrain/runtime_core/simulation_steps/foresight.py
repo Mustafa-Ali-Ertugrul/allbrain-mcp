@@ -10,7 +10,7 @@ from allbrain.models.schemas import EventRead
 from allbrain.runtime_core.event_bus import RuntimeEventBus
 
 if TYPE_CHECKING:
-    from allbrain.world import WorldModel
+    from allbrain.domains.analysis.world import WorldModel
 
 logger = logging.getLogger(__name__)
 

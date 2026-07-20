@@ -7,9 +7,9 @@ from typing import Any
 
 import pytest
 
-from allbrain.world.models import WorldState
-from allbrain.world.prediction import PredictionBridge
-from allbrain.world.prediction_learner import (
+from allbrain.domains.analysis.world.models import WorldState
+from allbrain.domains.analysis.world.prediction import PredictionBridge
+from allbrain.domains.analysis.world.prediction_learner import (
     SIMILARITY_THRESHOLD,
     BetaPredictor,
     LearnedPredictionBridge,

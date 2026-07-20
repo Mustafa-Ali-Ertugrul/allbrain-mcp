@@ -90,16 +90,16 @@ decisions create memories that update beliefs — a closed cognitive loop.
 | `install/` | Client installer |
 | `ops/` | Operational tooling |
 
-## Migration Status (v0.4.0)
+## Migration Status (v0.4.1)
 
 | Context | Modules | Status | Since | Path |
 |---|---|---|---|---|
 | `reasoning/` | 10 | ✅ **Migrated** | v0.4.0 | `allbrain.domains.reasoning.*` |
-| `analysis/` | 17 | ⏳ Pending | v0.4.1 | `allbrain.<mod>` (shim target: `allbrain.domains.analysis.*`) |
-| `governance/` | 12 | ⏳ Pending | v0.4.1 | `allbrain.<mod>` (shim target: `allbrain.domains.governance.*`) |
+| `analysis/` | 17 | ✅ **Migrated** | v0.4.1 | `allbrain.domains.analysis.*` |
+| `governance/` | 12 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.governance.*`) |
 | `learning/` | 12 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.learning.*`) |
-| `collaboration/` | 10 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
-| `memory/` | 12 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.memory.*`) |
+| `collaboration/` | 10 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
+| `memory/` | 12 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.memory.*`) |
 
 ## Bounded Contexts
 
@@ -117,6 +117,28 @@ decisions create memories that update beliefs — a closed cognitive loop.
 | intent | `allbrain.domains.reasoning.intent` | `allbrain.intent` | `IntentExtractor`, `IntentStore` |
 | objective_system | `allbrain.domains.reasoning.objective_system` | `allbrain.objective_system` | objective mgmt |
 | tradeoff_engine | `allbrain.domains.reasoning.tradeoff_engine` | `allbrain.tradeoff_engine` | tradeoff analysis |
+
+### `domains.analysis/` — situation understanding & anomaly (17) [MIGRATED v0.4.1]
+
+| Module | Canonical Path (v0.4.1+) | Legacy Shim Path (v0.4.1, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| attention | `allbrain.domains.analysis.attention` | `allbrain.attention` | attention |
+| attribution | `allbrain.domains.analysis.attribution` | `allbrain.attribution` | attribution |
+| belief | `allbrain.domains.analysis.belief` | `allbrain.belief` | `BeliefManager` |
+| causal | `allbrain.domains.analysis.causal` | `allbrain.causal` | `simulate_intervention` |
+| compression | `allbrain.domains.analysis.compression` | `allbrain.compression` | `EventCompressor` |
+| context | `allbrain.domains.analysis.context` | `allbrain.context` | `ParallelContextBuilder` |
+| contradiction | `allbrain.domains.analysis.contradiction` | `allbrain.contradiction` | `ContradictionDetector` |
+| drift | `allbrain.domains.analysis.drift` | `allbrain.drift` | drift detection (deprecated) |
+| dynamics | `allbrain.domains.analysis.dynamics` | `allbrain.dynamics` | capability dynamics |
+| episodic | `allbrain.domains.analysis.episodic` | `allbrain.episodic` | episodic memory |
+| evidence | `allbrain.domains.analysis.evidence` | `allbrain.evidence` | evidence |
+| failure_memory | `allbrain.domains.analysis.failure_memory` | `allbrain.failure_memory` | failure memory |
+| fusion | `allbrain.domains.analysis.fusion` | `allbrain.fusion` | data fusion |
+| graph | `allbrain.domains.analysis.graph` | `allbrain.graph` | graph analysis |
+| predictive_failure | `allbrain.domains.analysis.predictive_failure` | `allbrain.predictive_failure` | predictive failure |
+| semantic | `allbrain.domains.analysis.semantic` | `allbrain.semantic` | semantic analysis |
+| world | `allbrain.domains.analysis.world` | `allbrain.world` | `WorldModel` |
 
 ### `domains.governance/` — safety, alignment, self-repair (12)
 

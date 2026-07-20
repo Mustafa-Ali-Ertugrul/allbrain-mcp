@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.episodic.events import (
+from allbrain.domains.analysis.episodic.events import (
     make_episode_created_payload,
     make_episode_forgotten_payload,
     make_episode_retrieved_payload,

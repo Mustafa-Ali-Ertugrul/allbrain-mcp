@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.attribution import (
+from allbrain.domains.analysis.attribution import (
     make_attribution_update_payload,
     make_credit_payload,
     make_importance_payload,

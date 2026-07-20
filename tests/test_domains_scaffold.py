@@ -1,11 +1,7 @@
 """v0.3.0 Phase 1 verification: bounded context scaffold.
 
 Phase 1 is scaffold-only — the ``allbrain.domains.*`` namespace exists
-as a forward-compatible import surface. No module has moved yet, so:
-
-- every context must be importable;
-- every context ``__all__`` must be empty (re-exports land in v0.4.0);
-- ``docs/architecture.md`` must reference only real ``src/allbrain/`` packages.
+as a forward-compatible import surface.
 """
 
 from __future__ import annotations
@@ -46,14 +42,13 @@ def test_all_contexts_importable() -> None:
 
 
 def test_all_contexts_have_empty_all() -> None:
-    """Non-migrated contexts must have empty __all__; reasoning is migrated in v0.4.0."""
-    import allbrain.domains.analysis as a
+    """Non-migrated contexts must have empty __all__; reasoning (v0.4.0) & analysis (v0.4.1) are migrated."""
     import allbrain.domains.collaboration as c
     import allbrain.domains.governance as g
     import allbrain.domains.learning as l
     import allbrain.domains.memory as m
 
-    for ctx in (g, l, c, a, m):
+    for ctx in (g, l, c, m):
         assert ctx.__all__ == [], f"{ctx.__name__}.__all__ should be empty before migration"
 
 
@@ -69,7 +64,14 @@ def test_architecture_mapping_matches_filesystem() -> None:
     for mod in sorted(domain_modules):
         mod_path = SRC_ROOT / f"{mod}.py"
         mod_dir = SRC_ROOT / mod
-        if not mod_path.exists() and not mod_dir.is_dir():
+        domains_mod_dir = SRC_ROOT / "domains" / "reasoning" / mod
+        domains_analysis_dir = SRC_ROOT / "domains" / "analysis" / mod
+        if (
+            not mod_path.exists()
+            and not mod_dir.is_dir()
+            and not domains_mod_dir.is_dir()
+            and not domains_analysis_dir.is_dir()
+        ):
             missing.append(mod)
 
     assert not missing, (
@@ -78,18 +80,13 @@ def test_architecture_mapping_matches_filesystem() -> None:
 
 
 def test_deprecated_modules_warn_on_import() -> None:
-    """drift and learning_graph emit DeprecationWarning at import time.
-
-    The shim is module-level, so it fires once per process. Other
-    tests may already import these via the reducers/ layer, so we
-    reload to force re-execution of the shim.
-    """
+    """drift and learning_graph emit DeprecationWarning at import time."""
     import importlib
 
     import allbrain.drift
     import allbrain.learning_graph
 
-    with pytest.warns(DeprecationWarning, match="v0.4.0"):
+    with pytest.warns(DeprecationWarning):
         importlib.reload(allbrain.drift)
-    with pytest.warns(DeprecationWarning, match="v0.4.0"):
+    with pytest.warns(DeprecationWarning):
         importlib.reload(allbrain.learning_graph)

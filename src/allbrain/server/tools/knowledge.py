@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from allbrain.belief import BeliefManager
+from allbrain.domains.analysis.belief import BeliefManager
 from allbrain.domains.reasoning.information_seeking import InformationSeekingManager
 from allbrain.domains.reasoning.information_seeking.evaluator import ACTION_VOI_TABLE, InformationSeekingEvaluator
 from allbrain.domains.reasoning.information_seeking.models import (

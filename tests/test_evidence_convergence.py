@@ -4,8 +4,8 @@ from datetime import datetime
 
 import pytest
 
+from allbrain.domains.analysis.evidence import EvidenceManager, EvidenceReducer, EvidenceState
 from allbrain.events.schemas import EventType
-from allbrain.evidence import EvidenceManager, EvidenceReducer, EvidenceState
 
 
 class MockEvent:

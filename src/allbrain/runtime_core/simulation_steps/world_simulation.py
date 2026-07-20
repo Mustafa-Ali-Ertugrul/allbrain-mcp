@@ -12,7 +12,7 @@ from allbrain.runtime_core.event_bus import RuntimeEventBus
 from allbrain.runtime_core.observability import ObservabilityCollector
 
 if TYPE_CHECKING:
-    from allbrain.world import WorldModel
+    from allbrain.domains.analysis.world import WorldModel
 
 logger = logging.getLogger(__name__)
 

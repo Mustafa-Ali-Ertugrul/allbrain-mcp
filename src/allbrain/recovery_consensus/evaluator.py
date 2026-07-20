@@ -11,7 +11,7 @@ from allbrain.recovery_consensus.model import (
 )
 
 if TYPE_CHECKING:
-    from allbrain.failure_memory.manager import FailureMemoryManager
+    from allbrain.domains.analysis.failure_memory.manager import FailureMemoryManager
 
 
 class Evaluator:

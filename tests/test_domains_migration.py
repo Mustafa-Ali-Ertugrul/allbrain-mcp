@@ -1,4 +1,4 @@
-"""v0.4.0 migration validation tests for reasoning/ bounded context."""
+"""Migration validation tests for reasoning/ and analysis/ bounded contexts."""
 
 from __future__ import annotations
 
@@ -20,11 +20,38 @@ REASONING_MODULES = [
     "tradeoff_engine",
 ]
 
+ANALYSIS_MODULES = [
+    "attention",
+    "attribution",
+    "belief",
+    "causal",
+    "compression",
+    "context",
+    "contradiction",
+    "drift",
+    "dynamics",
+    "episodic",
+    "evidence",
+    "failure_memory",
+    "fusion",
+    "graph",
+    "predictive_failure",
+    "semantic",
+    "world",
+]
+
 
 def test_all_reasoning_modules_importable_at_new_path() -> None:
     """Each reasoning module must be importable from allbrain.domains.reasoning.<mod>."""
     for mod in REASONING_MODULES:
         target = importlib.import_module(f"allbrain.domains.reasoning.{mod}")
+        assert target is not None
+
+
+def test_all_analysis_modules_importable_at_new_path() -> None:
+    """Each analysis module must be importable from allbrain.domains.analysis.<mod>."""
+    for mod in ANALYSIS_MODULES:
+        target = importlib.import_module(f"allbrain.domains.analysis.{mod}")
         assert target is not None
 
 
@@ -36,66 +63,66 @@ def test_all_reasoning_shims_emit_deprecation_warning() -> None:
             importlib.reload(imported)
 
 
-def test_reasoning_context_init_reexports() -> None:
-    """domains/reasoning/__init__.py must declare all 10 modules in __all__."""
-    ctx = importlib.import_module("allbrain.domains.reasoning")
+def test_all_analysis_shims_emit_deprecation_warning() -> None:
+    """Old top-level paths allbrain.<mod> must emit DeprecationWarning on import/reload."""
+    for mod in ANALYSIS_MODULES:
+        imported = importlib.import_module(f"allbrain.{mod}")
+        with pytest.warns(DeprecationWarning, match="allbrain.domains.analysis"):
+            importlib.reload(imported)
+
+
+def test_analysis_submodule_package_shim_works() -> None:
+    """Submodule imports like allbrain.world.manager must resolve seamlessly via compat shims."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        import allbrain.world
+
+        importlib.reload(allbrain.world)
+    assert any(issubclass(w.category, DeprecationWarning) for w in caught)
+
+    from allbrain.world.manager import WorldModel
+
+    from allbrain.domains.analysis.world.manager import WorldModel as NewWorldModel
+
+    assert WorldModel is NewWorldModel
+
+
+def test_context_init_reexports() -> None:
+    """Context __init__.py files must declare all migrated modules in __all__."""
+    r_ctx = importlib.import_module("allbrain.domains.reasoning")
     for mod in REASONING_MODULES:
-        assert mod in ctx.__all__, f"{mod} missing from domains.reasoning.__all__"
-        assert hasattr(ctx, mod), f"{mod} attribute missing from domains.reasoning"
+        assert mod in r_ctx.__all__, f"{mod} missing from domains.reasoning.__all__"
+        assert hasattr(r_ctx, mod), f"{mod} attribute missing from domains.reasoning"
+
+    a_ctx = importlib.import_module("allbrain.domains.analysis")
+    for mod in ANALYSIS_MODULES:
+        assert mod in a_ctx.__all__, f"{mod} missing from domains.analysis.__all__"
+        assert hasattr(a_ctx, mod), f"{mod} attribute missing from domains.analysis"
 
 
-def test_no_cross_context_imports_in_reasoning() -> None:
-    """Golden Rule: reasoning modules must not import from other domain contexts.
-
-    Allowed imports:
-    - infrastructure: core, models, events, storage, security, server, snapshot,
-      orchestrator, reducers, foundations, domains
-    - internal: allbrain.domains.reasoning.*
-    """
+def test_no_untracked_domains_imports_in_migrated_contexts() -> None:
+    """Migrated reasoning/ and analysis/ contexts must only import known infrastructure or canonical domain targets."""
     import ast
     from pathlib import Path
 
-    infra = {
-        "core",
-        "storage",
-        "security",
-        "events",
-        "models",
-        "server",
-        "snapshot",
-        "orchestrator",
-        "reducers",
-        "foundations",
-        "config",
-        "cli",
-        "install",
-        "ops",
-        "domains",
-        "profiling",
-    }
+    known_contexts = {"reasoning", "analysis"}
     violations = []
-    root = Path("src/allbrain/domains/reasoning")
-    for py_file in root.rglob("*.py"):
-        if py_file.name == "__init__.py" and py_file.parent == root:
-            continue
-        try:
-            tree = ast.parse(py_file.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom) and node.module:
-                parts = node.module.split(".")
-                if len(parts) >= 2 and parts[0] == "allbrain":
-                    target = parts[1]
-                    if target == "domains" and len(parts) >= 3:
+    for ctx in known_contexts:
+        root = Path(f"src/allbrain/domains/{ctx}")
+        for py_file in root.rglob("*.py"):
+            if py_file.name == "__init__.py" and py_file.parent == root:
+                continue
+            try:
+                tree = ast.parse(py_file.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ImportFrom) and node.module:
+                    parts = node.module.split(".")
+                    if len(parts) >= 3 and parts[0] == "allbrain" and parts[1] == "domains":
                         target_ctx = parts[2]
-                        if target_ctx != "reasoning":
+                        # Disallow references to non-migrated placeholder contexts like domains.governance before v0.4.2
+                        if target_ctx not in known_contexts:
                             violations.append(f"{py_file.name} -> {node.module}")
-                    elif target not in infra and target not in REASONING_MODULES:
-                        violations.append(f"{py_file.name} -> {node.module}")
 
-    # Note: legacy cross-domain imports (e.g. world, routing, mitigation_learning)
-    # still exist in v0.4.0 via old shims until those contexts migrate in v0.4.1/v0.4.2.
-    # This test asserts no *new* domains.* cross-context references are introduced.
-    domains_violations = [v for v in violations if "domains." in v]
-    assert not domains_violations, f"Forbidden cross-context domains imports: {domains_violations}"
+    assert not violations, f"Untracked domain references: {violations}"

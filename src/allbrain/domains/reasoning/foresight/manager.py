@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from uuid6 import uuid7
 
+from allbrain.domains.analysis.world import PredictionBridge, SimulationBridge, StateTransitionBridge, WorldState
 from allbrain.domains.reasoning.foresight.evaluator import PlanEvaluator
 from allbrain.domains.reasoning.foresight.models import FORESIGHT_TEMPLATE_VERSION, ForesightAnalysis, FuturePlan
 from allbrain.domains.reasoning.foresight.planner import ActionPlanner
 from allbrain.domains.reasoning.foresight.ranking import PlanRanker
 from allbrain.domains.reasoning.foresight.simulator import MultiStepSimulator
-from allbrain.world import PredictionBridge, SimulationBridge, StateTransitionBridge, WorldState
 
 _PLAN_CONFIDENCE = (0.35, 0.35, 0.20, 0.10)
 _PLAN_ROLES = ("best", "expected", "safest", "fastest")

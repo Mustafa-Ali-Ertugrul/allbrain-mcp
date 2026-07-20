@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from allbrain.domains.analysis.world import PredictionBridge, SimulationBridge, StateTransitionBridge
 from allbrain.domains.reasoning.counterfactual.evaluator import CounterfactualEvaluator
 from allbrain.domains.reasoning.counterfactual.generator import AlternativeGenerator
 from allbrain.domains.reasoning.counterfactual.models import CounterfactualResult
 from allbrain.domains.reasoning.counterfactual.ranking import AlternativeRanker
-from allbrain.world import PredictionBridge, SimulationBridge, StateTransitionBridge
 
 
 def _default_simulator() -> SimulationBridge:

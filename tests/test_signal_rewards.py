@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.attribution import AttributionManager, initial_signal_rewards, update_signal_reward
+from allbrain.domains.analysis.attribution import AttributionManager, initial_signal_rewards, update_signal_reward
 
 
 class TestSignalRewards:
@@ -78,7 +78,7 @@ class TestSignalRewards:
         assert r["signal_counts"]["capability"] > 0
 
     def test_counterfactual_call_doesnt_crash(self):
-        from allbrain.attribution.counterfactual import estimate_signal_impact
+        from allbrain.domains.analysis.attribution.counterfactual import estimate_signal_impact
 
         impact = estimate_signal_impact(signal="capability", agent_id="x", task_type="y", actual_agent="x", events=[])
         assert impact == 0.0

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from allbrain.domains.analysis.world import PredictionBridge, SimulationBridge, StateTransitionBridge
 from allbrain.domains.reasoning.counterfactual.models import RankedAlternative
-from allbrain.world import PredictionBridge, SimulationBridge, StateTransitionBridge
 
 
 class AlternativeRanker:

@@ -16,6 +16,8 @@ DETERMINISM_FILES = [
 
 def _assert_no_nondeterminism_tokens(relative_dir: str, filename: str) -> None:
     path = Path(relative_dir) / filename
+    if not path.exists() and "drift" in relative_dir:
+        path = Path("src/allbrain/domains/analysis/drift") / filename
     content = path.read_text(encoding="utf-8")
     for token in ("uuid7", "datetime.now", "random.", "time.time"):
         assert token not in content, f"{relative_dir}/{filename} uses {token!r} — must be deterministic hash only"
@@ -43,7 +45,7 @@ def test_drift_module_no_nondeterminism():
       - events.py (payload validation/creation)
     """
     for filename in ("detector.py", "events.py"):
-        _assert_no_nondeterminism_tokens("src/allbrain/drift", filename)
+        _assert_no_nondeterminism_tokens("src/allbrain/domains/analysis/drift", filename)
 
 
 def test_revision_manager_reads_calibration_and_drift_from_event_log_only():

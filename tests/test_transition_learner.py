@@ -7,15 +7,15 @@ from typing import Any
 
 import pytest
 
-from allbrain.world.models import WorldState
-from allbrain.world.transition_learner import (
+from allbrain.domains.analysis.world.models import WorldState
+from allbrain.domains.analysis.world.transition_learner import (
     MIN_SAMPLES,
     SIMILARITY_THRESHOLD,
     TransitionLearner,
     _infer_action,
     _state_signature,
 )
-from allbrain.world.transitions import LearnedTransitionBridge, StateTransitionBridge
+from allbrain.domains.analysis.world.transitions import LearnedTransitionBridge, StateTransitionBridge
 
 # ---------------------------------------------------------------------------
 # Helpers

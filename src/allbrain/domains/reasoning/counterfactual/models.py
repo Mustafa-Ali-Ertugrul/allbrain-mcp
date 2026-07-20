@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from allbrain.world.models import Prediction
+from allbrain.domains.analysis.world.models import Prediction
 
 
 class CounterfactualResult(BaseModel):

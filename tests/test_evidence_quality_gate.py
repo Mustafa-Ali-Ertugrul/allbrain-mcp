@@ -20,7 +20,9 @@ def test_evidence_quality_gate_no_uuid7_or_now_or_random_or_time_in_determinism_
         "decay.py",
         "trust.py",
     ]
-    base = Path("src/allbrain/evidence")
+    base = Path("src/allbrain/domains/analysis/evidence")
+    if not base.exists():
+        base = Path("src/allbrain/evidence")
     for filename in determinism_critical:
         content = (base / filename).read_text(encoding="utf-8")
         assert "uuid7" not in content, f"evidence/{filename} uses uuid7 — must be deterministic hash"
@@ -33,7 +35,7 @@ def test_revision_trust_uses_event_log_only():
     """Zorunlu: revision's trust_score is read from the event log, not
     recomputed from beliefs/contradictions. The _read_trust_score helper
     in revision/manager.py MUST NOT call evidence_weight, trust_score,
-    decay, or any derivation function from allbrain.evidence.
+    decay, or any derivation function from allbrain.domains.analysis.evidence.
 
     Uses word-boundary regex to avoid matching function NAMES like
     `_read_trust_score` (which is just a helper name, not a call).

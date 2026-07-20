@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from allbrain.compression import EventCompressor
 from allbrain.conflict import ConflictDetector, ConflictResolver
-from allbrain.context import ParallelContextBuilder
-from allbrain.contradiction import ContradictionDetector
 from allbrain.core import StateEngine
+from allbrain.domains.analysis.compression import EventCompressor
+from allbrain.domains.analysis.context import ParallelContextBuilder
+from allbrain.domains.analysis.contradiction import ContradictionDetector
 from allbrain.domains.reasoning.intent import IntentExtractor, IntentStore
 from allbrain.merge import EventMergeEngine
 from allbrain.models.schemas import EventRead

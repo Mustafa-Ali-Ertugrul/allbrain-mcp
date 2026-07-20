@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from allbrain.domains.analysis.world.simulation import SimulationBridge
 from allbrain.domains.reasoning.counterfactual.models import CounterfactualResult
-from allbrain.world.simulation import SimulationBridge
 
 
 class CounterfactualEvaluator:

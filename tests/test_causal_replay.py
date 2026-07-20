@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.causal import make_counterfactual_payload, make_impact_payload
+from allbrain.domains.analysis.causal import make_counterfactual_payload, make_impact_payload
 from allbrain.events.schemas import EventType
 from allbrain.replay import EventReplayEngine
 
@@ -87,7 +87,7 @@ class TestCausalReplay:
         assert r1 == r2
 
     def test_mixed_with_other_reducers(self):
-        from allbrain.dynamics import make_drift_payload
+        from allbrain.domains.analysis.dynamics import make_drift_payload
         from allbrain.learning import make_learned_payload
 
         evts = [

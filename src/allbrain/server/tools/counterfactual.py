@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from allbrain.domains.analysis.world import WorldModel
 from allbrain.domains.reasoning.counterfactual import AlternativeRanker, CounterfactualEngine
 from allbrain.domains.reasoning.counterfactual.models import recommendation_severity
 from allbrain.events import EventType
@@ -20,7 +21,6 @@ from allbrain.server.tools._shared import (
 )
 from allbrain.server.tools._snapshot import maybe_auto_snapshot
 from allbrain.server.tools.decorators import handle_tool_errors
-from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 

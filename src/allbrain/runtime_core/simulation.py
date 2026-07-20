@@ -12,10 +12,10 @@ from allbrain.runtime_core.event_bus import RuntimeEventBus
 from allbrain.runtime_core.observability import ObservabilityCollector
 
 if TYPE_CHECKING:
+    from allbrain.domains.analysis.world import WorldModel
     from allbrain.domains.reasoning.counterfactual import CounterfactualEngine
     from allbrain.domains.reasoning.foresight import ForesightEngine
     from allbrain.domains.reasoning.scenarios import ScenarioEngine
-    from allbrain.world import WorldModel
 
 logger = logging.getLogger(__name__)
 

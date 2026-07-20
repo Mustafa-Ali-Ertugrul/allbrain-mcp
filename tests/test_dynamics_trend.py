@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from allbrain.dynamics import TrendLabel, classify_trend
-from allbrain.dynamics.model import TREND_HYSTERESIS_COUNT, TREND_OSCILLATION_VARIANCE
+from allbrain.domains.analysis.dynamics import TrendLabel, classify_trend
+from allbrain.domains.analysis.dynamics.model import TREND_HYSTERESIS_COUNT, TREND_OSCILLATION_VARIANCE
 
 
 class TestTrendClassification:

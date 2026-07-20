@@ -5,9 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from allbrain.events.schemas import EventType
-from allbrain.predictive_failure.manager import PredictiveFailureManager
-from allbrain.predictive_failure.model import (
+from allbrain.domains.analysis.predictive_failure.manager import PredictiveFailureManager
+from allbrain.domains.analysis.predictive_failure.model import (
     LEVEL_FAILURE,
     LEVEL_SAFE,
     LEVEL_WARNING,
@@ -15,8 +14,9 @@ from allbrain.predictive_failure.model import (
     FailurePrediction,
     RiskSignal,
 )
-from allbrain.predictive_failure.reducer import PredictiveFailureReducer
-from allbrain.predictive_failure.risk_drift import RiskDriftDetector
+from allbrain.domains.analysis.predictive_failure.reducer import PredictiveFailureReducer
+from allbrain.domains.analysis.predictive_failure.risk_drift import RiskDriftDetector
+from allbrain.events.schemas import EventType
 
 
 class TestPredictiveFailureIntegration:

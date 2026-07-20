@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 
+from allbrain.domains.analysis.world import WorldState
 from allbrain.domains.reasoning.foresight import ForesightAnalysis, ForesightEngine
 from allbrain.domains.reasoning.meta_reasoning import (
     HISTORICAL_SUCCESS_FALLBACK,
@@ -26,7 +27,6 @@ from allbrain.server.tools.foresight import (
     explain_decision_impl,
 )
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
-from allbrain.world import WorldState
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 

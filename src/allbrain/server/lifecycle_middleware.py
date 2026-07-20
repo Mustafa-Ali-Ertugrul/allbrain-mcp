@@ -31,46 +31,61 @@ class AllBrainMiddleware(Middleware):
         tool_name, tool_args = _tool_request(context.message)
         call_id = str(uuid7())
         started = perf_counter()
-        self.brain.repository.append_event(
-            project_path=self.brain.project_path,
-            session_id=session.id or 0,
-            type=EventType.TOOL_CALL.value,
-            source="allbrain",
-            payload={
-                "call_id": call_id,
-                "tool_name": tool_name,
-                "tool_args": tool_args,
-                "status": "started",
-                "server_instance_id": self.brain.server_instance_id,
-            },
-        )
+        try:
+            self.brain.repository.append_event(
+                project_path=self.brain.project_path,
+                session_id=session.id or 0,
+                type=EventType.TOOL_CALL.value,
+                source="allbrain",
+                payload={
+                    "call_id": call_id,
+                    "tool_name": tool_name,
+                    "tool_args": tool_args,
+                    "status": "started",
+                    "server_instance_id": self.brain.server_instance_id,
+                },
+            )
+        except Exception:
+            logger.debug("audit write failed (tool_call_started)", exc_info=True)
         try:
             result = await call_next(context)
         except BaseException as exc:
+            try:
+                _record_outcome(
+                    self.brain,
+                    session,
+                    call_id=call_id,
+                    tool_name=tool_name,
+                    ok=False,
+                    duration_ms=int((perf_counter() - started) * 1000),
+                    error_type=type(exc).__name__,
+                    error=str(exc),
+                )
+            except Exception:
+                logger.debug("audit write failed (tool_call_outcome_error)", exc_info=True)
+            raise
+        ok, error = _result_outcome(result)
+        try:
             _record_outcome(
                 self.brain,
                 session,
                 call_id=call_id,
                 tool_name=tool_name,
-                ok=False,
+                ok=ok,
                 duration_ms=int((perf_counter() - started) * 1000),
-                error_type=type(exc).__name__,
-                error=str(exc),
+                error_type=None if ok else "tool_error",
+                error=error,
             )
-            raise
-        ok, error = _result_outcome(result)
-        _record_outcome(
-            self.brain,
-            session,
-            call_id=call_id,
-            tool_name=tool_name,
-            ok=ok,
-            duration_ms=int((perf_counter() - started) * 1000),
-            error_type=None if ok else "tool_error",
-            error=error,
-        )
-        record_git_changes(self.brain, session, confidence="medium")
-        self.brain.repository.touch_session(session.id or 0)
+        except Exception:
+            logger.debug("audit write failed (tool_call_outcome)", exc_info=True)
+        try:
+            record_git_changes(self.brain, session, confidence="medium")
+        except Exception:
+            logger.debug("audit write failed (record_git_changes)", exc_info=True)
+        try:
+            self.brain.repository.touch_session(session.id or 0)
+        except Exception:
+            logger.debug("audit write failed (touch_session)", exc_info=True)
         # Auto-snapshot is owned by write-tool paths (maybe_auto_snapshot after
         # append_event), not middleware — avoids double checks on every call.
         return result

@@ -4,6 +4,8 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
+from allbrain.domains.analysis.world import PredictionBridge, StateTransitionBridge, WorldState
+from allbrain.domains.analysis.world.simulation import SimulationBridge
 from allbrain.domains.reasoning.counterfactual import (
     ACTION_MAP,
     AlternativeGenerator,
@@ -23,8 +25,6 @@ from allbrain.server.tools.counterfactual import (
     rank_alternatives_impl,
 )
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
-from allbrain.world import PredictionBridge, StateTransitionBridge, WorldState
-from allbrain.world.simulation import SimulationBridge
 from tests.test_sprint12_memory_policy_ui import events, make_context
 
 

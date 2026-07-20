@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.causal import (
+from allbrain.domains.analysis.causal import (
     CAUSAL_DIVERSITY_CLUSTERS,
     CAUSAL_IMPACT_THRESHOLD,
     CAUSAL_MIN_SAMPLES,

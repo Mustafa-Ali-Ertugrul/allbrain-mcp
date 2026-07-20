@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from allbrain.compression import EventCompressor
+from allbrain.domains.analysis.compression import EventCompressor
 from allbrain.events import EventType
 from allbrain.models.entities import utc_now
 from allbrain.resume import ResumeEngine
