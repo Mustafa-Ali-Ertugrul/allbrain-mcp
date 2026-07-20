@@ -607,4 +607,3 @@ def test_concurrent_snapshot_during_write(tmp_path: Path) -> None:
     for snap_data in snapshots:
         assert snap_data is not None
         assert "event_cursor" in snap_data or "id" in snap_data or "metadata" in snap_data
-
