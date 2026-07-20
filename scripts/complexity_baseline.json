@@ -25,14 +25,6 @@
       "complexity": 17,
       "lines": 81
     },
-    "allbrain/domains/analysis/graph/graph_domain_handlers.py::_add_collaboration_graph": {
-      "complexity": 20,
-      "lines": 94
-    },
-    "allbrain/domains/analysis/graph/graph_node_helpers.py::_event_backed_node_id": {
-      "complexity": 16,
-      "lines": 36
-    },
     "allbrain/domains/analysis/graph/workflow_graph_builder.py::WorkflowGraphBuilder.build": {
       "complexity": 29,
       "lines": 77
