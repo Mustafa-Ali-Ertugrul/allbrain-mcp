@@ -289,7 +289,7 @@ def start_server(name: str, db_path: str) -> subprocess.Popen:
         cwd=str(PROJECT_DIR),
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
         text=True,
         encoding="utf-8",
         errors="replace",
