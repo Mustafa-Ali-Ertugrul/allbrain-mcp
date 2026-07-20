@@ -17,8 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reasoning Context Facade:** `allbrain.domains.reasoning.__init__.py` re-exports all 10 modules and declares them in `__all__`.
 
 ### Added
+- `WorldModel.from_events()` classmethod: rebuild WorldModel state from event history for pipeline warm-starting (API surface, pipeline integration ships in v0.4.1).
+- `WorldModel.serialize_transitions()` method: serialize learned transition/prediction state for event-store persistence.
+- `docs/ARCHITECTURE.md` **Design Philosophy** section: 5-layer cognitive architecture (Bayesian Epistemology → Metacognition → World Modeling → Decision → Memory).
+- `docs/adr/` — 6 Architecture Decision Records (ADR-001 through ADR-006) documenting key migration, compatibility, and infrastructure decisions.
 - `tests/test_domains_migration.py`: 4 regression tests verifying new-path imports, shim deprecation warnings, context facade re-exports, and Golden Rule isolation.
-- `docs/architecture.md`: updated with migration status table and canonical v0.4.0 paths.
 
 ## [0.3.0] - 2026-07-19
 

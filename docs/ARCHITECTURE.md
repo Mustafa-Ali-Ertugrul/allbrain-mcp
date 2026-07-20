@@ -1,10 +1,63 @@
 # AllBrain Architecture — Bounded Contexts
 
 This document maps the 73 top-level domain packages into 6 bounded
-contexts. The `allbrain.domains.*` namespace (created in v0.3.0)
-is the forward-compatible home for the eventual mass migration, which lands
-in **v0.4.0**. Phase 1 (v0.3.0) is **scaffold + docs only**:
-no module moves yet.
+contexts. The `allbrain.domains.*` namespace was created in v0.3.0
+and the first context (`reasoning/`, 10 modules) was migrated in
+**v0.4.0**. Remaining contexts migrate in v0.4.1–v0.4.2.
+
+## Design Philosophy: A Cognitive Architecture for AI Agents
+
+AllBrain's module structure is not arbitrary. It implements a layered
+cognitive model for artificial agents, drawing from Bayesian epistemology,
+metacognition, world modeling, and decision theory.
+
+### Layer 1: Bayesian Epistemology — "What does the agent believe?"
+
+| Module | Role |
+|---|---|
+| `belief/` | Beta-Bernoulli posterior updates (Thompson Sampling) |
+| `evidence/` | Likelihood-weighted observation accumulation |
+| `contradiction/` | Posterior conflict detection |
+| `calibration/` | Predicted vs. actual outcome alignment (Tetlock-style) |
+
+### Layer 2: Metacognitive Hierarchy — "What does the agent think about its beliefs?"
+
+| Module | Role |
+|---|---|
+| `meta_reasoning/` | Reasoning about reasoning quality |
+| `meta_scoring/` | Scoring the scores |
+| `meta_meta_scoring/` | Detecting scoring drift |
+| `meta_policy/` | Policy selection over policies |
+
+### Layer 3: World Modeling & Prediction — "What does the agent think will happen?"
+
+| Module | Role |
+|---|---|
+| `world/` | `TransitionLearner` + `BetaPredictor` (event-log grounded) |
+| `foresight/` | Multi-step simulation with confidence decay |
+| `counterfactual/` | Intervention-based alternative evaluation |
+| `scenarios/` | Best/expected/worst branching |
+
+### Layer 4: Decision & Action — "What does the agent choose to do?"
+
+| Module | Role |
+|---|---|
+| `decision/` | 4-step pipeline (Preparation → Reasoning → Feedback → Learning) |
+| `tradeoff_engine/` | Multi-criteria optimization |
+| `information_seeking/` | Value of Information (VOI) maximization |
+
+### Layer 5: Memory & Identity — "What does the agent remember and how does it know itself?"
+
+| Module | Role |
+|---|---|
+| `episodic/` | Event-level recall (Tulving) |
+| `semantic/` | Compressed, generalized knowledge |
+| `failure_memory/` | Negative-example retention |
+
+This layered model is what distinguishes AllBrain from "tool collection"
+MCP servers. Each layer builds on the previous: beliefs feed metacognition,
+metacognition informs world modeling, world models drive decisions, and
+decisions create memories that update beliefs — a closed cognitive loop.
 
 ## Dependency Rule (Golden Rule)
 
