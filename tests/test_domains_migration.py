@@ -98,3 +98,31 @@ def test_context_init_reexports() -> None:
     for mod in ANALYSIS_MODULES:
         assert mod in a_ctx.__all__, f"{mod} missing from domains.analysis.__all__"
         assert hasattr(a_ctx, mod), f"{mod} attribute missing from domains.analysis"
+
+
+def test_no_untracked_domains_imports_in_migrated_contexts() -> None:
+    """Migrated reasoning/ and analysis/ contexts must only import known infrastructure or canonical domain targets."""
+    import ast
+    from pathlib import Path
+
+    known_contexts = {"reasoning", "analysis"}
+    violations = []
+    for ctx in known_contexts:
+        root = Path(f"src/allbrain/domains/{ctx}")
+        for py_file in root.rglob("*.py"):
+            if py_file.name == "__init__.py" and py_file.parent == root:
+                continue
+            try:
+                tree = ast.parse(py_file.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ImportFrom) and node.module:
+                    parts = node.module.split(".")
+                    if len(parts) >= 3 and parts[0] == "allbrain" and parts[1] == "domains":
+                        target_ctx = parts[2]
+                        # Disallow references to non-migrated placeholder contexts like domains.governance before v0.4.2
+                        if target_ctx not in known_contexts:
+                            violations.append(f"{py_file.name} -> {node.module}")
+
+    assert not violations, f"Untracked domain references: {violations}"
