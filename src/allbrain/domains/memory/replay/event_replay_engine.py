@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.domains.governance.adaptive_recovery.reducer import AdaptiveRecoveryReducer
-from allbrain.arbitration import ArbitrationReducer
+from allbrain.domains.collaboration.arbitration import ArbitrationReducer
 from allbrain.domains.learning.calibration.reducer import CalibrationReducer
 from allbrain.domains.learning.capabilities.reducer import CapabilityReducer
-from allbrain.collaboration import CollaborationStateBuilder
+from allbrain.domains.collaboration.collaboration import CollaborationStateBuilder
 from allbrain.domains.analysis.attention.reducer import AttentionReducer
 from allbrain.domains.analysis.attribution.reducer import AttributionReducer
 from allbrain.domains.analysis.belief.reducer import BeliefReducer
@@ -45,17 +45,17 @@ from allbrain.models.schemas import EventRead
 from allbrain.domains.governance.policy_competition.reducer import PolicyCompetitionReducer
 from allbrain.domains.governance.policy_routing.reducer import PolicyRoutingReducer
 from allbrain.domains.governance.recovery_consensus.reducer import RecoveryConsensusReducer
-from allbrain.reputation import ReputationReducer
+from allbrain.domains.collaboration.reputation import ReputationReducer
 from allbrain.domains.governance.resilience.reducer import ResilienceReducer
 from allbrain.domains.memory.revision.reducer import RevisionReducer
-from allbrain.routing import RoutingReducer
+from allbrain.domains.collaboration.routing import RoutingReducer
 from allbrain.domains.memory.runtime_core.projections import RuntimeCoreStateBuilder
 from allbrain.domains.learning.self_play.reducer import SelfPlayReducer
 from allbrain.domains.governance.self_repair.reducer import SelfRepairReducer
 from allbrain.domains.governance.soft_repair.reducer import SoftRepairReducer
 from allbrain.domains.memory.telemetry.reducer import TelemetryReducer
 from allbrain.domains.governance.value_alignment.reducer import ValueAlignmentReducer
-from allbrain.workspace import WorkspaceReducer
+from allbrain.domains.collaboration.workspace import WorkspaceReducer
 
 
 class EventReplayEngine:

@@ -125,7 +125,7 @@ drive decisions, and decisions create memories that update beliefs.
 | `install/` | Client installer |
 | `ops/` | Operational tooling |
 
-## Migration Status (v0.4.4)
+## Migration Status (v0.4.5 — Complete)
 
 | Context | Modules | Status | Since | Path |
 |---|---|---|---|---|
@@ -134,7 +134,7 @@ drive decisions, and decisions create memories that update beliefs.
 | `learning/` | 12 | ✅ **Migrated** | v0.4.2 | `allbrain.domains.learning.*` |
 | `governance/` | 12 | ✅ **Migrated** | v0.4.3 | `allbrain.domains.governance.*` |
 | `memory/` | 12 | ✅ **Migrated** | v0.4.4 | `allbrain.domains.memory.*` |
-| `collaboration/` | 10 | ⏳ Pending | v0.4.5 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
+| `collaboration/` | 10 | ✅ **Migrated** | v0.4.5 | `allbrain.domains.collaboration.*` |
 
 ## Bounded Contexts
 
@@ -209,20 +209,20 @@ drive decisions, and decisions create memories that update beliefs.
 | coevolution | `allbrain.domains.learning.coevolution` | `allbrain.coevolution` | co-evolution |
 | self_play | `allbrain.domains.learning.self_play` | `allbrain.self_play` | self-play |
 
-### `domains.collaboration/` — multi-agent coordination (10)
+### `domains.collaboration/` — multi-agent coordination (10) [MIGRATED v0.4.5]
 
-| Module | Current Path | Key Exports |
-|---|---|---|
-| collaboration | `allbrain.collaboration` | `CollaborationManager` |
-| conflict | `allbrain.conflict` | `ConflictDetector`, `ConflictResolver` |
-| merge | `allbrain.merge` | `EventMergeEngine`, `StateMerger` |
-| arbitration | `allbrain.arbitration` | `ArbitrationManager` |
-| reputation | `allbrain.reputation` | reputation |
-| distributed | `allbrain.distributed` | distributed coordination |
-| workflow | `allbrain.workflow` | `WorkflowSnapshotBuilder` |
-| workspace | `allbrain.workspace` | shared workspace |
-| agents | `allbrain.agents` | agent management |
-| routing | `allbrain.routing` | routing |
+| Module | Canonical Path (v0.4.5+) | Legacy Shim Path (v0.4.5, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| collaboration | `allbrain.domains.collaboration.collaboration` | `allbrain.collaboration` | `CollaborationManager` |
+| conflict | `allbrain.domains.collaboration.conflict` | `allbrain.conflict` | `ConflictDetector`, `ConflictResolver` |
+| merge | `allbrain.domains.collaboration.merge` | `allbrain.merge` | `EventMergeEngine`, `StateMerger` |
+| arbitration | `allbrain.domains.collaboration.arbitration` | `allbrain.arbitration` | `ArbitrationManager` |
+| reputation | `allbrain.domains.collaboration.reputation` | `allbrain.reputation` | reputation |
+| distributed | `allbrain.domains.collaboration.distributed` | `allbrain.distributed` | distributed coordination |
+| workflow | `allbrain.domains.collaboration.workflow` | `allbrain.workflow` | `WorkflowSnapshotBuilder` |
+| workspace | `allbrain.domains.collaboration.workspace` | `allbrain.workspace` | shared workspace |
+| agents | `allbrain.domains.collaboration.agents` | `allbrain.agents` | agent management |
+| routing | `allbrain.domains.collaboration.routing` | `allbrain.routing` | routing |
 
 ### `domains.analysis/` — situation understanding & anomaly (17)
 

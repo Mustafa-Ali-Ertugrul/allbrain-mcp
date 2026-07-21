@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from allbrain.agents.queue import QueueItem
+from allbrain.domains.collaboration.agents.queue import QueueItem
 from allbrain.models.schemas import EventRead
 from allbrain.domains.governance.reliability.idempotency import IdempotencyKeyBuilder
 

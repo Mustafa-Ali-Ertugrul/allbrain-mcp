@@ -1,43 +1,17 @@
-from allbrain.workspace.activation import compute_activation
-from allbrain.workspace.decay import apply_decay
-from allbrain.workspace.events import (
-    make_ws_added_payload,
-    make_ws_removed_payload,
-    make_ws_updated_payload,
-)
-from allbrain.workspace.manager import WorkspaceManager
-from allbrain.workspace.model import (
-    DECAY_RATE,
-    DEFAULT_CAPACITY,
-    EVICTION_REASON_BELOW_MIN,
-    EVICTION_REASON_CAPACITY,
-    MAX_CAPACITY,
-    MIN_ACTIVATION,
-    SOURCE_DECISION,
-    WORKSPACE_TEMPLATE_VERSION,
-    WorkspaceItem,
-    WorkspaceState,
-)
-from allbrain.workspace.reducer import WorkspaceReducer
-from allbrain.workspace.selector import select_workspace_items
+"""Deprecated compatibility shim for allbrain.domains.collaboration.workspace.
 
-__all__ = [
-    "WorkspaceManager",
-    "WorkspaceReducer",
-    "WORKSPACE_TEMPLATE_VERSION",
-    "DEFAULT_CAPACITY",
-    "MAX_CAPACITY",
-    "MIN_ACTIVATION",
-    "DECAY_RATE",
-    "SOURCE_DECISION",
-    "EVICTION_REASON_CAPACITY",
-    "EVICTION_REASON_BELOW_MIN",
-    "WorkspaceItem",
-    "WorkspaceState",
-    "apply_decay",
-    "compute_activation",
-    "select_workspace_items",
-    "make_ws_added_payload",
-    "make_ws_removed_payload",
-    "make_ws_updated_payload",
-]
+Moved to allbrain.domains.collaboration.workspace in v0.4.5.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.collaboration.workspace",
+    submodules=(
+        "activation", "decay", "events", "manager", "model", "reducer", "selector"
+    ),
+)

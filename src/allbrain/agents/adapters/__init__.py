@@ -1,3 +1,9 @@
-from allbrain.agents.adapters.mock import MockAdapter
+"""Deprecated compatibility shim for allbrain.domains.collaboration.agents.adapters."""
+from __future__ import annotations
+from allbrain._compat import shim_package
 
-__all__ = ["MockAdapter"]
+shim_package(
+    __name__,
+    "allbrain.domains.collaboration.agents.adapters",
+    submodules=("mock",),
+)

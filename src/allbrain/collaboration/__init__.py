@@ -1,39 +1,17 @@
-from allbrain.collaboration.collaboration_context import CollaborationContext
-from allbrain.collaboration.collaboration_manager import CollaborationManager
-from allbrain.collaboration.collaboration_state import CollaborationStateBuilder
-from allbrain.collaboration.consensus import ConsensusEngine
-from allbrain.collaboration.decision import Decision
-from allbrain.collaboration.delegation import Delegation, DelegationService
-from allbrain.collaboration.delegation_policy import DelegationPolicy
-from allbrain.collaboration.metrics import CollaborationMetrics
-from allbrain.collaboration.negotiation import NegotiationEngine
-from allbrain.collaboration.negotiation_state import NegotiationState
-from allbrain.collaboration.proposal import Proposal, ProposalFactory
-from allbrain.collaboration.supervisor import SupervisionPolicy, Supervisor
-from allbrain.collaboration.team import AgentTeam, TeamMember
-from allbrain.collaboration.team_builder import TeamBuilder
-from allbrain.collaboration.team_registry import TeamRegistry
-from allbrain.collaboration.voting import Vote
+"""Deprecated compatibility shim for allbrain.domains.collaboration.collaboration.
 
-__all__ = [
-    "AgentTeam",
-    "CollaborationContext",
-    "CollaborationManager",
-    "CollaborationMetrics",
-    "CollaborationStateBuilder",
-    "ConsensusEngine",
-    "Decision",
-    "Delegation",
-    "DelegationPolicy",
-    "DelegationService",
-    "NegotiationEngine",
-    "NegotiationState",
-    "Proposal",
-    "ProposalFactory",
-    "SupervisionPolicy",
-    "Supervisor",
-    "TeamBuilder",
-    "TeamMember",
-    "TeamRegistry",
-    "Vote",
-]
+Moved to allbrain.domains.collaboration.collaboration in v0.4.5.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.collaboration.collaboration",
+    submodules=(
+        "collaboration_context", "collaboration_manager", "collaboration_state", "consensus", "decision", "delegation", "delegation_policy", "metrics", "negotiation", "negotiation_state", "proposal", "supervisor", "team", "team_builder", "team_registry", "voting"
+    ),
+)

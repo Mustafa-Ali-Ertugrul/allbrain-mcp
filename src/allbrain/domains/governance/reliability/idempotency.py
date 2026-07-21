@@ -4,7 +4,7 @@ import hashlib
 import json
 from typing import Any
 
-from allbrain.agents.queue import QueueItem
+from allbrain.domains.collaboration.agents.queue import QueueItem
 from allbrain.models.schemas import EventRead
 
 

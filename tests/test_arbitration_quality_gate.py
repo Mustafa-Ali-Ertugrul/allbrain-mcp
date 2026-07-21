@@ -24,7 +24,7 @@ def _assert_no_nondeterminism(relative_dir, filename):
 class TestQualityGate:
     def test_no_nondeterminism(self):
         for f in ARBITRATION_FILES:
-            _assert_no_nondeterminism("src/allbrain/arbitration", f)
+            _assert_no_nondeterminism("src/allbrain/domains/collaboration/arbitration", f)
 
     def test_does_not_change_confidence(self):
         from allbrain.arbitration.events import make_consensus_payload

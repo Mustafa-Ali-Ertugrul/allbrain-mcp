@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.conflict import ConflictDetector, ConflictResolver
+from allbrain.domains.collaboration.conflict import ConflictDetector, ConflictResolver
 from allbrain.core import StateEngine
 from allbrain.domains.analysis.context import ParallelContextBuilder
-from allbrain.merge import EventMergeEngine
+from allbrain.domains.collaboration.merge import EventMergeEngine
 from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.resume.incremental import IncrementalResumeEngine
 

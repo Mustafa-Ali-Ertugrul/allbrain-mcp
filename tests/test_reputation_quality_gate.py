@@ -33,7 +33,7 @@ class TestQualityGate:
           - model.py (frozen dataclass)
         """
         for filename in REPUTATION_FILES:
-            _assert_no_nondeterminism_tokens("src/allbrain/reputation", filename)
+            _assert_no_nondeterminism_tokens("src/allbrain/domains/collaboration/reputation", filename)
 
     def test_reputation_does_not_change_confidence(self):
         """Sprint 48 contract: reputation is metadata only.

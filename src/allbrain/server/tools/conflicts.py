@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from allbrain.conflict.detector import ConflictDetector
-from allbrain.conflict.resolver import ConflictResolver
+from allbrain.domains.collaboration.conflict.detector import ConflictDetector
+from allbrain.domains.collaboration.conflict.resolver import ConflictResolver
 from allbrain.domains.analysis.context.parallel_builder import ParallelContextBuilder
 from allbrain.models.schemas import (
     ConflictInput,

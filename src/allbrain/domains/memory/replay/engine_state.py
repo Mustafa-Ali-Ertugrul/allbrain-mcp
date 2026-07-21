@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.collaboration import CollaborationStateBuilder
+from allbrain.domains.collaboration.collaboration import CollaborationStateBuilder
 from allbrain.domains.analysis.world.manager import WorldStateBuilder
 from allbrain.domains.reasoning.counterfactual.projection import CounterfactualProjection
 from allbrain.domains.reasoning.foresight.projection import ForesightProjection

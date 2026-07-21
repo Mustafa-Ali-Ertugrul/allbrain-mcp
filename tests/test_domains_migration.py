@@ -85,6 +85,19 @@ MEMORY_MODULES = [
     "api",
 ]
 
+COLLABORATION_MODULES = [
+    "collaboration",
+    "conflict",
+    "merge",
+    "arbitration",
+    "reputation",
+    "distributed",
+    "workflow",
+    "workspace",
+    "agents",
+    "routing",
+]
+
 
 def test_all_reasoning_modules_importable_at_new_path() -> None:
     """Each reasoning module must be importable from allbrain.domains.reasoning.<mod>."""
@@ -118,6 +131,13 @@ def test_all_memory_modules_importable_at_new_path() -> None:
     """Each memory module must be importable from allbrain.domains.memory.<mod>."""
     for mod in MEMORY_MODULES:
         target = importlib.import_module(f"allbrain.domains.memory.{mod}")
+        assert target is not None
+
+
+def test_all_collaboration_modules_importable_at_new_path() -> None:
+    """Each collaboration module must be importable from allbrain.domains.collaboration.<mod>."""
+    for mod in COLLABORATION_MODULES:
+        target = importlib.import_module(f"allbrain.domains.collaboration.{mod}")
         assert target is not None
 
 
@@ -159,6 +179,30 @@ def test_all_memory_shims_emit_deprecation_warning() -> None:
         imported = importlib.import_module(f"allbrain.{mod}")
         with pytest.warns(DeprecationWarning, match="allbrain.domains.memory"):
             importlib.reload(imported)
+
+
+def test_all_collaboration_shims_emit_deprecation_warning() -> None:
+    """Old top-level paths allbrain.<mod> must emit DeprecationWarning on import/reload."""
+    for mod in COLLABORATION_MODULES:
+        imported = importlib.import_module(f"allbrain.{mod}")
+        with pytest.warns(DeprecationWarning, match="allbrain.domains.collaboration"):
+            importlib.reload(imported)
+
+
+def test_collaboration_submodule_package_shim_works() -> None:
+    """Submodule imports like allbrain.collaboration.collaboration_manager must resolve seamlessly via compat shims."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        import allbrain.collaboration
+
+        importlib.reload(allbrain.collaboration)
+    assert any(issubclass(w.category, DeprecationWarning) for w in caught)
+
+    from allbrain.collaboration.collaboration_manager import CollaborationManager
+
+    from allbrain.domains.collaboration.collaboration.collaboration_manager import CollaborationManager as NewManager
+
+    assert CollaborationManager is NewManager
 
 
 def test_memory_submodule_package_shim_works() -> None:
@@ -249,13 +293,17 @@ def test_context_init_reexports() -> None:
     for mod in MEMORY_MODULES:
         assert hasattr(m_ctx, mod), f"{mod} attribute missing from domains.memory"
 
+    c_ctx = importlib.import_module("allbrain.domains.collaboration")
+    for mod in COLLABORATION_MODULES:
+        assert hasattr(c_ctx, mod), f"{mod} attribute missing from domains.collaboration"
+
 
 def test_no_untracked_domains_imports_in_migrated_contexts() -> None:
-    """Migrated reasoning/, analysis/, learning/, governance/, and memory/ contexts must only import known infrastructure or canonical domain targets."""
+    """Migrated reasoning/, analysis/, learning/, governance/, memory/, and collaboration/ contexts must only import known infrastructure or canonical domain targets."""
     import ast
     from pathlib import Path
 
-    known_contexts = {"reasoning", "analysis", "learning", "governance", "memory"}
+    known_contexts = {"reasoning", "analysis", "learning", "governance", "memory", "collaboration"}
     violations = []
     for ctx in known_contexts:
         root = Path(f"src/allbrain/domains/{ctx}")

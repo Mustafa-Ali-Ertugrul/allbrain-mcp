@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.distributed import WorkerRegistry
+from allbrain.domains.collaboration.distributed import WorkerRegistry
 from allbrain.models.schemas import EventRead
 
 

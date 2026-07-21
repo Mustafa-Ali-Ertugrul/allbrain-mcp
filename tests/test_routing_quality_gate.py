@@ -15,7 +15,7 @@ def _no_nondet(d, f):
 class TestQualityGate:
     def test_no_nondeterminism(self):
         for f in FILES:
-            _no_nondet("src/allbrain/routing", f)
+            _no_nondet("src/allbrain/domains/collaboration/routing", f)
 
     def test_does_not_change_confidence(self):
         from allbrain.events.schemas import EventType

@@ -1,12 +1,31 @@
 """Collaboration bounded context — multi-agent coordination.
 
-Future home (v0.4.0) of:
-  collaboration, conflict, merge, arbitration,
-  reputation, distributed, workflow,
-  workspace, agents, routing
+Migrated in v0.4.5 from:
+  allbrain.collaboration → allbrain.domains.collaboration.collaboration
+  allbrain.conflict → allbrain.domains.collaboration.conflict
+  allbrain.merge → allbrain.domains.collaboration.merge
+  allbrain.arbitration → allbrain.domains.collaboration.arbitration
+  allbrain.reputation → allbrain.domains.collaboration.reputation
+  allbrain.distributed → allbrain.domains.collaboration.distributed
+  allbrain.workflow → allbrain.domains.collaboration.workflow
+  allbrain.workspace → allbrain.domains.collaboration.workspace
+  allbrain.agents → allbrain.domains.collaboration.agents
+  allbrain.routing → allbrain.domains.collaboration.routing
 
-Currently these modules live at ``allbrain.<name>``.
-See docs/architecture.md for the full mapping.
+See docs/ARCHITECTURE.md for the full mapping.
 """
 
-__all__: list[str] = []  # Phase 2 re-exports land here in v0.4.0
+from __future__ import annotations
+
+__all__ = [
+    "agents",
+    "arbitration",
+    "collaboration",
+    "conflict",
+    "distributed",
+    "merge",
+    "reputation",
+    "routing",
+    "workflow",
+    "workspace",
+]

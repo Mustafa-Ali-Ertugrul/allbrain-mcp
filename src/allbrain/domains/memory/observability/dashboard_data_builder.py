@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from typing import Any
 
-from allbrain.collaboration import CollaborationMetrics
+from allbrain.domains.collaboration.collaboration import CollaborationMetrics
 from allbrain.domains.learning.evolution.metrics import LearningMetrics
 from allbrain.domains.governance.governance.metrics import GovernanceMetrics
 from allbrain.models.schemas import EventRead
