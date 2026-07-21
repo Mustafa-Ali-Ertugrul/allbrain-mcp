@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -57,10 +58,47 @@ def create_engine_for_url(database_url: str) -> Engine:
 
 
 def create_engine_for_path(db_path: str | Path) -> Engine:
-    """Backward-compatible SQLite engine factory."""
+    """Backward-compatible SQLite engine factory.
+
+    Security: creates the parent directory with mode 0o700 and the DB file
+    with mode 0o600 to prevent other local users/processes from reading
+    event payloads (which may contain redacted-but-sensitive data).
+
+    On Windows, ``os.chmod`` has limited effect (no fine-grained ACL
+    control via Python's chmod). The 0o600/0o700 calls are best-effort
+    and primarily effective on Unix.     Windows users should rely on NTFS
+    ACLs configured at the directory level for full isolation.
+    """
+    import contextlib
+
     path = Path(db_path).expanduser()
+    # Create parent dir with restrictive permissions (0o700 on Unix)
     path.parent.mkdir(parents=True, exist_ok=True)
-    return create_engine_for_url(f"sqlite:///{path}")
+    with contextlib.suppress(OSError, PermissionError):
+        os.chmod(path.parent, 0o700)
+
+    # Ensure DB file exists with 0o600 before engine connects.
+    # SQLite creates WAL/SHM sidecar files automatically; the umask
+    # during engine creation ensures they inherit restrictive perms.
+    is_new = not path.exists()
+    if is_new:
+        path.touch()
+    with contextlib.suppress(OSError, PermissionError):
+        os.chmod(path, 0o600)
+
+    # Set restrictive umask for engine creation so WAL/SHM files inherit 0o600
+    prev_umask = os.umask(0o077)
+    try:
+        engine = create_engine_for_url(f"sqlite:///{path}")
+    finally:
+        os.umask(prev_umask)
+
+    # Re-assert 0o600 on the DB file after engine creation (WAL may have changed it)
+    if is_new:
+        with contextlib.suppress(OSError, PermissionError):
+            os.chmod(path, 0o600)
+
+    return engine
 
 
 def _alembic_config(engine: Engine) -> Config:
