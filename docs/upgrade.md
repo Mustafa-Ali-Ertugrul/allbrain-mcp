@@ -31,11 +31,11 @@ allbrain.domains/
 └── collaboration/  (10 modules: collaboration, conflict, merge, arbitration, etc.)
 ```
 
-### B. Legacy Root Shims Deprecation & v0.5.0 Removal Timeline
+### B. Legacy Root Shims Deprecation & v2.0.0 Removal Timeline
 To maintain backward compatibility during the v0.4.x → v1.0 transition, backward-compatible shims are maintained at the package root (`allbrain/<module>/__init__.py`). 
 
 * **Behavior in v1.0:** Importing from `allbrain.<module>` still works but emits a `DeprecationWarning`.
-* **Removal Target:** All legacy root shims will be **completely removed in v0.5.0**. All imports must be updated to `allbrain.domains.<context>.<module>`.
+* **Removal Target:** All legacy root shims will be **completely removed in v2.0.0**. All imports must be updated to `allbrain.domains.<context>.<module>`.
 
 ### C. Standardized Environment Variables
 * **Path Traversal Root Restriction:**
@@ -55,7 +55,7 @@ To maintain backward compatibility during the v0.4.x → v1.0 transition, backwa
 Replace all legacy root module imports with their bounded context equivalents:
 
 ```python
-# ❌ Legacy (Deprecated in v1.0, removed in v0.5.0):
+# ❌ Legacy (Deprecated in v1.0, removed in v2.0.0):
 from allbrain.decision import DecisionEngine
 from allbrain.world import WorldModel
 from allbrain.conflict import ConflictDetector

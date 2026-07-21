@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 - Legacy root package imports (`allbrain.<module>`) emit `DeprecationWarning` via `_compat.shim_package`.
-- **Legacy root shims will be completely removed in v0.5.0.** All callers should migrate to `allbrain.domains.<context>.<module>`.
+- **Legacy root shims will be completely removed in v2.0.0.** All callers should migrate to `allbrain.domains.<context>.<module>`.
 
 ## [0.4.1] - 2026-07-20
 
@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 - Legacy top-level analysis imports (e.g., `allbrain.world`, `allbrain.causal`) emit `DeprecationWarning`.
-- Legacy analysis paths will be removed in `v0.5.0`.
+- Legacy analysis paths will be removed in `v2.0.0`.
 - Use canonical imports from `allbrain.domains.analysis` instead.
 
 ### Fixed
@@ -75,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **BREAKING (0.x semver):** Migrated all 10 reasoning modules to `allbrain.domains.reasoning.*`:
   `counterfactual`, `scenarios`, `foresight`, `meta_reasoning`, `uncertainty`, `decision`, `information_seeking`, `intent`, `objective_system`, `tradeoff_engine`.
-- **Backward-Compatible Shims:** Top-level `allbrain.<mod>` files re-export public APIs with `DeprecationWarning` (slated for removal in v0.5.0).
+- **Backward-Compatible Shims:** Top-level `allbrain.<mod>` files re-export public APIs with `DeprecationWarning` (slated for removal in v2.0.0).
 - **Internal Imports Migrated:** `server/tools/`, `snapshot/`, `contradiction/`, `predictive_failure/`, `replay/`, `runtime_core/`, `reducers/`, and `tests/` now import directly from `allbrain.domains.reasoning.*`.
 - **Reasoning Context Facade:** `allbrain.domains.reasoning.__init__.py` re-exports all 10 modules and declares them in `__all__`.
 

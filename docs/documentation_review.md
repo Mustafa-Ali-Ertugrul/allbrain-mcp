@@ -16,7 +16,7 @@ A thorough review and update of all project documentation was performed to ensur
 | **Architecture (`docs/ARCHITECTURE.md`)** | 6 Bounded Contexts, `allbrain.domains.*` namespace & 4-tier cognitive loop | **PASS** | Outdated duplicate tables removed. All 73 domain modules across the 6 contexts (`reasoning`, `analysis`, `learning`, `governance`, `memory`, `collaboration`) accurately documented. 4-tier cognitive philosophy confirmed. |
 | **Tool Documentation (`server/tools/`)** | All 51 MCP tools documented with clear descriptions & schemas | **PASS** | All 51 registered FastMCP tools audited. Zero missing descriptions. Type annotations generate valid JSON-RPC schemas. |
 | **Setup Guide (`docs/setup.md`)** | Installation, environment setup & client configuration | **PASS** | Comprehensive coverage for `uv`, Windows/macOS/Linux scripts, central SQLite database path (`~/.allbrain/allbrain.db`), and client integrations (Claude, Codex, Cursor, VS Code, Zed, etc.). |
-| **Migration Guide (`docs/upgrade.md`)** | v0.4.x → v1.0 breaking changes & legacy shim deprecation | **PASS** | Updated to v1.0. Documents the 73-module reorganization, shim removal timeline in v0.5.0, standardized environment variables, and step-by-step developer migration. |
+| **Migration Guide (`docs/upgrade.md`)** | v0.4.x → v1.0 breaking changes & legacy shim deprecation | **PASS** | Updated to v1.0. Documents the 73-module reorganization, shim removal timeline in v2.0.0, standardized environment variables, and step-by-step developer migration. |
 
 ---
 
@@ -50,7 +50,7 @@ A thorough review and update of all project documentation was performed to ensur
 - **Fix**: Replaced with comprehensive v1.0 Upgrade Guide covering:
   - Compatibility Matrix: Python 3.12–3.13, SQLite >= 3.35.0 (with window functions and `RETURNING`).
   - 73-module namespace migration (`allbrain.domains.<context>.<module>`).
-  - Root shim deprecation notice and **v0.5.0 complete removal schedule**.
+  - Root shim deprecation notice and **v2.0.0 complete removal schedule**.
   - Standardized environment variables (`ALLBRAIN_ALLOWED_PROJECT_ROOTS`, `ALLBRAIN_RATE_LIMIT_RPM`, `ALLBRAIN_RATE_LIMIT_RPS`).
   - Step-by-step code update instructions for Python library consumers and MCP server operators.
 

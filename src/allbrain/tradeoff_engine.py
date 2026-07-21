@@ -1,7 +1,7 @@
 """DEPRECATED: Moved to allbrain.domains.reasoning.tradeoff_engine in v0.4.0.
 
 This shim re-exports all public names for backward compatibility.
-It will be removed in v0.5.0.
+It will be removed in v2.0.0.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import warnings as _warnings
 _warnings.warn(
     "allbrain.tradeoff_engine is deprecated. "
     "Use allbrain.domains.reasoning.tradeoff_engine instead. "
-    "This shim will be removed in v0.5.0.",
+    "This shim will be removed in v2.0.0.",
     DeprecationWarning,
     stacklevel=2,
 )

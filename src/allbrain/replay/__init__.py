@@ -1,7 +1,7 @@
 """Deprecated compatibility shim for allbrain.domains.memory.replay.
 
 Moved to allbrain.domains.memory.replay in v0.4.4.
-This shim will be removed in v0.5.0.
+This shim will be removed in v2.0.0.
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 """DEPRECATED: low-coupling module.
 
-``allbrain.drift`` is deprecated and slated for removal in v0.5.0.
+``allbrain.drift`` is deprecated and slated for removal in v2.0.0.
 It has no server-tool, CLI, or public-API importers (reducers/ only).
 Use ``allbrain.domains.analysis.drift`` instead.
 """
@@ -8,7 +8,7 @@ Use ``allbrain.domains.analysis.drift`` instead.
 import warnings
 
 warnings.warn(
-    "allbrain.drift is deprecated and slated for removal in v0.5.0. "
+    "allbrain.drift is deprecated and slated for removal in v2.0.0. "
     "It has no server-tool, CLI, or public-API importers (reducers/ only). "
     "Use allbrain.domains.analysis.drift instead.",
     DeprecationWarning,

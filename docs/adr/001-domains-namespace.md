@@ -28,6 +28,6 @@ snapshot, orchestrator, reducers, config, cli, install, ops) remain at
 ## Consequences
 
 - Import paths increase by 2 segments (`allbrain.X` → `allbrain.domains.ctx.X`)
-- Backward-compat shims with `DeprecationWarning` bridge old paths during v0.4.0–v0.5.0
+- Backward-compat shims with `DeprecationWarning` bridge old paths during v0.4.0–v2.0.0
 - Cross-context imports prohibited and enforced by `test_no_cross_context_imports()`
-- Shims removed in v0.5.0 (breaking change, acceptable under 0.x semver)
+- Shims removed in v2.0.0 (breaking change, acceptable under 0.x semver)

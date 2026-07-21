@@ -140,7 +140,7 @@ drive decisions, and decisions create memories that update beliefs.
 
 ### `domains.reasoning/` — decision-making & forward thinking (10) [MIGRATED v0.4.0]
 
-| Module | Canonical Path (v0.4.0+) | Legacy Shim Path (v0.4.0, removed v0.5.0) | Key Exports |
+| Module | Canonical Path (v0.4.0+) | Legacy Shim Path (v0.4.0, removed v2.0.0) | Key Exports |
 |---|---|---|---|
 | counterfactual | `allbrain.domains.reasoning.counterfactual` | `allbrain.counterfactual` | `CounterfactualEngine`, `AlternativeRanker` |
 | scenarios | `allbrain.domains.reasoning.scenarios` | `allbrain.scenarios` | `ScenarioEngine`, `ScenarioAnalysis` |
@@ -155,7 +155,7 @@ drive decisions, and decisions create memories that update beliefs.
 
 ### `domains.analysis/` — situation understanding & anomaly (17) [MIGRATED v0.4.1]
 
-| Module | Canonical Path (v0.4.1+) | Legacy Shim Path (v0.4.1, removed v0.5.0) | Key Exports |
+| Module | Canonical Path (v0.4.1+) | Legacy Shim Path (v0.4.1, removed v2.0.0) | Key Exports |
 |---|---|---|---|
 | attention | `allbrain.domains.analysis.attention` | `allbrain.attention` | attention |
 | attribution | `allbrain.domains.analysis.attribution` | `allbrain.attribution` | attribution |
@@ -177,7 +177,7 @@ drive decisions, and decisions create memories that update beliefs.
 
 ### `domains.governance/` — safety, alignment, self-repair (12) [MIGRATED v0.4.3]
 
-| Module | Canonical Path (v0.4.3+) | Legacy Shim Path (v0.4.3, removed v0.5.0) | Key Exports |
+| Module | Canonical Path (v0.4.3+) | Legacy Shim Path (v0.4.3, removed v2.0.0) | Key Exports |
 |---|---|---|---|
 | policy | `allbrain.domains.governance.policy` | `allbrain.policy` | `RoutingEngine` |
 | policy_competition | `allbrain.domains.governance.policy_competition` | `allbrain.policy_competition` | competing policies |
@@ -194,7 +194,7 @@ drive decisions, and decisions create memories that update beliefs.
 
 ### `domains.learning/` — meta-learning & adaptation (12) [MIGRATED v0.4.2]
 
-| Module | Canonical Path (v0.4.2+) | Legacy Shim Path (v0.4.2, removed v0.5.0) | Key Exports |
+| Module | Canonical Path (v0.4.2+) | Legacy Shim Path (v0.4.2, removed v2.0.0) | Key Exports |
 |---|---|---|---|
 | learning | `allbrain.domains.learning.learning` | `allbrain.learning` | `CapabilityLearningManager` |
 | learning_graph | `allbrain.domains.learning.learning_graph` | `allbrain.learning_graph` | learning graph |
@@ -211,7 +211,7 @@ drive decisions, and decisions create memories that update beliefs.
 
 ### `domains.collaboration/` — multi-agent coordination (10) [MIGRATED v0.4.5]
 
-| Module | Canonical Path (v0.4.5+) | Legacy Shim Path (v0.4.5, removed v0.5.0) | Key Exports |
+| Module | Canonical Path (v0.4.5+) | Legacy Shim Path (v0.4.5, removed v2.0.0) | Key Exports |
 |---|---|---|---|
 | collaboration | `allbrain.domains.collaboration.collaboration` | `allbrain.collaboration` | `CollaborationManager` |
 | conflict | `allbrain.domains.collaboration.conflict` | `allbrain.conflict` | `ConflictDetector`, `ConflictResolver` |
@@ -226,7 +226,7 @@ drive decisions, and decisions create memories that update beliefs.
 
 ### `domains.memory/` — persistence, recall, observability (12) [MIGRATED v0.4.4]
 
-| Module | Canonical Path (v0.4.4+) | Legacy Shim Path (v0.4.4, removed v0.5.0) | Key Exports |
+| Module | Canonical Path (v0.4.4+) | Legacy Shim Path (v0.4.4, removed v2.0.0) | Key Exports |
 |---|---|---|---|
 | memory | `allbrain.domains.memory.memory` | `allbrain.memory` | `MemoryBuilder`, `MemoryRetriever` |
 | replay | `allbrain.domains.memory.replay` | `allbrain.replay` | deterministic replay |

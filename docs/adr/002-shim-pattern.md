@@ -33,10 +33,10 @@ from allbrain.domains.reasoning.counterfactual import *
 ```
 
 Shims emit `DeprecationWarning` on every import. Internal imports migrated
-to new paths in the same release. Shims removed in v0.5.0.
+to new paths in the same release. Shims removed in v2.0.0.
 
 ## Consequences
 
-- No breakage for external consumers during v0.4.0–v0.5.0
+- No breakage for external consumers during v0.4.0–v2.0.0
 - `DeprecationWarning` visible in test output motivates migration
 - `__pycache__` invalidation required after first import (standard Python behavior)

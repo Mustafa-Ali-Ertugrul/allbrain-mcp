@@ -1,7 +1,7 @@
 """DEPRECATED: Moved to allbrain.domains.reasoning.objective_system in v0.4.0.
 
 This shim re-exports all public names for backward compatibility.
-It will be removed in v0.5.0.
+It will be removed in v2.0.0.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import warnings as _warnings
 _warnings.warn(
     "allbrain.objective_system is deprecated. "
     "Use allbrain.domains.reasoning.objective_system instead. "
-    "This shim will be removed in v0.5.0.",
+    "This shim will be removed in v2.0.0.",
     DeprecationWarning,
     stacklevel=2,
 )

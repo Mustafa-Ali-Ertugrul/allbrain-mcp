@@ -1,7 +1,7 @@
 """Temporary compatibility helpers for domain migrations.
 
 This module exists only to support legacy package and submodule import paths
-until v0.5.0. It will be removed in v0.5.0.
+until v2.0.0. It will be removed in v2.0.0.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ def shim_package(
     new_name: str,
     *,
     submodules: Iterable[str] = (),
-    removal: str = "v0.5.0",
+    removal: str = "v2.0.0",
 ) -> ModuleType:
     """Create a backward-compatible package shim.
 

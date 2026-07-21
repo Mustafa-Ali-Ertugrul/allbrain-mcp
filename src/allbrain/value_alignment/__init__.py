@@ -1,7 +1,7 @@
 """Deprecated compatibility shim for allbrain.value_alignment.
 
 Moved to allbrain.domains.governance.value_alignment in v0.4.3.
-This shim will be removed in v0.5.0.
+This shim will be removed in v2.0.0.
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 """Deprecated compatibility shim for allbrain.drift.
 
 Moved to allbrain.domains.analysis.drift in v0.4.1.
-This shim will be removed in v0.5.0.
+This shim will be removed in v2.0.0.
 """
 
 from __future__ import annotations

@@ -40,7 +40,7 @@
 
 - [x] **3. Backward Compatibility Verified**
   - Legacy root package imports (`allbrain.<module>`) maintain 100% backward compatibility via `_compat.shim_package()`.
-  - Deprecation warnings are emitted as intended, preparing downstream callers for scheduled removal in `v0.5.0`.
+  - Deprecation warnings are emitted as intended, preparing downstream callers for scheduled removal in `v2.0.0`.
 
 - [x] **4. Performance Benchmarks Met**
   - **Cold Startup Time**: 0.109s (threshold: $\le 5.0$s)

@@ -1,7 +1,7 @@
 """Deprecated compatibility shim for allbrain.domains.collaboration.collaboration.
 
 Moved to allbrain.domains.collaboration.collaboration in v0.4.5.
-This shim will be removed in v0.5.0.
+This shim will be removed in v2.0.0.
 """
 
 from __future__ import annotations

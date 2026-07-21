@@ -1,7 +1,7 @@
 """Deprecated compatibility shim for allbrain.meta_meta_scoring.
 
 Moved to allbrain.domains.learning.meta_meta_scoring in v0.4.2.
-This shim will be removed in v0.5.0.
+This shim will be removed in v2.0.0.
 """
 
 from __future__ import annotations

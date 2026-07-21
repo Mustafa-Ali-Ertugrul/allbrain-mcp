@@ -73,6 +73,12 @@ def test_decision_pipeline_e2e() -> dict[str, Any]:
             },
         )
 
+        baseline_listed = list_events_impl(context, limit=50)
+        baseline_events = (
+            baseline_listed.data.get("events", []) if isinstance(baseline_listed.data, dict) else baseline_listed.data
+        ) or []
+        baseline_count = len(baseline_events)
+
         # 2. Reasoning: Run multi-stage decision pipeline (counterfactual, scenarios, foresight, uncertainty)
         res = run_decision_pipeline_impl(
             context,
@@ -84,19 +90,27 @@ def test_decision_pipeline_e2e() -> dict[str, Any]:
             enable_meta_reasoning=True,
         )
 
-        # 3. Feedback & Learning: Verify recorded decision/reasoning events
-        listed = list_events_impl(context, limit=50)
-        events_list = (listed.data.get("events", []) if isinstance(listed.data, dict) else listed.data) or []
-        event_types = [e.get("type") if isinstance(e, dict) else getattr(e, "type", "") for e in events_list]
+        # 3. Feedback & Learning: Verify recorded decision/reasoning events strictly created by this pipeline run
+        post_listed = list_events_impl(context, limit=100)
+        all_post_events = (
+            post_listed.data.get("events", []) if isinstance(post_listed.data, dict) else post_listed.data
+        ) or []
+        # Slice only new events produced after baseline
+        pipeline_new_events = all_post_events[baseline_count:]
+        pipeline_event_types = [
+            e.get("type") if isinstance(e, dict) else getattr(e, "type", "") for e in pipeline_new_events
+        ]
 
         context.repository.close()
-        has_reasoning = any("world" in t or "decision" in t or "scenario" in t or "foresight" in t for t in event_types)
+        has_post_pipeline_reasoning = any(
+            "world" in t or "decision" in t or "scenario" in t or "foresight" in t for t in pipeline_event_types
+        )
         return {
             "pipeline_ok": res.ok,
             "pipeline_data": res.data is not None,
-            "event_count": len(events_list),
-            "event_types": event_types,
-            "passed": res.ok and has_reasoning,
+            "event_count": len(pipeline_new_events),
+            "event_types": pipeline_event_types,
+            "passed": res.ok and has_post_pipeline_reasoning and len(pipeline_new_events) > 0,
         }
 
 
@@ -229,13 +243,20 @@ def test_session_lifecycle() -> dict[str, Any]:
         close_res = close_session_impl(context, session_id=session_id, reason="completed")
 
         context.repository.close()
+        passed = (
+            created.ok
+            and (claim_data is not None)
+            and ("state" in str(renew_data) if renew_data else False)
+            and ("state" in str(complete_data) if complete_data else False)
+            and close_res.ok
+        )
         return {
             "task_created": created.ok,
             "claim_ok": claim_data is not None and "lease_id" in claim_data,
-            "renew_ok": renew_data is not None and "state" in renew_data,
-            "complete_ok": complete_data is not None and "state" in complete_data,
+            "renew_ok": renew_data is not None and "state" in str(renew_data),
+            "complete_ok": complete_data is not None and "state" in str(complete_data),
             "close_ok": close_res.ok,
-            "passed": created.ok and (claim_data is not None) and close_res.ok,
+            "passed": passed,
         }
 
 

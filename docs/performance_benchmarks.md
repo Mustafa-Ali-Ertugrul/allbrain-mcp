@@ -1,6 +1,6 @@
 # Performance Benchmarks — allbrain-mcp v1.0
 
-> Generated: 2026-07-21T11:21:37Z
+> Generated: 2026-07-21T13:28:21Z
 > Result: **All benchmarks PASS**
 
 ## Hardware
@@ -23,25 +23,25 @@
 
 | Metric                                     |       Mean |     Median |    Stdev |  Threshold | Status |
 |--------------------------------------------|------------|------------|----------|------------|--------|
-| Startup time                               |     0.109s |     0.104s |    0.009 |     <=5.0s | [PASS] |
-| Event throughput (small payload)           |    604 eps |    608 eps |        6 |      >=400 | [PASS] |
-| Event throughput (medium payload)          |    584 eps |    584 eps |        4 |      >=400 | [PASS] |
-| Event throughput (large payload)           |    451 eps |    451 eps |        1 |      >=400 | [PASS] |
-| Snapshot generation (10k events)           |     0.091s |     0.091s |    0.001 |    <=10.0s | [PASS] |
-| Memory usage (RSS peak)                    |   149.6 MB |   149.6 MB |      0.1 |   <=512 MB | [PASS] |
-| Memory usage (RSS current after load)      |   150.9 MB |   150.9 MB |      0.1 |   <=512 MB | [PASS] |
+| Startup time                               |     0.326s |     0.338s |    0.063 |     <=5.0s | [PASS] |
+| Event throughput (small payload)           |    325 eps |    317 eps |       24 |      >=200 | [PASS] |
+| Event throughput (medium payload)          |    371 eps |    371 eps |        1 |      >=200 | [PASS] |
+| Event throughput (large payload)           |    277 eps |    276 eps |        1 |      >=200 | [PASS] |
+| Snapshot generation (10k events)           |     0.153s |     0.144s |    0.019 |    <=10.0s | [PASS] |
+| Memory usage (RSS peak)                    |   152.4 MB |   152.4 MB |      0.0 |   <=512 MB | [PASS] |
+| Memory usage (RSS current after load)      |   152.4 MB |   152.4 MB |      0.0 |   <=512 MB | [PASS] |
 
 ## Threshold Comparison
 
 | Criterion | Target | Actual | Status |
 |-----------|--------|--------|--------|
-| Startup time | <=5.0s | 0.109s | [PASS] |
-| Event throughput (small payload) | >=400 eps | 604 eps | [PASS] |
-| Event throughput (medium payload) | >=400 eps | 584 eps | [PASS] |
-| Event throughput (large payload) | >=400 eps | 451 eps | [PASS] |
-| Snapshot generation (10k events) | <=10.0s | 0.091s | [PASS] |
-| Memory usage (RSS peak) | <=512 MB | 149.6 MB | [PASS] |
-| Memory usage (RSS current after load) | <=512 MB | 150.9 MB | [PASS] |
+| Startup time | <=5.0s | 0.326s | [PASS] |
+| Event throughput (small payload) | >=200 eps | 325 eps | [PASS] |
+| Event throughput (medium payload) | >=200 eps | 371 eps | [PASS] |
+| Event throughput (large payload) | >=200 eps | 277 eps | [PASS] |
+| Snapshot generation (10k events) | <=10.0s | 0.153s | [PASS] |
+| Memory usage (RSS peak) | <=512 MB | 152.4 MB | [PASS] |
+| Memory usage (RSS current after load) | <=512 MB | 152.4 MB | [PASS] |
 
 ## Optimization Recommendations
 
