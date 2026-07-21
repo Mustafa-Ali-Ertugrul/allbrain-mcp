@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.governance.value_alignment.events import validate_alignment_failed
 from allbrain.domains.governance.value_alignment.model import VALUE_ALIGNMENT_TEMPLATE_VERSION
+from allbrain.events.schemas import EventType
 
 
 class ValueAlignmentReducer:

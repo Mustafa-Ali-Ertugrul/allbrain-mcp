@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 
 from allbrain.server.context import BrainContext
@@ -15,13 +16,13 @@ async def test_lifecycle_heartbeat_and_cleanup_loops():
     ctx._session_lock = MagicMock()
     ctx._session_lock.__enter__.return_value = None
     ctx._session_lock.__exit__.return_value = None
-    
+
     active_session = MagicMock()
     active_session.id = 123
     ctx._active_session = active_session
     ctx.project_path = "/test/project"
     ctx.repository = MagicMock()
-    
+
     # Run heartbeat loop for a short moment then cancel
     t1 = asyncio.create_task(_heartbeat_loop(ctx))
     await asyncio.sleep(0.01)
@@ -67,7 +68,7 @@ def test_prompts_registration_and_execution():
 
     ctx = MagicMock(spec=BrainContext)
     ctx.project_path = "/test/project"
-    
+
     # 1. No project branch
     ctx.repository.get_project_by_path.return_value = None
     register_prompts(mcp, ctx)
@@ -87,9 +88,10 @@ def test_prompts_registration_and_execution():
     ctx.repository.get_project_by_path.return_value = project
     ctx.repository.list_events.return_value = []
 
-    with patch("allbrain.server.prompts.load_events_through_cursor", return_value=[]), \
-         patch("allbrain.server.prompts.load_task_projection", return_value=({"tasks": {"t1": {"status": "open"}}}, {})):
-        
+    with (
+        patch("allbrain.server.prompts.load_events_through_cursor", return_value=[]),
+        patch("allbrain.server.prompts.load_task_projection", return_value=({"tasks": {"t1": {"status": "open"}}}, {})),
+    ):
         resume_res = registered_prompts["resume_project"]()
         assert len(resume_res) == 2
         assert "Context summary" in resume_res[0]["content"]

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.governance.resilience.events import (
     validate_anomaly_detected,
     validate_failure_analyzed,
@@ -16,6 +15,7 @@ from allbrain.domains.governance.resilience.model import (
     MetricsSnapshot,
     RecoveryPlan,
 )
+from allbrain.events.schemas import EventType
 
 
 class ResilienceReducer:

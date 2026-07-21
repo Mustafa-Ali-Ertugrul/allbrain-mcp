@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.collaboration.workflow",
-    submodules=(
-        "aggregator", "engine", "graph", "models", "recovery", "scheduler", "state_machine"
-    ),
+    submodules=("aggregator", "engine", "graph", "models", "recovery", "scheduler", "state_machine"),
 )

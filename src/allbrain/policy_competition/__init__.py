@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.governance.policy_competition",
-    submodules=(
-        "competition_engine", "evaluator", "events", "model", "reducer", "scorer"
-    ),
+    submodules=("competition_engine", "evaluator", "events", "model", "reducer", "scorer"),
 )

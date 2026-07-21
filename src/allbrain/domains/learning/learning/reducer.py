@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.learning.learning.events import validate_decayed, validate_learned, validate_observed
 from allbrain.domains.learning.learning.learner import _stable_learning_id
 from allbrain.domains.learning.learning.model import LearnedCapabilityState
+from allbrain.events.schemas import EventType
 
 
 class CapabilityLearningReducer:

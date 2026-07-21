@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.collaboration.workspace",
-    submodules=(
-        "activation", "decay", "events", "manager", "model", "reducer", "selector"
-    ),
+    submodules=("activation", "decay", "events", "manager", "model", "reducer", "selector"),
 )

@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.learning.self_play",
-    submodules=(
-        "events", "match_engine", "model", "reducer", "simulator"
-    ),
+    submodules=("events", "match_engine", "model", "reducer", "simulator"),
 )

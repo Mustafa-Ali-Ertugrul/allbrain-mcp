@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 from allbrain.domains.reasoning.decision.engine import DecisionEngine
 from allbrain.domains.reasoning.decision.model import DecisionContext
 from allbrain.domains.reasoning.decision.resolver import make_contract
 from allbrain.events.schemas import EventType
-from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 
 
 class DecisionManager:

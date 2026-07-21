@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.domains.learning.self_play.model import SELF_PLAY_SIM_WEIGHT_CAP, MatchResult
+from allbrain.mitigation_learning.model import StrategyStats
 
 
 class Simulator:

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.learning.self_play.events import validate_match_played
 from allbrain.domains.learning.self_play.model import SELF_PLAY_TEMPLATE_VERSION
+from allbrain.events.schemas import EventType
 
 
 class SelfPlayReducer:

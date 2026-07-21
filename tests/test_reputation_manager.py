@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-import pytest
 
-from allbrain.events.schemas import EventType
+import pytest
 from allbrain.reputation.estimator import (
     _stable_reputation_id,
     mean_confidence,
@@ -15,6 +14,8 @@ from allbrain.reputation.estimator import (
 from allbrain.reputation.events import make_payload, validate_payload
 from allbrain.reputation.manager import ReputationManager
 from allbrain.reputation.reducer import ReputationReducer
+
+from allbrain.events.schemas import EventType
 
 
 class FakeEvent(SimpleNamespace):
@@ -147,19 +148,31 @@ def test_reputation_events_validation():
         validate_payload({"agent_id": "a"})
 
     with pytest.raises(ValueError, match="agent_id must be"):
-        validate_payload({"agent_id": "", "task_id": "t", "success": True, "confidence": 0.5, "duration_ms": 1, "retry_count": 0})
+        validate_payload(
+            {"agent_id": "", "task_id": "t", "success": True, "confidence": 0.5, "duration_ms": 1, "retry_count": 0}
+        )
 
     with pytest.raises(ValueError, match="task_id must be"):
-        validate_payload({"agent_id": "a", "task_id": "", "success": True, "confidence": 0.5, "duration_ms": 1, "retry_count": 0})
+        validate_payload(
+            {"agent_id": "a", "task_id": "", "success": True, "confidence": 0.5, "duration_ms": 1, "retry_count": 0}
+        )
 
     with pytest.raises(ValueError, match="success must be a bool"):
-        validate_payload({"agent_id": "a", "task_id": "t", "success": "yes", "confidence": 0.5, "duration_ms": 1, "retry_count": 0})
+        validate_payload(
+            {"agent_id": "a", "task_id": "t", "success": "yes", "confidence": 0.5, "duration_ms": 1, "retry_count": 0}
+        )
 
     with pytest.raises(ValueError, match="confidence must be"):
-        validate_payload({"agent_id": "a", "task_id": "t", "success": True, "confidence": 1.5, "duration_ms": 1, "retry_count": 0})
+        validate_payload(
+            {"agent_id": "a", "task_id": "t", "success": True, "confidence": 1.5, "duration_ms": 1, "retry_count": 0}
+        )
 
     with pytest.raises(ValueError, match="duration_ms must be"):
-        validate_payload({"agent_id": "a", "task_id": "t", "success": True, "confidence": 0.5, "duration_ms": -5, "retry_count": 0})
+        validate_payload(
+            {"agent_id": "a", "task_id": "t", "success": True, "confidence": 0.5, "duration_ms": -5, "retry_count": 0}
+        )
 
     with pytest.raises(ValueError, match="retry_count must be"):
-        validate_payload({"agent_id": "a", "task_id": "t", "success": True, "confidence": 0.5, "duration_ms": 10, "retry_count": -1})
+        validate_payload(
+            {"agent_id": "a", "task_id": "t", "success": True, "confidence": 0.5, "duration_ms": 10, "retry_count": -1}
+        )

@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.governance.policy_routing",
-    submodules=(
-        "events", "family_selector", "model", "reducer", "router"
-    ),
+    submodules=("events", "family_selector", "model", "reducer", "router"),
 )

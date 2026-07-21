@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.domains.governance.policy.agent_selection_policy import AgentSelectionPolicy
+from allbrain.domains.governance.policy.policy_optimizer import PolicyOptimizer
 from allbrain.domains.memory.memory import MemoryRetriever
 from allbrain.domains.memory.metrics import AdvancedMetrics
 from allbrain.models.schemas import EventRead
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
-from allbrain.domains.governance.policy.agent_selection_policy import AgentSelectionPolicy
-from allbrain.domains.governance.policy.policy_optimizer import PolicyOptimizer
 
 
 class RoutingEngine:

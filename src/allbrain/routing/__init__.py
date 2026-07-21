@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.collaboration.routing",
-    submodules=(
-        "events", "manager", "model", "reducer", "scorer"
-    ),
+    submodules=("events", "manager", "model", "reducer", "scorer"),
 )

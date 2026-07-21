@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from allbrain.mitigation_learning.model import StrategyStats
 from allbrain.domains.learning.self_play.model import (
     SELF_PLAY_MATCHES_PER_CYCLE,
     SELF_PLAY_MIN_CANDIDATES,
@@ -8,6 +7,7 @@ from allbrain.domains.learning.self_play.model import (
     WinMatrix,
 )
 from allbrain.domains.learning.self_play.simulator import Simulator
+from allbrain.mitigation_learning.model import StrategyStats
 
 
 class MatchEngine:

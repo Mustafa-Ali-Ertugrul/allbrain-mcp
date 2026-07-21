@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-import pytest
 
-from allbrain.events.schemas import EventType
+import pytest
 from allbrain.meta_policy.estimator import (
     _stable_meta_id,
     compute_reward,
@@ -34,6 +33,8 @@ from allbrain.meta_policy.manager import MetaPolicyManager
 from allbrain.meta_policy.model import ModeStats, PolicyMode, PolicyState
 from allbrain.meta_policy.reducer import MetaPolicyReducer
 
+from allbrain.events.schemas import EventType
+
 
 class FakeEvent(SimpleNamespace):
     id: str
@@ -58,9 +59,7 @@ def test_meta_policy_manager_select_update_query():
     assert isinstance(mode, str)
 
     # Update mode stats with matching decision_id
-    reward = manager.update(
-        events, agent_id="agent_1", mode=mode, decision_id="dec_1", task_type="coding"
-    )
+    reward = manager.update(events, agent_id="agent_1", mode=mode, decision_id="dec_1", task_type="coding")
     assert reward is not None
 
     # Update with non-matching decision_id
@@ -132,8 +131,12 @@ def test_meta_policy_evaluator_functions():
     kl = compute_kl_divergence(dist_old, dist_new)
     assert kl > 0.0
 
-    state_old = PolicyState(mode_stats=stats_map, exploration_rate=0.5, temperature=1.0, last_updated="", decision_count=10)
-    state_new = PolicyState(mode_stats=stats_map, exploration_rate=0.5, temperature=1.0, last_updated="", decision_count=20)
+    state_old = PolicyState(
+        mode_stats=stats_map, exploration_rate=0.5, temperature=1.0, last_updated="", decision_count=10
+    )
+    state_new = PolicyState(
+        mode_stats=stats_map, exploration_rate=0.5, temperature=1.0, last_updated="", decision_count=20
+    )
     assert detect_policy_drift(state_old, state_new, threshold=10.0) is False
     assert should_snapshot(state_old) is True  # 10 % 10 == 0
 
@@ -183,7 +186,9 @@ def test_meta_policy_reducer_and_events_validators():
     # Invalid events
     reducer.apply(FakeEvent(id="inv_1", type=EventType.POLICY_EVALUATED.value, payload={"agent_id": ""}))
     reducer.apply(FakeEvent(id="inv_2", type=EventType.POLICY_UPDATED.value, payload={"reward": "nan"}))
-    reducer.apply(FakeEvent(id="inv_3", type=EventType.POLICY_DIVERGENCE_DETECTED.value, payload={"kl_divergence": "nan"}))
+    reducer.apply(
+        FakeEvent(id="inv_3", type=EventType.POLICY_DIVERGENCE_DETECTED.value, payload={"kl_divergence": "nan"})
+    )
     reducer.apply(FakeEvent(id="inv_4", type="other", payload=None))
 
     snap = reducer.snapshot(agent_id="agent_1")

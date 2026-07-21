@@ -2,20 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.domains.collaboration.collaboration import CollaborationStateBuilder
 from allbrain.domains.analysis.world.manager import WorldStateBuilder
-from allbrain.domains.reasoning.counterfactual.projection import CounterfactualProjection
-from allbrain.domains.reasoning.foresight.projection import ForesightProjection
-from allbrain.domains.reasoning.information_seeking.projection import InformationSeekingProjection
-from allbrain.domains.reasoning.meta_reasoning.projection import MetaReasoningProjection
-from allbrain.domains.reasoning.scenarios.projection import ScenarioProjection
-from allbrain.domains.reasoning.uncertainty.projection import UncertaintyProjection
-from allbrain.events import EventType
+from allbrain.domains.collaboration.collaboration import CollaborationStateBuilder
+from allbrain.domains.governance.governance.state import GovernanceStateBuilder
 from allbrain.domains.learning.evolution.learning_state import LearningStateBuilder
 from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 from allbrain.domains.memory.foundations.tolerance import is_known_event as _is_known_event
-from allbrain.domains.governance.governance.state import GovernanceStateBuilder
-from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.replay.event_classifiers import (
     _build_knowledge_gap_projection,
     _is_collaboration_event,
@@ -32,6 +24,14 @@ from allbrain.domains.memory.replay.event_classifiers import (
     _is_world_event,
 )
 from allbrain.domains.memory.runtime_core import RuntimeCoreStateBuilder
+from allbrain.domains.reasoning.counterfactual.projection import CounterfactualProjection
+from allbrain.domains.reasoning.foresight.projection import ForesightProjection
+from allbrain.domains.reasoning.information_seeking.projection import InformationSeekingProjection
+from allbrain.domains.reasoning.meta_reasoning.projection import MetaReasoningProjection
+from allbrain.domains.reasoning.scenarios.projection import ScenarioProjection
+from allbrain.domains.reasoning.uncertainty.projection import UncertaintyProjection
+from allbrain.events import EventType
+from allbrain.models.schemas import EventRead
 
 
 def ordered(events: list[EventRead], *, deterministic: bool) -> list[EventRead]:

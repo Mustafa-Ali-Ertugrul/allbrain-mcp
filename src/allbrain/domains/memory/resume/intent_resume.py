@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from allbrain.domains.analysis.contradiction import ContradictionDetector
+from allbrain.domains.memory.resume.multi_agent import MultiAgentResumeEngine
 from allbrain.domains.reasoning.intent import IntentExtractor, IntentStore
 from allbrain.models.schemas import EventRead
-from allbrain.domains.memory.resume.multi_agent import MultiAgentResumeEngine
 
 
 class IntentResumeEngine:

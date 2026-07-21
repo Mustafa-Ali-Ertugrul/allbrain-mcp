@@ -4,9 +4,9 @@ from typing import Any
 
 from allbrain.core import StateEngine
 from allbrain.domains.analysis.context import ContextBuilder
-from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.resume.engine import ResumeEngine
 from allbrain.domains.memory.resume.protocols import EventRepository, SnapshotStore
+from allbrain.models.schemas import EventRead
 from allbrain.snapshot.adapters import SnapshotAdapter
 from allbrain.snapshot.versions import is_compatible
 

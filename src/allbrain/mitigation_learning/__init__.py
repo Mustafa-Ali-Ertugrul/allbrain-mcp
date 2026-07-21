@@ -12,6 +12,12 @@ shim_package(
     __name__,
     "allbrain.domains.governance.mitigation_learning",
     submodules=(
-        "events", "learning_engine", "model", "outcome_tracker", "policy_store", "reducer", "strategy_optimizer"
+        "events",
+        "learning_engine",
+        "model",
+        "outcome_tracker",
+        "policy_store",
+        "reducer",
+        "strategy_optimizer",
     ),
 )

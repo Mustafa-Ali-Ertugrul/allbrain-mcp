@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from allbrain.orchestrator.scoring import SchedulerV1
 from allbrain.domains.collaboration.workflow.graph import DependencyEngine
 from allbrain.domains.collaboration.workflow.models import TaskGraph, TaskNode, WorkflowStatus
+from allbrain.orchestrator.scoring import SchedulerV1
 
 
 @dataclass

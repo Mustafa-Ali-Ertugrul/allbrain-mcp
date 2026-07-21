@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.collaboration.merge",
-    submodules=(
-        "event_merge",
-    ),
+    submodules=("event_merge",),
 )

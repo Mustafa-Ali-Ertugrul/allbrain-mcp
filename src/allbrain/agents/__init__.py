@@ -12,6 +12,21 @@ shim_package(
     __name__,
     "allbrain.domains.collaboration.agents",
     submodules=(
-        "adapter", "adapters", "adapters.mock", "definition", "learner", "metrics", "queue", "queues", "queues.memory", "queues.rabbitmq", "queues.redis", "queues.sqlite", "registry", "runtime", "safety", "worker"
+        "adapter",
+        "adapters",
+        "adapters.mock",
+        "definition",
+        "learner",
+        "metrics",
+        "queue",
+        "queues",
+        "queues.memory",
+        "queues.rabbitmq",
+        "queues.redis",
+        "queues.sqlite",
+        "registry",
+        "runtime",
+        "safety",
+        "worker",
     ),
 )

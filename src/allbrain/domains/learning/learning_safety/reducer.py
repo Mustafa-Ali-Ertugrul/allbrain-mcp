@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.learning.learning_safety.events import (
     validate_exploration_triggered,
     validate_learning_drift_detected,
     validate_simulation_weight_capped,
 )
 from allbrain.domains.learning.learning_safety.model import LEARNING_SAFETY_TEMPLATE_VERSION
+from allbrain.events.schemas import EventType
 
 
 class LearningSafetyReducer:

@@ -7,8 +7,8 @@ from allbrain.domains.collaboration.arbitration.scorer import (
     _stable_arbitration_id,
     weighted_resolve,
 )
-from allbrain.events.schemas import EventType
 from allbrain.domains.memory.foundations.ordering import canonical_event_sort
+from allbrain.events.schemas import EventType
 
 
 class ArbitrationManager:

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from allbrain.events import EventType
 from allbrain.domains.memory.foundations.ordering import canonical_event_sort
-from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.observability.span import Span
+from allbrain.events import EventType
+from allbrain.models.schemas import EventRead
 
 
 class Tracer:

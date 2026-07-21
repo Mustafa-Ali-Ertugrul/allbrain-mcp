@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.learning.meta_meta_scoring.events import validate_evaluator_profile_updated
 from allbrain.domains.learning.meta_meta_scoring.model import META_META_SCORING_TEMPLATE_VERSION
+from allbrain.events.schemas import EventType
 
 
 class MetaMetaScoringReducer:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+
 import pytest
 
 from allbrain.domains.analysis.causal.manager import CausalManager
@@ -84,9 +85,7 @@ def test_world_model_learn_serialize_restore_and_sim():
                 "next_state_samples": {},
                 "known_actions": ["act_1"],
             },
-            "predictors": {
-                "act_1": {"alpha": 2.0, "beta": 1.5}
-            },
+            "predictors": {"act_1": {"alpha": 2.0, "beta": 1.5}},
         },
     )
     restored = WorldModel.from_events([update_event])

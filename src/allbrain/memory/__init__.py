@@ -12,6 +12,11 @@ shim_package(
     __name__,
     "allbrain.domains.memory.memory",
     submodules=(
-        "memory_builder", "memory_domain_items", "memory_helpers", "memory_retriever", "semantic_memory", "workflow_memory_store"
+        "memory_builder",
+        "memory_domain_items",
+        "memory_helpers",
+        "memory_retriever",
+        "semantic_memory",
+        "workflow_memory_store",
     ),
 )

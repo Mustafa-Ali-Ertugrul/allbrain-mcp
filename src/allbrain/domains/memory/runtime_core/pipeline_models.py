@@ -4,11 +4,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from allbrain.events import EventType
-from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.runtime_core.contracts import RuntimeContext
 from allbrain.domains.memory.runtime_core.event_bus import RuntimeEventBus
 from allbrain.domains.memory.runtime_core.state import RuntimeStateMachine, RuntimeStatus
+from allbrain.events import EventType
+from allbrain.models.schemas import EventRead
 
 
 @dataclass(frozen=True)

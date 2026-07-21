@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.memory.telemetry.events import validate_completed_payload
 from allbrain.domains.memory.telemetry.metrics import _stable_telemetry_id
 from allbrain.domains.memory.telemetry.metrics import runtime_score as compute_runtime_score
 from allbrain.domains.memory.telemetry.model import TelemetryState
+from allbrain.events.schemas import EventType
 
 
 class TelemetryReducer:

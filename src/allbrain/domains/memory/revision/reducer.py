@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.domains.learning.calibration.estimator import calibrated_trust, mean_calibration_error
-from allbrain.domains.reasoning.uncertainty.events import validate_payload as validate_uncertainty_payload
-from allbrain.events.schemas import EventType
 from allbrain.domains.memory.revision.estimator import _stable_revision_id, revise
 from allbrain.domains.memory.revision.events import validate_payload
 from allbrain.domains.memory.revision.policies import REVISION_TEMPLATE_VERSION, RevisionPolicy
 from allbrain.domains.memory.revision.state import RevisionState
+from allbrain.domains.reasoning.uncertainty.events import validate_payload as validate_uncertainty_payload
+from allbrain.events.schemas import EventType
 
 
 class RevisionReducer:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.governance.recovery_consensus.events import (
     validate_consensus_reached,
     validate_strategies_generated,
@@ -15,6 +14,7 @@ from allbrain.domains.governance.recovery_consensus.model import (
     CandidateStrategy,
     RecoveryDecision,
 )
+from allbrain.events.schemas import EventType
 
 
 class RecoveryConsensusReducer:

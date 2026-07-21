@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-import pytest
 
-from allbrain.events.schemas import EventType
+import pytest
 from allbrain.learning.events import (
     make_decayed_payload,
     make_learned_payload,
@@ -15,6 +14,8 @@ from allbrain.learning.events import (
 from allbrain.learning.learner import _stable_learning_id
 from allbrain.learning.manager import CapabilityLearningManager
 from allbrain.learning.reducer import CapabilityLearningReducer
+
+from allbrain.events.schemas import EventType
 
 
 class FakeEvent(SimpleNamespace):
@@ -64,7 +65,11 @@ def test_capability_learning_manager_observed_events():
         # Invalid payload (not dict or not matching types)
         FakeEvent(id="evt_4", type=EventType.AGENT_CAPABILITY_OBSERVED.value, payload="invalid_payload"),
         FakeEvent(id="evt_5", type=EventType.AGENT_CAPABILITY_OBSERVED.value, payload={"agent_id": 123}),
-        FakeEvent(id="evt_6", type=EventType.AGENT_CAPABILITY_OBSERVED.value, payload={"agent_id": "agent_1", "task_type": 123}),
+        FakeEvent(
+            id="evt_6",
+            type=EventType.AGENT_CAPABILITY_OBSERVED.value,
+            payload={"agent_id": "agent_1", "task_type": 123},
+        ),
     ]
 
     state = manager.query(events, agent_id="agent_1", task_type="coding")
@@ -139,7 +144,9 @@ def test_capability_learning_reducer_apply_and_snapshot():
 
     # Invalid payload or type
     reducer.apply(FakeEvent(id="evt_inv", type="unknown", payload=None))
-    reducer.apply(FakeEvent(id="evt_bad_obs", type=EventType.AGENT_CAPABILITY_OBSERVED.value, payload={"agent_id": "x"}))
+    reducer.apply(
+        FakeEvent(id="evt_bad_obs", type=EventType.AGENT_CAPABILITY_OBSERVED.value, payload={"agent_id": "x"})
+    )
 
     snap = reducer.snapshot(agent_id="agent_1", task_type="coding")
     assert snap.observation_count == 1
@@ -179,13 +186,19 @@ def test_capability_learning_reducer_apply_and_snapshot():
 
 def test_learning_events_validators_and_helpers():
     with pytest.raises(ValueError, match="must be non-empty string"):
-        validate_observed({"agent_id": "", "task_type": "coding", "success": True, "runtime_score": 0.5, "selection_score": 0.5})
+        validate_observed(
+            {"agent_id": "", "task_type": "coding", "success": True, "runtime_score": 0.5, "selection_score": 0.5}
+        )
 
     with pytest.raises(ValueError, match="success must be bool"):
-        validate_observed({"agent_id": "a", "task_type": "c", "success": "yes", "runtime_score": 0.5, "selection_score": 0.5})
+        validate_observed(
+            {"agent_id": "a", "task_type": "c", "success": "yes", "runtime_score": 0.5, "selection_score": 0.5}
+        )
 
     with pytest.raises(ValueError, match="must be in"):
-        validate_observed({"agent_id": "a", "task_type": "c", "success": True, "runtime_score": 1.5, "selection_score": 0.5})
+        validate_observed(
+            {"agent_id": "a", "task_type": "c", "success": True, "runtime_score": 1.5, "selection_score": 0.5}
+        )
 
     with pytest.raises(ValueError, match="must be non-empty string"):
         validate_learned({"agent_id": "", "task_type": "c", "old_score": 0.1, "new_score": 0.2, "delta": 0.1})

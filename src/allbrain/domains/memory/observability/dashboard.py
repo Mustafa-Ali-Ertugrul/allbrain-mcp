@@ -3,12 +3,12 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from typing import Any
 
-from allbrain.events import EventType
 from allbrain.domains.memory.metrics import AdvancedMetrics, AgentRanking
-from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.observability.dashboard_data_builder import DashboardDataBuilder
 from allbrain.domains.memory.observability.exporter import SpanExporter
 from allbrain.domains.memory.observability.tracer import Tracer
+from allbrain.events import EventType
+from allbrain.models.schemas import EventRead
 from allbrain.orchestrator.metrics import AgentPerformanceReducer
 
 

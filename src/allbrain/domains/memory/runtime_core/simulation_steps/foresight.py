@@ -5,9 +5,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from allbrain.domains.memory.runtime_core.event_bus import RuntimeEventBus
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
-from allbrain.domains.memory.runtime_core.event_bus import RuntimeEventBus
 
 if TYPE_CHECKING:
     from allbrain.domains.analysis.world import WorldModel

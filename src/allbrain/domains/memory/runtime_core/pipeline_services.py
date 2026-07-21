@@ -7,12 +7,6 @@ from typing import Any
 from uuid6 import uuid7
 
 from allbrain.domains.analysis.world import WorldModel
-from allbrain.domains.reasoning.counterfactual import CounterfactualEngine
-from allbrain.domains.reasoning.foresight import ForesightEngine
-from allbrain.domains.reasoning.information_seeking import InformationSeekingManager
-from allbrain.domains.reasoning.meta_reasoning import MetaReasoningManager
-from allbrain.domains.reasoning.scenarios import ScenarioEngine
-from allbrain.domains.reasoning.uncertainty import UncertaintyManager
 from allbrain.domains.governance.governance import AutonomousGovernanceCoordinator
 from allbrain.domains.memory.runtime_core.arbitration import ArbitrationBridge
 from allbrain.domains.memory.runtime_core.contracts import EconomicEvaluator, StrategicPlanner
@@ -21,6 +15,12 @@ from allbrain.domains.memory.runtime_core.execution import ExecutionPlanningBrid
 from allbrain.domains.memory.runtime_core.learning import ClosedLoopLearningEngine
 from allbrain.domains.memory.runtime_core.planning import GoalDecompositionBridge, StrategicPlanningBridge
 from allbrain.domains.memory.runtime_core.simulation import SimulationOrchestrator
+from allbrain.domains.reasoning.counterfactual import CounterfactualEngine
+from allbrain.domains.reasoning.foresight import ForesightEngine
+from allbrain.domains.reasoning.information_seeking import InformationSeekingManager
+from allbrain.domains.reasoning.meta_reasoning import MetaReasoningManager
+from allbrain.domains.reasoning.scenarios import ScenarioEngine
+from allbrain.domains.reasoning.uncertainty import UncertaintyManager
 
 
 @dataclass

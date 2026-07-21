@@ -12,6 +12,11 @@ shim_package(
     __name__,
     "allbrain.domains.memory.replay",
     submodules=(
-        "diff_utils", "engine_state", "event_classifiers", "event_replay_engine", "execution_visualizer", "failure_analyzer"
+        "diff_utils",
+        "engine_state",
+        "event_classifiers",
+        "event_replay_engine",
+        "execution_visualizer",
+        "failure_analyzer",
     ),
 )

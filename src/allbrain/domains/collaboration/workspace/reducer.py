@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.collaboration.workspace.events import validate_ws_added, validate_ws_removed, validate_ws_updated
 from allbrain.domains.collaboration.workspace.model import DEFAULT_CAPACITY
+from allbrain.events.schemas import EventType
 
 
 class WorkspaceReducer:

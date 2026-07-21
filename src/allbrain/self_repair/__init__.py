@@ -12,6 +12,12 @@ shim_package(
     __name__,
     "allbrain.domains.governance.self_repair",
     submodules=(
-        "events", "model", "policy_health_monitor", "recovery_executor", "reducer", "rollback_engine", "validation_gate"
+        "events",
+        "model",
+        "policy_health_monitor",
+        "recovery_executor",
+        "reducer",
+        "rollback_engine",
+        "validation_gate",
     ),
 )

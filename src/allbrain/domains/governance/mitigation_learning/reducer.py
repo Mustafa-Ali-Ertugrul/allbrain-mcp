@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.governance.mitigation_learning.events import (
     validate_mitigation_evaluated,
     validate_outcome_measured,
@@ -10,6 +9,7 @@ from allbrain.domains.governance.mitigation_learning.events import (
     validate_strategy_updated,
 )
 from allbrain.domains.governance.mitigation_learning.model import MITIGATION_LEARNING_TEMPLATE_VERSION
+from allbrain.events.schemas import EventType
 
 
 class MitigationLearningReducer:

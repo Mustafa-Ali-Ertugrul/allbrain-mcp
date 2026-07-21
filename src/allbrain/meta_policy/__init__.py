@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.learning.meta_policy",
-    submodules=(
-        "estimator", "evaluator", "events", "learner", "manager", "model", "reducer", "selector"
-    ),
+    submodules=("estimator", "evaluator", "events", "learner", "manager", "model", "reducer", "selector"),
 )

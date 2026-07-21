@@ -11,7 +11,10 @@ from allbrain.domains.governance.governance.constitution import ConstitutionalRe
 from allbrain.domains.governance.governance.identity import IdentityConsistencyChecker
 from allbrain.domains.governance.governance.objectives import LongHorizonObjectiveSynthesizer
 from allbrain.domains.governance.governance.policy import GovernancePolicySynthesizer
-from allbrain.domains.governance.governance.self_modification import SelfModificationAuthorityEngine, SelfModificationGuard
+from allbrain.domains.governance.governance.self_modification import (
+    SelfModificationAuthorityEngine,
+    SelfModificationGuard,
+)
 from allbrain.domains.governance.governance.trajectory import SystemTrajectoryForecaster
 
 

@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.learning.learning_graph",
-    submodules=(
-        "graph", "model", "node", "rewriter"
-    ),
+    submodules=("graph", "model", "node", "rewriter"),
 )

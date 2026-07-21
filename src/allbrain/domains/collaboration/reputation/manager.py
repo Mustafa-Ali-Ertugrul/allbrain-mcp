@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
-from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 from allbrain.domains.collaboration.reputation.estimator import (
     _stable_reputation_id,
     mean_confidence,
@@ -13,6 +11,8 @@ from allbrain.domains.collaboration.reputation.estimator import (
     success_rate,
 )
 from allbrain.domains.collaboration.reputation.model import ReputationState
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
+from allbrain.events.schemas import EventType
 
 
 class ReputationManager:

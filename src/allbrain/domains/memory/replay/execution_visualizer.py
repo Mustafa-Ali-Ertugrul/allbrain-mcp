@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.observability import ObservabilityBuilder
+from allbrain.models.schemas import EventRead
 
 
 class ExecutionVisualizer:

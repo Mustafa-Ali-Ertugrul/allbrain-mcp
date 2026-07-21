@@ -1,5 +1,7 @@
 """Deprecated compatibility shim for allbrain.runtime_core.pipeline_steps."""
+
 from __future__ import annotations
+
 from allbrain._compat import shim_package
 
 shim_package(

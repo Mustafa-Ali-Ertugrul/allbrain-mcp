@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-import pytest
 
-from allbrain.events.schemas import EventType
+import pytest
 from allbrain.recovery_consensus.evaluator import Evaluator
 from allbrain.recovery_consensus.events import (
     make_consensus_reached_payload,
@@ -20,6 +19,8 @@ from allbrain.recovery_consensus.events import (
 from allbrain.recovery_consensus.manager import RecoveryConsensusManager
 from allbrain.recovery_consensus.reducer import RecoveryConsensusReducer
 from allbrain.recovery_consensus.strategy_generator import StrategyGenerator
+
+from allbrain.events.schemas import EventType
 
 
 class FakeEvent(SimpleNamespace):
@@ -69,8 +70,12 @@ def test_recovery_consensus_reducer_and_events():
     p_reach = make_consensus_reached_payload(
         decision_id="dec_1", fault_id="f_1", selected_strategy="rollback", consensus_score=0.9, candidate_count=1
     )
-    p_rej = make_strategy_rejected_payload(decision_id="dec_2", fault_id="f_1", strategy="rollback", score=0.2, reason="too risky")
-    p_sel = make_strategy_selected_payload(decision_id="dec_3", fault_id="f_1", selected_strategy="retry", consensus_score=0.85, reason="best fit")
+    p_rej = make_strategy_rejected_payload(
+        decision_id="dec_2", fault_id="f_1", strategy="rollback", score=0.2, reason="too risky"
+    )
+    p_sel = make_strategy_selected_payload(
+        decision_id="dec_3", fault_id="f_1", selected_strategy="retry", consensus_score=0.85, reason="best fit"
+    )
 
     reducer.apply(FakeEvent(id="e1", type=EventType.RECOVERY_STRATEGIES_GENERATED.value, payload=p_gen))
     reducer.apply(FakeEvent(id="e1", type=EventType.RECOVERY_STRATEGIES_GENERATED.value, payload=p_gen))  # duplicate

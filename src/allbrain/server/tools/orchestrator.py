@@ -5,13 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from allbrain.models.schemas import (
-    OrchestratorInput,
-    RunDecisionPipelineInput,
-    ToolResult,
-    UserInputError,
-)
-
 # is_compatible, OrchestratedResumeEngine imported locally to avoid circular import
 from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
 from allbrain.domains.memory.runtime_core.constants import (
@@ -23,6 +16,12 @@ from allbrain.domains.memory.runtime_core.constants import (
     DEFAULT_RISK_THRESHOLD,
     DEFAULT_SCENARIO_RECOMMENDATION_THRESHOLD,
     DEFAULT_SCENARIOS_LIMIT,
+)
+from allbrain.models.schemas import (
+    OrchestratorInput,
+    RunDecisionPipelineInput,
+    ToolResult,
+    UserInputError,
 )
 from allbrain.server.context import BrainContext
 from allbrain.server.queueing import QueueCoordinator

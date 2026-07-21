@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from allbrain.events import EventType
 from allbrain.domains.memory.runtime_core.contracts import EconomicEvaluator, RuntimeContext, StrategicPlanner
 from allbrain.domains.memory.runtime_core.pipeline_models import PipelineRunOptions, PipelineRunState
 from allbrain.domains.memory.runtime_core.pipeline_services import PipelineServices
@@ -14,6 +13,7 @@ from allbrain.domains.memory.runtime_core.pipeline_steps import (
     ReasoningStep,
 )
 from allbrain.domains.memory.runtime_core.state import RuntimeStatus
+from allbrain.events import EventType
 
 
 class SystemDecisionPipeline:

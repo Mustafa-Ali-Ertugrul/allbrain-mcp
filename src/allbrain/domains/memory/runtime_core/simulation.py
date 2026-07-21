@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from allbrain.events import EventType
-from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.runtime_core.contracts import RuntimeContext
 from allbrain.domains.memory.runtime_core.event_bus import RuntimeEventBus
 from allbrain.domains.memory.runtime_core.observability import ObservabilityCollector
+from allbrain.events import EventType
+from allbrain.models.schemas import EventRead
 
 if TYPE_CHECKING:
     from allbrain.domains.analysis.world import WorldModel

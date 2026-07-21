@@ -2,11 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.domains.governance.adaptive_recovery.reducer import AdaptiveRecoveryReducer
-from allbrain.domains.collaboration.arbitration import ArbitrationReducer
-from allbrain.domains.learning.calibration.reducer import CalibrationReducer
-from allbrain.domains.learning.capabilities.reducer import CapabilityReducer
-from allbrain.domains.collaboration.collaboration import CollaborationStateBuilder
 from allbrain.domains.analysis.attention.reducer import AttentionReducer
 from allbrain.domains.analysis.attribution.reducer import AttributionReducer
 from allbrain.domains.analysis.belief.reducer import BeliefReducer
@@ -20,6 +15,36 @@ from allbrain.domains.analysis.fusion.reducer import FusionReducer
 from allbrain.domains.analysis.predictive_failure.reducer import PredictiveFailureReducer
 from allbrain.domains.analysis.semantic.reducer import SemanticReducer
 from allbrain.domains.analysis.world.manager import WorldStateBuilder
+from allbrain.domains.collaboration.arbitration import ArbitrationReducer
+from allbrain.domains.collaboration.collaboration import CollaborationStateBuilder
+from allbrain.domains.collaboration.reputation import ReputationReducer
+from allbrain.domains.collaboration.routing import RoutingReducer
+from allbrain.domains.collaboration.workspace import WorkspaceReducer
+from allbrain.domains.governance.adaptive_recovery.reducer import AdaptiveRecoveryReducer
+from allbrain.domains.governance.governance.state import GovernanceStateBuilder
+from allbrain.domains.governance.mitigation_learning.reducer import MitigationLearningReducer
+from allbrain.domains.governance.policy_competition.reducer import PolicyCompetitionReducer
+from allbrain.domains.governance.policy_routing.reducer import PolicyRoutingReducer
+from allbrain.domains.governance.recovery_consensus.reducer import RecoveryConsensusReducer
+from allbrain.domains.governance.resilience.reducer import ResilienceReducer
+from allbrain.domains.governance.self_repair.reducer import SelfRepairReducer
+from allbrain.domains.governance.soft_repair.reducer import SoftRepairReducer
+from allbrain.domains.governance.value_alignment.reducer import ValueAlignmentReducer
+from allbrain.domains.learning.calibration.reducer import CalibrationReducer
+from allbrain.domains.learning.capabilities.reducer import CapabilityReducer
+from allbrain.domains.learning.evolution.learning_state import LearningStateBuilder
+from allbrain.domains.learning.learning.reducer import CapabilityLearningReducer
+from allbrain.domains.learning.learning_safety.reducer import LearningSafetyReducer
+from allbrain.domains.learning.meta_meta_scoring.reducer import MetaMetaScoringReducer
+from allbrain.domains.learning.meta_optimizer.reducer import MetaOptimizerReducer
+from allbrain.domains.learning.meta_policy.reducer import MetaPolicyReducer
+from allbrain.domains.learning.meta_scoring.reducer import MetaScoringReducer
+from allbrain.domains.learning.self_play.reducer import SelfPlayReducer
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
+from allbrain.domains.memory.foundations.tolerance import is_known_event as _is_known_event
+from allbrain.domains.memory.revision.reducer import RevisionReducer
+from allbrain.domains.memory.runtime_core.projections import RuntimeCoreStateBuilder
+from allbrain.domains.memory.telemetry.reducer import TelemetryReducer
 from allbrain.domains.reasoning.counterfactual.projection import CounterfactualProjection
 from allbrain.domains.reasoning.decision.reducer import DecisionReducer
 from allbrain.domains.reasoning.foresight.projection import ForesightProjection
@@ -30,32 +55,7 @@ from allbrain.domains.reasoning.scenarios.projection import ScenarioProjection
 from allbrain.domains.reasoning.tradeoff_engine.reducer import TradeoffReducer
 from allbrain.domains.reasoning.uncertainty.projection import UncertaintyProjection
 from allbrain.events import EventType
-from allbrain.domains.learning.evolution.learning_state import LearningStateBuilder
-from allbrain.domains.memory.foundations.ordering import canonical_event_sort
-from allbrain.domains.memory.foundations.tolerance import is_known_event as _is_known_event
-from allbrain.domains.governance.governance.state import GovernanceStateBuilder
-from allbrain.domains.learning.learning.reducer import CapabilityLearningReducer
-from allbrain.domains.learning.learning_safety.reducer import LearningSafetyReducer
-from allbrain.domains.learning.meta_meta_scoring.reducer import MetaMetaScoringReducer
-from allbrain.domains.learning.meta_optimizer.reducer import MetaOptimizerReducer
-from allbrain.domains.learning.meta_policy.reducer import MetaPolicyReducer
-from allbrain.domains.learning.meta_scoring.reducer import MetaScoringReducer
-from allbrain.domains.governance.mitigation_learning.reducer import MitigationLearningReducer
 from allbrain.models.schemas import EventRead
-from allbrain.domains.governance.policy_competition.reducer import PolicyCompetitionReducer
-from allbrain.domains.governance.policy_routing.reducer import PolicyRoutingReducer
-from allbrain.domains.governance.recovery_consensus.reducer import RecoveryConsensusReducer
-from allbrain.domains.collaboration.reputation import ReputationReducer
-from allbrain.domains.governance.resilience.reducer import ResilienceReducer
-from allbrain.domains.memory.revision.reducer import RevisionReducer
-from allbrain.domains.collaboration.routing import RoutingReducer
-from allbrain.domains.memory.runtime_core.projections import RuntimeCoreStateBuilder
-from allbrain.domains.learning.self_play.reducer import SelfPlayReducer
-from allbrain.domains.governance.self_repair.reducer import SelfRepairReducer
-from allbrain.domains.governance.soft_repair.reducer import SoftRepairReducer
-from allbrain.domains.memory.telemetry.reducer import TelemetryReducer
-from allbrain.domains.governance.value_alignment.reducer import ValueAlignmentReducer
-from allbrain.domains.collaboration.workspace import WorkspaceReducer
 
 
 class EventReplayEngine:

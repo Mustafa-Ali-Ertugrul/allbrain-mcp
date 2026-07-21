@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.memory.revision",
-    submodules=(
-        "estimator", "events", "manager", "policies", "reducer", "state"
-    ),
+    submodules=("estimator", "events", "manager", "policies", "reducer", "state"),
 )

@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.learning.learning_safety",
-    submodules=(
-        "drift_guard", "entropy", "events", "explorer", "model", "outcome_validator", "reducer"
-    ),
+    submodules=("drift_guard", "entropy", "events", "explorer", "model", "outcome_validator", "reducer"),
 )

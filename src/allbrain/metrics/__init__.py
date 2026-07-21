@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.memory.metrics",
-    submodules=(
-        "advanced_metrics", "agent_ranking"
-    ),
+    submodules=("advanced_metrics", "agent_ranking"),
 )

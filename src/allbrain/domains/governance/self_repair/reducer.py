@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.governance.self_repair.events import (
     validate_policy_snapshotted,
     validate_policy_validation_failed,
@@ -11,6 +10,7 @@ from allbrain.domains.governance.self_repair.events import (
     validate_system_recovered,
 )
 from allbrain.domains.governance.self_repair.model import SELF_REPAIR_TEMPLATE_VERSION
+from allbrain.events.schemas import EventType
 
 
 class SelfRepairReducer:

@@ -12,6 +12,16 @@ shim_package(
     __name__,
     "allbrain.domains.learning.evolution",
     submodules=(
-        "consensus_optimizer", "delegation_optimizer", "learning_manager", "learning_state", "metrics", "organizational_learning", "policy_feedback", "recommendation_engine", "supervisor_optimizer", "team_optimizer", "team_pattern"
+        "consensus_optimizer",
+        "delegation_optimizer",
+        "learning_manager",
+        "learning_state",
+        "metrics",
+        "organizational_learning",
+        "policy_feedback",
+        "recommendation_engine",
+        "supervisor_optimizer",
+        "team_optimizer",
+        "team_pattern",
     ),
 )

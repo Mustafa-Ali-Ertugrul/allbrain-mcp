@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.governance.policy",
-    submodules=(
-        "agent_selection_policy", "policy_optimizer", "routing_engine"
-    ),
+    submodules=("agent_selection_policy", "policy_optimizer", "routing_engine"),
 )

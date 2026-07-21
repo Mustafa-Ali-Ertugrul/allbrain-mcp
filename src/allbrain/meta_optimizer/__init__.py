@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.learning.meta_optimizer",
-    submodules=(
-        "events", "gradient_estimator", "model", "reducer", "stability_controller", "weight_optimizer"
-    ),
+    submodules=("events", "gradient_estimator", "model", "reducer", "stability_controller", "weight_optimizer"),
 )

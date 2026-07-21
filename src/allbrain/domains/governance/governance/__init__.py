@@ -7,7 +7,10 @@ from allbrain.domains.governance.governance.identity import IdentityConsistencyC
 from allbrain.domains.governance.governance.metrics import GovernanceMetrics
 from allbrain.domains.governance.governance.objectives import LongHorizonObjectiveSynthesizer
 from allbrain.domains.governance.governance.policy import GovernancePolicySynthesizer
-from allbrain.domains.governance.governance.self_modification import SelfModificationAuthorityEngine, SelfModificationGuard
+from allbrain.domains.governance.governance.self_modification import (
+    SelfModificationAuthorityEngine,
+    SelfModificationGuard,
+)
 from allbrain.domains.governance.governance.state import GovernanceStateBuilder
 from allbrain.domains.governance.governance.trajectory import SystemTrajectoryForecaster
 

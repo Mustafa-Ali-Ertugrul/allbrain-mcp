@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.learning.meta_meta_scoring",
-    submodules=(
-        "evaluator_store", "events", "meta_evaluator", "model", "reducer"
-    ),
+    submodules=("evaluator_store", "events", "meta_evaluator", "model", "reducer"),
 )

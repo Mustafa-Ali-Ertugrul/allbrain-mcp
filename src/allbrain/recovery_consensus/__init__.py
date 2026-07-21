@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.governance.recovery_consensus",
-    submodules=(
-        "arbiter", "evaluator", "events", "manager", "model", "reducer", "strategy_generator"
-    ),
+    submodules=("arbiter", "evaluator", "events", "manager", "model", "reducer", "strategy_generator"),
 )

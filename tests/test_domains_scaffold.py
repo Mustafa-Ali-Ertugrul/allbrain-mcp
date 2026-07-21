@@ -42,7 +42,8 @@ def test_all_contexts_importable() -> None:
 
 
 def test_all_contexts_have_empty_all() -> None:
-    """All 6 contexts are migrated: reasoning (v0.4.0), analysis (v0.4.1), learning (v0.4.2), governance (v0.4.3), memory (v0.4.4), & collaboration (v0.4.5)."""
+    """All 6 contexts are migrated: reasoning (v0.4.0), analysis (v0.4.1),
+    learning (v0.4.2), governance (v0.4.3), memory (v0.4.4), & collaboration (v0.4.5)."""
     pass
 
 

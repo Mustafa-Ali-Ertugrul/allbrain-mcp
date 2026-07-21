@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.collaboration.distributed",
-    submodules=(
-        "cluster_manager", "node_identity", "worker_registry"
-    ),
+    submodules=("cluster_manager", "node_identity", "worker_registry"),
 )

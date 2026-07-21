@@ -3,18 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from allbrain.domains.collaboration.conflict import ConflictDetector, ConflictResolver
 from allbrain.core import StateEngine
 from allbrain.domains.analysis.compression import EventCompressor
 from allbrain.domains.analysis.context import ParallelContextBuilder
 from allbrain.domains.analysis.contradiction import ContradictionDetector
-from allbrain.domains.reasoning.intent import IntentExtractor, IntentStore
+from allbrain.domains.collaboration.conflict import ConflictDetector, ConflictResolver
 from allbrain.domains.collaboration.merge import EventMergeEngine
+from allbrain.domains.memory.resume.orchestrated import OrchestratedResumeEngine
+from allbrain.domains.reasoning.intent import IntentExtractor, IntentStore
 from allbrain.models.schemas import EventRead
 from allbrain.orchestrator import TaskGraphBuilder, TaskStateReducer
 from allbrain.orchestrator.metrics import AgentPerformanceReducer, TaskOutcomeReducer
 from allbrain.orchestrator.state import AgentStateBuilder
-from allbrain.domains.memory.resume.orchestrated import OrchestratedResumeEngine
 from allbrain.snapshot.versions import snapshot_versions
 
 

@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.memory.telemetry",
-    submodules=(
-        "events", "manager", "metrics", "model", "reducer"
-    ),
+    submodules=("events", "manager", "metrics", "model", "reducer"),
 )

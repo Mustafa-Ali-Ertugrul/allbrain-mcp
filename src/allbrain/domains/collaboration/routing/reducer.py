@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.collaboration.routing.events import validate_scored, validate_selected
 from allbrain.domains.collaboration.routing.model import RoutingState
 from allbrain.domains.collaboration.routing.scorer import _stable_routing_id
+from allbrain.events.schemas import EventType
 
 
 class RoutingReducer:

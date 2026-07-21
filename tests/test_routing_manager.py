@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-import pytest
 
-from allbrain.events.schemas import EventType
+import pytest
 from allbrain.routing.events import (
     make_req_payload,
     make_scored_payload,
@@ -26,6 +25,8 @@ from allbrain.routing.scorer import (
     selection_score,
     unified_decision_score,
 )
+
+from allbrain.events.schemas import EventType
 
 
 class FakeEvent(SimpleNamespace):
@@ -53,27 +54,44 @@ def test_routing_manager_scored_and_selected():
             id="evt_1",
             type=EventType.AGENT_SELECTION_SCORED.value,
             payload=make_scored_payload(
-                task_type="code_gen", agent_id="agent_1", selection_score=0.85, reputation=0.8, runtime_score=0.8, calibrated_trust=0.8
+                task_type="code_gen",
+                agent_id="agent_1",
+                selection_score=0.85,
+                reputation=0.8,
+                runtime_score=0.8,
+                calibrated_trust=0.8,
             ),
         ),
         FakeEvent(
             id="evt_2",
             type=EventType.AGENT_SELECTION_SCORED.value,
             payload=make_scored_payload(
-                task_type="code_gen", agent_id="agent_2", selection_score=0.90, reputation=0.9, runtime_score=0.9, calibrated_trust=0.9
+                task_type="code_gen",
+                agent_id="agent_2",
+                selection_score=0.90,
+                reputation=0.9,
+                runtime_score=0.9,
+                calibrated_trust=0.9,
             ),
         ),
         FakeEvent(
             id="evt_3",
             type=EventType.AGENT_SELECTED.value,
-            payload=make_selected_payload(task_id="task_1", task_type="code_gen", agent_id="agent_2", selection_score=0.90),
+            payload=make_selected_payload(
+                task_id="task_1", task_type="code_gen", agent_id="agent_2", selection_score=0.90
+            ),
         ),
         # Mismatched task_type & invalid payloads
         FakeEvent(
             id="evt_4",
             type=EventType.AGENT_SELECTION_SCORED.value,
             payload=make_scored_payload(
-                task_type="other_task", agent_id="agent_3", selection_score=0.5, reputation=0.5, runtime_score=0.5, calibrated_trust=0.5
+                task_type="other_task",
+                agent_id="agent_3",
+                selection_score=0.5,
+                reputation=0.5,
+                runtime_score=0.5,
+                calibrated_trust=0.5,
             ),
         ),
         FakeEvent(id="evt_5", type=EventType.AGENT_SELECTED.value, payload="invalid_string"),
@@ -95,7 +113,12 @@ def test_routing_reducer_apply_and_snapshots():
         id="evt_1",
         type=EventType.AGENT_SELECTION_SCORED.value,
         payload=make_scored_payload(
-            task_type="review", agent_id="agent_x", selection_score=0.75, reputation=0.7, runtime_score=0.7, calibrated_trust=0.7
+            task_type="review",
+            agent_id="agent_x",
+            selection_score=0.75,
+            reputation=0.7,
+            runtime_score=0.7,
+            calibrated_trust=0.7,
         ),
     )
     reducer.apply(scored_evt)

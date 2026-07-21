@@ -299,7 +299,8 @@ def test_context_init_reexports() -> None:
 
 
 def test_no_untracked_domains_imports_in_migrated_contexts() -> None:
-    """Migrated reasoning/, analysis/, learning/, governance/, memory/, and collaboration/ contexts must only import known infrastructure or canonical domain targets."""
+    """Migrated reasoning/, analysis/, learning/, governance/, memory/, and collaboration/
+    contexts must only import known infrastructure or canonical domain targets."""
     import ast
     from pathlib import Path
 

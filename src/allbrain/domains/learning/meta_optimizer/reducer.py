@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.learning.meta_optimizer.events import validate_weights_adapated
 from allbrain.domains.learning.meta_optimizer.model import META_OPTIMIZER_TEMPLATE_VERSION
+from allbrain.events.schemas import EventType
 
 
 class MetaOptimizerReducer:

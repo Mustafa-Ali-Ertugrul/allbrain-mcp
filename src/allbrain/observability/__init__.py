@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.memory.observability",
-    submodules=(
-        "dashboard", "dashboard_data_builder", "exporter", "span", "tracer"
-    ),
+    submodules=("dashboard", "dashboard_data_builder", "exporter", "span", "tracer"),
 )

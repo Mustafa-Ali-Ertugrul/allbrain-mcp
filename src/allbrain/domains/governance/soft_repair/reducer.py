@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.governance.soft_repair.events import validate_policy_blended
 from allbrain.domains.governance.soft_repair.model import SOFT_REPAIR_TEMPLATE_VERSION
+from allbrain.events.schemas import EventType
 
 
 class SoftRepairReducer:

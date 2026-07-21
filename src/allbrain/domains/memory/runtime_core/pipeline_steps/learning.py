@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events import EventType
 from allbrain.domains.memory.runtime_core.pipeline_models import PipelineRunState
 from allbrain.domains.memory.runtime_core.pipeline_services import PipelineServices
 from allbrain.domains.memory.runtime_core.state import RuntimeStatus
+from allbrain.events import EventType
 
 
 class LearningCompletionStep:

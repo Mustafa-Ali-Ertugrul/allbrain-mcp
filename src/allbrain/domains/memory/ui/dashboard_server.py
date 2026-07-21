@@ -6,8 +6,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
 
 from allbrain.config import default_db_path
-from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 from allbrain.domains.memory.ui import GraphExplorer, MetricsDashboard
+from allbrain.storage import BrainRepository, create_engine_for_path, init_db
 
 _HTML_PAGE = r"""<!DOCTYPE html>
 <html lang="en">

@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.domains.memory.metrics import AdvancedMetrics, AgentRanking
-from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.observability import DashboardDataBuilder
+from allbrain.models.schemas import EventRead
 
 
 class MetricsDashboard:

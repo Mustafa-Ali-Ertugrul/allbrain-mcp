@@ -6,7 +6,6 @@ Covers all make_* / validate_* functions plus the _check_* helpers.
 from __future__ import annotations
 
 import pytest
-
 from allbrain.self_repair.events import (
     make_policy_snapshotted_payload,
     make_rollback_completed_payload,

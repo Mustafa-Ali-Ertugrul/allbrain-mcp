@@ -12,7 +12,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-
 from allbrain.gitbrain.parser import GitBrain, _is_credential_var, safe_git_env
 
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.domains.analysis.evidence.state import EvidenceState
-from allbrain.events.schemas import EventType
 from allbrain.domains.memory.foundations.ordering import canonical_event_sort
+from allbrain.events.schemas import EventType
 
 
 class EvidenceManager:

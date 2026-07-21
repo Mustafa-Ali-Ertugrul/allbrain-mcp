@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from allbrain.events import EventType
 from allbrain.domains.memory.runtime_core.bridge_executor import execute_bridge
 from allbrain.domains.memory.runtime_core.contracts import EconomicEvaluation, ObjectiveContext, StrategicPlan
 from allbrain.domains.memory.runtime_core.pipeline_models import PipelineRunState
 from allbrain.domains.memory.runtime_core.pipeline_services import PipelineServices
 from allbrain.domains.memory.runtime_core.state import RuntimeStatus
+from allbrain.events import EventType
 
 
 class DecisionPreparationStep:

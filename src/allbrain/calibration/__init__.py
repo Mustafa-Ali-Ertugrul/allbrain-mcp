@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.learning.calibration",
-    submodules=(
-        "estimator", "events", "manager", "model", "reducer"
-    ),
+    submodules=("estimator", "events", "manager", "model", "reducer"),
 )

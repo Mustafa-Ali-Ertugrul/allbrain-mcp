@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.governance.value_alignment",
-    submodules=(
-        "alignment_score", "constraint_engine", "events", "model", "reducer"
-    ),
+    submodules=("alignment_score", "constraint_engine", "events", "model", "reducer"),
 )

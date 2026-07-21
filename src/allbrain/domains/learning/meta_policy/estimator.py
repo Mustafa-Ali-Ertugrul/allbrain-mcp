@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.learning.meta_policy.model import (
     REWARD_WEIGHT_DECISION,
     REWARD_WEIGHT_OUTCOME,
     REWARD_WEIGHT_STABILITY,
     RewardSignal,
 )
+from allbrain.events.schemas import EventType
 
 
 def _stable_meta_id(key: str, event_ids: list[str] | None = None) -> str:

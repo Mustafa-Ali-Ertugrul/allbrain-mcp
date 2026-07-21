@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from allbrain.domains.collaboration.agents.queue import QueueItem
-from allbrain.models.schemas import EventRead
 from allbrain.domains.governance.reliability.idempotency import IdempotencyKeyBuilder
+from allbrain.models.schemas import EventRead
 
 
 @dataclass

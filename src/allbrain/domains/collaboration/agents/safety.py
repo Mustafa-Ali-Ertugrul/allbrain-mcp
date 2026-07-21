@@ -7,8 +7,8 @@ from typing import Any
 
 from allbrain.domains.collaboration.agents.adapter import AgentAdapter, ExecutionContext
 from allbrain.domains.collaboration.agents.definition import SafetyLimits
-from allbrain.security._prompt_rules import PROMPT_INJECTION_PATTERNS
 from allbrain.domains.collaboration.workflow.models import SubtaskResult
+from allbrain.security._prompt_rules import PROMPT_INJECTION_PATTERNS
 
 
 class SafetyError(Exception):

@@ -12,6 +12,12 @@ shim_package(
     __name__,
     "allbrain.domains.memory.resume",
     submodules=(
-        "context_builder", "engine", "incremental", "intent_resume", "multi_agent", "orchestrated", "protocols"
+        "context_builder",
+        "engine",
+        "incremental",
+        "intent_resume",
+        "multi_agent",
+        "orchestrated",
+        "protocols",
     ),
 )

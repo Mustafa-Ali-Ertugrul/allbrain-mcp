@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.events.schemas import EventType
 from allbrain.domains.governance.policy_competition.events import validate_competition_held
 from allbrain.domains.governance.policy_competition.model import POLICY_COMPETITION_TEMPLATE_VERSION
+from allbrain.events.schemas import EventType
 
 
 class PolicyCompetitionReducer:

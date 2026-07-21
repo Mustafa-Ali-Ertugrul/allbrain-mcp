@@ -12,6 +12,12 @@ shim_package(
     __name__,
     "allbrain.domains.governance.reliability",
     submodules=(
-        "deduplication", "idempotency", "lease_manager", "metrics", "resource_tracker", "shutdown_manager", "worker_heartbeat"
+        "deduplication",
+        "idempotency",
+        "lease_manager",
+        "metrics",
+        "resource_tracker",
+        "shutdown_manager",
+        "worker_heartbeat",
     ),
 )

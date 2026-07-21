@@ -11,7 +11,5 @@ from allbrain._compat import shim_package
 shim_package(
     __name__,
     "allbrain.domains.learning.coevolution",
-    submodules=(
-        "coupling_matrix", "model", "oscillation_detector"
-    ),
+    submodules=("coupling_matrix", "model", "oscillation_detector"),
 )

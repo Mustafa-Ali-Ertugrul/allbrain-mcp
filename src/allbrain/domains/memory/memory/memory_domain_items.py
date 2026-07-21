@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from allbrain.events import EventType
 from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 from allbrain.domains.memory.memory.memory_helpers import _agent
 from allbrain.domains.memory.memory.semantic_memory import MemoryItem, SemanticMemory
+from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
 
 

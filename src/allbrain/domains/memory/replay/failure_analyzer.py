@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from allbrain.domains.memory.observability import ObservabilityBuilder
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
-from allbrain.domains.memory.observability import ObservabilityBuilder
 
 
 class FailureAnalyzer:

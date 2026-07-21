@@ -12,6 +12,21 @@ shim_package(
     __name__,
     "allbrain.domains.collaboration.collaboration",
     submodules=(
-        "collaboration_context", "collaboration_manager", "collaboration_state", "consensus", "decision", "delegation", "delegation_policy", "metrics", "negotiation", "negotiation_state", "proposal", "supervisor", "team", "team_builder", "team_registry", "voting"
+        "collaboration_context",
+        "collaboration_manager",
+        "collaboration_state",
+        "consensus",
+        "decision",
+        "delegation",
+        "delegation_policy",
+        "metrics",
+        "negotiation",
+        "negotiation_state",
+        "proposal",
+        "supervisor",
+        "team",
+        "team_builder",
+        "team_registry",
+        "voting",
     ),
 )

@@ -6,7 +6,6 @@ Covers all make_* / validate_* functions plus _clamp_score edge cases.
 from __future__ import annotations
 
 import pytest
-
 from allbrain.recovery_consensus.events import (
     _clamp_score,
     make_consensus_reached_payload,

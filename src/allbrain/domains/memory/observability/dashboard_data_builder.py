@@ -4,12 +4,12 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from allbrain.domains.collaboration.collaboration import CollaborationMetrics
-from allbrain.domains.learning.evolution.metrics import LearningMetrics
 from allbrain.domains.governance.governance.metrics import GovernanceMetrics
-from allbrain.models.schemas import EventRead
-from allbrain.domains.memory.observability.tracer import Tracer
 from allbrain.domains.governance.reliability.metrics import ReliabilityMetrics
+from allbrain.domains.learning.evolution.metrics import LearningMetrics
+from allbrain.domains.memory.observability.tracer import Tracer
 from allbrain.domains.memory.runtime_core.projections import RuntimeCoreMetrics
+from allbrain.models.schemas import EventRead
 
 
 class DashboardDataBuilder:

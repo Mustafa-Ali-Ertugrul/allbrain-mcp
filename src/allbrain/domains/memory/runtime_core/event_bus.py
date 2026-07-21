@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from allbrain.models.schemas import EventRead
 from allbrain.domains.memory.runtime_core.contracts import RuntimeContext
+from allbrain.models.schemas import EventRead
 
 
 class RuntimeEventBus:
