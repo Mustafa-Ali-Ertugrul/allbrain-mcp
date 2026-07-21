@@ -230,8 +230,7 @@ class GitBrain:
         after_head = after.get("head")
         if self.repo is not None and before_head and after_head and before_head != after_head:
             try:
-                with self._git_env():
-                    committed = self.repo.git.diff("--name-only", before_head, after_head).splitlines()
+                committed = self._safe_git("diff", "--name-only", before_head, after_head).splitlines()
                 committed_paths = {path.strip().replace("\\", "/") for path in committed if path.strip()}
                 paths.update(committed_paths)
             except GitCommandError:
@@ -239,8 +238,7 @@ class GitBrain:
         tracked_paths: set[str] = set()
         if self.repo is not None:
             try:
-                with self._git_env():
-                    tracked = self.repo.git.ls_files().splitlines()
+                tracked = self._safe_git("ls-files").splitlines()
                 tracked_paths = {path.strip().replace("\\", "/") for path in tracked if path.strip()}
             except GitCommandError:
                 pass
@@ -264,30 +262,90 @@ class GitBrain:
 
     # ---- env sandbox ------------------------------------------------------
 
-    _ENV_OVERRIDES = {"GIT_TERMINAL_PROMPT": "0"}
+    # Git config overrides that neutralize untrusted-repo RCE vectors.
+    # Every git call inside this GitBrain MUST go through _safe_git() so these
+    # overrides are applied. Without them, a malicious .git/config can set
+    # core.fsmonitor, filter.*.clean, protocol.ext.allow, etc. to execute
+    # arbitrary commands on `git status` / `git diff` / `git log`.
+    _GIT_CONFIG_OVERRIDES: list[str] = [
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.preloadindex=false",
+        "-c",
+        "protocol.ext.allow=never",
+        "-c",
+        "protocol.file.allow=never",
+        "-c",
+        "filter.lfs.required=false",
+        "-c",
+        "filter.lfs.smudge=",
+        "-c",
+        "filter.lfs.clean=",
+    ]
+
+    # Hard env overrides — strip global/system config and block interactive prompts.
+    _ENV_HARD_OVERRIDES: dict[str, str] = {
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_SYSTEM": os.devnull,
+    }
 
     @contextlib.contextmanager
     def _git_env(self):
         """Apply credential-safe env tweaks without ``os.environ.clear()``.
 
-        Only removes known credential-carrying keys and forces
-        ``GIT_TERMINAL_PROMPT=0``. Other process env (PATH, HOME, …) stays
-        intact so concurrent threads never observe a wiped environment.
+        Removes known credential-carrying keys, blocks interactive prompts,
+        and disables global/system git config to neutralize untrusted-repo
+        RCE vectors (core.fsmonitor, filter.*, protocol.*).
+
+        Other process env (PATH, HOME, …) stays intact so concurrent threads
+        never observe a wiped environment.
         """
         removed: dict[str, str] = {}
         for key in list(os.environ):
             if _is_credential_var(key):
                 removed[key] = os.environ.pop(key)
-        previous_gtp = os.environ.get("GIT_TERMINAL_PROMPT")
-        os.environ["GIT_TERMINAL_PROMPT"] = "0"
+        # Apply hard overrides (save previous values for restore)
+        previous: dict[str, str | None] = {}
+        for key, val in self._ENV_HARD_OVERRIDES.items():
+            previous[key] = os.environ.get(key)
+            os.environ[key] = val
         try:
             yield
         finally:
-            if previous_gtp is None:
-                os.environ.pop("GIT_TERMINAL_PROMPT", None)
-            else:
-                os.environ["GIT_TERMINAL_PROMPT"] = previous_gtp
+            for key, prev in previous.items():
+                if prev is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = prev
             os.environ.update(removed)
+
+    def _safe_git(self, *args: str) -> str:
+        """Run a git command with config overrides and sandboxed env.
+
+        Wraps ``repo.git.execute()`` with mandatory ``-c`` overrides that
+        neutralize untrusted-repo RCE vectors (fsmonitor, filters, protocols).
+        No shell is used — argv is passed directly.
+
+        Args:
+            *args: git subcommand and flags (e.g. ``"status", "--short"``).
+
+        Returns:
+            Command stdout as string.
+
+        Raises:
+            GitCommandError: if the git command fails.
+        """
+        if self.repo is None:
+            raise GitCommandError(["git"], 128, "repo is not initialized")
+        argv: list[str] = ["git", *self._GIT_CONFIG_OVERRIDES, *args]
+        with self._git_env():
+            result = self.repo.git.execute(argv)
+        if isinstance(result, bytes):
+            return result.decode("utf-8", errors="replace")
+        return str(result)
 
     # ---- low-level git operations (all sanitized) -------------------------
 
@@ -320,8 +378,7 @@ class GitBrain:
         if self.repo is None:
             return ""
         try:
-            with self._git_env():
-                raw = self.repo.git.status("--short")
+            raw = self._safe_git("status", "--short")
             return sanitize_text(raw)
         except GitCommandError:
             return ""
@@ -330,8 +387,7 @@ class GitBrain:
         if self.repo is None:
             return ""
         try:
-            with self._git_env():
-                raw = self.repo.git.diff()
+            raw = self._safe_git("diff")
             return sanitize_text(raw)
         except GitCommandError:
             return ""
@@ -341,13 +397,23 @@ class GitBrain:
             return []
         files: set[str] = set()
         try:
-            for item in self.repo.index.diff(None):
-                files.add(item.a_path)
-            for item in self.repo.index.diff("HEAD"):
-                files.add(item.a_path)
-            files.update(self.repo.untracked_files)
-        except (ValueError, GitCommandError):
-            files.update(self.repo.untracked_files)
+            # Use sandboxed _safe_git instead of GitPython high-level methods
+            # (repo.index.diff / repo.untracked_files) to ensure all git calls
+            # go through the config override sandbox.
+            for line in self._safe_git("diff", "--name-only").splitlines():
+                p = line.strip()
+                if p:
+                    files.add(p.replace("\\", "/"))
+            for line in self._safe_git("diff", "--name-only", "HEAD").splitlines():
+                p = line.strip()
+                if p:
+                    files.add(p.replace("\\", "/"))
+            for line in self._safe_git("ls-files", "--others", "--exclude-standard").splitlines():
+                p = line.strip()
+                if p:
+                    files.add(p.replace("\\", "/"))
+        except GitCommandError:
+            pass
         return sorted(file for file in files if file)
 
     # ---- context normalisation (no git calls) -----------------------------
