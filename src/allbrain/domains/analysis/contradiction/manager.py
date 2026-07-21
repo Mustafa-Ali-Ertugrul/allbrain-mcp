@@ -8,7 +8,7 @@ from allbrain.domains.analysis.contradiction.estimator import (
 )
 from allbrain.domains.analysis.contradiction.models import ContradictionState
 from allbrain.events.schemas import EventType
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 
 
 class ContradictionManager:

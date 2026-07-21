@@ -10,7 +10,7 @@ from allbrain.domains.analysis.world.simulation import SimulationBridge
 from allbrain.domains.analysis.world.transition_learner import TransitionLearner
 from allbrain.domains.analysis.world.transitions import LearnedTransitionBridge, StateTransitionBridge
 from allbrain.events import EventType
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 from allbrain.models.schemas import EventRead
 
 

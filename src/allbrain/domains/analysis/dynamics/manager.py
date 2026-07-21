@@ -6,7 +6,7 @@ from allbrain.domains.analysis.dynamics.drift import detect_drift
 from allbrain.domains.analysis.dynamics.forecast import predict
 from allbrain.domains.analysis.dynamics.trend import classify_trend
 from allbrain.events.schemas import EventType
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 
 
 class CapabilityDynamicsManager:

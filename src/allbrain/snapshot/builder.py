@@ -14,7 +14,7 @@ from allbrain.models.schemas import EventRead
 from allbrain.orchestrator import TaskGraphBuilder, TaskStateReducer
 from allbrain.orchestrator.metrics import AgentPerformanceReducer, TaskOutcomeReducer
 from allbrain.orchestrator.state import AgentStateBuilder
-from allbrain.resume.orchestrated import OrchestratedResumeEngine
+from allbrain.domains.memory.resume.orchestrated import OrchestratedResumeEngine
 from allbrain.snapshot.versions import snapshot_versions
 
 

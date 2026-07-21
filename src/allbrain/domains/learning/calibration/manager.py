@@ -10,7 +10,7 @@ from allbrain.domains.learning.calibration.estimator import (
 )
 from allbrain.domains.learning.calibration.model import CalibrationState
 from allbrain.events.schemas import EventType
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 
 
 class CalibrationManager:

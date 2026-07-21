@@ -54,7 +54,7 @@ class TestQualityGate:
         assert mgr.query(w).selected_agent_score == 0.7
 
     def test_no_recompute(self):
-        c = Path("src/allbrain/revision/manager.py").read_text(encoding="utf-8")
+        c = Path("src/allbrain/domains/memory/revision/manager.py").read_text(encoding="utf-8")
         lines = c.splitlines()
         inh = False
         forb = [r"\bRoutingManager\(", r"\bRoutingReducer\("]

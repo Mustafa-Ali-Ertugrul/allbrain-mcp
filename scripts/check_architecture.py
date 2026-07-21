@@ -43,6 +43,8 @@ def main() -> int:
         imports, tree = parsed
         relative = path.relative_to(root)
         package_root = relative.parts[0]
+        if package_root == "domains" and len(relative.parts) > 2:
+            package_root = relative.parts[2]
         if relative.parts[:3] == ("server", "tools", path.name) and path.name != "decorators.py":
             for node in tree.body:
                 if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) or not node.name.endswith("_impl"):

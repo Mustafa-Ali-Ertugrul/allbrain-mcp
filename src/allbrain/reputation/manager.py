@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from allbrain.events.schemas import EventType
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 from allbrain.reputation.estimator import (
     _stable_reputation_id,
     mean_confidence,

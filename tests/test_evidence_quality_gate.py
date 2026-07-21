@@ -42,7 +42,7 @@ def test_revision_trust_uses_event_log_only():
     """
     import re
 
-    manager_path = Path("src/allbrain/revision/manager.py")
+    manager_path = Path("src/allbrain/domains/memory/revision/manager.py")
     content = manager_path.read_text(encoding="utf-8")
     lines = content.splitlines()
     in_helper = False

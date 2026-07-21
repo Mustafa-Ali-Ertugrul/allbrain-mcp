@@ -1,12 +1,35 @@
 """Memory bounded context — persistence, recall, observability.
 
-Future home (v0.4.0) of:
-  memory, replay, resume, telemetry,
-  observability, metrics, foundations,
-  runtime_core, gitbrain, revision, ui, api
+Migrated in v0.4.4 from:
+  allbrain.memory → allbrain.domains.memory.memory
+  allbrain.replay → allbrain.domains.memory.replay
+  allbrain.resume → allbrain.domains.memory.resume
+  allbrain.telemetry → allbrain.domains.memory.telemetry
+  allbrain.observability → allbrain.domains.memory.observability
+  allbrain.metrics → allbrain.domains.memory.metrics
+  allbrain.foundations → allbrain.domains.memory.foundations
+  allbrain.runtime_core → allbrain.domains.memory.runtime_core
+  allbrain.gitbrain → allbrain.domains.memory.gitbrain
+  allbrain.revision → allbrain.domains.memory.revision
+  allbrain.ui → allbrain.domains.memory.ui
+  allbrain.api → allbrain.domains.memory.api
 
-Currently these modules live at ``allbrain.<name>``.
-See docs/architecture.md for the full mapping.
+See docs/ARCHITECTURE.md for the full mapping.
 """
 
-__all__: list[str] = []  # Phase 2 re-exports land here in v0.4.0
+from __future__ import annotations
+
+__all__ = [
+    "api",
+    "foundations",
+    "gitbrain",
+    "memory",
+    "metrics",
+    "observability",
+    "replay",
+    "resume",
+    "revision",
+    "runtime_core",
+    "telemetry",
+    "ui",
+]

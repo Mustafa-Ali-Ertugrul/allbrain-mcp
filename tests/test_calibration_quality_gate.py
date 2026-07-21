@@ -69,7 +69,7 @@ def test_revision_manager_reads_calibration_and_drift_from_event_log_only():
     Word-boundary regex avoids false-positives on helper names like
     `_read_calibration_error` (a helper, not a recompute call).
     """
-    manager_path = Path("src/allbrain/revision/manager.py")
+    manager_path = Path("src/allbrain/domains/memory/revision/manager.py")
     content = manager_path.read_text(encoding="utf-8")
     lines = content.splitlines()
 

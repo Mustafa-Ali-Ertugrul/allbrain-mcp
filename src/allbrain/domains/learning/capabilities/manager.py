@@ -5,7 +5,7 @@ from typing import Any
 from allbrain.domains.learning.capabilities.model import CapabilityState
 from allbrain.domains.learning.capabilities.scorer import _stable_capability_id
 from allbrain.events.schemas import EventType
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 
 
 class CapabilityManager:

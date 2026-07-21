@@ -14,7 +14,7 @@ from allbrain.domains.reasoning.information_seeking.models import (
 )
 from allbrain.domains.reasoning.uncertainty import UncertaintyManager, observed_success_rate
 from allbrain.events import EventType
-from allbrain.memory import MemoryBuilder, MemoryRetriever
+from allbrain.domains.memory.memory import MemoryBuilder, MemoryRetriever
 from allbrain.models.schemas import (
     DetectKnowledgeGapsInput,
     EstimateInformationGainInput,

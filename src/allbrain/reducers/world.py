@@ -6,7 +6,7 @@ from allbrain.domains.analysis.evidence.reducer import EvidenceReducer
 from allbrain.domains.analysis.semantic.reducer import SemanticReducer
 from allbrain.domains.reasoning.tradeoff_engine.reducer import TradeoffReducer
 from allbrain.reputation.reducer import ReputationReducer
-from allbrain.telemetry.reducer import TelemetryReducer
+from allbrain.domains.memory.telemetry.reducer import TelemetryReducer
 from allbrain.workspace.reducer import WorkspaceReducer
 
 __all__ = [

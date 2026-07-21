@@ -37,8 +37,8 @@ def resume_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     project = context.repository.get_project_by_path(context.project_path)
     if project is None or project.id is None:
         raise UserInputError("project does not exist")
-    from allbrain.resume.incremental import IncrementalResumeEngine
-    from allbrain.resume.multi_agent import MultiAgentResumeEngine
+    from allbrain.domains.memory.resume.incremental import IncrementalResumeEngine
+    from allbrain.domains.memory.resume.multi_agent import MultiAgentResumeEngine
     from allbrain.snapshot.versions import is_compatible
 
     events = None
@@ -137,9 +137,9 @@ def resume_with_intent_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
     if project is None or project.id is None:
         raise UserInputError("project does not exist")
     events = load_events_through_cursor(context.repository, project_path=context.project_path, batch_size=data.limit)
-    from allbrain.resume.incremental import IncrementalResumeEngine
-    from allbrain.resume.intent_resume import IntentResumeEngine
-    from allbrain.resume.multi_agent import MultiAgentResumeEngine
+    from allbrain.domains.memory.resume.incremental import IncrementalResumeEngine
+    from allbrain.domains.memory.resume.intent_resume import IntentResumeEngine
+    from allbrain.domains.memory.resume.multi_agent import MultiAgentResumeEngine
     from allbrain.storage.snapshot_repo import SnapshotRepo
 
     incremental = IncrementalResumeEngine(

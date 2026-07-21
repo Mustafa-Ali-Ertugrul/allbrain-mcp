@@ -1,47 +1,43 @@
-from allbrain.runtime_core.arbitration import ArbitrationBridge
-from allbrain.runtime_core.contracts import (
-    EconomicEvaluation,
-    EconomicEvaluator,
-    EventStore,
-    ObjectiveContext,
-    RuntimeContext,
-    StrategicPlan,
-    StrategicPlanner,
-)
-from allbrain.runtime_core.economics import EconomicEvaluationBridge
-from allbrain.runtime_core.event_bus import RuntimeEventBus
-from allbrain.runtime_core.execution import ExecutionPlanningBridge
-from allbrain.runtime_core.learning import ClosedLoopLearningEngine
-from allbrain.runtime_core.memory import GlobalExperienceMemoryBuilder
-from allbrain.runtime_core.pipeline import SystemDecisionPipeline
-from allbrain.runtime_core.pipeline_models import PipelineRunOptions, PipelineRunState
-from allbrain.runtime_core.pipeline_services import PipelineServices
-from allbrain.runtime_core.planning import GoalDecompositionBridge, StrategicPlanningBridge
-from allbrain.runtime_core.projections import RuntimeCoreMetrics, RuntimeCoreStateBuilder
-from allbrain.runtime_core.state import RuntimeStateMachine, RuntimeStatus
+"""Deprecated compatibility shim for allbrain.runtime_core.
 
-__all__ = [
-    "ArbitrationBridge",
-    "ClosedLoopLearningEngine",
-    "EconomicEvaluation",
-    "EconomicEvaluator",
-    "EventStore",
-    "EconomicEvaluationBridge",
-    "ExecutionPlanningBridge",
-    "GlobalExperienceMemoryBuilder",
-    "GoalDecompositionBridge",
-    "ObjectiveContext",
-    "RuntimeContext",
-    "RuntimeEventBus",
-    "RuntimeCoreMetrics",
-    "RuntimeCoreStateBuilder",
-    "RuntimeStateMachine",
-    "RuntimeStatus",
-    "PipelineRunOptions",
-    "PipelineRunState",
-    "PipelineServices",
-    "StrategicPlanningBridge",
-    "StrategicPlan",
-    "StrategicPlanner",
-    "SystemDecisionPipeline",
-]
+Moved to allbrain.domains.memory.runtime_core in v0.4.4.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.memory.runtime_core",
+    submodules=(
+        "arbitration",
+        "bridge_executor",
+        "constants",
+        "contracts",
+        "economics",
+        "event_bus",
+        "execution",
+        "learning",
+        "memory",
+        "observability",
+        "pipeline",
+        "pipeline_models",
+        "pipeline_services",
+        "pipeline_steps",
+        "pipeline_steps.decision",
+        "pipeline_steps.execution",
+        "pipeline_steps.learning",
+        "pipeline_steps.reasoning",
+        "planning",
+        "projections",
+        "simulation",
+        "simulation_steps",
+        "simulation_steps.counterfactual",
+        "simulation_steps.foresight",
+        "simulation_steps.scenario",
+        "simulation_steps.world_simulation",
+        "state",
+    ),
+)

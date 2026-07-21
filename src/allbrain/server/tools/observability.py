@@ -5,9 +5,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from allbrain.api.observability_api import ObservabilityAPI
+from allbrain.domains.memory.api.observability_api import ObservabilityAPI
 from allbrain.models.schemas import OrchestratorInput, ToolResult, UserInputError
-from allbrain.observability import ObservabilityBuilder
+from allbrain.domains.memory.observability import ObservabilityBuilder
 from allbrain.domains.governance.reliability.metrics import ReliabilityMetrics
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import audit_tool_call, bind_session_id
@@ -117,7 +117,7 @@ def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolRes
     memory_categories: dict[str, int] = {}
     if memory_event_count > 0:
         try:
-            from allbrain.memory import MemoryBuilder
+            from allbrain.domains.memory.memory import MemoryBuilder
 
             items = MemoryBuilder().build(events)
             memory_items = len(items)

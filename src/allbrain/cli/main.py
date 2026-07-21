@@ -224,7 +224,7 @@ def ui(
     port: Annotated[int, typer.Option("--port", "-p", help="Listen port.")] = 8080,
 ) -> None:
     """Start the local operational dashboard (single-page web view)."""
-    from allbrain.ui.dashboard_server import start_dashboard
+    from allbrain.domains.memory.ui.dashboard_server import start_dashboard
 
     start_dashboard(host=host, port=port)
 

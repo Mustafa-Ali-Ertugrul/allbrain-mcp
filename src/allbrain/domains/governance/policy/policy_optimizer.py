@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-from allbrain.memory.semantic_memory import MemoryItem
+from allbrain.domains.memory.memory.semantic_memory import MemoryItem
 
 
 class PolicyOptimizer:

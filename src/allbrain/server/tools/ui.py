@@ -18,7 +18,7 @@ from allbrain.server.tools._tasks import (
     observability_project_and_limit,
 )
 from allbrain.server.tools.decorators import handle_tool_errors
-from allbrain.ui import GraphExplorer, MetricsDashboard, ReplayViewer, TraceViewer
+from allbrain.domains.memory.ui import GraphExplorer, MetricsDashboard, ReplayViewer, TraceViewer
 
 logger = logging.getLogger(__name__)
 

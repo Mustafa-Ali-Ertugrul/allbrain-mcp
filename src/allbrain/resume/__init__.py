@@ -1,13 +1,17 @@
-from allbrain.resume.engine import ResumeEngine
-from allbrain.resume.incremental import IncrementalResumeEngine
-from allbrain.resume.intent_resume import IntentResumeEngine
-from allbrain.resume.multi_agent import MultiAgentResumeEngine
-from allbrain.resume.orchestrated import OrchestratedResumeEngine
+"""Deprecated compatibility shim for allbrain.domains.memory.resume.
 
-__all__ = [
-    "IncrementalResumeEngine",
-    "IntentResumeEngine",
-    "MultiAgentResumeEngine",
-    "OrchestratedResumeEngine",
-    "ResumeEngine",
-]
+Moved to allbrain.domains.memory.resume in v0.4.4.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.memory.resume",
+    submodules=(
+        "context_builder", "engine", "incremental", "intent_resume", "multi_agent", "orchestrated", "protocols"
+    ),
+)

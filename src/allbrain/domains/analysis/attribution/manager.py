@@ -13,7 +13,7 @@ from allbrain.domains.analysis.attribution.matrix import detect_importance_chang
 from allbrain.domains.analysis.attribution.model import (
     ATTRIBUTION_COUNTERFACTUAL_INTERVAL,
 )
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 
 
 class AttributionManager:

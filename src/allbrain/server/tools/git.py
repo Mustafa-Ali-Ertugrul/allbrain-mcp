@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from allbrain.gitbrain.parser import GitBrain
+from allbrain.domains.memory.gitbrain.parser import GitBrain
 from allbrain.models.schemas import (
     GitContextInput,
     RecentChangesInput,

@@ -98,7 +98,7 @@ class TestQualityGate:
         recomputed. The only allowed runtime reference to reputation is the
         module-level import of pure-math helpers.
         """
-        manager_path = Path("src/allbrain/revision/manager.py")
+        manager_path = Path("src/allbrain/domains/memory/revision/manager.py")
         content = manager_path.read_text(encoding="utf-8")
         lines = content.splitlines()
 

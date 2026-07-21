@@ -13,8 +13,8 @@ from allbrain.models.schemas import (
 )
 
 # is_compatible, OrchestratedResumeEngine imported locally to avoid circular import
-from allbrain.runtime_core import SystemDecisionPipeline
-from allbrain.runtime_core.constants import (
+from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
+from allbrain.domains.memory.runtime_core.constants import (
     DEFAULT_COUNTERFACTUAL_LIMIT,
     DEFAULT_FORESIGHT_LIMIT,
     DEFAULT_MAX_HORIZON,
@@ -66,7 +66,7 @@ def orchestrate_project_impl(context: BrainContext, **kwargs: Any) -> ToolResult
         batch_size=data.limit,
         use_snapshot=data.use_snapshot,
     )
-    from allbrain.resume.orchestrated import OrchestratedResumeEngine
+    from allbrain.domains.memory.resume.orchestrated import OrchestratedResumeEngine
     from allbrain.server.tools.snapshots import resume_project_impl
 
     base = resume_project_impl(

@@ -57,7 +57,7 @@ class TestQualityGate:
         assert mgr.query(w).capability_score == 0.5
 
     def test_no_recompute(self):
-        c = Path("src/allbrain/revision/manager.py").read_text(encoding="utf-8")
+        c = Path("src/allbrain/domains/memory/revision/manager.py").read_text(encoding="utf-8")
         ls = c.splitlines()
         inh = False
         forb = [r"\bCapabilityManager\(", r"\bCapabilityReducer\("]

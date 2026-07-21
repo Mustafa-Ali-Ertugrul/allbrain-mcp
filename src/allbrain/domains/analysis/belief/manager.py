@@ -6,7 +6,7 @@ from allbrain.domains.analysis.belief.estimator import _stable_analysis_id, list
 from allbrain.domains.analysis.belief.models import BeliefState
 from allbrain.domains.analysis.belief.updater import update_state
 from allbrain.events.schemas import EventType
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 
 
 class BeliefManager:

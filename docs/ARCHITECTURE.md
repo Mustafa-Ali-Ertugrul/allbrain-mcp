@@ -125,7 +125,7 @@ drive decisions, and decisions create memories that update beliefs.
 | `install/` | Client installer |
 | `ops/` | Operational tooling |
 
-## Migration Status (v0.4.3)
+## Migration Status (v0.4.4)
 
 | Context | Modules | Status | Since | Path |
 |---|---|---|---|---|
@@ -133,8 +133,8 @@ drive decisions, and decisions create memories that update beliefs.
 | `analysis/` | 17 | ✅ **Migrated** | v0.4.1 | `allbrain.domains.analysis.*` |
 | `learning/` | 12 | ✅ **Migrated** | v0.4.2 | `allbrain.domains.learning.*` |
 | `governance/` | 12 | ✅ **Migrated** | v0.4.3 | `allbrain.domains.governance.*` |
-| `collaboration/` | 10 | ⏳ Pending | v0.4.4 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
-| `memory/` | 12 | ⏳ Pending | v0.4.4 | `allbrain.<mod>` (shim target: `allbrain.domains.memory.*`) |
+| `memory/` | 12 | ✅ **Migrated** | v0.4.4 | `allbrain.domains.memory.*` |
+| `collaboration/` | 10 | ⏳ Pending | v0.4.5 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
 
 ## Bounded Contexts
 
@@ -246,22 +246,22 @@ drive decisions, and decisions create memories that update beliefs.
 | graph | `allbrain.graph` | graph analysis |
 | fusion | `allbrain.fusion` | data fusion |
 
-### `domains.memory/` — persistence, recall, observability (12)
+### `domains.memory/` — persistence, recall, observability (12) [MIGRATED v0.4.4]
 
-| Module | Current Path | Key Exports |
-|---|---|---|
-| memory | `allbrain.memory` | `MemoryBuilder`, `MemoryRetriever` |
-| replay | `allbrain.replay` | deterministic replay |
-| resume | `allbrain.resume` | `OrchestratedResumeEngine` |
-| telemetry | `allbrain.telemetry` | telemetry |
-| observability | `allbrain.observability` | `ObservabilityBuilder` |
-| metrics | `allbrain.metrics` | metrics |
-| foundations | `allbrain.foundations` | `canonical_event_sort` |
-| runtime_core | `allbrain.runtime_core` | `SystemDecisionPipeline` |
-| gitbrain | `allbrain.gitbrain` | `GitBrain` |
-| revision | `allbrain.revision` | revision tracking |
-| ui | `allbrain.ui` | `TraceViewer`, `GraphExplorer` |
-| api | `allbrain.api` | API layer |
+| Module | Canonical Path (v0.4.4+) | Legacy Shim Path (v0.4.4, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| memory | `allbrain.domains.memory.memory` | `allbrain.memory` | `MemoryBuilder`, `MemoryRetriever` |
+| replay | `allbrain.domains.memory.replay` | `allbrain.replay` | deterministic replay |
+| resume | `allbrain.domains.memory.resume` | `allbrain.resume` | `OrchestratedResumeEngine` |
+| telemetry | `allbrain.domains.memory.telemetry` | `allbrain.telemetry` | telemetry |
+| observability | `allbrain.domains.memory.observability` | `allbrain.observability` | `ObservabilityBuilder` |
+| metrics | `allbrain.domains.memory.metrics` | `allbrain.metrics` | metrics |
+| foundations | `allbrain.domains.memory.foundations` | `allbrain.foundations` | `canonical_event_sort` |
+| runtime_core | `allbrain.domains.memory.runtime_core` | `allbrain.runtime_core` | `SystemDecisionPipeline` |
+| gitbrain | `allbrain.domains.memory.gitbrain` | `allbrain.gitbrain` | `GitBrain` |
+| revision | `allbrain.domains.memory.revision` | `allbrain.revision` | revision tracking |
+| ui | `allbrain.domains.memory.ui` | `allbrain.ui` | `TraceViewer`, `GraphExplorer` |
+| api | `allbrain.domains.memory.api` | `allbrain.api` | API layer |
 
 ## Dependency Graph
 

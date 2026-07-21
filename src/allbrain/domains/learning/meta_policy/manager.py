@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 from allbrain.domains.learning.meta_policy.estimator import estimate_mode_reward
 from allbrain.domains.learning.meta_policy.evaluator import detect_policy_drift, should_snapshot
 from allbrain.domains.learning.meta_policy.learner import _default_mode_stats, update_mode_stats

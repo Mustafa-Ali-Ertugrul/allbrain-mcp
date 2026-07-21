@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.memory import MemoryRetriever
+from allbrain.domains.memory.memory import MemoryRetriever
 
 
 class AgentSelectionPolicy:
