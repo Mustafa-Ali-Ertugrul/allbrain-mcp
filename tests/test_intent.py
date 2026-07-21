@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from allbrain.domains.analysis.contradiction import ContradictionDetector
+from allbrain.domains.memory.resume import IncrementalResumeEngine, IntentResumeEngine, MultiAgentResumeEngine
 from allbrain.domains.reasoning.intent import IntentExtractor, IntentStore
-from allbrain.resume import IncrementalResumeEngine, IntentResumeEngine, MultiAgentResumeEngine
 from allbrain.server.tools.events import save_event_impl
 from allbrain.server.tools.intents import (
     detect_contradictions_impl,

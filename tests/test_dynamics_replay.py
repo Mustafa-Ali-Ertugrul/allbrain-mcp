@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from allbrain.domains.analysis.dynamics import make_drift_payload, make_forecast_payload, make_trend_payload
+from allbrain.domains.memory.replay import EventReplayEngine
 from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
 
 
 class E:
@@ -85,7 +85,7 @@ class TestDynamicsReplay:
         assert r1 == r2
 
     def test_mixed_with_learning_events(self):
-        from allbrain.learning import make_learned_payload
+        from allbrain.domains.learning.learning import make_learned_payload
 
         evts = [
             E(

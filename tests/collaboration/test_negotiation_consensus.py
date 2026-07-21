@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.collaboration import ConsensusEngine, NegotiationEngine, Vote
+from allbrain.domains.collaboration.collaboration import ConsensusEngine, NegotiationEngine, Vote
 
 
 def test_negotiation_success_with_counter_proposal() -> None:

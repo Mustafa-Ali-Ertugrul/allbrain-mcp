@@ -1,7 +1,7 @@
 """Tests for workflow/state_machine.py - WorkflowStateMachine."""
 
-from allbrain.workflow.models import TaskGraph, TaskNode, WorkflowStatus
-from allbrain.workflow.state_machine import WorkflowStateMachine
+from allbrain.domains.collaboration.workflow.models import TaskGraph, TaskNode, WorkflowStatus
+from allbrain.domains.collaboration.workflow.state_machine import WorkflowStateMachine
 
 
 def _graph_with_node(

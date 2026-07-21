@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.events.schemas import EventType
-from allbrain.routing import RoutingManager, RoutingReducer
-from allbrain.routing.events import (
+from allbrain.domains.collaboration.routing import RoutingManager, RoutingReducer
+from allbrain.domains.collaboration.routing.events import (
     make_scored_payload,
     make_selected_payload,
 )
+from allbrain.events.schemas import EventType
 
 
 class E:
@@ -127,8 +127,8 @@ class TestManagerEqualsReducer:
 
 class TestSelectedLastWins:
     def test_last_wins(self):
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as make_rev
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as make_rev
 
         evts = [
             E(

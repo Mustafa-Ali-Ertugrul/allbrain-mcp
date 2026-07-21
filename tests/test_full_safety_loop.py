@@ -4,19 +4,19 @@ import pytest
 
 from allbrain.domains.analysis.predictive_failure.manager import PredictiveFailureManager
 from allbrain.domains.analysis.predictive_failure.model import RiskSignal
-from allbrain.events.schemas import EventType
-from allbrain.learning_safety import (
-    DriftGuard,
-    EntropyCalculator,
-    Explorer,
-    OutcomeValidator,
-)
-from allbrain.mitigation_learning import (
+from allbrain.domains.governance.mitigation_learning import (
     LearningEngine,
     OutcomeTracker,
     PolicyStore,
     StrategyOptimizer,
 )
+from allbrain.domains.learning.learning_safety import (
+    DriftGuard,
+    EntropyCalculator,
+    Explorer,
+    OutcomeValidator,
+)
+from allbrain.events.schemas import EventType
 
 
 def _event_types(events):
@@ -179,7 +179,7 @@ class TestFullSafetyLoop:
         assert EventType.SIMULATION_WEIGHT_CAPPED.value not in ev_types
 
     def test_reducer_tracks_safety_events(self):
-        from allbrain.learning_safety.reducer import LearningSafetyReducer
+        from allbrain.domains.learning.learning_safety.reducer import LearningSafetyReducer
 
         class FakeEvent:
             pass

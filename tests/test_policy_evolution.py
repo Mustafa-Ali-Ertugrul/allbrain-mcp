@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.mitigation_learning.model import (
+from allbrain.domains.governance.mitigation_learning.model import (
     POLICY_UPDATE_MIN_RECORDS,
     StrategyStats,
 )
-from allbrain.mitigation_learning.policy_store import PolicyStore
+from allbrain.domains.governance.mitigation_learning.policy_store import PolicyStore
 
 
 def _make_stats(

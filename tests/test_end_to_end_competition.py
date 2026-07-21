@@ -4,24 +4,24 @@ import pytest
 
 from allbrain.domains.analysis.predictive_failure import PredictiveFailureManager
 from allbrain.domains.analysis.predictive_failure.model import RiskSignal
-from allbrain.events.schemas import EventType
-from allbrain.learning_safety import DriftGuard, EntropyCalculator, Explorer, OutcomeValidator
-from allbrain.mitigation_learning import (
+from allbrain.domains.governance.mitigation_learning import (
     LearningEngine,
     OutcomeTracker,
     PolicyStore,
     StrategyOptimizer,
 )
-from allbrain.policy_competition import CompetitionEngine
-from allbrain.policy_routing import MetaPolicyRouter
-from allbrain.self_repair import (
+from allbrain.domains.governance.policy_competition import CompetitionEngine
+from allbrain.domains.governance.policy_routing import MetaPolicyRouter
+from allbrain.domains.governance.self_repair import (
     PolicyHealthMonitor,
     PolicySnapshotManager,
     RecoveryExecutor,
     RollbackEngine,
     ValidationGate,
 )
-from allbrain.soft_repair import PolicyBlender
+from allbrain.domains.governance.soft_repair import PolicyBlender
+from allbrain.domains.learning.learning_safety import DriftGuard, EntropyCalculator, Explorer, OutcomeValidator
+from allbrain.events.schemas import EventType
 
 
 def _event_types(events):
@@ -183,10 +183,10 @@ class TestEndToEndCompetition:
     def test_no_crash_when_competition_has_single_candidate(self):
         """Competition with only one candidate should still produce a result."""
         engine = CompetitionEngine()
-        from allbrain.policy_competition import PolicyCandidate
+        from allbrain.domains.governance.policy_competition import PolicyCandidate
 
         c = PolicyCandidate("only_one", "timeout", "rate_limit", {}, 1)
-        from allbrain.mitigation_learning.model import StrategyStats
+        from allbrain.domains.governance.mitigation_learning.model import StrategyStats
 
         stats = {
             ("timeout", "timeout", "rate_limit"): StrategyStats(

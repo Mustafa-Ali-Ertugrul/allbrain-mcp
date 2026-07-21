@@ -10,8 +10,8 @@ from allbrain.domains.analysis.fusion.analyzer import (
 from allbrain.domains.analysis.fusion.calibration import normalize_signal
 from allbrain.domains.analysis.fusion.fusion import build_signal_vector, unified_decision_score
 from allbrain.domains.analysis.fusion.weights import calibrate_weights
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 from allbrain.events.schemas import EventType
-from allbrain.foundations import canonical_event_sort
 
 
 class FusionManager:

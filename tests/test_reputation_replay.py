@@ -4,8 +4,8 @@ from datetime import datetime
 
 import pytest
 
+from allbrain.domains.collaboration.reputation.events import make_payload
 from allbrain.events.schemas import EventType
-from allbrain.reputation.events import make_payload
 
 
 class E:
@@ -18,7 +18,7 @@ class E:
 
 class TestReplay:
     def test_round_trip(self):
-        from allbrain.replay import EventReplayEngine
+        from allbrain.domains.memory.replay import EventReplayEngine
 
         engine = EventReplayEngine()
         events = [
@@ -59,7 +59,7 @@ class TestReplay:
         assert final["reputation"]["b"]["reputation_score"] == pytest.approx(0.0)
 
     def test_replay_equality(self):
-        from allbrain.replay import EventReplayEngine
+        from allbrain.domains.memory.replay import EventReplayEngine
 
         engine = EventReplayEngine()
         events = [
@@ -83,7 +83,7 @@ class TestReplay:
         assert result1["final_state"]["reputation"] == result2["final_state"]["reputation"]
 
     def test_replay_with_no_events(self):
-        from allbrain.replay import EventReplayEngine
+        from allbrain.domains.memory.replay import EventReplayEngine
 
         engine = EventReplayEngine()
         result = engine.replay([])
@@ -91,7 +91,7 @@ class TestReplay:
         assert result["final_state"]["reputation"] == {}
 
     def test_replay_preserves_other_projections(self):
-        from allbrain.replay import EventReplayEngine
+        from allbrain.domains.memory.replay import EventReplayEngine
 
         engine = EventReplayEngine()
         events = [

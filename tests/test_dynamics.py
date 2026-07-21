@@ -25,8 +25,8 @@ from allbrain.domains.analysis.dynamics import (
     validate_forecast,
     validate_trend,
 )
+from allbrain.domains.collaboration.routing import dynamics_selection_score
 from allbrain.events.schemas import EventType
-from allbrain.routing import dynamics_selection_score
 
 
 class TestDriftDetection:

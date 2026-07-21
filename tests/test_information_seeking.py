@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
 from allbrain.domains.reasoning.information_seeking import (
     ACTION_TO_GAPS,
     ACTION_VOI_TABLE,
@@ -16,8 +18,6 @@ from allbrain.domains.reasoning.information_seeking import (
 )
 from allbrain.domains.reasoning.uncertainty.models import KnowledgeGap
 from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.knowledge import (
     estimate_information_gain_impl,
     identify_information_needs_impl,

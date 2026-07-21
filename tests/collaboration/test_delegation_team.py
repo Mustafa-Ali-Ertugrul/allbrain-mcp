@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.collaboration import (
+from allbrain.domains.collaboration.collaboration import (
     CollaborationContext,
     CollaborationManager,
     DelegationPolicy,

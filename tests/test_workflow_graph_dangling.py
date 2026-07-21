@@ -5,8 +5,8 @@ from_id/to_id but still called _find_cycle(), which raised KeyError on
 adj[edge.from_id] for non-existent nodes.
 """
 
-from allbrain.workflow.graph import DependencyEngine
-from allbrain.workflow.models import EdgeType, TaskEdge, TaskGraph, TaskNode, WorkflowStatus
+from allbrain.domains.collaboration.workflow.graph import DependencyEngine
+from allbrain.domains.collaboration.workflow.models import EdgeType, TaskEdge, TaskGraph, TaskNode, WorkflowStatus
 
 
 def _node(nid: str, status: WorkflowStatus = WorkflowStatus.PENDING) -> TaskNode:

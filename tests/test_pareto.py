@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.domains.governance.mitigation_learning.model import StrategyStats
 from allbrain.domains.reasoning.objective_system import Objective
 from allbrain.domains.reasoning.objective_system.model import ObjectiveWeights
 from allbrain.domains.reasoning.tradeoff_engine import (
@@ -12,7 +13,6 @@ from allbrain.domains.reasoning.tradeoff_engine import (
     UtilityFunction,
     UtilityResult,
 )
-from allbrain.mitigation_learning.model import StrategyStats
 
 
 def _ur(id, safety, stability, success, eff, safety_pass=True):

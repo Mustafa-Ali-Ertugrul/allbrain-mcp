@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.recovery_consensus.events import (
+from allbrain.domains.governance.recovery_consensus.events import (
     _clamp_score,
     make_consensus_reached_payload,
     make_strategies_generated_payload,

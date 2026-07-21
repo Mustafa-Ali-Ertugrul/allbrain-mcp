@@ -10,7 +10,7 @@ from allbrain.domains.analysis.attention.model import (
     ResourceBudget,
 )
 from allbrain.domains.analysis.attention.scheduler import schedule_attention
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 
 
 class AttentionManager:

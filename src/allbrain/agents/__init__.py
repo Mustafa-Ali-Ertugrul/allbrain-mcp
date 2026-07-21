@@ -1,63 +1,32 @@
-from allbrain.agents.adapter import (
-    AgentAdapter,
-    AgentHealth,
-    AgentStatus,
-    ExecutionContext,
-    RetryPolicy,
-)
-from allbrain.agents.definition import (
-    AgentCapability,
-    AgentCost,
-    AgentDefinition,
-    AgentProvider,
-    LatencyProfile,
-    SafetyLimits,
-)
-from allbrain.agents.learner import CapabilityLearner
-from allbrain.agents.metrics import ExecutionMetrics, MetricsCollector
-from allbrain.agents.queue import InMemoryTaskQueue, QueueItem, TaskQueue
-from allbrain.agents.registry import AgentRegistry
-from allbrain.agents.runtime import AgentRuntime
-from allbrain.agents.safety import (
-    CostCeilingExceeded,
-    InputRejected,
-    RateLimitExceeded,
-    SafetyError,
-    SafetyState,
-    SafetyWrapper,
-    sanitize_input,
-    sanitize_task,
-)
-from allbrain.agents.worker import WorkerPool, WorkerStats
+"""Deprecated compatibility shim for allbrain.domains.collaboration.agents.
 
-__all__ = [
-    "AgentAdapter",
-    "AgentCapability",
-    "AgentCost",
-    "AgentDefinition",
-    "AgentHealth",
-    "AgentProvider",
-    "AgentRegistry",
-    "AgentRuntime",
-    "AgentStatus",
-    "CapabilityLearner",
-    "CostCeilingExceeded",
-    "ExecutionContext",
-    "ExecutionMetrics",
-    "InMemoryTaskQueue",
-    "InputRejected",
-    "LatencyProfile",
-    "MetricsCollector",
-    "QueueItem",
-    "RateLimitExceeded",
-    "RetryPolicy",
-    "SafetyError",
-    "SafetyLimits",
-    "SafetyState",
-    "SafetyWrapper",
-    "TaskQueue",
-    "WorkerPool",
-    "WorkerStats",
-    "sanitize_input",
-    "sanitize_task",
-]
+Moved to allbrain.domains.collaboration.agents in v0.4.5.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.collaboration.agents",
+    submodules=(
+        "adapter",
+        "adapters",
+        "adapters.mock",
+        "definition",
+        "learner",
+        "metrics",
+        "queue",
+        "queues",
+        "queues.memory",
+        "queues.rabbitmq",
+        "queues.redis",
+        "queues.sqlite",
+        "registry",
+        "runtime",
+        "safety",
+        "worker",
+    ),
+)

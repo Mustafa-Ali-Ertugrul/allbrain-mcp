@@ -33,7 +33,7 @@ class TestQualityGate:
           - model.py (frozen dataclass)
         """
         for filename in REPUTATION_FILES:
-            _assert_no_nondeterminism_tokens("src/allbrain/reputation", filename)
+            _assert_no_nondeterminism_tokens("src/allbrain/domains/collaboration/reputation", filename)
 
     def test_reputation_does_not_change_confidence(self):
         """Sprint 48 contract: reputation is metadata only.
@@ -43,10 +43,10 @@ class TestQualityGate:
         change agent_reputation — but it MUST NOT modify the `confidence` field,
         which is the Sprint 46 contract.
         """
+        from allbrain.domains.collaboration.reputation.events import make_payload as make_reputation_payload
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as make_revision_payload
         from allbrain.events.schemas import EventType
-        from allbrain.reputation.events import make_payload as make_reputation_payload
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as make_revision_payload
 
         class E:
             def __init__(self, t, i, p):
@@ -98,7 +98,7 @@ class TestQualityGate:
         recomputed. The only allowed runtime reference to reputation is the
         module-level import of pure-math helpers.
         """
-        manager_path = Path("src/allbrain/revision/manager.py")
+        manager_path = Path("src/allbrain/domains/memory/revision/manager.py")
         content = manager_path.read_text(encoding="utf-8")
         lines = content.splitlines()
 

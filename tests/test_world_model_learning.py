@@ -391,8 +391,8 @@ class TestPipelineLearnedSimulation:
 
     def test_simulation_event_contains_action(self, tmp_path) -> None:
         """The sim event payload should include an ``action`` field."""
+        from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
         from allbrain.events import EventType
-        from allbrain.runtime_core import SystemDecisionPipeline
         from tests.test_sprint12_memory_policy_ui import make_context
 
         context = make_context(tmp_path)
@@ -414,7 +414,7 @@ class TestPipelineLearnedSimulation:
 
     def test_pipeline_learn_fallback_empty_log(self, tmp_path) -> None:
         """Pipeline with no prior events falls back to hardcoded prediction."""
-        from allbrain.runtime_core import SystemDecisionPipeline
+        from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
         from tests.test_sprint12_memory_policy_ui import make_context
 
         context = make_context(tmp_path)

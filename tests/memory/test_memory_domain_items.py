@@ -5,8 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from allbrain.events import EventType
-from allbrain.memory.memory_domain_items import (
+from allbrain.domains.memory.memory.memory_domain_items import (
     _collaboration_items,
     _file_modification_items,
     _goal_items,
@@ -15,7 +14,8 @@ from allbrain.memory.memory_domain_items import (
     _runtime_core_items,
     _session_items,
 )
-from allbrain.memory.semantic_memory import SemanticMemory
+from allbrain.domains.memory.memory.semantic_memory import SemanticMemory
+from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.routing import unified_decision_score
+from allbrain.domains.collaboration.routing import unified_decision_score
 
 
 class TestUnifiedScore:

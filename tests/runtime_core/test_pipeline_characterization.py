@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.runtime_core import SystemDecisionPipeline
+from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
 from tests.runtime_core.test_system_decision_pipeline import objective
 from tests.test_sprint12_memory_policy_ui import events, make_context
 

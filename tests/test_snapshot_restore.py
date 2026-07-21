@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.resilience.state_snapshot import StateSnapshotManager
+from allbrain.domains.governance.resilience.state_snapshot import StateSnapshotManager
 
 
 class TestCreateSnapshot:

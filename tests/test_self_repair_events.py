@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.self_repair.events import (
+from allbrain.domains.governance.self_repair.events import (
     make_policy_snapshotted_payload,
     make_rollback_completed_payload,
     make_rollback_triggered_payload,

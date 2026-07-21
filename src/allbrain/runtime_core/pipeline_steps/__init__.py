@@ -1,6 +1,11 @@
-from allbrain.runtime_core.pipeline_steps.decision import DecisionPreparationStep
-from allbrain.runtime_core.pipeline_steps.execution import ExecutionFeedbackStep
-from allbrain.runtime_core.pipeline_steps.learning import LearningCompletionStep
-from allbrain.runtime_core.pipeline_steps.reasoning import ReasoningStep
+"""Deprecated compatibility shim for allbrain.runtime_core.pipeline_steps."""
 
-__all__ = ["DecisionPreparationStep", "ExecutionFeedbackStep", "LearningCompletionStep", "ReasoningStep"]
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.memory.runtime_core.pipeline_steps",
+    submodules=("decision", "execution", "learning", "reasoning"),
+)

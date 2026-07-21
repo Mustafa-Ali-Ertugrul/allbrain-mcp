@@ -4,8 +4,8 @@ import logging
 from datetime import timedelta
 from typing import Any
 
+from allbrain.domains.memory.gitbrain.parser import GitBrain
 from allbrain.events import EventType
-from allbrain.gitbrain.parser import GitBrain
 from allbrain.models.entities import Session, utc_now
 from allbrain.models.session_summary import build_session_summary
 from allbrain.server.constants import STALE_AFTER_SECONDS

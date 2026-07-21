@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.learning_graph import (
+from allbrain.domains.learning.learning_graph import (
     LEARNING_GRAPH_PARAM_BOUND,
     LEARNING_GRAPH_REWRITE_INTERVAL,
     GraphRewriter,

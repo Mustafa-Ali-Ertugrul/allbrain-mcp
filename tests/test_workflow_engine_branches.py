@@ -1,7 +1,14 @@
 """Deep coverage: workflow/engine.py uncovered branches."""
 
-from allbrain.workflow.engine import WorkflowEngine
-from allbrain.workflow.models import EdgeType, SubtaskResult, TaskEdge, TaskGraph, TaskNode, WorkflowStatus
+from allbrain.domains.collaboration.workflow.engine import WorkflowEngine
+from allbrain.domains.collaboration.workflow.models import (
+    EdgeType,
+    SubtaskResult,
+    TaskEdge,
+    TaskGraph,
+    TaskNode,
+    WorkflowStatus,
+)
 
 
 def _node(nid, status=WorkflowStatus.PENDING):

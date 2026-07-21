@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from allbrain.domains.reasoning.decision.model import DecisionContext
-from allbrain.routing import (
+from allbrain.domains.collaboration.routing import (
     causal_selection_score,
     dynamics_selection_score,
     selection_score,
     unified_decision_score,
 )
+from allbrain.domains.reasoning.decision.model import DecisionContext
 
 
 def fusion_backend(ctx: DecisionContext) -> tuple[float, dict[str, float]]:

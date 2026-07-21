@@ -4,9 +4,9 @@ import os
 
 import pytest
 
-from allbrain.agents.queue import QueueItem
-from allbrain.agents.queues import RabbitMQTaskQueue, RedisTaskQueue
-from allbrain.workflow.models import TaskNode
+from allbrain.domains.collaboration.agents.queue import QueueItem
+from allbrain.domains.collaboration.agents.queues import RabbitMQTaskQueue, RedisTaskQueue
+from allbrain.domains.collaboration.workflow.models import TaskNode
 
 
 def _item(node_id: str) -> QueueItem:

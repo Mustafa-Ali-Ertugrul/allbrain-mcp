@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.calibration import (
+from allbrain.domains.learning.calibration import (
     accuracy,
     calibrated_trust,
     mean_calibration_error,

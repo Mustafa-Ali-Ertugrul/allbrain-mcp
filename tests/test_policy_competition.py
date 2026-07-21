@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.mitigation_learning.model import StrategyStats
-from allbrain.policy_competition import (
+from allbrain.domains.governance.mitigation_learning.model import StrategyStats
+from allbrain.domains.governance.policy_competition import (
     COMPETITION_CANDIDATE_COUNT,
     CompetitionEngine,
     PolicyCandidate,

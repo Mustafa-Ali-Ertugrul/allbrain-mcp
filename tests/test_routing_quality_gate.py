@@ -15,13 +15,13 @@ def _no_nondet(d, f):
 class TestQualityGate:
     def test_no_nondeterminism(self):
         for f in FILES:
-            _no_nondet("src/allbrain/routing", f)
+            _no_nondet("src/allbrain/domains/collaboration/routing", f)
 
     def test_does_not_change_confidence(self):
+        from allbrain.domains.collaboration.routing.events import make_selected_payload
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as mr
         from allbrain.events.schemas import EventType
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as mr
-        from allbrain.routing.events import make_selected_payload
 
         class E:
             def __init__(self, t, i, p):
@@ -54,7 +54,7 @@ class TestQualityGate:
         assert mgr.query(w).selected_agent_score == 0.7
 
     def test_no_recompute(self):
-        c = Path("src/allbrain/revision/manager.py").read_text(encoding="utf-8")
+        c = Path("src/allbrain/domains/memory/revision/manager.py").read_text(encoding="utf-8")
         lines = c.splitlines()
         inh = False
         forb = [r"\bRoutingManager\(", r"\bRoutingReducer\("]

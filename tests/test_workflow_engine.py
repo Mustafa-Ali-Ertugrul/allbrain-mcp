@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from allbrain.workflow.aggregator import ResultAggregator
-from allbrain.workflow.engine import WorkflowEngine
-from allbrain.workflow.graph import DependencyEngine
-from allbrain.workflow.models import (
+from allbrain.domains.collaboration.workflow.aggregator import ResultAggregator
+from allbrain.domains.collaboration.workflow.engine import WorkflowEngine
+from allbrain.domains.collaboration.workflow.graph import DependencyEngine
+from allbrain.domains.collaboration.workflow.models import (
     AggregationStrategy,
     EdgeType,
     SubtaskResult,
@@ -12,9 +12,9 @@ from allbrain.workflow.models import (
     TaskNode,
     WorkflowStatus,
 )
-from allbrain.workflow.recovery import RecoveryManager
-from allbrain.workflow.scheduler import SubtaskScheduler
-from allbrain.workflow.state_machine import WorkflowStateMachine
+from allbrain.domains.collaboration.workflow.recovery import RecoveryManager
+from allbrain.domains.collaboration.workflow.scheduler import SubtaskScheduler
+from allbrain.domains.collaboration.workflow.state_machine import WorkflowStateMachine
 
 
 def make_graph(*, ready_roots: bool = True) -> TaskGraph:

@@ -1,6 +1,6 @@
 """Tests for replay/diff_utils.py."""
 
-from allbrain.replay.diff_utils import _dict_delta, _list_delta, _task_statuses
+from allbrain.domains.memory.replay.diff_utils import _dict_delta, _list_delta, _task_statuses
 
 
 class TestTaskStatuses:

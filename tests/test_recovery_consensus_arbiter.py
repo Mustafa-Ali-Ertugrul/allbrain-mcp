@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.recovery_consensus.arbiter import Arbiter
-from allbrain.recovery_consensus.evaluator import Evaluator
-from allbrain.recovery_consensus.model import CandidateStrategy
+from allbrain.domains.governance.recovery_consensus.arbiter import Arbiter
+from allbrain.domains.governance.recovery_consensus.evaluator import Evaluator
+from allbrain.domains.governance.recovery_consensus.model import CandidateStrategy
 
 
 def _scored_single(strategy, success=0.7, confidence=0.8, risk=0.2):

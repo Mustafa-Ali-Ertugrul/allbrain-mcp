@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.workspace import (
+from allbrain.domains.collaboration.workspace import (
     make_ws_added_payload,
     make_ws_removed_payload,
     make_ws_updated_payload,
 )
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.events.schemas import EventType
 
 
 class E:

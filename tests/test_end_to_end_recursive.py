@@ -2,25 +2,25 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.coevolution import CouplingMatrix, Dynamics, OscillationDetector
 from allbrain.domains.analysis.predictive_failure import PredictiveFailureManager
 from allbrain.domains.analysis.predictive_failure.model import RiskSignal
-from allbrain.events.schemas import EventType
-from allbrain.learning_graph import GraphRewriter, LearningGraph, LearningNode
-from allbrain.learning_safety import EntropyCalculator, Explorer
-from allbrain.meta_meta_scoring import EvaluatorStore, MetaEvaluator
-from allbrain.meta_optimizer import WeightOptimizer
-from allbrain.meta_scoring import MetaScorer, ProfileStore
-from allbrain.mitigation_learning import (
+from allbrain.domains.governance.mitigation_learning import (
     LearningEngine,
     OutcomeTracker,
     PolicyStore,
     StrategyOptimizer,
 )
-from allbrain.policy_competition import CompetitionEngine
-from allbrain.policy_routing import MetaPolicyRouter
-from allbrain.self_play import MatchEngine, WinMatrix
-from allbrain.self_repair import PolicySnapshotManager, ValidationGate
+from allbrain.domains.governance.policy_competition import CompetitionEngine
+from allbrain.domains.governance.policy_routing import MetaPolicyRouter
+from allbrain.domains.governance.self_repair import PolicySnapshotManager, ValidationGate
+from allbrain.domains.learning.coevolution import CouplingMatrix, Dynamics, OscillationDetector
+from allbrain.domains.learning.learning_graph import GraphRewriter, LearningGraph, LearningNode
+from allbrain.domains.learning.learning_safety import EntropyCalculator, Explorer
+from allbrain.domains.learning.meta_meta_scoring import EvaluatorStore, MetaEvaluator
+from allbrain.domains.learning.meta_optimizer import WeightOptimizer
+from allbrain.domains.learning.meta_scoring import MetaScorer, ProfileStore
+from allbrain.domains.learning.self_play import MatchEngine, WinMatrix
+from allbrain.events.schemas import EventType
 
 
 def _event_types(events):
@@ -131,7 +131,7 @@ class TestEndToEndRecursive:
     def test_pipeline_has_decision_flags(self):
         import inspect
 
-        from allbrain.runtime_core.pipeline import SystemDecisionPipeline
+        from allbrain.domains.memory.runtime_core.pipeline import SystemDecisionPipeline
 
         sig = inspect.signature(SystemDecisionPipeline.run)
         for name in [

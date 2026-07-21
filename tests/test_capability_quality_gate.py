@@ -7,7 +7,10 @@ FS = ["scorer.py", "reducer.py", "manager.py", "events.py", "model.py"]
 
 
 def _n(d, f):
-    c = (Path(d) / f).read_text(encoding="utf-8")
+    p = Path(d) / f
+    if not p.exists():
+        p = Path(d.replace("src/allbrain/", "src/allbrain/domains/learning/")) / f
+    c = p.read_text(encoding="utf-8")
     for t in ("uuid7", "datetime.now", "random.", "time.time"):
         assert t not in c, repr(d + "/" + f) + " uses " + repr(t)
 
@@ -18,10 +21,10 @@ class TestQualityGate:
             _n("src/allbrain/capabilities", f)
 
     def test_does_not_change_confidence(self):
-        from allbrain.capabilities.events import make_matched_payload
+        from allbrain.domains.learning.capabilities.events import make_matched_payload
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as mr
         from allbrain.events.schemas import EventType
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as mr
 
         class E:
             def __init__(self, t, i, p):
@@ -54,7 +57,7 @@ class TestQualityGate:
         assert mgr.query(w).capability_score == 0.5
 
     def test_no_recompute(self):
-        c = Path("src/allbrain/revision/manager.py").read_text(encoding="utf-8")
+        c = Path("src/allbrain/domains/memory/revision/manager.py").read_text(encoding="utf-8")
         ls = c.splitlines()
         inh = False
         forb = [r"\bCapabilityManager\(", r"\bCapabilityReducer\("]
@@ -71,7 +74,7 @@ class TestQualityGate:
                 assert not re.search(p, line), "revision/manager.py:" + str(n) + " contains " + repr(p)
 
     def test_selection_score_unchanged(self):
-        from allbrain.routing.scorer import extended_selection_score, selection_score
+        from allbrain.domains.collaboration.routing.scorer import extended_selection_score, selection_score
 
         s1 = selection_score(reputation=0.5, runtime_score=0.5, calibrated_trust=0.5, consensus_score=0.5)
         s2 = extended_selection_score(

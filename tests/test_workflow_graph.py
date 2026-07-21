@@ -1,7 +1,7 @@
 """Tests for workflow/graph.py uncovered branches - DependencyEngine."""
 
-from allbrain.workflow.graph import DependencyEngine
-from allbrain.workflow.models import TaskEdge, TaskGraph, TaskNode, WorkflowStatus
+from allbrain.domains.collaboration.workflow.graph import DependencyEngine
+from allbrain.domains.collaboration.workflow.models import TaskEdge, TaskGraph, TaskNode, WorkflowStatus
 
 
 def _graph(*nodes: TaskNode) -> TaskGraph:

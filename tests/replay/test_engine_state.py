@@ -3,19 +3,19 @@
 from datetime import UTC, datetime, timezone
 from uuid import uuid4
 
-from allbrain.events import EventType
-from allbrain.models.schemas import EventRead
-from allbrain.replay.engine_state import (
+from allbrain.domains.memory.replay.engine_state import (
     _apply_drift_event,
     _apply_selection_decision,
     _apply_task_transition,
     _apply_unknown_event,
     ordered,
 )
+from allbrain.events import EventType
+from allbrain.models.schemas import EventRead
 
 
 def _event(etype, **kw):
-    from allbrain.foundations import current_payload_version
+    from allbrain.domains.memory.foundations import current_payload_version
 
     return EventRead(
         id=str(uuid4()),

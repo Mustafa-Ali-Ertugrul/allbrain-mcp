@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta, timezone
 
-from allbrain.reliability import HeartbeatTracker, LeaseManager
+from allbrain.domains.governance.reliability import HeartbeatTracker, LeaseManager
 
 
 class Clock:

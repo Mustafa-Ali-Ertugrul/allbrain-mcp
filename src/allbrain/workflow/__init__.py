@@ -1,39 +1,15 @@
-from allbrain.workflow.aggregator import ResultAggregator
-from allbrain.workflow.engine import StepResult, WorkflowEngine, WorkflowResult
-from allbrain.workflow.graph import DependencyEngine, ValidationResult
-from allbrain.workflow.models import (
-    AggregatedResult,
-    AggregationStrategy,
-    EdgeType,
-    SubtaskResult,
-    TaskEdge,
-    TaskGraph,
-    TaskNode,
-    WorkflowStatus,
-)
-from allbrain.workflow.recovery import RecoveryDecision, RecoveryManager
-from allbrain.workflow.scheduler import SubtaskAssignment, SubtaskScheduler
-from allbrain.workflow.state_machine import TransitionResult, WorkflowStateMachine
+"""Deprecated compatibility shim for allbrain.domains.collaboration.workflow.
 
-__all__ = [
-    "AggregatedResult",
-    "AggregationStrategy",
-    "DependencyEngine",
-    "EdgeType",
-    "RecoveryDecision",
-    "RecoveryManager",
-    "ResultAggregator",
-    "StepResult",
-    "SubtaskAssignment",
-    "SubtaskResult",
-    "SubtaskScheduler",
-    "TaskEdge",
-    "TaskGraph",
-    "TaskNode",
-    "TransitionResult",
-    "ValidationResult",
-    "WorkflowEngine",
-    "WorkflowResult",
-    "WorkflowStateMachine",
-    "WorkflowStatus",
-]
+Moved to allbrain.domains.collaboration.workflow in v0.4.5.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.collaboration.workflow",
+    submodules=("aggregator", "engine", "graph", "models", "recovery", "scheduler", "state_machine"),
+)

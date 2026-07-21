@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 from pathlib import Path
 
-from allbrain.conflict import ConflictDetector, ConflictResolver
+from allbrain.domains.collaboration.conflict import ConflictDetector, ConflictResolver
 from allbrain.models.entities import Event
 from allbrain.server.tools.conflicts import (
     detect_conflicts_impl,

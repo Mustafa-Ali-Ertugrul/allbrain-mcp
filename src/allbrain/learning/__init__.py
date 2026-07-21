@@ -1,44 +1,15 @@
-from allbrain.learning.events import (
-    make_decayed_payload,
-    make_learned_payload,
-    make_observed_payload,
-    validate_decayed,
-    validate_learned,
-    validate_observed,
-)
-from allbrain.learning.learner import (
-    _stable_learning_id,
-    ema_update,
-    observation,
-)
-from allbrain.learning.manager import CapabilityLearningManager
-from allbrain.learning.model import (
-    INITIAL_CAPABILITY,
-    LEARNING_DELTA_THRESHOLD,
-    LEARNING_EMA_BIAS,
-    LEARNING_RETENTION,
-    LEARNING_TEMPLATE_VERSION,
-    LearnedCapabilityState,
-)
-from allbrain.learning.reducer import CapabilityLearningReducer
+"""Deprecated compatibility shim for allbrain.learning.
 
-__all__ = [
-    "CapabilityLearningManager",
-    "CapabilityLearningReducer",
-    "INITIAL_CAPABILITY",
-    "LEARNED_CAPABILITY_STATE",
-    "LEARNING_EMA_BIAS",
-    "LEARNING_RETENTION",
-    "LEARNING_DELTA_THRESHOLD",
-    "LEARNING_TEMPLATE_VERSION",
-    "LearnedCapabilityState",
-    "_stable_learning_id",
-    "ema_update",
-    "make_decayed_payload",
-    "make_learned_payload",
-    "make_observed_payload",
-    "observation",
-    "validate_decayed",
-    "validate_learned",
-    "validate_observed",
-]
+Moved to allbrain.domains.learning.learning in v0.4.2.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.learning.learning",
+    submodules=("events", "learner", "manager", "model", "reducer"),
+)

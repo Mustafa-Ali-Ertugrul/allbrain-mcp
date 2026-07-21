@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.events.schemas import EventType
-from allbrain.meta_optimizer import (
+from allbrain.domains.learning.meta_optimizer import (
     META_OPTIMIZER_LEARNING_RATE,
     META_OPTIMIZER_UPDATE_INTERVAL,
     META_OPTIMIZER_WEIGHT_MAX,
@@ -17,7 +16,8 @@ from allbrain.meta_optimizer import (
     validate_meta_optimizer_guarded,
     validate_weights_adapated,
 )
-from allbrain.meta_scoring import ProfileStore, ScoringProfile
+from allbrain.domains.learning.meta_scoring import ProfileStore, ScoringProfile
+from allbrain.events.schemas import EventType
 
 
 class TestGradientEstimator:

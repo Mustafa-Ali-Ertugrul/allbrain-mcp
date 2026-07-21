@@ -1,6 +1,6 @@
 """Tests for ui/replay_viewer.py - _diff_highlights."""
 
-from allbrain.ui.replay_viewer import _diff_highlights
+from allbrain.domains.memory.ui.replay_viewer import _diff_highlights
 
 
 class TestDiffHighlights:

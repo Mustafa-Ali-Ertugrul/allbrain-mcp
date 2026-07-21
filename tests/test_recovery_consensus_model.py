@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.recovery_consensus.model import (
+from allbrain.domains.governance.recovery_consensus.model import (
     CONSENSUS_MIN_RATIO,
     CONSENSUS_TEMPLATE_VERSION,
     DEFAULT_CONFIDENCE_WEIGHT,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.meta_meta_scoring import EvaluatorStore, MetaEvaluator
+from allbrain.domains.learning.meta_meta_scoring import EvaluatorStore, MetaEvaluator
 
 
 class TestEvaluatorEvaluation:
@@ -36,7 +36,7 @@ class TestEvaluatorEvaluation:
 
     def test_store_clamps_values(self):
         store = EvaluatorStore()
-        from allbrain.meta_meta_scoring.model import EvaluatorProfile
+        from allbrain.domains.learning.meta_meta_scoring.model import EvaluatorProfile
 
         store.set(EvaluatorProfile("s1", "timeout", accuracy=5.0, bias=-5.0))
         p = store.get("s1", "timeout")
@@ -45,7 +45,7 @@ class TestEvaluatorEvaluation:
 
     def test_all_profiles_serializable(self):
         store = EvaluatorStore()
-        from allbrain.meta_meta_scoring.model import EvaluatorProfile
+        from allbrain.domains.learning.meta_meta_scoring.model import EvaluatorProfile
 
         store.set(EvaluatorProfile("s1", "timeout", accuracy=0.7))
         all_p = store.all_profiles()

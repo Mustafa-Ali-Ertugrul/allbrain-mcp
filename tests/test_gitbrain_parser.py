@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from allbrain.gitbrain.parser import GitBrain, _is_credential_var, safe_git_env
+from allbrain.domains.memory.gitbrain.parser import GitBrain, _is_credential_var, safe_git_env
 
 
 class TestIsCredentialVar:

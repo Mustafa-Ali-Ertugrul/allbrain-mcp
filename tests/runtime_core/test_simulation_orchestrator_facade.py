@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from allbrain.runtime_core.simulation import SimulationOrchestrator
+from allbrain.domains.memory.runtime_core.simulation import SimulationOrchestrator
 
 
 def _make_orchestrator() -> SimulationOrchestrator:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.coevolution import COEVOLUTION_OSCILLATION_THRESHOLD, OscillationDetector
+from allbrain.domains.learning.coevolution import COEVOLUTION_OSCILLATION_THRESHOLD, OscillationDetector
 
 
 class TestOscillationDetector:

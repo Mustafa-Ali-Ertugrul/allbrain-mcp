@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.adaptive_recovery import (
+from allbrain.domains.governance.adaptive_recovery import (
     CHAIN_OUTCOME_ESCALATED,
     CHAIN_OUTCOME_FAILED,
     CHAIN_OUTCOME_SUCCESS,
     AdaptiveRecoveryManager,
     AdaptiveRecoveryReducer,
 )
-from allbrain.recovery_consensus.model import CandidateStrategy
+from allbrain.domains.governance.recovery_consensus.model import CandidateStrategy
 
 
 def _c(strategy: str = "retry", confidence: float = 0.8) -> CandidateStrategy:

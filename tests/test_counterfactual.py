@@ -6,6 +6,8 @@ import pytest
 
 from allbrain.domains.analysis.world import PredictionBridge, StateTransitionBridge, WorldState
 from allbrain.domains.analysis.world.simulation import SimulationBridge
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
 from allbrain.domains.reasoning.counterfactual import (
     ACTION_MAP,
     AlternativeGenerator,
@@ -18,8 +20,6 @@ from allbrain.domains.reasoning.counterfactual import (
     recommendation_severity,
 )
 from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.counterfactual import (
     generate_counterfactual_impl,
     rank_alternatives_impl,

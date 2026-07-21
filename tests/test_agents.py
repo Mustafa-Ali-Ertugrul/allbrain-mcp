@@ -4,9 +4,9 @@ import asyncio
 
 import pytest
 
-from allbrain.agents.adapter import AgentHealth, AgentStatus, ExecutionContext
-from allbrain.agents.adapters.mock import MockAdapter
-from allbrain.agents.definition import (
+from allbrain.domains.collaboration.agents.adapter import AgentHealth, AgentStatus, ExecutionContext
+from allbrain.domains.collaboration.agents.adapters.mock import MockAdapter
+from allbrain.domains.collaboration.agents.definition import (
     AgentCapability,
     AgentCost,
     AgentDefinition,
@@ -14,12 +14,12 @@ from allbrain.agents.definition import (
     LatencyProfile,
     SafetyLimits,
 )
-from allbrain.agents.learner import CapabilityLearner
-from allbrain.agents.metrics import ExecutionMetrics, MetricsCollector
-from allbrain.agents.queue import InMemoryTaskQueue, QueueItem
-from allbrain.agents.registry import AgentRegistry
-from allbrain.agents.runtime import AgentRuntime
-from allbrain.agents.safety import (
+from allbrain.domains.collaboration.agents.learner import CapabilityLearner
+from allbrain.domains.collaboration.agents.metrics import ExecutionMetrics, MetricsCollector
+from allbrain.domains.collaboration.agents.queue import InMemoryTaskQueue, QueueItem
+from allbrain.domains.collaboration.agents.registry import AgentRegistry
+from allbrain.domains.collaboration.agents.runtime import AgentRuntime
+from allbrain.domains.collaboration.agents.safety import (
     CostCeilingExceeded,
     InputRejected,
     RateLimitExceeded,
@@ -27,9 +27,9 @@ from allbrain.agents.safety import (
     sanitize_input,
     sanitize_task,
 )
-from allbrain.agents.worker import WorkerPool
-from allbrain.workflow.models import SubtaskResult, TaskGraph, TaskNode, WorkflowStatus
-from allbrain.workflow.scheduler import SubtaskAssignment
+from allbrain.domains.collaboration.agents.worker import WorkerPool
+from allbrain.domains.collaboration.workflow.models import SubtaskResult, TaskGraph, TaskNode, WorkflowStatus
+from allbrain.domains.collaboration.workflow.scheduler import SubtaskAssignment
 
 # ---------- AgentDefinition ----------
 
@@ -625,7 +625,7 @@ def test_registry_discover_empty_without_keys() -> None:
 @pytest.mark.asyncio
 async def test_e2e_workflow_through_runtime() -> None:
     """Full workflow: create graph -> schedule -> execute via runtime."""
-    from allbrain.workflow.engine import WorkflowEngine
+    from allbrain.domains.collaboration.workflow.engine import WorkflowEngine
 
     registry = _make_registry_with_mock()
     runtime = AgentRuntime(registry)

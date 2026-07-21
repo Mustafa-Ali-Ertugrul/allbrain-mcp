@@ -4,12 +4,12 @@ from datetime import UTC, datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from allbrain.domains.memory.resume.context_builder import ContextBuilder
 from allbrain.models.schemas import EventRead
-from allbrain.resume.context_builder import ContextBuilder
 
 
 def _event() -> EventRead:
-    from allbrain.foundations import current_payload_version
+    from allbrain.domains.memory.foundations import current_payload_version
 
     return EventRead(
         id=str(uuid4()),

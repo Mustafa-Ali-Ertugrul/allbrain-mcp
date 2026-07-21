@@ -5,8 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from allbrain.events import EventType
-from allbrain.foundations import (
+from allbrain.domains.memory.foundations import (
     PayloadUpcaster,
     canonical_event_keys,
     canonical_event_sort,
@@ -14,8 +13,9 @@ from allbrain.foundations import (
     is_known_event,
     normalize_payload,
 )
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
-from allbrain.replay import EventReplayEngine
 from allbrain.server.tools.knowledge import (
     detect_knowledge_gaps_impl,
     estimate_uncertainty_impl,
@@ -351,7 +351,7 @@ def test_list_events_ordered_by_stream_position_not_created_at(tmp_path) -> None
 
 
 def test_payload_version_persisted_and_stamped(tmp_path) -> None:
-    from allbrain.foundations.versioning import current_payload_version
+    from allbrain.domains.memory.foundations.versioning import current_payload_version
     from allbrain.models.entities import Event
     from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
 
@@ -381,7 +381,7 @@ def test_payload_version_persisted_and_stamped(tmp_path) -> None:
 
 
 def test_upcaster_fires_on_read(tmp_path) -> None:
-    from allbrain.foundations.versioning import (
+    from allbrain.domains.memory.foundations.versioning import (
         get_default_upcaster,
     )
     from allbrain.models.entities import Event

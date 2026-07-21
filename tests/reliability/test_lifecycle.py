@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.reliability import ResourceTracker, ShutdownManager
+from allbrain.domains.governance.reliability import ResourceTracker, ShutdownManager
 
 
 class SyncResource:

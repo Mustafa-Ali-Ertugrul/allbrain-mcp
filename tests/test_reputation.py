@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.reputation.estimator import (
+from allbrain.domains.collaboration.reputation.estimator import (
     REPUTATION_MAX_RETRY,
     consistency,
     mean_confidence,
@@ -11,7 +11,7 @@ from allbrain.reputation.estimator import (
     reputation_score,
     success_rate,
 )
-from allbrain.reputation.events import make_payload, validate_payload
+from allbrain.domains.collaboration.reputation.events import make_payload, validate_payload
 
 
 # Helper: create a sample tuple

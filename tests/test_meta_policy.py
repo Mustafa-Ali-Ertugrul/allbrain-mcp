@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.meta_policy import (
+from allbrain.domains.learning.meta_policy import (
     META_POLICY_EXPLORATION_MAX,
     ModeStats,
     PolicyState,

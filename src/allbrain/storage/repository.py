@@ -12,11 +12,11 @@ from sqlmodel import col, select
 from uuid6 import uuid7
 
 from allbrain.config import canonicalize_project_path
-from allbrain.events.schemas import _EVENT_TYPE_ALIASES, EventType
-from allbrain.foundations.versioning import (
+from allbrain.domains.memory.foundations.versioning import (
     current_payload_version,
     get_default_upcaster,
 )
+from allbrain.events.schemas import _EVENT_TYPE_ALIASES, EventType
 from allbrain.models.entities import Event, Project, QueueItemRecord, Session, SnapshotRecord, utc_now
 from allbrain.models.schemas import EventRead, UserInputError
 from allbrain.security.redaction import sanitize_payload

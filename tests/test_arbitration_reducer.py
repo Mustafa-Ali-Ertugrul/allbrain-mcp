@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.arbitration import ArbitrationManager, ArbitrationReducer
-from allbrain.arbitration.events import (
+from allbrain.domains.collaboration.arbitration import ArbitrationManager, ArbitrationReducer
+from allbrain.domains.collaboration.arbitration.events import (
     make_arb_decision_payload,
     make_consensus_payload,
     make_vote_payload,
@@ -193,8 +193,8 @@ class TestVoteOrderIndependence:
 
 class TestConsensusLastWins:
     def test_last_wins(self):
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as make_revision_payload
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as make_revision_payload
 
         events = [
             E(

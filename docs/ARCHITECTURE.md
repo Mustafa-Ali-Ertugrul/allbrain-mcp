@@ -9,55 +9,90 @@ and the first context (`reasoning/`, 10 modules) was migrated in
 
 AllBrain's module structure is not arbitrary. It implements a layered
 cognitive model for artificial agents, drawing from Bayesian epistemology,
-metacognition, world modeling, and decision theory.
+metacognition, world modeling, and decision theory. Each layer builds
+on the previous, forming a closed cognitive loop where beliefs inform
+metacognition, metacognition shapes world models, world models drive
+decisions, and decisions generate evidence that updates beliefs.
 
-### Layer 1: Bayesian Epistemology — "What does the agent believe?"
+### 1. Bayesian Epistemology — "What does the agent believe?"
+
+The foundation of AllBrain's reasoning is probabilistic belief updating.
+Agents maintain uncertainty-aware beliefs that evolve as new evidence arrives.
 
 | Module | Role |
 |---|---|
-| `belief/` | Beta-Bernoulli posterior updates (Thompson Sampling) |
+| `belief/` | Beta-Bernoulli posterior updates via Thompson Sampling |
 | `evidence/` | Likelihood-weighted observation accumulation |
-| `contradiction/` | Posterior conflict detection |
-| `calibration/` | Predicted vs. actual outcome alignment (Tetlock-style) |
+| `contradiction/` | Posterior conflict detection when evidence contradicts beliefs |
+| `calibration/` | Predicted vs. actual outcome alignment (Tetlock-style forecasting) |
 
-### Layer 2: Metacognitive Hierarchy — "What does the agent think about its beliefs?"
+**Key Insight:** Beliefs are not binary; they are probability distributions
+that capture both the agent's best estimate and its uncertainty about that
+estimate. This enables rational resource allocation: investigate when
+uncertainty is high, act when confidence is sufficient.
+
+### 2. Metacognition Hierarchy — "What does the agent think about its beliefs?"
+
+Metacognition allows agents to reason about their own reasoning quality,
+creating a self-improving feedback loop.
 
 | Module | Role |
 |---|---|
-| `meta_reasoning/` | Reasoning about reasoning quality |
-| `meta_scoring/` | Scoring the scores |
-| `meta_meta_scoring/` | Detecting scoring drift |
-| `meta_policy/` | Policy selection over policies |
+| `meta_reasoning/` | Assess reasoning quality and identify reasoning failures |
+| `meta_scoring/` | Score the quality of scores (second-order evaluation) |
+| `meta_meta_scoring/` | Detect scoring drift and meta-evaluation degradation |
+| `meta_policy/` | Select policies over policies (third-order reasoning) |
 
-### Layer 3: World Modeling & Prediction — "What does the agent think will happen?"
+**Key Insight:** The hierarchy is not infinite; it terminates at practical
+depth. `meta_meta_scoring` detects when further meta-evaluation yields
+diminishing returns, preventing infinite regress.
+
+### 3. World Modeling — "What does the agent think will happen?"
+
+Agents construct internal models of environment dynamics to predict
+consequences of actions before committing to them.
 
 | Module | Role |
 |---|---|
 | `world/` | `TransitionLearner` + `BetaPredictor` (event-log grounded) |
 | `foresight/` | Multi-step simulation with confidence decay |
 | `counterfactual/` | Intervention-based alternative evaluation |
-| `scenarios/` | Best/expected/worst branching |
+| `scenarios/` | Best/expected/worst branching analysis |
 
-### Layer 4: Decision & Action — "What does the agent choose to do?"
+**Key Insight:** World models are grounded in observed event transitions,
+not static assumptions. The `TransitionLearner` updates its transition
+probabilities as new events arrive, maintaining a living model of
+environment dynamics.
+
+### 4. Decision Theory — "What does the agent choose to do?"
+
+Decisions integrate beliefs, metacognitive assessment, and world models
+to select actions that maximize expected utility under uncertainty.
 
 | Module | Role |
 |---|---|
-| `decision/` | 4-step pipeline (Preparation → Reasoning → Feedback → Learning) |
-| `tradeoff_engine/` | Multi-criteria optimization |
+| `decision/` | 4-step pipeline: Preparation → Reasoning → Feedback → Learning |
+| `tradeoff_engine/` | Multi-criteria optimization across competing objectives |
 | `information_seeking/` | Value of Information (VOI) maximization |
 
-### Layer 5: Memory & Identity — "What does the agent remember and how does it know itself?"
+**Key Insight:** The decision pipeline is closed-loop: each decision
+generates feedback that updates beliefs, creating a continuous learning
+cycle. The `information_seeking` module explicitly values gathering
+new information when the expected value of information exceeds the
+cost of acquiring it.
 
-| Module | Role |
-|---|---|
-| `episodic/` | Event-level recall (Tulving) |
-| `semantic/` | Compressed, generalized knowledge |
-| `failure_memory/` | Negative-example retention |
+### Cognitive Loop Integration
 
-This layered model is what distinguishes AllBrain from "tool collection"
-MCP servers. Each layer builds on the previous: beliefs feed metacognition,
-metacognition informs world modeling, world models drive decisions, and
-decisions create memories that update beliefs — a closed cognitive loop.
+These four layers form a closed cognitive loop:
+
+```
+Beliefs → Metacognition → World Model → Decision → Evidence → Beliefs
+```
+
+This loop is what distinguishes AllBrain from "tool collection"
+MCP servers. Each layer builds on the previous: beliefs feed
+metacognition, metacognition informs world modeling, world models
+drive decisions, and decisions create memories that update beliefs.
 
 ## Dependency Rule (Golden Rule)
 
@@ -90,16 +125,16 @@ decisions create memories that update beliefs — a closed cognitive loop.
 | `install/` | Client installer |
 | `ops/` | Operational tooling |
 
-## Migration Status (v0.4.1)
+## Migration Status (v0.4.5 — Complete)
 
 | Context | Modules | Status | Since | Path |
 |---|---|---|---|---|
 | `reasoning/` | 10 | ✅ **Migrated** | v0.4.0 | `allbrain.domains.reasoning.*` |
 | `analysis/` | 17 | ✅ **Migrated** | v0.4.1 | `allbrain.domains.analysis.*` |
-| `governance/` | 12 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.governance.*`) |
-| `learning/` | 12 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.learning.*`) |
-| `collaboration/` | 10 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
-| `memory/` | 12 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.memory.*`) |
+| `learning/` | 12 | ✅ **Migrated** | v0.4.2 | `allbrain.domains.learning.*` |
+| `governance/` | 12 | ✅ **Migrated** | v0.4.3 | `allbrain.domains.governance.*` |
+| `memory/` | 12 | ✅ **Migrated** | v0.4.4 | `allbrain.domains.memory.*` |
+| `collaboration/` | 10 | ✅ **Migrated** | v0.4.5 | `allbrain.domains.collaboration.*` |
 
 ## Bounded Contexts
 
@@ -140,54 +175,54 @@ decisions create memories that update beliefs — a closed cognitive loop.
 | semantic | `allbrain.domains.analysis.semantic` | `allbrain.semantic` | semantic analysis |
 | world | `allbrain.domains.analysis.world` | `allbrain.world` | `WorldModel` |
 
-### `domains.governance/` — safety, alignment, self-repair (12)
+### `domains.governance/` — safety, alignment, self-repair (12) [MIGRATED v0.4.3]
 
-| Module | Current Path | Key Exports |
-|---|---|---|
-| policy | `allbrain.policy` | `RoutingEngine` |
-| policy_competition | `allbrain.policy_competition` | competing policies |
-| policy_routing | `allbrain.policy_routing` | policy selection |
-| value_alignment | `allbrain.value_alignment` | value alignment |
-| governance | `allbrain.governance` | `AutonomousGovernanceCoordinator` |
-| self_repair | `allbrain.self_repair` | self-repair |
-| soft_repair | `allbrain.soft_repair` | soft repair |
-| adaptive_recovery | `allbrain.adaptive_recovery` | adaptive recovery |
-| recovery_consensus | `allbrain.recovery_consensus` | recovery consensus |
-| mitigation_learning | `allbrain.mitigation_learning` | mitigation learning |
-| reliability | `allbrain.reliability` | `ReliabilityMetrics` |
-| resilience | `allbrain.resilience` | resilience |
+| Module | Canonical Path (v0.4.3+) | Legacy Shim Path (v0.4.3, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| policy | `allbrain.domains.governance.policy` | `allbrain.policy` | `RoutingEngine` |
+| policy_competition | `allbrain.domains.governance.policy_competition` | `allbrain.policy_competition` | competing policies |
+| policy_routing | `allbrain.domains.governance.policy_routing` | `allbrain.policy_routing` | policy selection |
+| value_alignment | `allbrain.domains.governance.value_alignment` | `allbrain.value_alignment` | value alignment |
+| governance | `allbrain.domains.governance.governance` | `allbrain.governance` | `AutonomousGovernanceCoordinator` |
+| self_repair | `allbrain.domains.governance.self_repair` | `allbrain.self_repair` | self-repair |
+| soft_repair | `allbrain.domains.governance.soft_repair` | `allbrain.soft_repair` | soft repair |
+| adaptive_recovery | `allbrain.domains.governance.adaptive_recovery` | `allbrain.adaptive_recovery` | adaptive recovery |
+| recovery_consensus | `allbrain.domains.governance.recovery_consensus` | `allbrain.recovery_consensus` | recovery consensus |
+| mitigation_learning | `allbrain.domains.governance.mitigation_learning` | `allbrain.mitigation_learning` | mitigation learning |
+| reliability | `allbrain.domains.governance.reliability` | `allbrain.reliability` | `ReliabilityMetrics` |
+| resilience | `allbrain.domains.governance.resilience` | `allbrain.resilience` | resilience |
 
-### `domains.learning/` — meta-learning & adaptation (12)
+### `domains.learning/` — meta-learning & adaptation (12) [MIGRATED v0.4.2]
 
-| Module | Current Path | Key Exports |
-|---|---|---|
-| learning | `allbrain.learning` | `CapabilityLearningManager` |
-| learning_graph | `allbrain.learning_graph` | learning graph |
-| learning_safety | `allbrain.learning_safety` | safe learning |
-| meta_optimizer | `allbrain.meta_optimizer` | meta-optimizer |
-| meta_scoring | `allbrain.meta_scoring` | meta-scoring |
-| meta_meta_scoring | `allbrain.meta_meta_scoring` | meta-meta-scoring |
-| meta_policy | `allbrain.meta_policy` | meta-policy |
-| calibration | `allbrain.calibration` | calibration |
-| capabilities | `allbrain.capabilities` | capability tracking |
-| evolution | `allbrain.evolution` | evolutionary strategies |
-| coevolution | `allbrain.coevolution` | co-evolution |
-| self_play | `allbrain.self_play` | self-play |
+| Module | Canonical Path (v0.4.2+) | Legacy Shim Path (v0.4.2, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| learning | `allbrain.domains.learning.learning` | `allbrain.learning` | `CapabilityLearningManager` |
+| learning_graph | `allbrain.domains.learning.learning_graph` | `allbrain.learning_graph` | learning graph |
+| learning_safety | `allbrain.domains.learning.learning_safety` | `allbrain.learning_safety` | safe learning |
+| meta_optimizer | `allbrain.domains.learning.meta_optimizer` | `allbrain.meta_optimizer` | meta-optimizer |
+| meta_scoring | `allbrain.domains.learning.meta_scoring` | `allbrain.meta_scoring` | meta-scoring |
+| meta_meta_scoring | `allbrain.domains.learning.meta_meta_scoring` | `allbrain.meta_meta_scoring` | meta-meta-scoring |
+| meta_policy | `allbrain.domains.learning.meta_policy` | `allbrain.meta_policy` | meta-policy |
+| calibration | `allbrain.domains.learning.calibration` | `allbrain.calibration` | calibration |
+| capabilities | `allbrain.domains.learning.capabilities` | `allbrain.capabilities` | capability tracking |
+| evolution | `allbrain.domains.learning.evolution` | `allbrain.evolution` | evolutionary strategies |
+| coevolution | `allbrain.domains.learning.coevolution` | `allbrain.coevolution` | co-evolution |
+| self_play | `allbrain.domains.learning.self_play` | `allbrain.self_play` | self-play |
 
-### `domains.collaboration/` — multi-agent coordination (10)
+### `domains.collaboration/` — multi-agent coordination (10) [MIGRATED v0.4.5]
 
-| Module | Current Path | Key Exports |
-|---|---|---|
-| collaboration | `allbrain.collaboration` | `CollaborationManager` |
-| conflict | `allbrain.conflict` | `ConflictDetector`, `ConflictResolver` |
-| merge | `allbrain.merge` | `EventMergeEngine`, `StateMerger` |
-| arbitration | `allbrain.arbitration` | `ArbitrationManager` |
-| reputation | `allbrain.reputation` | reputation |
-| distributed | `allbrain.distributed` | distributed coordination |
-| workflow | `allbrain.workflow` | `WorkflowSnapshotBuilder` |
-| workspace | `allbrain.workspace` | shared workspace |
-| agents | `allbrain.agents` | agent management |
-| routing | `allbrain.routing` | routing |
+| Module | Canonical Path (v0.4.5+) | Legacy Shim Path (v0.4.5, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| collaboration | `allbrain.domains.collaboration.collaboration` | `allbrain.collaboration` | `CollaborationManager` |
+| conflict | `allbrain.domains.collaboration.conflict` | `allbrain.conflict` | `ConflictDetector`, `ConflictResolver` |
+| merge | `allbrain.domains.collaboration.merge` | `allbrain.merge` | `EventMergeEngine`, `StateMerger` |
+| arbitration | `allbrain.domains.collaboration.arbitration` | `allbrain.arbitration` | `ArbitrationManager` |
+| reputation | `allbrain.domains.collaboration.reputation` | `allbrain.reputation` | reputation |
+| distributed | `allbrain.domains.collaboration.distributed` | `allbrain.distributed` | distributed coordination |
+| workflow | `allbrain.domains.collaboration.workflow` | `allbrain.workflow` | `WorkflowSnapshotBuilder` |
+| workspace | `allbrain.domains.collaboration.workspace` | `allbrain.workspace` | shared workspace |
+| agents | `allbrain.domains.collaboration.agents` | `allbrain.agents` | agent management |
+| routing | `allbrain.domains.collaboration.routing` | `allbrain.routing` | routing |
 
 ### `domains.analysis/` — situation understanding & anomaly (17)
 
@@ -211,22 +246,22 @@ decisions create memories that update beliefs — a closed cognitive loop.
 | graph | `allbrain.graph` | graph analysis |
 | fusion | `allbrain.fusion` | data fusion |
 
-### `domains.memory/` — persistence, recall, observability (12)
+### `domains.memory/` — persistence, recall, observability (12) [MIGRATED v0.4.4]
 
-| Module | Current Path | Key Exports |
-|---|---|---|
-| memory | `allbrain.memory` | `MemoryBuilder`, `MemoryRetriever` |
-| replay | `allbrain.replay` | deterministic replay |
-| resume | `allbrain.resume` | `OrchestratedResumeEngine` |
-| telemetry | `allbrain.telemetry` | telemetry |
-| observability | `allbrain.observability` | `ObservabilityBuilder` |
-| metrics | `allbrain.metrics` | metrics |
-| foundations | `allbrain.foundations` | `canonical_event_sort` |
-| runtime_core | `allbrain.runtime_core` | `SystemDecisionPipeline` |
-| gitbrain | `allbrain.gitbrain` | `GitBrain` |
-| revision | `allbrain.revision` | revision tracking |
-| ui | `allbrain.ui` | `TraceViewer`, `GraphExplorer` |
-| api | `allbrain.api` | API layer |
+| Module | Canonical Path (v0.4.4+) | Legacy Shim Path (v0.4.4, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| memory | `allbrain.domains.memory.memory` | `allbrain.memory` | `MemoryBuilder`, `MemoryRetriever` |
+| replay | `allbrain.domains.memory.replay` | `allbrain.replay` | deterministic replay |
+| resume | `allbrain.domains.memory.resume` | `allbrain.resume` | `OrchestratedResumeEngine` |
+| telemetry | `allbrain.domains.memory.telemetry` | `allbrain.telemetry` | telemetry |
+| observability | `allbrain.domains.memory.observability` | `allbrain.observability` | `ObservabilityBuilder` |
+| metrics | `allbrain.domains.memory.metrics` | `allbrain.metrics` | metrics |
+| foundations | `allbrain.domains.memory.foundations` | `allbrain.foundations` | `canonical_event_sort` |
+| runtime_core | `allbrain.domains.memory.runtime_core` | `allbrain.runtime_core` | `SystemDecisionPipeline` |
+| gitbrain | `allbrain.domains.memory.gitbrain` | `allbrain.gitbrain` | `GitBrain` |
+| revision | `allbrain.domains.memory.revision` | `allbrain.revision` | revision tracking |
+| ui | `allbrain.domains.memory.ui` | `allbrain.ui` | `TraceViewer`, `GraphExplorer` |
+| api | `allbrain.domains.memory.api` | `allbrain.api` | API layer |
 
 ## Dependency Graph
 

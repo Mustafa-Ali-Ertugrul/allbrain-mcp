@@ -9,7 +9,7 @@ from allbrain.snapshot.trigger import snapshot_weight
 
 
 def _event(etype: str) -> EventRead:
-    from allbrain.foundations import current_payload_version
+    from allbrain.domains.memory.foundations import current_payload_version
 
     return EventRead(
         id=str(uuid4()),

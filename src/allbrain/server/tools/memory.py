@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from allbrain.memory import MemoryBuilder, MemoryRetriever, WorkflowMemoryStore
+from allbrain.domains.memory.memory import MemoryBuilder, MemoryRetriever, WorkflowMemoryStore
 from allbrain.models.schemas import (
     ToolResult,
     UserInputError,

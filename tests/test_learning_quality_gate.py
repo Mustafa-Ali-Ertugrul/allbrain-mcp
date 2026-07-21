@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.events import SemanticEventType
-from allbrain.events.schemas import EventType
-from allbrain.learning import (
+from allbrain.domains.learning.learning import (
     INITIAL_CAPABILITY,
     LEARNING_DELTA_THRESHOLD,
     CapabilityLearningManager,
@@ -15,7 +13,9 @@ from allbrain.learning import (
     make_observed_payload,
     observation,
 )
-from allbrain.learning.model import LEARNING_EMA_BIAS, LEARNING_RETENTION
+from allbrain.domains.learning.learning.model import LEARNING_EMA_BIAS, LEARNING_RETENTION
+from allbrain.events import SemanticEventType
+from allbrain.events.schemas import EventType
 
 
 class E:
@@ -149,8 +149,8 @@ class TestQualityGates:
 
     def test_learned_capability_state_in_revision_state(self):
         """learned_capability field exists in RevisionState."""
-        from allbrain.revision import RevisionState
-        from allbrain.revision.state import RevisionPolicy
+        from allbrain.domains.memory.revision import RevisionState
+        from allbrain.domains.memory.revision.state import RevisionPolicy
 
         s = RevisionState(
             context_key="a::t",
@@ -166,7 +166,7 @@ class TestQualityGates:
 
     def test_adaptive_selection_score_registered(self):
         """adaptive_selection_score must be importable and callable."""
-        from allbrain.routing import adaptive_selection_score
+        from allbrain.domains.collaboration.routing import adaptive_selection_score
 
         score = adaptive_selection_score(
             reputation=0.5,

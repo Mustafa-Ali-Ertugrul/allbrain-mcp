@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from allbrain.domains.analysis.graph import WorkflowGraphBuilder
-from allbrain.events import EventType
-from allbrain.evolution import (
+from allbrain.domains.learning.evolution import (
     ConsensusOptimizer,
     DelegationOptimizer,
     LearningManager,
@@ -13,9 +12,10 @@ from allbrain.evolution import (
     SupervisorOptimizer,
     TeamOptimizer,
 )
-from allbrain.memory import MemoryBuilder
-from allbrain.observability import DashboardDataBuilder
-from allbrain.replay import EventReplayEngine
+from allbrain.domains.memory.memory import MemoryBuilder
+from allbrain.domains.memory.observability import DashboardDataBuilder
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.events import EventType
 from allbrain.server.tools.events import save_event_impl
 from tests.test_sprint12_memory_policy_ui import events, make_context
 

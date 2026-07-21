@@ -4,7 +4,7 @@ from typing import Any
 
 from allbrain.domains.analysis.causal.estimator import estimate_treatment_effect
 from allbrain.domains.analysis.causal.intervention import top_alternatives
-from allbrain.foundations import canonical_event_sort
+from allbrain.domains.memory.foundations.ordering import canonical_event_sort
 
 
 class CausalManager:

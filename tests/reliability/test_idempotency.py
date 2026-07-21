@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from allbrain.agents.queue import QueueItem
-from allbrain.reliability import Deduplicator, IdempotencyKeyBuilder
-from allbrain.workflow.models import TaskNode
+from allbrain.domains.collaboration.agents.queue import QueueItem
+from allbrain.domains.collaboration.workflow.models import TaskNode
+from allbrain.domains.governance.reliability import Deduplicator, IdempotencyKeyBuilder
 
 
 def test_idempotency_keys_are_stable() -> None:

@@ -1,22 +1,6 @@
 {
   "version": 1,
   "violations": {
-    "allbrain/adaptive_recovery/manager.py::AdaptiveRecoveryManager.run_chain": {
-      "complexity": 9,
-      "lines": 172
-    },
-    "allbrain/adaptive_recovery/reducer.py::AdaptiveRecoveryReducer.apply": {
-      "complexity": 22,
-      "lines": 96
-    },
-    "allbrain/arbitration/manager.py::ArbitrationManager.query": {
-      "complexity": 22,
-      "lines": 96
-    },
-    "allbrain/arbitration/reducer.py::ArbitrationReducer.apply": {
-      "complexity": 16,
-      "lines": 60
-    },
     "allbrain/cli/main.py::doctor": {
       "complexity": 16,
       "lines": 108
@@ -45,6 +29,70 @@
       "complexity": 19,
       "lines": 82
     },
+    "allbrain/domains/collaboration/arbitration/manager.py::ArbitrationManager.query": {
+      "complexity": 22,
+      "lines": 96
+    },
+    "allbrain/domains/collaboration/arbitration/reducer.py::ArbitrationReducer.apply": {
+      "complexity": 16,
+      "lines": 60
+    },
+    "allbrain/domains/collaboration/workflow/engine.py::WorkflowEngine.step": {
+      "complexity": 20,
+      "lines": 122
+    },
+    "allbrain/domains/governance/adaptive_recovery/manager.py::AdaptiveRecoveryManager.run_chain": {
+      "complexity": 9,
+      "lines": 172
+    },
+    "allbrain/domains/governance/adaptive_recovery/reducer.py::AdaptiveRecoveryReducer.apply": {
+      "complexity": 22,
+      "lines": 96
+    },
+    "allbrain/domains/governance/governance/self_modification.py::SelfModificationAuthorityEngine.decide": {
+      "complexity": 17,
+      "lines": 61
+    },
+    "allbrain/domains/governance/governance/state.py::GovernanceStateBuilder.build": {
+      "complexity": 20,
+      "lines": 59
+    },
+    "allbrain/domains/governance/recovery_consensus/reducer.py::RecoveryConsensusReducer.apply": {
+      "complexity": 16,
+      "lines": 80
+    },
+    "allbrain/domains/governance/resilience/reducer.py::ResilienceReducer.apply": {
+      "complexity": 19,
+      "lines": 90
+    },
+    "allbrain/domains/governance/self_repair/reducer.py::SelfRepairReducer.apply": {
+      "complexity": 16,
+      "lines": 51
+    },
+    "allbrain/domains/memory/gitbrain/parser.py::GitBrain.changed_paths_between": {
+      "complexity": 25,
+      "lines": 46
+    },
+    "allbrain/domains/memory/replay/event_replay_engine.py::EventReplayEngine._apply": {
+      "complexity": 30,
+      "lines": 92
+    },
+    "allbrain/domains/memory/replay/event_replay_engine.py::EventReplayEngine.replay": {
+      "complexity": 3,
+      "lines": 265
+    },
+    "allbrain/domains/memory/runtime_core/observability.py::ObservabilityCollector.collect_layer_indicators": {
+      "complexity": 19,
+      "lines": 50
+    },
+    "allbrain/domains/memory/runtime_core/projections.py::RuntimeCoreStateBuilder.build": {
+      "complexity": 19,
+      "lines": 42
+    },
+    "allbrain/domains/memory/ui/graph_explorer.py::_node_ids_for_event": {
+      "complexity": 21,
+      "lines": 28
+    },
     "allbrain/domains/reasoning/decision/manager.py::DecisionManager._build_context": {
       "complexity": 19,
       "lines": 89
@@ -53,49 +101,9 @@
       "complexity": 20,
       "lines": 38
     },
-    "allbrain/gitbrain/parser.py::GitBrain.changed_paths_between": {
-      "complexity": 25,
-      "lines": 46
-    },
-    "allbrain/governance/self_modification.py::SelfModificationAuthorityEngine.decide": {
-      "complexity": 17,
-      "lines": 61
-    },
-    "allbrain/governance/state.py::GovernanceStateBuilder.build": {
-      "complexity": 20,
-      "lines": 59
-    },
     "allbrain/models/session_summary.py::build_session_summary": {
       "complexity": 22,
       "lines": 59
-    },
-    "allbrain/recovery_consensus/reducer.py::RecoveryConsensusReducer.apply": {
-      "complexity": 16,
-      "lines": 80
-    },
-    "allbrain/replay/event_replay_engine.py::EventReplayEngine._apply": {
-      "complexity": 30,
-      "lines": 92
-    },
-    "allbrain/replay/event_replay_engine.py::EventReplayEngine.replay": {
-      "complexity": 3,
-      "lines": 265
-    },
-    "allbrain/resilience/reducer.py::ResilienceReducer.apply": {
-      "complexity": 19,
-      "lines": 90
-    },
-    "allbrain/runtime_core/observability.py::ObservabilityCollector.collect_layer_indicators": {
-      "complexity": 19,
-      "lines": 50
-    },
-    "allbrain/runtime_core/projections.py::RuntimeCoreStateBuilder.build": {
-      "complexity": 19,
-      "lines": 42
-    },
-    "allbrain/self_repair/reducer.py::SelfRepairReducer.apply": {
-      "complexity": 16,
-      "lines": 51
     },
     "allbrain/server/prompts.py::register_prompts": {
       "complexity": 1,
@@ -128,14 +136,6 @@
     "allbrain/storage/history_repair.py::HistoryRepairer._merge_sources": {
       "complexity": 16,
       "lines": 111
-    },
-    "allbrain/ui/graph_explorer.py::_node_ids_for_event": {
-      "complexity": 21,
-      "lines": 28
-    },
-    "allbrain/workflow/engine.py::WorkflowEngine.step": {
-      "complexity": 20,
-      "lines": 122
     }
   }
 }

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.domains.memory.revision import RevisionManager, RevisionReducer, make_payload
 from allbrain.events.schemas import EventType
-from allbrain.revision import RevisionManager, RevisionReducer, make_payload
 
 
 def _make_event(event_id: str, event_type: str, payload: dict | None = None):
@@ -18,7 +18,7 @@ def _make_event(event_id: str, event_type: str, payload: dict | None = None):
 
 
 def test_stable_revision_id_order_independence():
-    from allbrain.revision.estimator import _stable_revision_id
+    from allbrain.domains.memory.revision.estimator import _stable_revision_id
 
     id1 = _stable_revision_id("default", ["1", "2", "3"])
     id2 = _stable_revision_id("default", ["3", "2", "1"])
@@ -27,7 +27,7 @@ def test_stable_revision_id_order_independence():
 
 
 def test_stable_revision_id_distinguishes_context():
-    from allbrain.revision.estimator import _stable_revision_id
+    from allbrain.domains.memory.revision.estimator import _stable_revision_id
 
     id_a = _stable_revision_id("ctx_a", ["1", "2"])
     id_b = _stable_revision_id("ctx_b", ["1", "2"])
@@ -35,7 +35,7 @@ def test_stable_revision_id_distinguishes_context():
 
 
 def test_stable_revision_id_distinguishes_evidence():
-    from allbrain.revision.estimator import _stable_revision_id
+    from allbrain.domains.memory.revision.estimator import _stable_revision_id
 
     id_1 = _stable_revision_id("default", ["1", "2"])
     id_2 = _stable_revision_id("default", ["1", "3"])
@@ -45,14 +45,14 @@ def test_stable_revision_id_distinguishes_evidence():
 
 
 def test_stable_revision_id_prefix():
-    from allbrain.revision.estimator import _stable_revision_id
+    from allbrain.domains.memory.revision.estimator import _stable_revision_id
 
     id_default = _stable_revision_id("default", ["1"])
     assert id_default.startswith("revision-")
 
 
 def test_stable_revision_id_empty_evidence_is_valid():
-    from allbrain.revision.estimator import _stable_revision_id
+    from allbrain.domains.memory.revision.estimator import _stable_revision_id
 
     id_empty = _stable_revision_id("default", [])
     assert id_empty.startswith("revision-")

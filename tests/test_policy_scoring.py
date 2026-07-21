@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from allbrain.policy_competition import (
+from allbrain.domains.governance.policy_competition import (
     COMPETITION_SCORE_WEIGHTS,
     PolicyCandidate,
     PolicyScorer,

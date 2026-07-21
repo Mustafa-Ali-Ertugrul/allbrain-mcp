@@ -1,7 +1,7 @@
 """Tests for workflow/aggregator.py - ResultAggregator."""
 
-from allbrain.workflow.aggregator import ResultAggregator
-from allbrain.workflow.models import AggregationStrategy, SubtaskResult
+from allbrain.domains.collaboration.workflow.aggregator import ResultAggregator
+from allbrain.domains.collaboration.workflow.models import AggregationStrategy, SubtaskResult
 
 
 def _result(

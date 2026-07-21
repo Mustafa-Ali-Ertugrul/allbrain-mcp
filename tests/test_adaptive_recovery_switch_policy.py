@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.adaptive_recovery import LinearSwitchPolicy, RecoveryChain, RecoveryStep
+from allbrain.domains.governance.adaptive_recovery import LinearSwitchPolicy, RecoveryChain, RecoveryStep
 
 
 def _chain(steps: int = 3) -> RecoveryChain:

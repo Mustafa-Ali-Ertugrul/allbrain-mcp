@@ -6,8 +6,8 @@ from pathlib import Path
 from git import Repo
 from sqlmodel import select
 
+from allbrain.domains.memory.memory import MemoryBuilder
 from allbrain.events import EventType
-from allbrain.memory import MemoryBuilder
 from allbrain.models.entities import Session, utc_now
 from allbrain.server import BrainContext
 from allbrain.server.lifecycle import (

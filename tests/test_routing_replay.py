@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from allbrain.domains.collaboration.routing.events import make_scored_payload, make_selected_payload
+from allbrain.domains.memory.replay import EventReplayEngine
 from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.routing.events import make_scored_payload, make_selected_payload
 
 
 class E:

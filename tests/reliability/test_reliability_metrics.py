@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from allbrain.domains.governance.reliability import ReliabilityMetrics
 from allbrain.events import EventType
-from allbrain.reliability import ReliabilityMetrics
 from allbrain.server.tools.events import save_event_impl
 from allbrain.server.tools.observability import (
     get_reliability_status_impl,

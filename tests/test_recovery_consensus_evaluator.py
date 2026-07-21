@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.recovery_consensus.evaluator import Evaluator
-from allbrain.recovery_consensus.model import CandidateStrategy
+from allbrain.domains.governance.recovery_consensus.evaluator import Evaluator
+from allbrain.domains.governance.recovery_consensus.model import CandidateStrategy
 
 
 def _make_candidate(

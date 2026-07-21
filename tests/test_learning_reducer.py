@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.events.schemas import EventType
-from allbrain.learning import (
+from allbrain.domains.learning.learning import (
     CapabilityLearningReducer,
     make_decayed_payload,
     make_learned_payload,
     make_observed_payload,
 )
+from allbrain.events.schemas import EventType
 
 
 class E:

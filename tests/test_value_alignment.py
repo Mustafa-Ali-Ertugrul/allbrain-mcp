@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.events.schemas import EventType
-from allbrain.value_alignment import (
+from allbrain.domains.governance.value_alignment import (
     AlignmentScoreTracker,
     ConstraintEngine,
     ValueAlignmentReducer,
     make_alignment_failed_payload,
     validate_alignment_failed,
 )
+from allbrain.events.schemas import EventType
 
 
 class TestValueAlignment:
@@ -25,7 +25,7 @@ class TestValueAlignment:
 
     def test_tracker_isolation(self):
         tracker = AlignmentScoreTracker()
-        from allbrain.value_alignment.model import AlignmentResult, AlignmentScore
+        from allbrain.domains.governance.value_alignment.model import AlignmentResult, AlignmentScore
 
         s1 = AlignmentScore("t1", 1.0, {}, [], [], True)
         s2 = AlignmentScore("t2", 0.1, {}, [], [], False)

@@ -4,19 +4,19 @@ import pytest
 
 from allbrain.domains.analysis.predictive_failure import PredictiveFailureManager
 from allbrain.domains.analysis.predictive_failure.model import RiskSignal
-from allbrain.events.schemas import EventType
-from allbrain.learning_safety import EntropyCalculator, Explorer
-from allbrain.meta_optimizer import WeightOptimizer
-from allbrain.meta_scoring import MetaScorer, ProfileStore
-from allbrain.mitigation_learning import (
+from allbrain.domains.governance.mitigation_learning import (
     LearningEngine,
     OutcomeTracker,
     PolicyStore,
     StrategyOptimizer,
 )
-from allbrain.policy_competition import CompetitionEngine
-from allbrain.policy_routing import MetaPolicyRouter
-from allbrain.self_play import MatchEngine, WinMatrix
+from allbrain.domains.governance.policy_competition import CompetitionEngine
+from allbrain.domains.governance.policy_routing import MetaPolicyRouter
+from allbrain.domains.learning.learning_safety import EntropyCalculator, Explorer
+from allbrain.domains.learning.meta_optimizer import WeightOptimizer
+from allbrain.domains.learning.meta_scoring import MetaScorer, ProfileStore
+from allbrain.domains.learning.self_play import MatchEngine, WinMatrix
+from allbrain.events.schemas import EventType
 
 
 def _event_types(events):
@@ -96,8 +96,8 @@ class TestEndToEndMetaLoop:
         assert EventType.WEIGHTS_ADAPTED.value in all_types
 
     def test_meta_optimizer_guarded_when_no_stability(self):
-        from allbrain.meta_optimizer import StabilityController
-        from allbrain.meta_optimizer.events import make_meta_optimizer_guarded_payload
+        from allbrain.domains.learning.meta_optimizer import StabilityController
+        from allbrain.domains.learning.meta_optimizer.events import make_meta_optimizer_guarded_payload
 
         evt = make_meta_optimizer_guarded_payload(
             fault_type="timeout",
@@ -128,7 +128,7 @@ class TestEndToEndMetaLoop:
     def test_pipeline_has_decision_flags(self):
         import inspect
 
-        from allbrain.runtime_core.pipeline import SystemDecisionPipeline
+        from allbrain.domains.memory.runtime_core.pipeline import SystemDecisionPipeline
 
         sig = inspect.signature(SystemDecisionPipeline.run)
         for name in [

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.learning_safety.entropy import EntropyCalculator
-from allbrain.learning_safety.explorer import Explorer
-from allbrain.learning_safety.model import DEFAULT_BASE_EPSILON, DEFAULT_DECAY_RATE
-from allbrain.mitigation_learning.model import StrategyStats
+from allbrain.domains.governance.mitigation_learning.model import StrategyStats
+from allbrain.domains.learning.learning_safety.entropy import EntropyCalculator
+from allbrain.domains.learning.learning_safety.explorer import Explorer
+from allbrain.domains.learning.learning_safety.model import DEFAULT_BASE_EPSILON, DEFAULT_DECAY_RATE
 
 
 def _make_stats(ft, sig, strat, uses=5, succ=3, eff=0.5, disabled=False):

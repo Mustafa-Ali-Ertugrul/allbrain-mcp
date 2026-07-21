@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.capabilities import CapabilityManager, CapabilityReducer
-from allbrain.capabilities.events import (
+from allbrain.domains.learning.capabilities import CapabilityManager, CapabilityReducer
+from allbrain.domains.learning.capabilities.events import (
     make_matched_payload,
     make_registered_payload,
 )

@@ -7,8 +7,8 @@ from allbrain.domains.analysis.attribution import (
     make_credit_payload,
     make_importance_payload,
 )
+from allbrain.domains.memory.replay import EventReplayEngine
 from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
 
 
 class E:
@@ -82,7 +82,7 @@ class TestAttributionReplay:
         assert r1 == r2
 
     def test_mixed_with_meta_policy(self):
-        from allbrain.meta_policy import make_policy_eval_payload
+        from allbrain.domains.learning.meta_policy import make_policy_eval_payload
 
         evts = [
             E(

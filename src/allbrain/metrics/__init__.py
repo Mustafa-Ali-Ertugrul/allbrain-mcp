@@ -1,4 +1,15 @@
-from allbrain.metrics.advanced_metrics import AdvancedMetrics
-from allbrain.metrics.agent_ranking import AgentRanking
+"""Deprecated compatibility shim for allbrain.domains.memory.metrics.
 
-__all__ = ["AdvancedMetrics", "AgentRanking"]
+Moved to allbrain.domains.memory.metrics in v0.4.4.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.memory.metrics",
+    submodules=("advanced_metrics", "agent_ranking"),
+)

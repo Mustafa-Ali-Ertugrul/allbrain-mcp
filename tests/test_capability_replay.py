@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.capabilities.events import make_matched_payload
+from allbrain.domains.learning.capabilities.events import make_matched_payload
+from allbrain.domains.memory.replay import EventReplayEngine
 from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
 
 
 class E:

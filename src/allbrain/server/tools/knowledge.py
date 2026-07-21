@@ -6,6 +6,8 @@ import logging
 from typing import Any
 
 from allbrain.domains.analysis.belief import BeliefManager
+from allbrain.domains.governance.policy import RoutingEngine
+from allbrain.domains.memory.memory import MemoryBuilder, MemoryRetriever
 from allbrain.domains.reasoning.information_seeking import InformationSeekingManager
 from allbrain.domains.reasoning.information_seeking.evaluator import ACTION_VOI_TABLE, InformationSeekingEvaluator
 from allbrain.domains.reasoning.information_seeking.models import (
@@ -14,7 +16,6 @@ from allbrain.domains.reasoning.information_seeking.models import (
 )
 from allbrain.domains.reasoning.uncertainty import UncertaintyManager, observed_success_rate
 from allbrain.events import EventType
-from allbrain.memory import MemoryBuilder, MemoryRetriever
 from allbrain.models.schemas import (
     DetectKnowledgeGapsInput,
     EstimateInformationGainInput,
@@ -25,7 +26,6 @@ from allbrain.models.schemas import (
     ToolResult,
     UserInputError,
 )
-from allbrain.policy import RoutingEngine
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import audit_tool_call, bind_session_id
 from allbrain.server.tools._tasks import observability_project_and_limit

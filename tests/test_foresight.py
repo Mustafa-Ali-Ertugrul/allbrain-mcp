@@ -6,6 +6,8 @@ import pytest
 
 from allbrain.domains.analysis.world import PredictionBridge, StateTransitionBridge, WorldState
 from allbrain.domains.analysis.world.simulation import SimulationBridge
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
 from allbrain.domains.reasoning.foresight import (
     DEPLOY_PLANS,
     FORESIGHT_TEMPLATE_VERSION,
@@ -19,8 +21,6 @@ from allbrain.domains.reasoning.foresight import (
     PlanRanker,
 )
 from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.foresight import (
     evaluate_plan_impl,
     generate_future_plans_impl,

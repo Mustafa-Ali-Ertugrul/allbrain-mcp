@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.events.schemas import EventType
-from allbrain.learning import (
+from allbrain.domains.learning.learning import (
     make_decayed_payload,
     make_learned_payload,
     make_observed_payload,
 )
-from allbrain.replay import EventReplayEngine
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.events.schemas import EventType
 
 
 class E:
@@ -129,7 +129,7 @@ class TestLearningReplay:
 
     def test_mixed_with_existing_reducers(self):
         """Learning events alongside capability events do not interfere."""
-        from allbrain.capabilities.events import make_matched_payload
+        from allbrain.domains.learning.capabilities.events import make_matched_payload
 
         evts = [
             E(

@@ -16,8 +16,13 @@ DETERMINISM_FILES = [
 
 def _assert_no_nondeterminism_tokens(relative_dir: str, filename: str) -> None:
     path = Path(relative_dir) / filename
-    if not path.exists() and "drift" in relative_dir:
-        path = Path("src/allbrain/domains/analysis/drift") / filename
+    if not path.exists():
+        # Try common migration paths
+        for prefix in ("src/allbrain/domains/analysis/", "src/allbrain/domains/learning/"):
+            candidate = Path(prefix + relative_dir.split("/allbrain/")[1]) / filename
+            if candidate.exists():
+                path = candidate
+                break
     content = path.read_text(encoding="utf-8")
     for token in ("uuid7", "datetime.now", "random.", "time.time"):
         assert token not in content, f"{relative_dir}/{filename} uses {token!r} — must be deterministic hash only"
@@ -64,7 +69,7 @@ def test_revision_manager_reads_calibration_and_drift_from_event_log_only():
     Word-boundary regex avoids false-positives on helper names like
     `_read_calibration_error` (a helper, not a recompute call).
     """
-    manager_path = Path("src/allbrain/revision/manager.py")
+    manager_path = Path("src/allbrain/domains/memory/revision/manager.py")
     content = manager_path.read_text(encoding="utf-8")
     lines = content.splitlines()
 
@@ -99,10 +104,10 @@ def test_calibration_does_not_change_confidence():
     calibrated_trust, calibration_error, and drift_count — but it MUST NOT
     modify the `confidence` field, which is the Sprint 46 contract.
     """
-    from allbrain.calibration import make_payload as make_calibration_payload
+    from allbrain.domains.learning.calibration import make_payload as make_calibration_payload
+    from allbrain.domains.memory.revision import RevisionManager
+    from allbrain.domains.memory.revision import make_payload as make_revision_payload
     from allbrain.events.schemas import EventType
-    from allbrain.revision import RevisionManager
-    from allbrain.revision import make_payload as make_revision_payload
 
     class E:
         def __init__(self, t, i, p):

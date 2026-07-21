@@ -3,9 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from allbrain.events import EventType
-from allbrain.foundations import current_payload_version
-from allbrain.memory.memory_helpers import (
+from allbrain.domains.memory.foundations import current_payload_version
+from allbrain.domains.memory.memory.memory_helpers import (
     _agent,
     _failed_agent,
     _failure_pattern,
@@ -16,6 +15,7 @@ from allbrain.memory.memory_helpers import (
     _status,
     _task_summary,
 )
+from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
 
 

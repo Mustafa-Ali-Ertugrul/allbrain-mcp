@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.soft_repair import (
+from allbrain.domains.governance.soft_repair import (
     BLEND_ALPHA_MAX,
     BLEND_ALPHA_MIN,
     SOFT_REPAIR_TEMPLATE_VERSION,
@@ -10,7 +10,7 @@ from allbrain.soft_repair import (
     PolicyBlender,
     StabilityAdapter,
 )
-from allbrain.soft_repair.policy_blender import _blend_dicts
+from allbrain.domains.governance.soft_repair.policy_blender import _blend_dicts
 
 
 class TestAlphaController:

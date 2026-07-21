@@ -18,8 +18,8 @@ from allbrain.domains.analysis.causal import (
     validate_counterfactual,
     validate_impact,
 )
+from allbrain.domains.collaboration.routing import causal_selection_score
 from allbrain.events.schemas import EventType
-from allbrain.routing import causal_selection_score
 
 
 class E:

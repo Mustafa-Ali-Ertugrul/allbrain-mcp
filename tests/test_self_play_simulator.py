@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.events.schemas import EventType
-from allbrain.mitigation_learning.model import StrategyStats
-from allbrain.self_play import (
+from allbrain.domains.governance.mitigation_learning.model import StrategyStats
+from allbrain.domains.learning.self_play import (
     SELF_PLAY_MIN_CANDIDATES,
     MatchEngine,
     MatchResult,
@@ -14,6 +13,7 @@ from allbrain.self_play import (
     make_match_played_payload,
     validate_match_played,
 )
+from allbrain.events.schemas import EventType
 
 
 class TestSimulator:

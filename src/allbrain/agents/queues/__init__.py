@@ -1,15 +1,11 @@
-from allbrain.agents.queue import QueueItem, TaskQueue
-from allbrain.agents.queues.memory import InMemoryTaskQueue
-from allbrain.agents.queues.rabbitmq import RabbitMQTaskQueue
-from allbrain.agents.queues.redis import RedisQueueStore, RedisTaskQueue
-from allbrain.agents.queues.sqlite import SQLiteTaskQueue
+"""Deprecated compatibility shim for allbrain.domains.collaboration.agents.queues."""
 
-__all__ = [
-    "InMemoryTaskQueue",
-    "QueueItem",
-    "RabbitMQTaskQueue",
-    "RedisQueueStore",
-    "RedisTaskQueue",
-    "SQLiteTaskQueue",
-    "TaskQueue",
-]
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.collaboration.agents.queues",
+    submodules=("memory", "rabbitmq", "redis", "sqlite"),
+)

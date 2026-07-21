@@ -4,12 +4,12 @@ import math
 
 import pytest
 
-from allbrain.learning_safety.entropy import (
+from allbrain.domains.learning.learning_safety.entropy import (
     EntropyCalculator,
     entropy_decay,
     shannon_entropy,
 )
-from allbrain.learning_safety.model import DEFAULT_BASE_EPSILON, DEFAULT_DECAY_RATE
+from allbrain.domains.learning.learning_safety.model import DEFAULT_BASE_EPSILON, DEFAULT_DECAY_RATE
 
 
 class TestEntropy:

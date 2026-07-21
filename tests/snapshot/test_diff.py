@@ -8,7 +8,7 @@ from allbrain.snapshot.diff import events_after_cursor
 
 
 def _event(event_id: str) -> EventRead:
-    from allbrain.foundations import current_payload_version
+    from allbrain.domains.memory.foundations import current_payload_version
 
     return EventRead(
         id=event_id,

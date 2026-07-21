@@ -3,13 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.revision import (
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.revision import (
     RevisionManager,
     RevisionReducer,
     make_payload,
 )
+from allbrain.events.schemas import EventType
 
 
 def _make_event(event_id: str, event_type: str, payload: dict | None = None, created_at: datetime | None = None):
@@ -159,7 +159,9 @@ def test_revision_quality_gate_no_uuid7_or_now_or_random_in_determinism_path():
     not replay.
     """
     determinism_critical = ["estimator.py", "reducer.py", "manager.py"]
-    base = Path("src/allbrain/revision")
+    base = Path("src/allbrain/domains/memory/revision")
+    if not base.exists():
+        base = Path("src/allbrain/revision")
     for filename in determinism_critical:
         content = (base / filename).read_text(encoding="utf-8")
         assert "uuid7" not in content, f"{filename} uses uuid7 — must be deterministic hash"

@@ -4,6 +4,9 @@ import time
 
 import pytest
 
+# IMPORT ORDER MATTERS: import the chain-building modules first
+# to resolve circular import (mitigation_learning -> predictive_failure -> objective_system)
+from allbrain.domains.governance.mitigation_learning.model import StrategyStats
 from allbrain.domains.reasoning.objective_system import ObjectiveResult, ObjectiveWeights
 
 # Tradeoff engine imports (safe after objective_system is fully loaded)
@@ -19,10 +22,6 @@ from allbrain.domains.reasoning.tradeoff_engine import (
     validate_tradeoff_analyzed,
     validate_utility_computed,
 )
-
-# IMPORT ORDER MATTERS: import the chain-building modules first
-# to resolve circular import (mitigation_learning -> predictive_failure -> objective_system)
-from allbrain.mitigation_learning.model import StrategyStats
 
 
 class TestUtilityFunctionStrictInfinityMasking:
