@@ -264,10 +264,11 @@ def test_save_event_fuzz_importance(tmp_path: Path, importance: int) -> None:
 
 
 def test_path_traversal_outside_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """canonicalize_project_path must reject paths outside ALLOWED_PROJECT_ROOTS."""
+    """canonicalize_project_path must reject paths outside ALLBRAIN_ALLOWED_PROJECT_ROOTS."""
     allowed = tmp_path / "safe"
     allowed.mkdir()
-    monkeypatch.setenv("ALLOWED_PROJECT_ROOTS", str(allowed))
+    monkeypatch.setenv("ALLBRAIN_ALLOWED_PROJECT_ROOTS", str(allowed))
+    monkeypatch.delenv("ALLOWED_PROJECT_ROOTS", raising=False)
     _reset_allowed_roots()
 
     # Path inside safe dir → OK
@@ -282,7 +283,8 @@ def test_path_traversal_outside_root(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
 
 def test_path_traversal_default_allows_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """When ALLOWED_PROJECT_ROOTS is unset, default to ~/."""
+    """When ALLBRAIN_ALLOWED_PROJECT_ROOTS and ALLOWED_PROJECT_ROOTS are unset, default to ~/."""
+    monkeypatch.delenv("ALLBRAIN_ALLOWED_PROJECT_ROOTS", raising=False)
     monkeypatch.delenv("ALLOWED_PROJECT_ROOTS", raising=False)
     _reset_allowed_roots()
 
