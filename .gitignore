@@ -27,10 +27,10 @@ benchmarks/results/
 .mimocode/
 .zcode/
 
-# Diagnostic and analysis artifacts
-bandit_report.json
-SUMMARY.md
-git_changes.diff
-analysis/
+# Diagnostic and analysis root artifacts
+/bandit_report.json
+/SUMMARY.md
+/git_changes.diff
+/analysis/
 *.allbrain-diagnostic*
 *.db.bak*

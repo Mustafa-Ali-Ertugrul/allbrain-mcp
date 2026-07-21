@@ -57,14 +57,14 @@ allbrain-sdk = { workspace = true }
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "/src",
-  "/README.md",
-  "/LICENSE",
-  "/pyproject.toml",
-  "/uv.lock",
-  "/docs",
-  "/examples",
-  "/packages/allbrain-sdk/src",
+  "src",
+  "README.md",
+  "LICENSE",
+  "pyproject.toml",
+  "uv.lock",
+  "docs",
+  "examples",
+  "packages/allbrain-sdk/src",
 ]
 exclude = [
   "/.opencode",
@@ -76,7 +76,6 @@ exclude = [
   "/.git",
   "/dist",
   "/tests",
-  "/analysis",
   "/benchmarks",
   "/scripts",
   "*.db",
