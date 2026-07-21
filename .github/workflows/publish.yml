@@ -150,7 +150,23 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Check if version already exists on TestPyPI
+        id: check-testpypi
+        run: |
+          version="${{ needs.build-and-validate.outputs.version }}"
+          if uv pip install --dry-run --python "$(which python)" \
+            --default-index https://test.pypi.org/simple/ \
+            --no-deps \
+            "allbrain-agent-runtime==${version}" 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Version ${version} already exists on TestPyPI — skipping publish"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Version ${version} not found on TestPyPI — will publish"
+          fi
+
       - name: Publish to TestPyPI
+        if: steps.check-testpypi.outputs.exists != 'true'
         run: uv publish --publish-url https://test.pypi.org/legacy/ --trusted-publishing always dist/*
 
       - name: Verify install from TestPyPI
@@ -218,7 +234,22 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Check if version already exists on PyPI
+        id: check-pypi
+        run: |
+          version="${{ needs.build-and-validate.outputs.version }}"
+          if uv pip install --dry-run --python "$(which python)" \
+            --no-deps \
+            "allbrain-agent-runtime==${version}" 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Version ${version} already exists on PyPI — skipping publish"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Version ${version} not found on PyPI — will publish"
+          fi
+
       - name: Publish to PyPI
+        if: steps.check-pypi.outputs.exists != 'true'
         run: uv publish --trusted-publishing always dist/*
 
       - name: Verify install from PyPI
