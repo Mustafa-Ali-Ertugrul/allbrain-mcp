@@ -224,28 +224,6 @@ drive decisions, and decisions create memories that update beliefs.
 | agents | `allbrain.domains.collaboration.agents` | `allbrain.agents` | agent management |
 | routing | `allbrain.domains.collaboration.routing` | `allbrain.routing` | routing |
 
-### `domains.analysis/` — situation understanding & anomaly (17)
-
-| Module | Current Path | Key Exports |
-|---|---|---|
-| causal | `allbrain.causal` | `simulate_intervention` |
-| belief | `allbrain.belief` | `BeliefManager` |
-| evidence | `allbrain.evidence` | evidence |
-| contradiction | `allbrain.contradiction` | `ContradictionDetector` |
-| drift | `allbrain.drift` | drift detection |
-| dynamics | `allbrain.dynamics` | capability dynamics |
-| attention | `allbrain.attention` | attention |
-| attribution | `allbrain.attribution` | attribution |
-| compression | `allbrain.compression` | `EventCompressor` |
-| episodic | `allbrain.episodic` | episodic memory |
-| failure_memory | `allbrain.failure_memory` | failure memory |
-| predictive_failure | `allbrain.predictive_failure` | predictive failure |
-| semantic | `allbrain.semantic` | semantic analysis |
-| world | `allbrain.world` | `WorldModel` |
-| context | `allbrain.context` | `ParallelContextBuilder` |
-| graph | `allbrain.graph` | graph analysis |
-| fusion | `allbrain.fusion` | data fusion |
-
 ### `domains.memory/` — persistence, recall, observability (12) [MIGRATED v0.4.4]
 
 | Module | Canonical Path (v0.4.4+) | Legacy Shim Path (v0.4.4, removed v0.5.0) | Key Exports |
