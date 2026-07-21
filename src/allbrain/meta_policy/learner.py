@@ -52,17 +52,11 @@ def update_exploration_rate(
 
 
 def default_mode_stats() -> dict[str, ModeStats]:
+    from allbrain.meta_policy.model import PolicyMode
+
     return {
-        mode.value: ModeStats(mode=mode.value, count=0, avg_reward=0.0, ema_reward=0.0, variance=0.0)
-        for mode in [
-            PolicyMode
-            for PolicyMode in [
-                __import__("allbrain.meta_policy.model").PolicyMode.FUSION,
-                __import__("allbrain.meta_policy.model").PolicyMode.CAUSAL,
-                __import__("allbrain.meta_policy.model").PolicyMode.DYNAMIC,
-                __import__("allbrain.meta_policy.model").PolicyMode.LEGACY,
-            ]
-        ]
+        m.value: ModeStats(mode=m.value, count=0, avg_reward=0.0, ema_reward=0.0, variance=0.0)
+        for m in [PolicyMode.FUSION, PolicyMode.CAUSAL, PolicyMode.DYNAMIC, PolicyMode.LEGACY]
     }
 
 
