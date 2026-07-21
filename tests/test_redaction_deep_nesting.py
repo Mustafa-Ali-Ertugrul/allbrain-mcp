@@ -52,7 +52,7 @@ def test_very_deep_payload_does_not_crash() -> None:
 
 
 def test_depth_limit_stops_redaction_at_boundary() -> None:
-    """At exactly _MAX_SANITIZE_DEPTH, nested values pass through unredacted."""
+    """At exactly _MAX_SANITIZE_DEPTH, nested values are fail-closed (MASK)."""
     # Build a payload that nests a secret exactly at the depth limit
     secret = "sk-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMN"
     innermost = {"secret": secret}
@@ -61,13 +61,21 @@ def test_depth_limit_stops_redaction_at_boundary() -> None:
         payload = {"next": payload}
 
     result = sanitize_payload(payload)
-    # Walk down to find where the secret lands
+    # Walk down the tree. At the boundary, the subtree must be MASK (fail-closed),
+    # not the raw secret. We accept either the MASK string or a dict whose
+    # sensitive values have been masked — both are safe (no raw secret leaks).
     current = result
     for _ in range(_MAX_SANITIZE_DEPTH - 2):
+        assert isinstance(current, dict), f"Expected dict while walking, got {type(current)}"
         current = current["next"]
-    # At the boundary, the secret may or may not be redacted
-    # depending on exact depth counting — just verify no crash
-    assert isinstance(result, dict)
+    # The next level must NOT contain the raw secret
+    if isinstance(current["next"], str):
+        assert current["next"] == "********", (
+            f"Expected fail-closed MASK at depth boundary, got {current['next']!r}"
+        )
+    elif isinstance(current["next"], dict):
+        # The inner dict was reached and redaction applied to its values
+        assert current["next"].get("secret") == "********"
 
 
 def test_extremely_deep_list_does_not_crash() -> None:

@@ -24,6 +24,29 @@ _MAX_PAYLOAD_BYTES = 250_000
 _MAX_DICT_BYTES = 50_000
 
 
+def _get_max_payload_bytes() -> int:
+    """Read max payload size from env (ALLBRAIN_MAX_PAYLOAD_BYTES).
+
+    Default 250KB, max 1MB (1_048_576). Bounds-checked to prevent
+    misconfiguration DoS or accidental disablement.
+    """
+    import os
+
+    raw = os.environ.get("ALLBRAIN_MAX_PAYLOAD_BYTES", "").strip()
+    if not raw:
+        return _MAX_PAYLOAD_BYTES
+    try:
+        val = int(raw)
+    except ValueError:
+        return _MAX_PAYLOAD_BYTES
+    return max(1_000, min(1_048_576, val))
+
+
+def max_payload_bytes() -> int:
+    """Public accessor for the effective payload size cap."""
+    return _get_max_payload_bytes()
+
+
 def _coerce_iso_datetime(value: Any) -> Any:
     """Coerce ISO 8601 strings into ``datetime`` for strict-mode models.
 
@@ -171,8 +194,11 @@ class SaveEventInput(BaseInputModel):
         import json
 
         raw = json.dumps(value)
-        if len(raw) > 250000:
-            raise ValueError("payload exceeds maximum size of 250KB")
+        max_bytes = max_payload_bytes()
+        if len(raw) > max_bytes:
+            raise ValueError(
+                f"payload exceeds maximum size of {max_bytes // 1000}KB (got {len(raw) // 1000}KB)"
+            )
         return value
 
     @field_validator("type")

@@ -15,7 +15,24 @@ _REDOS_RISKY = re.compile(
     r"\([^)]*[+*][^)]*\)[+*{]"  # (x+)+ / (x*)* / (x+){2,}
     r"|\([^)]*\|[^)]*\)[+*]"  # (a|a)+ / (a|b)*
 )
-_MAX_SANITIZE_DEPTH = 32
+
+
+def _get_max_sanitize_depth() -> int:
+    """Read max sanitize depth from env (ALLBRAIN_SANITIZE_MAX_DEPTH), default 32.
+
+    Bounds-checked to [1, 256] to prevent misconfiguration DoS.
+    """
+    raw = os.environ.get("ALLBRAIN_SANITIZE_MAX_DEPTH", "").strip()
+    if not raw:
+        return 32
+    try:
+        val = int(raw)
+    except ValueError:
+        return 32
+    return max(1, min(256, val))
+
+
+_MAX_SANITIZE_DEPTH = _get_max_sanitize_depth()
 
 _BUILTIN_SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"sk-ant-[a-zA-Z0-9_-]{20,}", re.IGNORECASE), "anthropic"),
@@ -271,7 +288,16 @@ def _mask_secrets_patterns(text: str, found_types: dict[str, int]) -> str:
 def _sanitize_payload_impl(obj: Any, found_types: dict[str, int], *, depth: int = 0) -> Any:
     """Core recursive walk with field-name redaction."""
     if depth >= _MAX_SANITIZE_DEPTH:
-        return obj
+        found_types["depth_limit"] = found_types.get("depth_limit", 0) + 1
+        logger.warning(
+            "sanitize_depth_limit_reached",
+            extra={
+                "depth": depth,
+                "max_depth": _MAX_SANITIZE_DEPTH,
+                "count": found_types["depth_limit"],
+            },
+        )
+        return MASK
     if isinstance(obj, dict):
         out: dict[str, Any] = {}
         for k, v in obj.items():
