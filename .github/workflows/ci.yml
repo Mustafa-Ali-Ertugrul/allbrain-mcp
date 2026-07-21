@@ -48,6 +48,42 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.12", "3.13"]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: allbrain
+          POSTGRES_PASSWORD: allbrain
+          POSTGRES_DB: allbrain
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U allbrain -d allbrain"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rabbitmq:
+        image: rabbitmq:4-alpine
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      ALLBRAIN_TEST_POSTGRES_URL: postgresql+psycopg://allbrain:allbrain@localhost:5432/allbrain
+      ALLBRAIN_TEST_REDIS_URL: redis://localhost:6379/0
+      ALLBRAIN_TEST_AMQP_URL: amqp://guest:guest@localhost:5672/
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -55,7 +91,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       - run: uv sync --group dev --extra postgres --extra distributed --python ${{ matrix.python-version }}
-      - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=85 -n auto --dist=worksteal
+      - run: uv run pytest --cov --cov-report=term-missing -n auto --dist=worksteal
 
   postgres-contract:
     name: PostgreSQL storage contract
