@@ -68,7 +68,7 @@ wheels = [
 
 [[package]]
 name = "allbrain-agent-runtime"
-version = "0.4.1"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
