@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-21
+
+### Added
+- **Production GA Release (v1.0.0):** Production-ready release of AllBrain MCP event-sourced memory and multi-agent runtime.
+- **Complete Bounded Context Architecture:** All 73 domain modules migrated into canonical namespace `allbrain.domains.*` across 6 Bounded Contexts:
+  - `allbrain.domains.reasoning` (10 modules: `decision`, `counterfactual`, `scenarios`, `foresight`, `uncertainty`, `meta_reasoning`, `tradeoff_engine`, `information_seeking`, `intent`, `objective_system`)
+  - `allbrain.domains.analysis` (17 modules: `world`, `belief`, `causal`, `contradiction`, `semantic`, `attention`, `attribution`, `compression`, `dynamics`, `episodic`, `evidence`, `failure_memory`, `fusion`, `graph`, `predictive_failure`, `context`, `drift`)
+  - `allbrain.domains.learning` (12 modules: `learning`, `capabilities`, `meta_policy`, `calibration`, `evolution`, `coevolution`, `self_play`, `learning_graph`, `learning_safety`, `meta_optimizer`, `meta_scoring`, `meta_meta_scoring`)
+  - `allbrain.domains.governance` (12 modules: `policy`, `governance`, `reliability`, `resilience`, `self_repair`, `soft_repair`, `adaptive_recovery`, `recovery_consensus`, `mitigation_learning`, `policy_competition`, `policy_routing`, `value_alignment`)
+  - `allbrain.domains.memory` (12 modules: `memory`, `replay`, `resume`, `gitbrain`, `telemetry`, `observability`, `metrics`, `foundations`, `runtime_core`, `revision`, `ui`, `api`)
+  - `allbrain.domains.collaboration` (10 modules: `collaboration`, `conflict`, `merge`, `arbitration`, `reputation`, `distributed`, `workflow`, `workspace`, `agents`, `routing`)
+- **Performance Benchmark Suite (`scripts/benchmark_performance.py`):**
+  - Cold startup time: **0.109s** (target $\le 5.0$s)
+  - Event throughput: **451–604 eps** across small, medium, and large payloads (target $\ge 400$ eps)
+  - Snapshot generation: **0.091s** for 10k events (target $\le 10.0$s)
+  - Memory footprint: **~150 MB RSS** (target $\le 512$ MB)
+  - Auto-generated benchmark report in `docs/performance_benchmarks.md`.
+- **Comprehensive Functional Verification Suite (`scripts/verify_functional_requirements.py`):**
+  - MCP Tool Completeness (51/51 registered tools verified against FastMCP JSON-RPC schemas)
+  - 4-step E2E Decision Pipeline (Preparation → Reasoning → Feedback → Learning)
+  - Multi-agent Conflict Resolution (`ConflictDetector` + `ConflictResolver`)
+  - Event Sourcing & Snapshot Restore Integrity
+  - Session Management & Worker Lease Lifecycle (`QueueCoordinator`)
+  - Auto-generated functional report in `docs/functional_verification.md`.
+- **Security Audit & Hardening Report (`docs/security_audit.md`):**
+  - 0 High/Critical vulnerabilities across 48,521 LOC (Bandit SAST scan).
+  - Multi-layer secret redaction (13+ high-entropy regexes, field denylists, ReDoS guards, Pydantic error masking).
+  - Strict input validation via Pydantic `BaseInputModel` (`extra='forbid'`, strict mode, null-byte rejection, size caps).
+  - Filesystem sandboxing via `canonicalize_project_path()` and `ALLBRAIN_ALLOWED_PROJECT_ROOTS`.
+  - Process-local thread-safe dual-window rate limiting (`SlidingWindowCounter`).
+- **Comprehensive v1.0 Documentation:**
+  - `docs/ARCHITECTURE.md`: Updated 4-tier cognitive architecture and canonical bounded context reference.
+  - `docs/upgrade.md`: Step-by-step v0.4.x → v1.0 migration guide.
+
+### Changed
+- Promoted package classifier to `Development Status :: 5 - Production/Stable`.
+- Standardized environment variables:
+  - `ALLBRAIN_ALLOWED_PROJECT_ROOTS` (replaces deprecated `ALLOWED_PROJECT_ROOTS`).
+  - `ALLBRAIN_RATE_LIMIT_RPM` (default: 100,000 requests/min).
+  - `ALLBRAIN_RATE_LIMIT_RPS` (default: 1,000 requests/sec).
+
+### Deprecated
+- Legacy root package imports (`allbrain.<module>`) emit `DeprecationWarning` via `_compat.shim_package`.
+- **Legacy root shims will be completely removed in v0.5.0.** All callers should migrate to `allbrain.domains.<context>.<module>`.
+
 ## [0.4.1] - 2026-07-20
 
 ### Changed
