@@ -91,7 +91,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       - run: uv sync --group dev --extra postgres --extra distributed --python ${{ matrix.python-version }}
-      - run: uv run pytest --cov --cov-report=term-missing -n auto --dist=worksteal
+      - run: uv run pytest --cov --cov-report=term-missing -n auto
 
   postgres-contract:
     name: PostgreSQL storage contract
