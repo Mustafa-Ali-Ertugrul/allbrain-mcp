@@ -27,11 +27,10 @@ class TestQualityGate:
             _assert_no_nondeterminism("src/allbrain/domains/collaboration/arbitration", f)
 
     def test_does_not_change_confidence(self):
-        from allbrain.arbitration.events import make_consensus_payload
-
+        from allbrain.domains.collaboration.arbitration.events import make_consensus_payload
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as make_rev_payload
         from allbrain.events.schemas import EventType
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as make_rev_payload
 
         class E:
             def __init__(self, t, i, p):

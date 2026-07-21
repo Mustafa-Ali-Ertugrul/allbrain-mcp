@@ -19,11 +19,10 @@ class TestQualityGate:
             _assert_no_nondeterminism("src/allbrain/domains/memory/telemetry", f)
 
     def test_does_not_change_confidence(self):
-        from allbrain.telemetry.events import make_runtime_updated_payload
-
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as make_rev_payload
+        from allbrain.domains.memory.telemetry.events import make_runtime_updated_payload
         from allbrain.events.schemas import EventType
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as make_rev_payload
 
         class E:
             def __init__(self, t, i, p):

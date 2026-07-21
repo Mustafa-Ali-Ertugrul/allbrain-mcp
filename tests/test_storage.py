@@ -358,7 +358,7 @@ def test_quality_gate_stream_position_ordering_ignores_created_at(tmp_path: Path
 
 def test_payload_version_column_backfilled_on_old_schema(tmp_path: Path) -> None:
     from allbrain.config import canonicalize_project_path
-    from allbrain.foundations.versioning import current_payload_version
+    from allbrain.domains.memory.foundations.versioning import current_payload_version
     from allbrain.storage import (
         BrainRepository,
         create_engine_for_path,

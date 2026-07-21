@@ -7,8 +7,8 @@ from allbrain.domains.analysis.attention import (
     make_budget_payload,
     make_reallocation_payload,
 )
+from allbrain.domains.memory.replay import EventReplayEngine
 from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
 
 
 class E:

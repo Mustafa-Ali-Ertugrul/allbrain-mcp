@@ -3,7 +3,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-from allbrain.learning.events import (
+
+from allbrain.domains.learning.learning.events import (
     make_decayed_payload,
     make_learned_payload,
     make_observed_payload,
@@ -11,10 +12,9 @@ from allbrain.learning.events import (
     validate_learned,
     validate_observed,
 )
-from allbrain.learning.learner import _stable_learning_id
-from allbrain.learning.manager import CapabilityLearningManager
-from allbrain.learning.reducer import CapabilityLearningReducer
-
+from allbrain.domains.learning.learning.learner import _stable_learning_id
+from allbrain.domains.learning.learning.manager import CapabilityLearningManager
+from allbrain.domains.learning.learning.reducer import CapabilityLearningReducer
 from allbrain.events.schemas import EventType
 
 

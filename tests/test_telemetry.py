@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.telemetry.events import (
+from allbrain.domains.memory.telemetry.events import (
     make_completed_payload,
     make_runtime_updated_payload,
     make_started_payload,
     validate_completed_payload,
 )
-from allbrain.telemetry.metrics import (
+from allbrain.domains.memory.telemetry.metrics import (
     duration_component,
     mean_duration,
     mean_retry,
@@ -16,7 +16,7 @@ from allbrain.telemetry.metrics import (
     runtime_score,
     success_rate,
 )
-from allbrain.telemetry.model import MAX_DURATION_MS, MAX_RETRIES
+from allbrain.domains.memory.telemetry.model import MAX_DURATION_MS, MAX_RETRIES
 
 
 def s(success: bool, duration: float, retry: float) -> tuple[bool, float, float]:

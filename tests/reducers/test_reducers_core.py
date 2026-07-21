@@ -8,7 +8,7 @@ from tests.reducers.conftest import make_event
 
 class TestCapabilityReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.capabilities.model import CapabilityState
+        from allbrain.domains.learning.capabilities.model import CapabilityState
         from allbrain.reducers.core import CapabilityReducer
 
         reducer = CapabilityReducer()
@@ -62,8 +62,8 @@ class TestCapabilityReducer:
 
 class TestRevisionReducer:
     def test_empty_snapshot(self) -> None:
+        from allbrain.domains.memory.revision.state import RevisionState
         from allbrain.reducers.core import RevisionReducer
-        from allbrain.revision.state import RevisionState
 
         reducer = RevisionReducer()
         snap = reducer.snapshot(context_key="default")

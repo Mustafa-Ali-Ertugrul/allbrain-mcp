@@ -1,6 +1,6 @@
 """Smoke test: dashboard_server module imports and basic types."""
 
-from allbrain.ui.dashboard_server import _HTML_PAGE, DashboardHandler
+from allbrain.domains.memory.ui.dashboard_server import _HTML_PAGE, DashboardHandler
 
 
 def test_dashboard_html_is_valid() -> None:

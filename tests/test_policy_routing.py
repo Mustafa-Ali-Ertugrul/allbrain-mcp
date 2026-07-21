@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.policy_routing import (
+from allbrain.domains.governance.policy_routing import (
     DEFAULT_FAMILY_MAP,
     FamilySelector,
     FamilyType,
@@ -69,7 +69,7 @@ class TestMetaPolicyRouter:
         assert decision.signal_type == "latency_rise"
 
     def test_all_default_families_have_strategies(self):
-        from allbrain.policy_routing.model import FAMILY_STRATEGIES
+        from allbrain.domains.governance.policy_routing.model import FAMILY_STRATEGIES
 
         for ft in FamilyType:
             assert ft in FAMILY_STRATEGIES

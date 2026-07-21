@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from allbrain.resilience.model import FaultRecord, RecoveryPlan
+from allbrain.domains.governance.resilience.model import FaultRecord, RecoveryPlan
 
 
 def _make_fault(
@@ -41,7 +41,7 @@ def _make_plan(
 
 class TestFullCycleRetry:
     def test_retry_succeeds(self) -> None:
-        from allbrain.resilience.healing_executor import HealingExecutor
+        from allbrain.domains.governance.resilience.healing_executor import HealingExecutor
 
         executor = HealingExecutor()
         plan = _make_plan(strategy="retry")
@@ -52,7 +52,7 @@ class TestFullCycleRetry:
         assert meta.get("rolled_back") is False
 
     def test_retry_with_snapshot_rollback(self) -> None:
-        from allbrain.resilience.healing_executor import HealingExecutor
+        from allbrain.domains.governance.resilience.healing_executor import HealingExecutor
 
         executor = HealingExecutor()
         # Isolate strategy with no circuit_breaker still succeeds
@@ -64,7 +64,7 @@ class TestFullCycleRetry:
 
 class TestFullCycleRollback:
     def test_rollback_initiated(self) -> None:
-        from allbrain.resilience.healing_executor import HealingExecutor
+        from allbrain.domains.governance.resilience.healing_executor import HealingExecutor
 
         executor = HealingExecutor()
         plan = _make_plan(strategy="rollback", priority=5)
@@ -76,8 +76,8 @@ class TestFullCycleRollback:
 
 class TestFullCycleIsolate:
     def test_isolate_with_circuit_breaker(self) -> None:
-        from allbrain.resilience.circuit_breaker import CircuitBreaker
-        from allbrain.resilience.healing_executor import HealingExecutor
+        from allbrain.domains.governance.resilience.circuit_breaker import CircuitBreaker
+        from allbrain.domains.governance.resilience.healing_executor import HealingExecutor
 
         cb = CircuitBreaker(name="test", failure_threshold=1, recovery_seconds=60)
         executor = HealingExecutor(circuit_breaker=cb)
@@ -91,7 +91,7 @@ class TestFullCycleIsolate:
 
 class TestGuardrailBlocksRecovery:
     def test_high_guardrail_blocks_execution(self) -> None:
-        from allbrain.resilience.healing_executor import HealingExecutor
+        from allbrain.domains.governance.resilience.healing_executor import HealingExecutor
 
         executor = HealingExecutor()
         plan = _make_plan(strategy="retry", priority=1)  # low priority = riskier
@@ -111,7 +111,7 @@ class TestGuardrailBlocksRecovery:
 
 class TestFailedRecoveryRollback:
     def test_rollback_on_failure(self) -> None:
-        from allbrain.resilience.healing_executor import HealingExecutor
+        from allbrain.domains.governance.resilience.healing_executor import HealingExecutor
 
         executor = HealingExecutor()
         # Unknown strategy triggers failure
@@ -123,7 +123,7 @@ class TestFailedRecoveryRollback:
 
 class TestMultipleFaults:
     def test_manager_detects_and_plans(self) -> None:
-        from allbrain.resilience.manager import ResilienceManager
+        from allbrain.domains.governance.resilience.manager import ResilienceManager
 
         mgr = ResilienceManager()
         events = [
@@ -136,7 +136,7 @@ class TestMultipleFaults:
 
 class TestEmptyEventStream:
     def test_empty_events_no_faults(self) -> None:
-        from allbrain.resilience.manager import ResilienceManager
+        from allbrain.domains.governance.resilience.manager import ResilienceManager
 
         mgr = ResilienceManager()
         result = mgr.run_cycle([])
@@ -146,7 +146,7 @@ class TestEmptyEventStream:
 
 class TestFullCycleSimulation:
     def test_full_cycle_produces_events(self) -> None:
-        from allbrain.resilience.manager import ResilienceManager
+        from allbrain.domains.governance.resilience.manager import ResilienceManager
 
         mgr = ResilienceManager()
         events = [

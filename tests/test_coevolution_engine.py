@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.coevolution import (
+from allbrain.domains.learning.coevolution import (
     COEVOLUTION_DAMPING,
     COEVOLUTION_MAX_STRENGTH,
     COEVOLUTION_MIN_STRENGTH,

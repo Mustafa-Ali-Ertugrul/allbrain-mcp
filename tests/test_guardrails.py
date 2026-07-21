@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from allbrain.resilience.metrics_guard import (
+from allbrain.domains.governance.resilience.metrics_guard import (
     compute_guardrail_score,
     should_execute,
 )
-from allbrain.resilience.model import FaultRecord, RecoveryPlan
+from allbrain.domains.governance.resilience.model import FaultRecord, RecoveryPlan
 
 
 def _fault(severity: str, component: str = "test") -> FaultRecord:

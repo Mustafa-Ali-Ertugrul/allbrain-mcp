@@ -3,13 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.revision import (
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.revision import (
     RevisionManager,
     RevisionReducer,
     make_payload,
 )
+from allbrain.events.schemas import EventType
 
 
 def _make_event(event_id: str, event_type: str, payload: dict | None = None, created_at: datetime | None = None):

@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
+from allbrain.domains.memory.foundations import current_payload_version
 from allbrain.events import EventType
-from allbrain.foundations import current_payload_version
 from allbrain.models.schemas import EventRead
 from allbrain.snapshot.compression import EventCompressor
 

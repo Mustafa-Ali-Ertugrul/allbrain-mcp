@@ -104,10 +104,10 @@ def test_calibration_does_not_change_confidence():
     calibrated_trust, calibration_error, and drift_count — but it MUST NOT
     modify the `confidence` field, which is the Sprint 46 contract.
     """
-    from allbrain.calibration import make_payload as make_calibration_payload
+    from allbrain.domains.learning.calibration import make_payload as make_calibration_payload
+    from allbrain.domains.memory.revision import RevisionManager
+    from allbrain.domains.memory.revision import make_payload as make_revision_payload
     from allbrain.events.schemas import EventType
-    from allbrain.revision import RevisionManager
-    from allbrain.revision import make_payload as make_revision_payload
 
     class E:
         def __init__(self, t, i, p):

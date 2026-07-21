@@ -21,11 +21,10 @@ class TestQualityGate:
             _n("src/allbrain/capabilities", f)
 
     def test_does_not_change_confidence(self):
-        from allbrain.capabilities.events import make_matched_payload
-
+        from allbrain.domains.learning.capabilities.events import make_matched_payload
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as mr
         from allbrain.events.schemas import EventType
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as mr
 
         class E:
             def __init__(self, t, i, p):
@@ -75,7 +74,7 @@ class TestQualityGate:
                 assert not re.search(p, line), "revision/manager.py:" + str(n) + " contains " + repr(p)
 
     def test_selection_score_unchanged(self):
-        from allbrain.routing.scorer import extended_selection_score, selection_score
+        from allbrain.domains.collaboration.routing.scorer import extended_selection_score, selection_score
 
         s1 = selection_score(reputation=0.5, runtime_score=0.5, calibrated_trust=0.5, consensus_score=0.5)
         s2 = extended_selection_score(

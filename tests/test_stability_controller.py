@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from allbrain.coevolution.oscillation_detector import OscillationDetector
-from allbrain.meta_optimizer import WeightOptimizer
-from allbrain.meta_optimizer.model import META_OPTIMIZER_MIN_STABILITY
-from allbrain.meta_optimizer.stability_controller import StabilityController
-from allbrain.meta_scoring import ProfileStore, ScoringProfile
+from allbrain.domains.learning.coevolution.oscillation_detector import OscillationDetector
+from allbrain.domains.learning.meta_optimizer import WeightOptimizer
+from allbrain.domains.learning.meta_optimizer.model import META_OPTIMIZER_MIN_STABILITY
+from allbrain.domains.learning.meta_optimizer.stability_controller import StabilityController
+from allbrain.domains.learning.meta_scoring import ProfileStore, ScoringProfile
 
 
 class TestStabilityControllerDeadZone:

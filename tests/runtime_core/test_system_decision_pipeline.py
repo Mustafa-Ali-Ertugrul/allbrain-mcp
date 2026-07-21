@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from allbrain.domains.analysis.graph import WorkflowGraphBuilder
-from allbrain.events import EventType
-from allbrain.memory import MemoryBuilder
-from allbrain.observability import DashboardDataBuilder
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import (
+from allbrain.domains.memory.memory import MemoryBuilder
+from allbrain.domains.memory.observability import DashboardDataBuilder
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.runtime_core import (
     GlobalExperienceMemoryBuilder,
     RuntimeCoreStateBuilder,
     SystemDecisionPipeline,
 )
+from allbrain.events import EventType
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
 from tests.test_sprint12_memory_policy_ui import events, make_context
 

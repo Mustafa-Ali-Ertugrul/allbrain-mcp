@@ -7,6 +7,8 @@ import pytest
 
 from allbrain.domains.analysis.world import PredictionBridge, StateTransitionBridge, WorldState
 from allbrain.domains.analysis.world.simulation import SimulationBridge
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
 from allbrain.domains.reasoning.scenarios import (
     DEFAULT_TEMPLATES,
     SCENARIO_TEMPLATE_VERSION,
@@ -20,8 +22,6 @@ from allbrain.domains.reasoning.scenarios import (
     apply_overlay,
 )
 from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.orchestrator import run_decision_pipeline_impl
 from allbrain.server.tools.scenarios import (
     evaluate_scenarios_impl,

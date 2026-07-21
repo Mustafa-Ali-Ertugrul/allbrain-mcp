@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.events.schemas import EventType
-from allbrain.meta_policy import (
+from allbrain.domains.learning.meta_policy import (
     MetaPolicyManager,
     make_policy_drift_payload,
     make_policy_eval_payload,
     make_policy_update_payload,
 )
-from allbrain.replay import EventReplayEngine
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.events.schemas import EventType
 
 
 class E:

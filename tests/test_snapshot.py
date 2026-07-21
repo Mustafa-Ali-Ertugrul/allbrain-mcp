@@ -4,10 +4,10 @@ import time
 from pathlib import Path
 
 from allbrain.domains.analysis.compression import EventCompressor
+from allbrain.domains.memory.resume import ResumeEngine
+from allbrain.domains.memory.resume.incremental import IncrementalResumeEngine
 from allbrain.events import EventType
 from allbrain.models.entities import utc_now
-from allbrain.resume import ResumeEngine
-from allbrain.resume.incremental import IncrementalResumeEngine
 from allbrain.server import BrainContext
 from allbrain.server.tools.events import save_event_impl
 from allbrain.server.tools.snapshots import (

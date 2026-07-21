@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
+from allbrain.domains.collaboration.reputation import ReputationManager, ReputationReducer
+from allbrain.domains.collaboration.reputation.events import make_payload
 from allbrain.events.schemas import EventType
-from allbrain.reputation import ReputationManager, ReputationReducer
-from allbrain.reputation.events import make_payload
 
 
 class E:
@@ -280,8 +280,8 @@ class TestLastWins:
     """Sprint 48: reputation_score last-wins across events."""
 
     def test_last_wins(self):
-        from allbrain.reputation.estimator import reputation_score as compute_score
-        from allbrain.reputation.events import make_payload as make_reputation_payload
+        from allbrain.domains.collaboration.reputation.estimator import reputation_score as compute_score
+        from allbrain.domains.collaboration.reputation.events import make_payload as make_reputation_payload
 
         s1 = (True, 0.5, 0.0, 0.0)
         score1 = compute_score([s1])
@@ -334,8 +334,8 @@ class TestLastWins:
                 ),
             ),
         ]
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as make_revision_payload
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as make_revision_payload
 
         rev_manager = RevisionManager()
         base_events = list(events) + [

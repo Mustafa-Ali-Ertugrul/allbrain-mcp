@@ -3,8 +3,9 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-from allbrain.recovery_consensus.evaluator import Evaluator
-from allbrain.recovery_consensus.events import (
+
+from allbrain.domains.governance.recovery_consensus.evaluator import Evaluator
+from allbrain.domains.governance.recovery_consensus.events import (
     make_consensus_reached_payload,
     make_strategies_generated_payload,
     make_strategy_evaluated_payload,
@@ -16,10 +17,9 @@ from allbrain.recovery_consensus.events import (
     validate_strategy_rejected,
     validate_strategy_selected,
 )
-from allbrain.recovery_consensus.manager import RecoveryConsensusManager
-from allbrain.recovery_consensus.reducer import RecoveryConsensusReducer
-from allbrain.recovery_consensus.strategy_generator import StrategyGenerator
-
+from allbrain.domains.governance.recovery_consensus.manager import RecoveryConsensusManager
+from allbrain.domains.governance.recovery_consensus.reducer import RecoveryConsensusReducer
+from allbrain.domains.governance.recovery_consensus.strategy_generator import StrategyGenerator
 from allbrain.events.schemas import EventType
 
 

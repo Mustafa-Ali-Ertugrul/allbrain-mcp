@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.workspace import (
+from allbrain.domains.collaboration.workspace import (
     WorkspaceManager,
     make_ws_added_payload,
     make_ws_removed_payload,

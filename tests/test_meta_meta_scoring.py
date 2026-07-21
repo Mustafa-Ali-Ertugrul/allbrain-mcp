@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.events.schemas import EventType
-from allbrain.meta_meta_scoring import (
+from allbrain.domains.learning.meta_meta_scoring import (
     EvaluatorProfile,
     EvaluatorStore,
     MetaEvaluator,
@@ -12,6 +11,7 @@ from allbrain.meta_meta_scoring import (
     make_evaluator_profile_updated_payload,
     validate_evaluator_profile_updated,
 )
+from allbrain.events.schemas import EventType
 
 
 class TestMetaEvaluator:

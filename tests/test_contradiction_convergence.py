@@ -18,9 +18,9 @@ from allbrain.domains.analysis.contradiction.estimator import (
     _contradiction_key_of,
     _stable_contradiction_id,
 )
+from allbrain.domains.memory.replay import EventReplayEngine
 from allbrain.domains.reasoning.intent.models import Intent
 from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
 
 
 class MockEvent:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta, timezone
 
-from allbrain.distributed import ClusterManager, NodeIdentity, WorkerRegistry
-from allbrain.resilience import Bulkhead, CircuitBreaker, FallbackRouter, RetryPolicy
+from allbrain.domains.collaboration.distributed import ClusterManager, NodeIdentity, WorkerRegistry
+from allbrain.domains.governance.resilience import Bulkhead, CircuitBreaker, FallbackRouter, RetryPolicy
 
 
 class Clock:

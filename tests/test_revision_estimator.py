@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.revision import RevisionPolicy, revise
+from allbrain.domains.memory.revision import RevisionPolicy, revise
 
 
 def test_revise_basic_linear_formula():

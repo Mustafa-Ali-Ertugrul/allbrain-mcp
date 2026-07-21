@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.collaboration import Supervisor
+from allbrain.domains.collaboration.collaboration import Supervisor
 
 
 def test_supervisor_assign_intervene_and_approve() -> None:

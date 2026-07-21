@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.arbitration.events import make_consensus_payload, make_vote_payload
+from allbrain.domains.collaboration.arbitration.events import make_consensus_payload, make_vote_payload
+from allbrain.domains.memory.replay import EventReplayEngine
 from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
 
 
 class E:

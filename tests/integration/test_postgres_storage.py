@@ -4,10 +4,10 @@ import os
 
 import pytest
 
-from allbrain.agents.queue import QueueItem
-from allbrain.agents.queues import SQLiteTaskQueue
+from allbrain.domains.collaboration.agents.queue import QueueItem
+from allbrain.domains.collaboration.agents.queues import SQLiteTaskQueue
+from allbrain.domains.collaboration.workflow.models import TaskNode
 from allbrain.storage import BrainRepository, create_engine_for_url, init_db
-from allbrain.workflow.models import TaskNode
 
 
 @pytest.mark.asyncio

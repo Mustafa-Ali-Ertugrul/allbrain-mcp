@@ -2,23 +2,23 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.policy_competition.events import (
+from allbrain.domains.governance.policy_competition.events import (
     make_competition_held_payload,
     validate_competition_held,
 )
-from allbrain.policy_competition.reducer import PolicyCompetitionReducer
-from allbrain.policy_routing.events import (
+from allbrain.domains.governance.policy_competition.reducer import PolicyCompetitionReducer
+from allbrain.domains.governance.policy_routing.events import (
     make_family_candidate_evaluated_payload,
     make_policy_family_selected_payload,
     validate_family_candidate_evaluated,
     validate_policy_family_selected,
 )
-from allbrain.policy_routing.reducer import PolicyRoutingReducer
-from allbrain.soft_repair.events import (
+from allbrain.domains.governance.policy_routing.reducer import PolicyRoutingReducer
+from allbrain.domains.governance.soft_repair.events import (
     make_policy_blended_payload,
     validate_policy_blended,
 )
-from allbrain.soft_repair.reducer import SoftRepairReducer
+from allbrain.domains.governance.soft_repair.reducer import SoftRepairReducer
 
 
 class TestSprint72EventValidation:

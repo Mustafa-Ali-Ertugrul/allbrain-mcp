@@ -43,11 +43,10 @@ class TestQualityGate:
         change agent_reputation — but it MUST NOT modify the `confidence` field,
         which is the Sprint 46 contract.
         """
-        from allbrain.reputation.events import make_payload as make_reputation_payload
-
+        from allbrain.domains.collaboration.reputation.events import make_payload as make_reputation_payload
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as make_revision_payload
         from allbrain.events.schemas import EventType
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as make_revision_payload
 
         class E:
             def __init__(self, t, i, p):

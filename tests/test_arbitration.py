@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.arbitration.events import (
+from allbrain.domains.collaboration.arbitration.events import (
     make_arb_decision_payload,
     make_consensus_payload,
     make_vote_payload,
@@ -10,8 +10,8 @@ from allbrain.arbitration.events import (
     validate_consensus_payload,
     validate_vote_payload,
 )
-from allbrain.arbitration.model import VoteRecord
-from allbrain.arbitration.scorer import (
+from allbrain.domains.collaboration.arbitration.model import VoteRecord
+from allbrain.domains.collaboration.arbitration.scorer import (
     agreement_ratio,
     candidate_scores,
     majority_resolve,

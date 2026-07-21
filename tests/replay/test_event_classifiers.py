@@ -3,10 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from allbrain.events import EventType
-from allbrain.foundations import current_payload_version
-from allbrain.models.schemas import EventRead
-from allbrain.replay.event_classifiers import (
+from allbrain.domains.memory.foundations import current_payload_version
+from allbrain.domains.memory.replay.event_classifiers import (
     _build_knowledge_gap_projection,
     _is_collaboration_event,
     _is_counterfactual_event,
@@ -21,6 +19,8 @@ from allbrain.replay.event_classifiers import (
     _is_uncertainty_event,
     _is_world_event,
 )
+from allbrain.events import EventType
+from allbrain.models.schemas import EventRead
 
 
 def _event(event_type: str, *, event_id: str = "e1", payload: dict | None = None) -> EventRead:

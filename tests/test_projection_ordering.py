@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from allbrain.domains.memory.runtime_core.projections import RuntimeCoreStateBuilder
 from allbrain.models.schemas import EventRead
-from allbrain.runtime_core.projections import RuntimeCoreStateBuilder
 
 
 # Behavioral test for projection ordering

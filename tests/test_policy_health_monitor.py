@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.self_repair.model import MIN_STABILITY_THRESHOLD, StabilityReport
-from allbrain.self_repair.policy_health_monitor import PolicyHealthMonitor
+from allbrain.domains.governance.self_repair.model import MIN_STABILITY_THRESHOLD, StabilityReport
+from allbrain.domains.governance.self_repair.policy_health_monitor import PolicyHealthMonitor
 
 
 def _report(stability):

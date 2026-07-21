@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.mitigation_learning.model import StrategyStats
-from allbrain.self_play import WinMatrix
-from allbrain.self_play.match_engine import MatchEngine
+from allbrain.domains.governance.mitigation_learning.model import StrategyStats
+from allbrain.domains.learning.self_play import WinMatrix
+from allbrain.domains.learning.self_play.match_engine import MatchEngine
 
 
 class TestWinMatrix:
@@ -51,7 +51,7 @@ class TestWinMatrix:
 
     def test_edge_case_single_policy(self):
         wm = WinMatrix()
-        from allbrain.self_play.model import MatchResult
+        from allbrain.domains.learning.self_play.model import MatchResult
 
         wm.record(
             MatchResult(
@@ -76,7 +76,7 @@ class TestWinMatrix:
 
 
 def _mr(fault_type, a, b, winner, sa, sb):
-    from allbrain.self_play.model import MatchResult
+    from allbrain.domains.learning.self_play.model import MatchResult
 
     return MatchResult(
         policy_a=a,

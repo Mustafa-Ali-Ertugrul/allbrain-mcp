@@ -4,19 +4,19 @@ import pytest
 
 from allbrain.domains.analysis.predictive_failure.manager import PredictiveFailureManager
 from allbrain.domains.analysis.predictive_failure.model import RiskSignal
-from allbrain.events.schemas import EventType
-from allbrain.mitigation_learning import (
+from allbrain.domains.governance.mitigation_learning import (
     LearningEngine,
     OutcomeTracker,
     PolicyStore,
 )
-from allbrain.self_repair import (
+from allbrain.domains.governance.self_repair import (
     PolicyHealthMonitor,
     PolicySnapshotManager,
     RecoveryExecutor,
     RollbackEngine,
     ValidationGate,
 )
+from allbrain.events.schemas import EventType
 
 
 def _event_types(events):
@@ -239,7 +239,7 @@ class TestFullSelfRepairLoop:
         assert EventType.ROLLBACK_TRIGGERED.value not in ev_types
 
     def test_reducer_tracks_self_repair_events(self):
-        from allbrain.self_repair.reducer import SelfRepairReducer
+        from allbrain.domains.governance.self_repair.reducer import SelfRepairReducer
 
         class FakeEvent:
             pass

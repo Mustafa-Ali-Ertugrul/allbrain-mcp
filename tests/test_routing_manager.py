@@ -3,7 +3,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-from allbrain.routing.events import (
+
+from allbrain.domains.collaboration.routing.events import (
     make_req_payload,
     make_scored_payload,
     make_selected_payload,
@@ -11,9 +12,9 @@ from allbrain.routing.events import (
     validate_scored,
     validate_selected,
 )
-from allbrain.routing.manager import RoutingManager
-from allbrain.routing.reducer import RoutingReducer
-from allbrain.routing.scorer import (
+from allbrain.domains.collaboration.routing.manager import RoutingManager
+from allbrain.domains.collaboration.routing.reducer import RoutingReducer
+from allbrain.domains.collaboration.routing.scorer import (
     _stable_routing_id,
     adaptive_selection_score,
     best_agent,
@@ -25,7 +26,6 @@ from allbrain.routing.scorer import (
     selection_score,
     unified_decision_score,
 )
-
 from allbrain.events.schemas import EventType
 
 

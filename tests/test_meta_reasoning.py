@@ -6,6 +6,8 @@ from uuid import uuid4
 import pytest
 
 from allbrain.domains.analysis.world import WorldState
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
 from allbrain.domains.reasoning.foresight import ForesightAnalysis, ForesightEngine
 from allbrain.domains.reasoning.meta_reasoning import (
     HISTORICAL_SUCCESS_FALLBACK,
@@ -20,8 +22,6 @@ from allbrain.domains.reasoning.meta_reasoning import (
     RejectionAnalyzer,
 )
 from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.foresight import (
     estimate_confidence_impl,
     explain_decision_impl,

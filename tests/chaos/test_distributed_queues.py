@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta, timezone
 
-from allbrain.agents.queue import QueueItem
-from allbrain.agents.queues import RabbitMQTaskQueue, RedisQueueStore, RedisTaskQueue
-from allbrain.workflow.models import TaskNode
+from allbrain.domains.collaboration.agents.queue import QueueItem
+from allbrain.domains.collaboration.agents.queues import RabbitMQTaskQueue, RedisQueueStore, RedisTaskQueue
+from allbrain.domains.collaboration.workflow.models import TaskNode
 
 
 def make_item(node_id: str = "n1") -> QueueItem:

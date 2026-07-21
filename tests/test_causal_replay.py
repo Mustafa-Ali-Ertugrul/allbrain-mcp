@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from allbrain.domains.analysis.causal import make_counterfactual_payload, make_impact_payload
+from allbrain.domains.memory.replay import EventReplayEngine
 from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
 
 
 class E:
@@ -88,7 +88,7 @@ class TestCausalReplay:
 
     def test_mixed_with_other_reducers(self):
         from allbrain.domains.analysis.dynamics import make_drift_payload
-        from allbrain.learning import make_learned_payload
+        from allbrain.domains.learning.learning import make_learned_payload
 
         evts = [
             E(

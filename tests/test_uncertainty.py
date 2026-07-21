@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 import pytest
 
 from allbrain.domains.analysis.world import WorldState
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
 from allbrain.domains.reasoning.foresight import ForesightEngine
 from allbrain.domains.reasoning.uncertainty import (
     UNCERTAINTY_TEMPLATE_VERSION,
@@ -20,8 +22,6 @@ from allbrain.domains.reasoning.uncertainty import (
     observed_success_rate,
 )
 from allbrain.events import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.tools.knowledge import (
     detect_knowledge_gaps_impl,
     estimate_uncertainty_impl,

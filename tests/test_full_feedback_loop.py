@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from allbrain.domains.analysis.predictive_failure.manager import PredictiveFailureManager
 from allbrain.domains.analysis.predictive_failure.model import RiskSignal
-from allbrain.events.schemas import EventType
-from allbrain.mitigation_learning import (
+from allbrain.domains.governance.mitigation_learning import (
     LearningEngine,
     OutcomeTracker,
     PolicyStore,
     StrategyOptimizer,
 )
-from allbrain.mitigation_learning.model import MIN_USES_FOR_DISABLE, POLICY_UPDATE_MIN_RECORDS
+from allbrain.domains.governance.mitigation_learning.model import MIN_USES_FOR_DISABLE, POLICY_UPDATE_MIN_RECORDS
+from allbrain.events.schemas import EventType
 
 
 def _event_types(events):
@@ -142,7 +142,7 @@ class TestFullFeedbackLoop:
         assert engine.stats[("timeout", "retry_spike", "log_warning")].total_uses == 10
 
     def test_reducer_tracks_learning_events(self):
-        from allbrain.mitigation_learning.reducer import MitigationLearningReducer
+        from allbrain.domains.governance.mitigation_learning.reducer import MitigationLearningReducer
 
         reducer = MitigationLearningReducer()
 

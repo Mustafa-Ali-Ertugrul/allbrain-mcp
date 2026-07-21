@@ -8,7 +8,7 @@ from tests.reducers.conftest import make_event
 
 class TestArbitrationReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.arbitration.model import ArbitrationState
+        from allbrain.domains.collaboration.arbitration.model import ArbitrationState
         from allbrain.reducers.governance import ArbitrationReducer
 
         reducer = ArbitrationReducer()
@@ -96,7 +96,7 @@ class TestBeliefReducer:
 
 class TestCalibrationReducer:
     def test_empty_snapshot(self) -> None:
-        from allbrain.calibration.model import CalibrationState
+        from allbrain.domains.learning.calibration.model import CalibrationState
         from allbrain.reducers.governance import CalibrationReducer
 
         reducer = CalibrationReducer()

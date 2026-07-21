@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from allbrain.agents.queue import QueueItem
-from allbrain.agents.queues import SQLiteTaskQueue
-from allbrain.agents.worker import WorkerPool
+from allbrain.domains.collaboration.agents.queue import QueueItem
+from allbrain.domains.collaboration.agents.queues import SQLiteTaskQueue
+from allbrain.domains.collaboration.agents.worker import WorkerPool
+from allbrain.domains.collaboration.workflow.models import SubtaskResult, TaskNode
 from allbrain.storage import create_engine_for_path, init_db
-from allbrain.workflow.models import SubtaskResult, TaskNode
 
 
 def make_item() -> QueueItem:

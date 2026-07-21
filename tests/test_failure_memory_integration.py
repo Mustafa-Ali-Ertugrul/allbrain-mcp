@@ -4,8 +4,8 @@ import pytest
 
 from allbrain.domains.analysis.failure_memory.manager import FailureMemoryManager
 from allbrain.domains.analysis.failure_memory.model import DEFAULT_BIAS_WEIGHT, DEFAULT_NEUTRAL_BIAS
-from allbrain.recovery_consensus.evaluator import Evaluator
-from allbrain.recovery_consensus.model import CandidateStrategy
+from allbrain.domains.governance.recovery_consensus.evaluator import Evaluator
+from allbrain.domains.governance.recovery_consensus.model import CandidateStrategy
 
 
 def _make_candidate(

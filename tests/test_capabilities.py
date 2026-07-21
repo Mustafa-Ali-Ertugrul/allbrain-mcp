@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.capabilities.events import (
+from allbrain.domains.learning.capabilities.events import (
     make_classified_payload,
     make_matched_payload,
     make_registered_payload,
     validate_registered,
 )
-from allbrain.capabilities.scorer import (
+from allbrain.domains.learning.capabilities.scorer import (
     match_kind,
     match_score,
     normalize_task_type,

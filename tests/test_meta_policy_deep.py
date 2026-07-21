@@ -3,18 +3,19 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-from allbrain.meta_policy.estimator import (
+
+from allbrain.domains.learning.meta_policy.estimator import (
     _stable_meta_id,
     compute_reward,
     estimate_mode_reward,
 )
-from allbrain.meta_policy.evaluator import (
+from allbrain.domains.learning.meta_policy.evaluator import (
     _to_prob_distribution,
     compute_kl_divergence,
     detect_policy_drift,
     should_snapshot,
 )
-from allbrain.meta_policy.events import (
+from allbrain.domains.learning.meta_policy.events import (
     make_policy_drift_payload,
     make_policy_eval_payload,
     make_policy_update_payload,
@@ -22,17 +23,16 @@ from allbrain.meta_policy.events import (
     validate_policy_eval,
     validate_policy_update,
 )
-from allbrain.meta_policy.learner import (
+from allbrain.domains.learning.meta_policy.learner import (
     _default_mode_stats,
     default_mode_stats,
     update_exploration_rate,
     update_mode_stats,
     update_temperature,
 )
-from allbrain.meta_policy.manager import MetaPolicyManager
-from allbrain.meta_policy.model import ModeStats, PolicyMode, PolicyState
-from allbrain.meta_policy.reducer import MetaPolicyReducer
-
+from allbrain.domains.learning.meta_policy.manager import MetaPolicyManager
+from allbrain.domains.learning.meta_policy.model import ModeStats, PolicyMode, PolicyState
+from allbrain.domains.learning.meta_policy.reducer import MetaPolicyReducer
 from allbrain.events.schemas import EventType
 
 

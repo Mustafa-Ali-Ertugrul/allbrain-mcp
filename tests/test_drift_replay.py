@@ -4,17 +4,17 @@ from datetime import datetime
 
 import pytest
 
-from allbrain.calibration import make_payload as make_calibration_payload
 from allbrain.domains.analysis.drift import make_payload as make_drift_payload
-from allbrain.events.schemas import EventType
-from allbrain.replay import EventReplayEngine
-from allbrain.revision import (
+from allbrain.domains.learning.calibration import make_payload as make_calibration_payload
+from allbrain.domains.memory.replay import EventReplayEngine
+from allbrain.domains.memory.revision import (
     RevisionManager,
     RevisionReducer,
 )
-from allbrain.revision import (
+from allbrain.domains.memory.revision import (
     make_payload as make_revision_payload,
 )
+from allbrain.events.schemas import EventType
 
 
 class MockEvent:
@@ -206,7 +206,7 @@ def test_replay_calibration_round_trip():
         ),
     ]
     final_state = EventReplayEngine().replay(events)["final_state"]
-    from allbrain.calibration import CalibrationReducer
+    from allbrain.domains.learning.calibration import CalibrationReducer
 
     reducer = CalibrationReducer()
     for e in events:

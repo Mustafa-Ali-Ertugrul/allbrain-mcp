@@ -3,13 +3,13 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from allbrain.domains.memory.telemetry.manager import TelemetryManager
 from allbrain.events import EventType
 from allbrain.models.schemas import EventRead
-from allbrain.telemetry.manager import TelemetryManager
 
 
 def _tool_event(success: bool, duration_ms: float, retry_count: float, agent_id: str = "default"):
-    from allbrain.foundations import current_payload_version
+    from allbrain.domains.memory.foundations import current_payload_version
 
     return EventRead(
         id=str(uuid4()),
@@ -33,7 +33,7 @@ def _tool_event(success: bool, duration_ms: float, retry_count: float, agent_id:
 
 
 def _other_event():
-    from allbrain.foundations import current_payload_version
+    from allbrain.domains.memory.foundations import current_payload_version
 
     return EventRead(
         id=str(uuid4()),

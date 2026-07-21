@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from allbrain.domains.memory.runtime_core import SystemDecisionPipeline
 from allbrain.events import EVENT_DOMAINS, EventDomain, EventType, SemanticEventType, event_domain
-from allbrain.runtime_core import SystemDecisionPipeline
 from allbrain.server.context import BrainContext
 from tests.runtime_core.test_system_decision_pipeline import objective
 from tests.test_sprint12_memory_policy_ui import events, make_context

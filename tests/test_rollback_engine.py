@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.mitigation_learning.policy_store import PolicyStore
-from allbrain.self_repair.model import (
+from allbrain.domains.governance.mitigation_learning.policy_store import PolicyStore
+from allbrain.domains.governance.self_repair.model import (
     MIN_STABILITY_THRESHOLD,
     STABLE_BASELINE,
     PolicySnapshot,
     StabilityReport,
 )
-from allbrain.self_repair.rollback_engine import RollbackEngine
+from allbrain.domains.governance.self_repair.rollback_engine import RollbackEngine
 
 
 def _report(stability):

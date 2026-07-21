@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from allbrain.meta_policy import (
+from allbrain.domains.learning.meta_policy import (
     META_POLICY_KL_THRESHOLD,
     META_POLICY_SNAPSHOT_INTERVAL,
     ModeStats,

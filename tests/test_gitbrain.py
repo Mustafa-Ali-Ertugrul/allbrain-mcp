@@ -5,8 +5,8 @@ from datetime import UTC, datetime, timedelta, timezone
 
 from git import Repo
 
-from allbrain.gitbrain import GitBrain
-from allbrain.gitbrain.parser import _is_credential_var
+from allbrain.domains.memory.gitbrain import GitBrain
+from allbrain.domains.memory.gitbrain.parser import _is_credential_var
 
 
 def test_gitbrain_returns_normalized_empty_context_for_non_repo(tmp_path) -> None:

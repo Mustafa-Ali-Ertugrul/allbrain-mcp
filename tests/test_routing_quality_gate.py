@@ -18,11 +18,10 @@ class TestQualityGate:
             _no_nondet("src/allbrain/domains/collaboration/routing", f)
 
     def test_does_not_change_confidence(self):
-        from allbrain.routing.events import make_selected_payload
-
+        from allbrain.domains.collaboration.routing.events import make_selected_payload
+        from allbrain.domains.memory.revision import RevisionManager
+        from allbrain.domains.memory.revision import make_payload as mr
         from allbrain.events.schemas import EventType
-        from allbrain.revision import RevisionManager
-        from allbrain.revision import make_payload as mr
 
         class E:
             def __init__(self, t, i, p):

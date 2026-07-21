@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.adaptive_recovery import (
+from allbrain.domains.governance.adaptive_recovery import (
     DEFAULT_MAX_CHAIN_LENGTH,
     PATTERN_MOVE_MIN_SAMPLES,
     PATTERN_MOVE_THRESHOLD,
@@ -10,7 +10,7 @@ from allbrain.adaptive_recovery import (
     RecoveryStep,
     StrategyChain,
 )
-from allbrain.recovery_consensus.model import CandidateStrategy
+from allbrain.domains.governance.recovery_consensus.model import CandidateStrategy
 
 
 def _candidate(

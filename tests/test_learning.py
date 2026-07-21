@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from allbrain.learning import (
+from allbrain.domains.collaboration.routing import adaptive_selection_score
+from allbrain.domains.learning.learning import (
     INITIAL_CAPABILITY,
     LEARNING_DELTA_THRESHOLD,
     LEARNING_EMA_BIAS,
@@ -15,8 +16,7 @@ from allbrain.learning import (
     validate_learned,
     validate_observed,
 )
-from allbrain.learning.model import LEARNING_TEMPLATE_VERSION
-from allbrain.routing import adaptive_selection_score
+from allbrain.domains.learning.learning.model import LEARNING_TEMPLATE_VERSION
 
 
 class TestLearner:

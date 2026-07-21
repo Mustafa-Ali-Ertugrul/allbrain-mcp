@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from allbrain.domains.memory.runtime_core.simulation_steps import counterfactual, foresight, scenario, world_simulation
 from allbrain.events import EventType
-from allbrain.runtime_core.simulation_steps import counterfactual, foresight, scenario, world_simulation
 
 
 class FakeEvent(SimpleNamespace):

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from allbrain.events.schemas import EventType
-from allbrain.revision import (
+from allbrain.domains.memory.revision import (
     RevisionManager,
     RevisionPolicy,
     RevisionReducer,
     make_payload,
 )
+from allbrain.events.schemas import EventType
 
 
 def _make_event(event_id: str, event_type: str, payload: dict | None = None):

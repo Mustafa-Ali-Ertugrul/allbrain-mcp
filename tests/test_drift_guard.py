@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from allbrain.learning_safety.drift_guard import DriftGuard
-from allbrain.learning_safety.model import (
+from allbrain.domains.learning.learning_safety.drift_guard import DriftGuard
+from allbrain.domains.learning.learning_safety.model import (
     DRIFT_THRESHOLD,
     SAFETY_LEARNING_DRIFT_DETECTED,
 )

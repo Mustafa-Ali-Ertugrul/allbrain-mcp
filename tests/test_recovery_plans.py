@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from allbrain.resilience.model import FaultRecord
-from allbrain.resilience.recovery_planner import RecoveryPlanner
+from allbrain.domains.governance.resilience.model import FaultRecord
+from allbrain.domains.governance.resilience.recovery_planner import RecoveryPlanner
 
 
 def _make_fault(
@@ -82,7 +82,7 @@ class TestPriorityOrdering:
 
 class TestUsesExistingInfrastructure:
     def test_retry_policy_accessible(self) -> None:
-        from allbrain.resilience.retry_policy import RetryPolicy
+        from allbrain.domains.governance.resilience.retry_policy import RetryPolicy
 
         planner = RecoveryPlanner(retry_policy=RetryPolicy(max_attempts=5))
         assert planner.retry_policy.max_attempts == 5

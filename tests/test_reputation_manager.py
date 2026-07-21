@@ -3,7 +3,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-from allbrain.reputation.estimator import (
+
+from allbrain.domains.collaboration.reputation.estimator import (
     _stable_reputation_id,
     mean_confidence,
     mean_duration,
@@ -11,10 +12,9 @@ from allbrain.reputation.estimator import (
     reputation_score,
     success_rate,
 )
-from allbrain.reputation.events import make_payload, validate_payload
-from allbrain.reputation.manager import ReputationManager
-from allbrain.reputation.reducer import ReputationReducer
-
+from allbrain.domains.collaboration.reputation.events import make_payload, validate_payload
+from allbrain.domains.collaboration.reputation.manager import ReputationManager
+from allbrain.domains.collaboration.reputation.reducer import ReputationReducer
 from allbrain.events.schemas import EventType
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from allbrain.resilience.fault_detector import FaultDetector
+from allbrain.domains.governance.resilience.fault_detector import FaultDetector
 
 
 def _mk_event(type_: str, eid: str = "ev-1", payload: dict | None = None) -> MagicMock:

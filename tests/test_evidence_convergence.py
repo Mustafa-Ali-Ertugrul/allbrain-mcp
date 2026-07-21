@@ -155,7 +155,7 @@ def test_manager_equals_reducer_other_context_ignored():
 
 def test_replay_round_trip_exact_equality():
     """Netleştirme 2: exact dict equality through the replay engine."""
-    from allbrain.replay import EventReplayEngine
+    from allbrain.domains.memory.replay import EventReplayEngine
 
     events = [
         MockEvent(

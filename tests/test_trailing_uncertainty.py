@@ -4,17 +4,17 @@ from datetime import datetime
 
 import pytest
 
+from allbrain.domains.memory.revision import (
+    RevisionManager,
+    RevisionReducer,
+)
+from allbrain.domains.memory.revision import (
+    make_payload as make_revision_payload,
+)
 from allbrain.domains.reasoning.uncertainty import (
     make_payload as make_uncertainty_payload,
 )
 from allbrain.events.schemas import EventType
-from allbrain.revision import (
-    RevisionManager,
-    RevisionReducer,
-)
-from allbrain.revision import (
-    make_payload as make_revision_payload,
-)
 
 
 class MockEvent:

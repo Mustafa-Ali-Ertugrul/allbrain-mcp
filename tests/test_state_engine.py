@@ -1,8 +1,8 @@
 from datetime import UTC, datetime, timezone
 
 from allbrain.core import StateEngine
+from allbrain.domains.memory.resume import ResumeEngine
 from allbrain.models.schemas import EventRead
-from allbrain.resume import ResumeEngine
 
 
 def make_event(
