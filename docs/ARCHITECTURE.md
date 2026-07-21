@@ -318,9 +318,15 @@ the lowest coupling are the safest v0.4.0 removal candidates.
 | 1 | 4 | `semantic` |
 | 1 | 4 | `workspace` |
 
-> **Note:** A strict "unused module" analysis (zero importers outside
-> `reducers/`, zero in `server/tools/`, `cli/`, `install/`, tests) found
-> **zero** modules — every domain package is reachable. The table above
-> lists the lowest-coupling modules; `drift` and `learning_graph` have
-> no production importer outside the reducer layer and are the leading
-> v0.4.0 cleanup candidates.
+## Legacy Root Shim Inventory (Scheduled Removal in v2.0.0)
+
+To provide backward compatibility during the v1.0.0 release cycle, root package imports (`allbrain.<module>`) are maintained as shims using `allbrain._compat.shim_package()`. They emit `DeprecationWarning` and will be **completely removed in v2.0.0**.
+
+| Bounded Context | Legacy Root Shim Package | Canonical v1.0+ Destination |
+|---|---|---|
+| **Reasoning** | `allbrain.counterfactual`, `scenarios`, `foresight`, `meta_reasoning`, `uncertainty`, `decision`, `information_seeking`, `intent`, `objective_system`, `tradeoff_engine` | `allbrain.domains.reasoning.*` |
+| **Analysis** | `allbrain.attention`, `attribution`, `belief`, `causal`, `compression`, `context`, `contradiction`, `drift`, `dynamics`, `episodic`, `evidence`, `failure_memory`, `fusion`, `graph`, `predictive_failure`, `semantic`, `world` | `allbrain.domains.analysis.*` |
+| **Learning** | `allbrain.learning`, `capabilities`, `meta_policy`, `calibration`, `evolution`, `coevolution`, `self_play`, `learning_graph`, `learning_safety`, `meta_optimizer`, `meta_scoring`, `meta_meta_scoring` | `allbrain.domains.learning.*` |
+| **Governance** | `allbrain.policy`, `governance`, `reliability`, `resilience`, `self_repair`, `soft_repair`, `adaptive_recovery`, `recovery_consensus`, `mitigation_learning`, `policy_competition`, `policy_routing`, `value_alignment` | `allbrain.domains.governance.*` |
+| **Memory** | `allbrain.memory`, `replay`, `resume`, `gitbrain`, `telemetry`, `observability`, `metrics`, `foundations`, `runtime_core`, `revision`, `ui`, `api` | `allbrain.domains.memory.*` |
+| **Collaboration** | `allbrain.collaboration`, `conflict`, `merge`, `arbitration`, `reputation`, `distributed`, `workflow`, `workspace`, `agents`, `routing` | `allbrain.domains.collaboration.*` |

@@ -45,6 +45,11 @@ To maintain backward compatibility during the v0.4.x → v1.0 transition, backwa
   * `ALLBRAIN_RATE_LIMIT_RPM`: Requests per minute ceiling (default: `100000`)
   * `ALLBRAIN_RATE_LIMIT_RPS`: Burst requests per second ceiling (default: `1000`)
 
+### D. Event Type Normalization (`WEIGHTS_ADAPATED` → `WEIGHTS_ADAPTED`)
+Historical event streams and specifications contained a minor typo in the adaptation event key (`WEIGHTS_ADAPATED`). 
+* **Canonical v1.0:** `EventType.WEIGHTS_ADAPTED` (`"weights_adapted"`).
+* **Backward Compatibility:** `allbrain.events.schemas._EVENT_TYPE_ALIASES` transparently normalizes `"WEIGHTS_ADAPATED"` to `"weights_adapted"`. Existing SQLite event stores require no manual data migrations.
+
 ---
 
 ## 3. Step-by-Step Migration Guide

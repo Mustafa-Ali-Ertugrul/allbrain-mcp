@@ -1,49 +1,51 @@
-# AllBrain MCP v0.2.3 Sürüm Geri Dönüş (Rollback) Planı ve İzleme Yönergesi
+# AllBrain MCP v1.0.0 Rollback Plan & Post-Release Monitoring
 
-Bu doküman, v0.2.3 sürümünün yayına alınmasından sonra olası bir kararsızlık durumunda güvenli bir şekilde v0.2.2 sürümüne geri dönme (rollback) adımlarını ve ilk 72 saatlik izleme planını detaylandırır.
+This document details the contingency procedures and post-release telemetry metrics for safely rolling back from **v1.0.0** to **v0.4.1** if unrecoverable instability occurs.
 
-## 1. Geri Dönüş (Rollback) Prosedürü
+---
 
-### Adım 1: Git Tag ve Release Geri Alma
-Yerel ve uzak etiketleri geri çekmek için aşağıdaki komutları uygulayın:
+## 1. Rollback Procedure (v1.0.0 → v0.4.1)
+
+### Step 1: Git Tag & GitHub Release Rollback
 ```bash
-# Yerel etiketi sil
-git tag -d v0.2.3
+# Delete local release tag
+git tag -d v1.0.0
 
-# Uzak etiketi sil
-git push --delete origin v0.2.3
+# Delete remote release tag
+git push --delete origin v1.0.0
 
-# GitHub Release sil
-gh release delete v0.2.3 --yes
+# Delete GitHub Release
+gh release delete v1.0.0 --yes
 ```
 
-### Adım 2: Önceki Sürüme Dönüş (Downgrade)
-Çalışan sürümü v0.2.2'ye geri çekmek için:
+### Step 2: Checkout Previous Stable Tag (v0.4.1)
 ```bash
-# v0.2.2 tagine dön
-git checkout v0.2.2
+# Checkout v0.4.1
+git checkout v0.4.1
 
-# Bağımlılıkları senkronize et
+# Sync dependencies
 uv sync --group dev
 ```
 
-### Adım 3: Veritabanı Uyumluluğu (Alembic Downgrade)
-v0.2.3 ile v0.2.2 arasında veritabanı şema değişikliği yapılmamıştır. Bu nedenle veritabanı şeması geriye dönük uyumludur. Herhangi bir Alembic downgrade komutuna ihtiyaç duyulmaz. Olası bir veri bozulması durumuna karşı yedekten geri dönmek için:
+### Step 3: Database & State Restoration
+The v1.0.0 database schema is backward-compatible with v0.4.1. If data corruption occurred during a failed run, restore the automatic pre-run snapshot:
+
 ```bash
-# Yedek veritabanını geri yükle
+# Restore backup database
 cp ~/.allbrain/allbrain.db.bak-<timestamp> ~/.allbrain/allbrain.db
 ```
 
 ---
 
-## 2. Sürüm Sonrası İzleme Planı (Post-Release Monitoring)
+## 2. Post-Release Monitoring Plan (First 72 Hours)
 
-Sürüm yayına alındıktan sonraki ilk 72 saat boyunca aşağıdaki metrikler ve loglar takip edilecektir:
+During the first 72 hours post-release, monitor the following health metrics:
 
-1. **Crash Oranı:** Sunucu stdio süreçlerinin beklenmedik şekilde sonlanma sıklığı.
-2. **Tool Hata Oranı:** Telemetry loglarında `ok=False` olan araç çağrılarının toplam çağrılara oranı.
-3. **Queue Başarısızlıkları:** `QueueItemRecord` tablolarında `state="failed"` durumuna düşen veya lease süresi dolan (`LEASE_EXPIRED`) kayıtların izlenmesi.
-4. **Replay Hataları:** `EventReplayEngine` üzerinden çalıştırılan geçmiş replayer çağrılarının hata sıklığı.
-5. **WAL Dosyası Büyümesi:** SQLite WAL modunun dosya boyutu (`allbrain.db-wal` dosyasının 100MB sınırını aşmaması kontrolü).
-6. **Bellek Kullanımı:** Uzun süren oturumlarda bellek sızıntısı (memory leak) kontrolü.
-7. **Ortalama Tool Latency:** Her araç için `duration_ms` değerlerinin 200ms altında seyretmesi.
+1. **Crash Rate**: Stdio server process terminations (`exit_code != 0`).
+2. **Tool Error Rate**: Ratio of `ok=False` tool responses in telemetry logs.
+3. **Queue Leases**: Unrecovered `state="leased"` records or excessive `LEASE_EXPIRED` events in `QueueItemRecord`.
+4. **Replay Integrity**: Failure frequency during `EventReplayEngine` deterministic replay runs.
+5. **SQLite WAL Growth**: Ensure `allbrain.db-wal` remains $\le 100$ MB under active load.
+6. **Process Memory RSS**: Verify agent memory footprint remains $\le 512$ MB RSS.
+7. **Average Tool Latency**: Monitor per-tool execution latency targeting $\le 200$ms.
+

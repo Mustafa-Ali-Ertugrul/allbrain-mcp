@@ -29,6 +29,8 @@ benchmarks/results/
 
 # Diagnostic and analysis artifacts
 bandit_report.json
+SUMMARY.md
 git_changes.diff
+analysis/
 *.allbrain-diagnostic*
 *.db.bak*

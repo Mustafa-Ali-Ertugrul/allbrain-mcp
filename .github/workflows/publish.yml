@@ -62,8 +62,8 @@ jobs:
       - name: Format check
         run: uv run ruff format --check src/ tests/
 
-      - name: Critical path tests
-        run: uv run pytest -x -q tests/test_merge_server_regression.py tests/test_sdist_contents.py
+      - name: Full test suite & coverage validation
+        run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=85 -n auto
 
       - name: Extract version
         id: version
