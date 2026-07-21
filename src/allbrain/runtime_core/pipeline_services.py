@@ -13,7 +13,7 @@ from allbrain.domains.reasoning.information_seeking import InformationSeekingMan
 from allbrain.domains.reasoning.meta_reasoning import MetaReasoningManager
 from allbrain.domains.reasoning.scenarios import ScenarioEngine
 from allbrain.domains.reasoning.uncertainty import UncertaintyManager
-from allbrain.governance import AutonomousGovernanceCoordinator
+from allbrain.domains.governance.governance import AutonomousGovernanceCoordinator
 from allbrain.runtime_core.arbitration import ArbitrationBridge
 from allbrain.runtime_core.contracts import EconomicEvaluator, StrategicPlanner
 from allbrain.runtime_core.economics import EconomicEvaluationBridge

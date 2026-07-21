@@ -55,6 +55,21 @@ LEARNING_MODULES = [
     "self_play",
 ]
 
+GOVERNANCE_MODULES = [
+    "policy",
+    "policy_competition",
+    "policy_routing",
+    "value_alignment",
+    "governance",
+    "self_repair",
+    "soft_repair",
+    "adaptive_recovery",
+    "recovery_consensus",
+    "mitigation_learning",
+    "reliability",
+    "resilience",
+]
+
 
 def test_all_reasoning_modules_importable_at_new_path() -> None:
     """Each reasoning module must be importable from allbrain.domains.reasoning.<mod>."""
@@ -74,6 +89,13 @@ def test_all_learning_modules_importable_at_new_path() -> None:
     """Each learning module must be importable from allbrain.domains.learning.<mod>."""
     for mod in LEARNING_MODULES:
         target = importlib.import_module(f"allbrain.domains.learning.{mod}")
+        assert target is not None
+
+
+def test_all_governance_modules_importable_at_new_path() -> None:
+    """Each governance module must be importable from allbrain.domains.governance.<mod>."""
+    for mod in GOVERNANCE_MODULES:
+        target = importlib.import_module(f"allbrain.domains.governance.{mod}")
         assert target is not None
 
 
@@ -99,6 +121,30 @@ def test_all_learning_shims_emit_deprecation_warning() -> None:
         imported = importlib.import_module(f"allbrain.{mod}")
         with pytest.warns(DeprecationWarning, match="allbrain.domains.learning"):
             importlib.reload(imported)
+
+
+def test_all_governance_shims_emit_deprecation_warning() -> None:
+    """Old top-level paths allbrain.<mod> must emit DeprecationWarning on import/reload."""
+    for mod in GOVERNANCE_MODULES:
+        imported = importlib.import_module(f"allbrain.{mod}")
+        with pytest.warns(DeprecationWarning, match="allbrain.domains.governance"):
+            importlib.reload(imported)
+
+
+def test_governance_submodule_package_shim_works() -> None:
+    """Submodule imports like allbrain.policy.routing_engine must resolve seamlessly via compat shims."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        import allbrain.policy
+
+        importlib.reload(allbrain.policy)
+    assert any(issubclass(w.category, DeprecationWarning) for w in caught)
+
+    from allbrain.policy.routing_engine import RoutingEngine
+
+    from allbrain.domains.governance.policy.routing_engine import RoutingEngine as NewRoutingEngine
+
+    assert RoutingEngine is NewRoutingEngine
 
 
 def test_analysis_submodule_package_shim_works() -> None:
@@ -149,13 +195,17 @@ def test_context_init_reexports() -> None:
     for mod in LEARNING_MODULES:
         assert hasattr(l_ctx, mod), f"{mod} attribute missing from domains.learning"
 
+    g_ctx = importlib.import_module("allbrain.domains.governance")
+    for mod in GOVERNANCE_MODULES:
+        assert hasattr(g_ctx, mod), f"{mod} attribute missing from domains.governance"
+
 
 def test_no_untracked_domains_imports_in_migrated_contexts() -> None:
-    """Migrated reasoning/, analysis/, and learning/ contexts must only import known infrastructure or canonical domain targets."""
+    """Migrated reasoning/, analysis/, learning/, and governance/ contexts must only import known infrastructure or canonical domain targets."""
     import ast
     from pathlib import Path
 
-    known_contexts = {"reasoning", "analysis", "learning"}
+    known_contexts = {"reasoning", "analysis", "learning", "governance"}
     violations = []
     for ctx in known_contexts:
         root = Path(f"src/allbrain/domains/{ctx}")

@@ -8,7 +8,7 @@ from typing import Any
 from allbrain.api.observability_api import ObservabilityAPI
 from allbrain.models.schemas import OrchestratorInput, ToolResult, UserInputError
 from allbrain.observability import ObservabilityBuilder
-from allbrain.reliability.metrics import ReliabilityMetrics
+from allbrain.domains.governance.reliability.metrics import ReliabilityMetrics
 from allbrain.server.context import BrainContext
 from allbrain.server.tools._shared import audit_tool_call, bind_session_id
 from allbrain.server.tools._tasks import observability_project_and_limit

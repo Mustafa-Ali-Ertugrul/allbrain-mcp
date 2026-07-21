@@ -13,7 +13,7 @@ from uuid6 import uuid7
 
 from allbrain.agents.queue import QueueItem, TaskQueue
 from allbrain.models.entities import QueueItemRecord, WorkerLeaseRecord, utc_now
-from allbrain.reliability.idempotency import IdempotencyKeyBuilder
+from allbrain.domains.governance.reliability.idempotency import IdempotencyKeyBuilder
 from allbrain.workflow.models import SubtaskResult, TaskNode
 
 

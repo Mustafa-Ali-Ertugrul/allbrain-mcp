@@ -125,16 +125,16 @@ drive decisions, and decisions create memories that update beliefs.
 | `install/` | Client installer |
 | `ops/` | Operational tooling |
 
-## Migration Status (v0.4.2)
+## Migration Status (v0.4.3)
 
 | Context | Modules | Status | Since | Path |
 |---|---|---|---|---|
 | `reasoning/` | 10 | ✅ **Migrated** | v0.4.0 | `allbrain.domains.reasoning.*` |
 | `analysis/` | 17 | ✅ **Migrated** | v0.4.1 | `allbrain.domains.analysis.*` |
 | `learning/` | 12 | ✅ **Migrated** | v0.4.2 | `allbrain.domains.learning.*` |
-| `governance/` | 12 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.governance.*`) |
-| `collaboration/` | 10 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
-| `memory/` | 12 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.memory.*`) |
+| `governance/` | 12 | ✅ **Migrated** | v0.4.3 | `allbrain.domains.governance.*` |
+| `collaboration/` | 10 | ⏳ Pending | v0.4.4 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
+| `memory/` | 12 | ⏳ Pending | v0.4.4 | `allbrain.<mod>` (shim target: `allbrain.domains.memory.*`) |
 
 ## Bounded Contexts
 
@@ -175,22 +175,22 @@ drive decisions, and decisions create memories that update beliefs.
 | semantic | `allbrain.domains.analysis.semantic` | `allbrain.semantic` | semantic analysis |
 | world | `allbrain.domains.analysis.world` | `allbrain.world` | `WorldModel` |
 
-### `domains.governance/` — safety, alignment, self-repair (12)
+### `domains.governance/` — safety, alignment, self-repair (12) [MIGRATED v0.4.3]
 
-| Module | Current Path | Key Exports |
-|---|---|---|
-| policy | `allbrain.policy` | `RoutingEngine` |
-| policy_competition | `allbrain.policy_competition` | competing policies |
-| policy_routing | `allbrain.policy_routing` | policy selection |
-| value_alignment | `allbrain.value_alignment` | value alignment |
-| governance | `allbrain.governance` | `AutonomousGovernanceCoordinator` |
-| self_repair | `allbrain.self_repair` | self-repair |
-| soft_repair | `allbrain.soft_repair` | soft repair |
-| adaptive_recovery | `allbrain.adaptive_recovery` | adaptive recovery |
-| recovery_consensus | `allbrain.recovery_consensus` | recovery consensus |
-| mitigation_learning | `allbrain.mitigation_learning` | mitigation learning |
-| reliability | `allbrain.reliability` | `ReliabilityMetrics` |
-| resilience | `allbrain.resilience` | resilience |
+| Module | Canonical Path (v0.4.3+) | Legacy Shim Path (v0.4.3, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| policy | `allbrain.domains.governance.policy` | `allbrain.policy` | `RoutingEngine` |
+| policy_competition | `allbrain.domains.governance.policy_competition` | `allbrain.policy_competition` | competing policies |
+| policy_routing | `allbrain.domains.governance.policy_routing` | `allbrain.policy_routing` | policy selection |
+| value_alignment | `allbrain.domains.governance.value_alignment` | `allbrain.value_alignment` | value alignment |
+| governance | `allbrain.domains.governance.governance` | `allbrain.governance` | `AutonomousGovernanceCoordinator` |
+| self_repair | `allbrain.domains.governance.self_repair` | `allbrain.self_repair` | self-repair |
+| soft_repair | `allbrain.domains.governance.soft_repair` | `allbrain.soft_repair` | soft repair |
+| adaptive_recovery | `allbrain.domains.governance.adaptive_recovery` | `allbrain.adaptive_recovery` | adaptive recovery |
+| recovery_consensus | `allbrain.domains.governance.recovery_consensus` | `allbrain.recovery_consensus` | recovery consensus |
+| mitigation_learning | `allbrain.domains.governance.mitigation_learning` | `allbrain.mitigation_learning` | mitigation learning |
+| reliability | `allbrain.domains.governance.reliability` | `allbrain.reliability` | `ReliabilityMetrics` |
+| resilience | `allbrain.domains.governance.resilience` | `allbrain.resilience` | resilience |
 
 ### `domains.learning/` — meta-learning & adaptation (12) [MIGRATED v0.4.2]
 

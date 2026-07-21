@@ -1,22 +1,17 @@
-from allbrain.value_alignment.alignment_score import AlignmentScoreTracker
-from allbrain.value_alignment.constraint_engine import ConstraintEngine
-from allbrain.value_alignment.events import make_alignment_failed_payload, validate_alignment_failed
-from allbrain.value_alignment.model import (
-    VALUE_ALIGNMENT_TEMPLATE_VERSION,
-    AlignmentResult,
-    AlignmentScore,
-    Constraint,
-)
-from allbrain.value_alignment.reducer import ValueAlignmentReducer
+"""Deprecated compatibility shim for allbrain.value_alignment.
 
-__all__ = [
-    "VALUE_ALIGNMENT_TEMPLATE_VERSION",
-    "Constraint",
-    "AlignmentScore",
-    "AlignmentResult",
-    "ConstraintEngine",
-    "AlignmentScoreTracker",
-    "ValueAlignmentReducer",
-    "validate_alignment_failed",
-    "make_alignment_failed_payload",
-]
+Moved to allbrain.domains.governance.value_alignment in v0.4.3.
+This shim will be removed in v0.5.0.
+"""
+
+from __future__ import annotations
+
+from allbrain._compat import shim_package
+
+shim_package(
+    __name__,
+    "allbrain.domains.governance.value_alignment",
+    submodules=(
+        "alignment_score", "constraint_engine", "events", "model", "reducer"
+    ),
+)

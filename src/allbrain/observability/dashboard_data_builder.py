@@ -5,10 +5,10 @@ from typing import Any
 
 from allbrain.collaboration import CollaborationMetrics
 from allbrain.domains.learning.evolution import LearningMetrics
-from allbrain.governance import GovernanceMetrics
+from allbrain.domains.governance.governance import GovernanceMetrics
 from allbrain.models.schemas import EventRead
 from allbrain.observability.tracer import Tracer
-from allbrain.reliability import ReliabilityMetrics
+from allbrain.domains.governance.reliability import ReliabilityMetrics
 from allbrain.runtime_core import RuntimeCoreMetrics
 
 

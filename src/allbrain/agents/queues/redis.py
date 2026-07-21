@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from uuid6 import uuid7
 
 from allbrain.agents.queue import QueueItem, TaskQueue
-from allbrain.reliability.idempotency import IdempotencyKeyBuilder
+from allbrain.domains.governance.reliability.idempotency import IdempotencyKeyBuilder
 
 # Optional real Redis client
 try:

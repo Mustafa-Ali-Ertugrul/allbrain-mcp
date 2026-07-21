@@ -14,7 +14,7 @@ from allbrain.events import EventType
 from allbrain.domains.learning.evolution import LearningStateBuilder
 from allbrain.foundations import canonical_event_sort
 from allbrain.foundations import is_known_event as _is_known_event
-from allbrain.governance import GovernanceStateBuilder
+from allbrain.domains.governance.governance import GovernanceStateBuilder
 from allbrain.models.schemas import EventRead
 from allbrain.replay.event_classifiers import (
     _build_knowledge_gap_projection,
