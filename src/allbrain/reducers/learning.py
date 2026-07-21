@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from allbrain.learning.reducer import CapabilityLearningReducer
-from allbrain.learning_safety.reducer import LearningSafetyReducer
-from allbrain.meta_meta_scoring.reducer import MetaMetaScoringReducer
-from allbrain.meta_optimizer.reducer import MetaOptimizerReducer
-from allbrain.meta_policy.reducer import MetaPolicyReducer
-from allbrain.meta_scoring.reducer import MetaScoringReducer
-from allbrain.self_play.reducer import SelfPlayReducer
+from allbrain.domains.learning.learning.reducer import CapabilityLearningReducer
+from allbrain.domains.learning.learning_safety.reducer import LearningSafetyReducer
+from allbrain.domains.learning.meta_meta_scoring.reducer import MetaMetaScoringReducer
+from allbrain.domains.learning.meta_optimizer.reducer import MetaOptimizerReducer
+from allbrain.domains.learning.meta_policy.reducer import MetaPolicyReducer
+from allbrain.domains.learning.meta_scoring.reducer import MetaScoringReducer
+from allbrain.domains.learning.self_play.reducer import SelfPlayReducer
 
 __all__ = [
     "CapabilityLearningReducer",

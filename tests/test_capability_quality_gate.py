@@ -7,7 +7,10 @@ FS = ["scorer.py", "reducer.py", "manager.py", "events.py", "model.py"]
 
 
 def _n(d, f):
-    c = (Path(d) / f).read_text(encoding="utf-8")
+    p = Path(d) / f
+    if not p.exists():
+        p = Path(d.replace("src/allbrain/", "src/allbrain/domains/learning/")) / f
+    c = p.read_text(encoding="utf-8")
     for t in ("uuid7", "datetime.now", "random.", "time.time"):
         assert t not in c, repr(d + "/" + f) + " uses " + repr(t)
 

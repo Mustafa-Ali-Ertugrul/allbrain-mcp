@@ -42,13 +42,12 @@ def test_all_contexts_importable() -> None:
 
 
 def test_all_contexts_have_empty_all() -> None:
-    """Non-migrated contexts must have empty __all__; reasoning (v0.4.0) & analysis (v0.4.1) are migrated."""
+    """Non-migrated contexts must have empty __all__; reasoning (v0.4.0), analysis (v0.4.1), & learning (v0.4.2) are migrated."""
     import allbrain.domains.collaboration as c
     import allbrain.domains.governance as g
-    import allbrain.domains.learning as l
     import allbrain.domains.memory as m
 
-    for ctx in (g, l, c, m):
+    for ctx in (g, c, m):
         assert ctx.__all__ == [], f"{ctx.__name__}.__all__ should be empty before migration"
 
 
@@ -66,11 +65,13 @@ def test_architecture_mapping_matches_filesystem() -> None:
         mod_dir = SRC_ROOT / mod
         domains_mod_dir = SRC_ROOT / "domains" / "reasoning" / mod
         domains_analysis_dir = SRC_ROOT / "domains" / "analysis" / mod
+        domains_learning_dir = SRC_ROOT / "domains" / "learning" / mod
         if (
             not mod_path.exists()
             and not mod_dir.is_dir()
             and not domains_mod_dir.is_dir()
             and not domains_analysis_dir.is_dir()
+            and not domains_learning_dir.is_dir()
         ):
             missing.append(mod)
 

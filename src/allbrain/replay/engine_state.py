@@ -11,7 +11,7 @@ from allbrain.domains.reasoning.meta_reasoning import MetaReasoningProjection
 from allbrain.domains.reasoning.scenarios import ScenarioProjection
 from allbrain.domains.reasoning.uncertainty import UncertaintyProjection
 from allbrain.events import EventType
-from allbrain.evolution import LearningStateBuilder
+from allbrain.domains.learning.evolution import LearningStateBuilder
 from allbrain.foundations import canonical_event_sort
 from allbrain.foundations import is_known_event as _is_known_event
 from allbrain.governance import GovernanceStateBuilder

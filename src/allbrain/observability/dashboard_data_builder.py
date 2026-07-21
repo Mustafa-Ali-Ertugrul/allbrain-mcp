@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from allbrain.collaboration import CollaborationMetrics
-from allbrain.evolution import LearningMetrics
+from allbrain.domains.learning.evolution import LearningMetrics
 from allbrain.governance import GovernanceMetrics
 from allbrain.models.schemas import EventRead
 from allbrain.observability.tracer import Tracer

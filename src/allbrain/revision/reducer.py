@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from allbrain.calibration.estimator import calibrated_trust, mean_calibration_error
+from allbrain.domains.learning.calibration.estimator import calibrated_trust, mean_calibration_error
 from allbrain.domains.reasoning.uncertainty.events import validate_payload as validate_uncertainty_payload
 from allbrain.events.schemas import EventType
 from allbrain.revision.estimator import _stable_revision_id, revise

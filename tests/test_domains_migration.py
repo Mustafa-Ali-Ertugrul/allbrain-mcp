@@ -40,6 +40,21 @@ ANALYSIS_MODULES = [
     "world",
 ]
 
+LEARNING_MODULES = [
+    "learning",
+    "learning_graph",
+    "learning_safety",
+    "meta_optimizer",
+    "meta_scoring",
+    "meta_meta_scoring",
+    "meta_policy",
+    "calibration",
+    "capabilities",
+    "evolution",
+    "coevolution",
+    "self_play",
+]
+
 
 def test_all_reasoning_modules_importable_at_new_path() -> None:
     """Each reasoning module must be importable from allbrain.domains.reasoning.<mod>."""
@@ -52,6 +67,13 @@ def test_all_analysis_modules_importable_at_new_path() -> None:
     """Each analysis module must be importable from allbrain.domains.analysis.<mod>."""
     for mod in ANALYSIS_MODULES:
         target = importlib.import_module(f"allbrain.domains.analysis.{mod}")
+        assert target is not None
+
+
+def test_all_learning_modules_importable_at_new_path() -> None:
+    """Each learning module must be importable from allbrain.domains.learning.<mod>."""
+    for mod in LEARNING_MODULES:
+        target = importlib.import_module(f"allbrain.domains.learning.{mod}")
         assert target is not None
 
 
@@ -71,6 +93,14 @@ def test_all_analysis_shims_emit_deprecation_warning() -> None:
             importlib.reload(imported)
 
 
+def test_all_learning_shims_emit_deprecation_warning() -> None:
+    """Old top-level paths allbrain.<mod> must emit DeprecationWarning on import/reload."""
+    for mod in LEARNING_MODULES:
+        imported = importlib.import_module(f"allbrain.{mod}")
+        with pytest.warns(DeprecationWarning, match="allbrain.domains.learning"):
+            importlib.reload(imported)
+
+
 def test_analysis_submodule_package_shim_works() -> None:
     """Submodule imports like allbrain.world.manager must resolve seamlessly via compat shims."""
     with warnings.catch_warnings(record=True) as caught:
@@ -87,6 +117,22 @@ def test_analysis_submodule_package_shim_works() -> None:
     assert WorldModel is NewWorldModel
 
 
+def test_learning_submodule_package_shim_works() -> None:
+    """Submodule imports like allbrain.meta_policy.learner must resolve seamlessly via compat shims."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        import allbrain.meta_policy
+
+        importlib.reload(allbrain.meta_policy)
+    assert any(issubclass(w.category, DeprecationWarning) for w in caught)
+
+    from allbrain.meta_policy.learner import _default_mode_stats
+
+    from allbrain.domains.learning.meta_policy.learner import _default_mode_stats as new_fn
+
+    assert _default_mode_stats is new_fn
+
+
 def test_context_init_reexports() -> None:
     """Context __init__.py files must declare all migrated modules in __all__."""
     r_ctx = importlib.import_module("allbrain.domains.reasoning")
@@ -99,13 +145,17 @@ def test_context_init_reexports() -> None:
         assert mod in a_ctx.__all__, f"{mod} missing from domains.analysis.__all__"
         assert hasattr(a_ctx, mod), f"{mod} attribute missing from domains.analysis"
 
+    l_ctx = importlib.import_module("allbrain.domains.learning")
+    for mod in LEARNING_MODULES:
+        assert hasattr(l_ctx, mod), f"{mod} attribute missing from domains.learning"
+
 
 def test_no_untracked_domains_imports_in_migrated_contexts() -> None:
-    """Migrated reasoning/ and analysis/ contexts must only import known infrastructure or canonical domain targets."""
+    """Migrated reasoning/, analysis/, and learning/ contexts must only import known infrastructure or canonical domain targets."""
     import ast
     from pathlib import Path
 
-    known_contexts = {"reasoning", "analysis"}
+    known_contexts = {"reasoning", "analysis", "learning"}
     violations = []
     for ctx in known_contexts:
         root = Path(f"src/allbrain/domains/{ctx}")

@@ -125,14 +125,14 @@ drive decisions, and decisions create memories that update beliefs.
 | `install/` | Client installer |
 | `ops/` | Operational tooling |
 
-## Migration Status (v0.4.1)
+## Migration Status (v0.4.2)
 
 | Context | Modules | Status | Since | Path |
 |---|---|---|---|---|
 | `reasoning/` | 10 | ✅ **Migrated** | v0.4.0 | `allbrain.domains.reasoning.*` |
 | `analysis/` | 17 | ✅ **Migrated** | v0.4.1 | `allbrain.domains.analysis.*` |
-| `governance/` | 12 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.governance.*`) |
-| `learning/` | 12 | ⏳ Pending | v0.4.2 | `allbrain.<mod>` (shim target: `allbrain.domains.learning.*`) |
+| `learning/` | 12 | ✅ **Migrated** | v0.4.2 | `allbrain.domains.learning.*` |
+| `governance/` | 12 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.governance.*`) |
 | `collaboration/` | 10 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.collaboration.*`) |
 | `memory/` | 12 | ⏳ Pending | v0.4.3 | `allbrain.<mod>` (shim target: `allbrain.domains.memory.*`) |
 
@@ -192,22 +192,22 @@ drive decisions, and decisions create memories that update beliefs.
 | reliability | `allbrain.reliability` | `ReliabilityMetrics` |
 | resilience | `allbrain.resilience` | resilience |
 
-### `domains.learning/` — meta-learning & adaptation (12)
+### `domains.learning/` — meta-learning & adaptation (12) [MIGRATED v0.4.2]
 
-| Module | Current Path | Key Exports |
-|---|---|---|
-| learning | `allbrain.learning` | `CapabilityLearningManager` |
-| learning_graph | `allbrain.learning_graph` | learning graph |
-| learning_safety | `allbrain.learning_safety` | safe learning |
-| meta_optimizer | `allbrain.meta_optimizer` | meta-optimizer |
-| meta_scoring | `allbrain.meta_scoring` | meta-scoring |
-| meta_meta_scoring | `allbrain.meta_meta_scoring` | meta-meta-scoring |
-| meta_policy | `allbrain.meta_policy` | meta-policy |
-| calibration | `allbrain.calibration` | calibration |
-| capabilities | `allbrain.capabilities` | capability tracking |
-| evolution | `allbrain.evolution` | evolutionary strategies |
-| coevolution | `allbrain.coevolution` | co-evolution |
-| self_play | `allbrain.self_play` | self-play |
+| Module | Canonical Path (v0.4.2+) | Legacy Shim Path (v0.4.2, removed v0.5.0) | Key Exports |
+|---|---|---|---|
+| learning | `allbrain.domains.learning.learning` | `allbrain.learning` | `CapabilityLearningManager` |
+| learning_graph | `allbrain.domains.learning.learning_graph` | `allbrain.learning_graph` | learning graph |
+| learning_safety | `allbrain.domains.learning.learning_safety` | `allbrain.learning_safety` | safe learning |
+| meta_optimizer | `allbrain.domains.learning.meta_optimizer` | `allbrain.meta_optimizer` | meta-optimizer |
+| meta_scoring | `allbrain.domains.learning.meta_scoring` | `allbrain.meta_scoring` | meta-scoring |
+| meta_meta_scoring | `allbrain.domains.learning.meta_meta_scoring` | `allbrain.meta_meta_scoring` | meta-meta-scoring |
+| meta_policy | `allbrain.domains.learning.meta_policy` | `allbrain.meta_policy` | meta-policy |
+| calibration | `allbrain.domains.learning.calibration` | `allbrain.calibration` | calibration |
+| capabilities | `allbrain.domains.learning.capabilities` | `allbrain.capabilities` | capability tracking |
+| evolution | `allbrain.domains.learning.evolution` | `allbrain.evolution` | evolutionary strategies |
+| coevolution | `allbrain.domains.learning.coevolution` | `allbrain.coevolution` | co-evolution |
+| self_play | `allbrain.domains.learning.self_play` | `allbrain.self_play` | self-play |
 
 ### `domains.collaboration/` — multi-agent coordination (10)
 
