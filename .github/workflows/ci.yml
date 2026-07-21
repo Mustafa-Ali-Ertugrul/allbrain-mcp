@@ -7,7 +7,6 @@ on:
     branches: [dev, main]
 
 env:
-  UV_VERSION: "0.6.x"
   ALLBRAIN_ALLOWED_PROJECT_ROOTS: "/home/runner:/tmp"
 
 jobs:
@@ -18,7 +17,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
-          version: ${{ env.UV_VERSION }}
           python-version: "3.13"
           enable-cache: true
       - run: uv sync --group dev
@@ -37,7 +35,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
-          version: ${{ env.UV_VERSION }}
           python-version: "3.13"
           enable-cache: true
       - run: uv sync --group dev
@@ -55,10 +52,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
-          version: ${{ env.UV_VERSION }}
           python-version: ${{ matrix.python-version }}
           enable-cache: true
-      - run: uv sync --group dev
+      - run: uv sync --group dev --extra postgres --extra distributed --python ${{ matrix.python-version }}
       - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=85 -n auto --dist=worksteal
 
   postgres-contract:
@@ -85,8 +81,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
-          version: ${{ env.UV_VERSION }}
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: "3.13"
           enable-cache: true
       - run: uv sync --group dev --extra postgres
       - run: uv run pytest -q -n 0 tests/integration/test_postgres_storage.py
@@ -101,8 +96,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
-          version: ${{ env.UV_VERSION }}
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: "3.13"
           enable-cache: true
       - run: uv sync --group dev
       - name: Smoke test — CLI available
@@ -142,8 +136,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
-          version: ${{ env.UV_VERSION }}
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: "3.13"
           enable-cache: true
       - run: uv sync --group dev --extra distributed
       - run: uv run pytest -q -n 0 tests/integration/test_distributed_brokers.py
