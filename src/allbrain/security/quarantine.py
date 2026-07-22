@@ -102,9 +102,7 @@ def is_effectively_quarantined(event, promoted_ids: set[str] | None = None) -> b
     event_id = getattr(event, "id", None)
     if event_id is None and isinstance(event, dict):
         event_id = event.get("id")
-    if promoted_ids is not None and event_id in promoted_ids:
-        return False
-    return True
+    return not (promoted_ids is not None and event_id in promoted_ids)
 
 
 def filter_quarantined(events: list, promoted_ids: set[str] | None = None) -> list:

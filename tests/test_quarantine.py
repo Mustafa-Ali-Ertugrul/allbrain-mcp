@@ -18,7 +18,6 @@ from pathlib import Path
 from allbrain.events.schemas import EventType
 from allbrain.server.tools.events import list_events_impl, save_event_impl
 from allbrain.server.tools.snapshots import resume_project_impl
-
 from tests._helpers import make_context
 
 

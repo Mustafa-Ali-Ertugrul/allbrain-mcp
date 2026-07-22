@@ -54,7 +54,17 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --group dev --extra postgres --extra distributed
+        run: |
+          for attempt in 1 2 3 4 5; do
+            echo "uv sync attempt ${attempt}"
+            if uv sync --group dev --extra postgres --extra distributed; then
+              exit 0
+            fi
+            echo "uv sync failed on attempt ${attempt}; retrying in 15s..."
+            sleep 15
+          done
+          echo "uv sync failed after retries" >&2
+          exit 1
 
       - name: Lint
         run: uv run ruff check src/ tests/

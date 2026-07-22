@@ -13,8 +13,6 @@ from allbrain.models.schemas import (
     ToolResult,
 )
 from allbrain.security.quarantine import (
-    compute_promoted_set,
-    filter_quarantined,
     mark_quarantined,
     scan_prompt_injection,
 )
@@ -338,10 +336,7 @@ def _register_review_quarantined(mcp, context: BrainContext) -> None:
             limit=10000,
         )
         promoted_ids = {e.caused_by for e in promoted_events if e.caused_by}
-        quarantined = [
-            e for e in events
-            if getattr(e, "quarantined", False)
-        ]
+        quarantined = [e for e in events if getattr(e, "quarantined", False)]
         for e in quarantined:
             e.quarantined = e.id not in promoted_ids
         audit_tool_call(
