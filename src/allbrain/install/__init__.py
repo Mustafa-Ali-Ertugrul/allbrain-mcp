@@ -338,7 +338,6 @@ def install_client(
         merge_server(project / ".kiro" / "settings" / "mcp.json", "mcpServers", server, dry_run, force=force)
 
 
-
 def _verify_probe_script(repo: Path, project: Path) -> str:
     server_args = [
         "run",

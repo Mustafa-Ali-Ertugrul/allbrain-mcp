@@ -196,9 +196,7 @@ class SaveEventInput(BaseInputModel):
         raw = json.dumps(value)
         max_bytes = max_payload_bytes()
         if len(raw) > max_bytes:
-            raise ValueError(
-                f"payload exceeds maximum size of {max_bytes // 1000}KB (got {len(raw) // 1000}KB)"
-            )
+            raise ValueError(f"payload exceeds maximum size of {max_bytes // 1000}KB (got {len(raw) // 1000}KB)")
         return value
 
     @field_validator("type")

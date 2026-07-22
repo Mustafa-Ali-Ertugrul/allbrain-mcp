@@ -70,9 +70,7 @@ def test_depth_limit_stops_redaction_at_boundary() -> None:
         current = current["next"]
     # The next level must NOT contain the raw secret
     if isinstance(current["next"], str):
-        assert current["next"] == "********", (
-            f"Expected fail-closed MASK at depth boundary, got {current['next']!r}"
-        )
+        assert current["next"] == "********", f"Expected fail-closed MASK at depth boundary, got {current['next']!r}"
     elif isinstance(current["next"], dict):
         # The inner dict was reached and redaction applied to its values
         assert current["next"].get("secret") == "********"

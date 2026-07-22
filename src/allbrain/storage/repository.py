@@ -463,10 +463,7 @@ class BrainRepository:
         event starts from the genesis base (backward compatible).
         """
         statement = (
-            select(Event)
-            .where(Event.project_id == project_id)
-            .order_by(col(Event.stream_position).desc())
-            .limit(1)
+            select(Event).where(Event.project_id == project_id).order_by(col(Event.stream_position).desc()).limit(1)
         )
         previous = db.exec(statement).first()
         if previous is None:

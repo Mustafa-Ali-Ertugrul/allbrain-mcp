@@ -63,9 +63,7 @@ def test_sanitize_depth_limit_logs_warning(caplog: pytest.LogCaptureFixture) -> 
     with caplog.at_level(logging.WARNING, logger="allbrain.security.redaction"):
         sanitize_payload(payload)
     assert any(
-        "sanitize_depth_limit_reached" in r.message
-        or "depth_limit" in str(r.args).lower()
-        for r in caplog.records
+        "sanitize_depth_limit_reached" in r.message or "depth_limit" in str(r.args).lower() for r in caplog.records
     )
 
 
