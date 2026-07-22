@@ -1,6 +1,6 @@
 [project]
 name = "allbrain-agent-runtime"
-version = "1.0.0"
+version = "1.1.0"
 description = "Event-sourced memory and orchestration server for multi-agent AI systems"
 authors = [{ name = "Mustafa Ali Ertuğrul", email = "mustafali1230@hotmail.com" }]
 keywords = ["mcp", "agent", "multi-agent", "orchestration", "memory", "event-sourcing", "ai"]
@@ -146,7 +146,7 @@ dev = [
 ]
 
 [tool.bumpversion]
-current_version = "1.0.0"
+current_version = "1.1.0"
 allow_dirty = false
 commit = false
 tag = false

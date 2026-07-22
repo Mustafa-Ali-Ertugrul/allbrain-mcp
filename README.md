@@ -36,7 +36,7 @@ AllBrain gives every agent a shared workbench. Each tool call is recorded in an 
 - **Conflict detection** — automatic surface of conflicting state updates
 - **Decision pipelines** — counterfactual reasoning, scenario planning, foresight
 - **Deterministic replay** — rebuild project state from raw events
-- **51 tools** in full profile across 18 domain modules (start with 3, enable more as needed)
+- **53 tools** in full profile across 18 domain modules (start with 3, enable more as needed)
 
 ## 30-second demo
 
@@ -104,7 +104,7 @@ Start with `--tool-profile minimal` (3 tools) and expand when needed:
 | `collaboration` | memory + task/conflict/resolution tools | Multi-agent handoff |
 | `reasoning` | memory + decision pipeline tools | Planning and analysis |
 | `core` | save_event, list_events, retrieve_memory, git_info, create_task, get_task_graph, orchestrate_project, run_decision_pipeline, create_snapshot, resume_project, get_context_pack | Essential workflow + context pack |
-| `full` | 51 tools | Complete surface across all 18 tool modules |
+| `full` | 53 tools | Complete surface across all 18 tool modules |
 
 ```shell
 uv run allbrain start --project . --agent my-agent --tool-profile memory
@@ -164,10 +164,26 @@ Switch to another client, call `list_events()` again — the same event appears.
 
 > **Note:** Glama evaluates the balanced 11-tool `core` profile. The full profile remains available for local development.
 
-- 51 tools in the full MCP profile across 18 server tool implementation modules (`src/allbrain/server/tools/`)
+- 53 tools in the full MCP profile across 18 server tool implementation modules (`src/allbrain/server/tools/`)
 - Default profile (`full`) registers all tools
 - `minimal` profile: 3 tools (`save_event`, `list_events`, `resume_project`)
 - `core` profile: 11 tools (essential workflow + reasoning + context pack)
+
+## What's New in v1.1.0
+
+### Security hardening (threat-model remediation)
+* **Fail-closed sanitization (§B1):** Depth-limit bypass closed; configurable max depth and payload size cap.
+* **gitbrain RCE sandbox (§D):** No-shell argv, hard env isolation, and dangerous git config overrides.
+* **SQLite permissions (§E1):** Restrictive file/dir modes and umask hardening (Windows best-effort documented).
+* **Memory poisoning defense (§1):** Event-sourced quarantine, default exclusion from context, untrusted event boundaries, `promote_event` / `review_quarantined`.
+* **Safe install (§C1):** `.mcp.json` backup + merge + confirm/`--force` + integrity hash.
+* **Windows path hardening (§C2):** Case-insensitive `normcase` + `realpath` containment checks.
+* **Event hash-chain (§A2):** Lightweight tamper-evidence via chained payload hashes.
+
+### Runtime changes
+* Full tool surface: **53 tools** (`promote_event`, `review_quarantined` added)
+* `list_events` default limit raised to **1000**
+* CI matrix: **Python 3.12 & 3.13**, coverage gate **85%**
 
 ## What's New in v1.0.0
 
@@ -183,7 +199,7 @@ Switch to another client, call `list_events()` again — the same event appears.
 
 ### 3. Production Security & Verification
 * **Secret Redaction:** Multi-layer masking for 13+ secret formats and Pydantic validation error sanitization.
-* **Input Validation:** Strict Pydantic models with null-byte rejection and prompt injection filtering across all 51 MCP tools.
+* **Input Validation:** Strict Pydantic models with null-byte rejection and prompt injection filtering across MCP tools.
 * **Filesystem Sandbox:** `ALLBRAIN_ALLOWED_PROJECT_ROOTS` path traversal isolation.
 * **Dual-Window Rate Limiting:** Process-local thread-safe rate limiter (1,000 RPS burst, 100,000 RPM rolling).
 
@@ -208,7 +224,8 @@ AllBrain stores events, sessions, and audit logs in local SQLite. Data never lea
 
 ## Status
 
-- 3,063 passed tests, 3 skipped tests (100% green)
+- 3,110 passed tests, 5 skipped tests (100% green)
+- 53 tools in full profile
 - stdio FastMCP handshake verified
-- Python 3.12 & 3.13 matrix verified in CI
+- Python 3.12 & 3.13 (CI matrix)
 - Coverage: 86.54% (enforced threshold 85%)

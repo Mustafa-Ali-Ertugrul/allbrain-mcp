@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-22
+
+### Security (Threat-Model Remediation)
+- **§B1 Fail-Closed Sanitization:** Depth-32 bypass closed; `ALLBRAIN_SANITIZE_MAX_DEPTH` env var (1–256); payload size cap (250KB default).
+- **§D gitbrain RCE Sandbox:** All git calls use no-shell argv + `GIT_CONFIG_NOSYSTEM`/`GLOBAL`/`SYSTEM` isolation + `core.fsmonitor`/`protocol.ext`/`filter.lfs` overrides.
+- **§E1 SQLite Permissions:** DB `0o600`, directory `0o700`, umask `0o077` (WAL/SHM); Windows best-effort + NTFS ACL documented.
+- **§1 Memory Poisoning Defense:** Event-sourced quarantine (`quarantined=True` metadata, `quarantine_lifted` event for promote); `include_quarantined=False` default; untrusted boundary (`<untrusted_event_history>` wrapping); `review_quarantined` + `promote_event` tools.
+- **§C1 Safe `.mcp.json` Install:** Existing files are not silently overwritten; `.bak` backup; merge; interactive confirm / `--force`; `.allbrain/mcp.json.sha256` hash.
+- **§C2 Windows Path Hardening:** `normcase` + `realpath`; case-insensitive root containment; TOCTOU limitation documented.
+- **§A2 Lightweight Event Hash-Chain:** `sha256(prev_hash + payload)`; genesis start; legacy-compatible; tamper-evidence (not full cryptographic signing).
+
+### Changed
+- `list_events_default_limit`: 50 → 1000
+- Tool count: 51 → 53 (`promote_event`, `review_quarantined` added)
+- CI: Python 3.12 & 3.13 matrix, coverage threshold 85%
+
 ## [1.0.0] - 2026-07-21
 
 ### Added
