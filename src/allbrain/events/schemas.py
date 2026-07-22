@@ -275,6 +275,8 @@ class EventType(StrEnum):
     UTILITY_COMPUTED = "utility_computed"
     ALIGNMENT_FAILED = "alignment_failed"
     OBJECTIVE_REBALANCED = "objective_rebalanced"
+    # Security: event-sourced quarantine lifecycle (§1 memory poisoning defense)
+    QUARANTINE_LIFTED = "quarantine_lifted"
 
 
 SemanticEventType = {
@@ -504,4 +506,6 @@ SemanticEventType = {
     EventType.UTILITY_COMPUTED,
     EventType.ALIGNMENT_FAILED,
     EventType.OBJECTIVE_REBALANCED,
+    # Security: event-sourced quarantine lifecycle (§1 memory poisoning defense)
+    EventType.QUARANTINE_LIFTED,
 }

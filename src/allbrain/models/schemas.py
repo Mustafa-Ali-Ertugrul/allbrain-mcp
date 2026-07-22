@@ -241,6 +241,8 @@ class ListEventsInput(BaseInputModel):
     # Sprint 74: cursor pagination + summary mode.
     cursor: str | None = Field(default=None, max_length=64)
     summary: bool = False
+    # §1 Security: exclude quarantined events from default context
+    include_quarantined: bool = False
 
     @field_validator("since", "until", mode="before")
     @classmethod
@@ -274,6 +276,8 @@ class ResumeProjectInput(BaseInputModel):
     use_snapshot: bool = True
     # Agents should get compact context by default; pass detail="full" for dumps.
     detail: str = Field(default="slim", pattern="^(slim|full)$")
+    # §1 Security: exclude quarantined events from default resume context
+    include_quarantined: bool = False
 
 
 class ContextPackInput(BaseInputModel):
@@ -599,6 +603,8 @@ class EventRead(BaseModel):
     created_at: datetime
     payload_version: int = Field(default=1, ge=1)
     stream_position: int | None = None
+    # Security: quarantine flag derived from payload _meta (§1 defense)
+    quarantined: bool = False
 
 
 class ToolResult(BaseModel):
