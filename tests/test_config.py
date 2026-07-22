@@ -1,3 +1,5 @@
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -7,6 +9,7 @@ from allbrain.config import (
     allowed_project_roots,
     canonicalize_project_path,
     default_db_path,
+    path_is_allowed,
 )
 
 
@@ -34,7 +37,7 @@ def test_canonicalize_rejects_parent_traversal(tmp_path: Path) -> None:
     import allbrain.config as cfg
 
     saved = cfg._ALLOWED_PROJECT_ROOTS
-    cfg._ALLOWED_PROJECT_ROOTS = [allowed.resolve()]
+    cfg._ALLOWED_PROJECT_ROOTS = [cfg._normalize_path_for_compare(allowed)]
     try:
         evil = allowed / ".." / ".." / "etc"
         with pytest.raises(PathTraversalError):
@@ -52,7 +55,7 @@ def test_canonicalize_rejects_sibling_root(tmp_path: Path) -> None:
     import allbrain.config as cfg
 
     saved = cfg._ALLOWED_PROJECT_ROOTS
-    cfg._ALLOWED_PROJECT_ROOTS = [allowed.resolve()]
+    cfg._ALLOWED_PROJECT_ROOTS = [cfg._normalize_path_for_compare(allowed)]
     try:
         with pytest.raises(PathTraversalError):
             canonicalize_project_path(sibling)
@@ -68,10 +71,10 @@ def test_canonicalize_accepts_nested_child(tmp_path: Path) -> None:
     import allbrain.config as cfg
 
     saved = cfg._ALLOWED_PROJECT_ROOTS
-    cfg._ALLOWED_PROJECT_ROOTS = [allowed.resolve()]
+    cfg._ALLOWED_PROJECT_ROOTS = [cfg._normalize_path_for_compare(allowed)]
     try:
         result = canonicalize_project_path(child)
-        assert Path(result) == child.resolve(strict=False)
+        assert Path(result) == Path(os.path.realpath(str(child.resolve(strict=False))))
     finally:
         cfg._ALLOWED_PROJECT_ROOTS = saved
 
@@ -92,11 +95,10 @@ def test_allbrain_allowed_project_roots_env(monkeypatch) -> None:
 
     roots = cfg.allowed_project_roots()
     assert len(roots) == 2
-    assert (
-        roots[0] == Path("C:\\temp").resolve(strict=False)
-        if cfg.os.name == "nt"
-        else Path("/temp").resolve(strict=False)
-    )
+    if cfg.os.name == "nt":
+        assert roots[0] == cfg._normalize_path_for_compare(Path("C:\\temp"))
+    else:
+        assert roots[0] == cfg._normalize_path_for_compare(Path("/temp"))
 
 
 def test_allowed_project_roots_deprecation_warning(monkeypatch) -> None:
@@ -109,8 +111,57 @@ def test_allowed_project_roots_deprecation_warning(monkeypatch) -> None:
     with pytest.warns(DeprecationWarning, match="ALLOWED_PROJECT_ROOTS is deprecated"):
         roots = cfg.allowed_project_roots()
         assert len(roots) == 1
-        assert (
-            roots[0] == Path("C:\\legacy").resolve(strict=False)
-            if cfg.os.name == "nt"
-            else Path("/legacy").resolve(strict=False)
-        )
+        if cfg.os.name == "nt":
+            assert roots[0] == cfg._normalize_path_for_compare(Path("C:\\legacy"))
+        else:
+            assert roots[0] == cfg._normalize_path_for_compare(Path("/legacy"))
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows path/case/junction semantics")
+def test_canonicalize_windows_junction_and_case(tmp_path: Path) -> None:
+    """Case-insensitive match and traversal rejection on Windows."""
+    import allbrain.config as cfg
+
+    safe = tmp_path / "SafeRoot"
+    safe.mkdir()
+    nested = safe / "project"
+    nested.mkdir()
+
+    saved = cfg._ALLOWED_PROJECT_ROOTS
+    # Allowed root recorded with one casing; query uses another.
+    cfg._ALLOWED_PROJECT_ROOTS = [cfg._normalize_path_for_compare(safe)]
+    try:
+        # Case folding: c:\... vs C:\...
+        mixed = Path(str(nested).swapcase() if str(nested).swapcase() != str(nested) else str(nested))
+        result = canonicalize_project_path(mixed)
+        assert path_is_allowed(result)
+
+        # Relative self-equivalence via .. inside the root
+        via_parent = nested / ".." / "project"
+        assert canonicalize_project_path(via_parent) == canonicalize_project_path(nested)
+
+        # Escape outside allowed root must fail
+        escape = safe / ".." / ".." / "Windows"
+        with pytest.raises(PathTraversalError):
+            canonicalize_project_path(escape)
+
+        # Also reject a path that normalizes outside via multi-hop
+        multi = Path(str(safe)) / ".." / ".." / ".." / "Windows"
+        with pytest.raises(PathTraversalError):
+            canonicalize_project_path(multi)
+    finally:
+        cfg._ALLOWED_PROJECT_ROOTS = saved
+
+
+def test_path_is_allowed_helper(tmp_path: Path) -> None:
+    import allbrain.config as cfg
+
+    allowed = tmp_path / "ok"
+    allowed.mkdir()
+    saved = cfg._ALLOWED_PROJECT_ROOTS
+    cfg._ALLOWED_PROJECT_ROOTS = [cfg._normalize_path_for_compare(allowed)]
+    try:
+        assert path_is_allowed(allowed / "child")
+        assert not path_is_allowed(tmp_path / "nope")
+    finally:
+        cfg._ALLOWED_PROJECT_ROOTS = saved

@@ -54,6 +54,10 @@ def install(
     isolate: Annotated[bool, typer.Option("--isolate", help="Use separate DB per client")] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show changes without writing")] = False,
     verify: Annotated[bool, typer.Option("--verify", help="Run MCP handshake after config")] = False,
+    force: Annotated[
+        bool,
+        typer.Option("--force", help="Skip confirmation when merging over existing MCP configs"),
+    ] = False,
 ) -> None:
     """Configure MCP clients to connect to AllBrain.
 
@@ -83,6 +87,8 @@ def install(
         args.append("--dry-run")
     if verify:
         args.append("--verify")
+    if force:
+        args.append("--force")
     if all_clients:
         args.append("--all")
     args.extend(selected_flags)

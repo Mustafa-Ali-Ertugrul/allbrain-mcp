@@ -12,6 +12,18 @@ DB_FILE_NAME = "allbrain.db"
 _ALLOWED_PROJECT_ROOTS: list[Path] | None = None
 
 
+def _normalize_path_for_compare(path: str | Path) -> Path:
+    """Resolve symlinks/junctions and apply OS-aware case normalization.
+
+    On Windows, ``normcase`` makes comparisons case-insensitive so that
+    ``C:\\Safe`` and ``c:\\safe`` (and 8.3 short names after realpath) match.
+    ``realpath`` expands junction points and symlink chains.
+    """
+    expanded = Path(path).expanduser().resolve(strict=False)
+    real = os.path.realpath(str(expanded))
+    return Path(os.path.normcase(real))
+
+
 def _parse_allowed_roots() -> list[Path]:
     import warnings
 
@@ -26,15 +38,15 @@ def _parse_allowed_roots() -> list[Path]:
             )
     if not raw:
         # Default: user home (safe — prevents traversal into system dirs)
-        return [Path.home()]
+        return [_normalize_path_for_compare(Path.home())]
 
     sep = ";" if os.name == "nt" else ":"
     roots: list[Path] = []
     for part in raw.split(sep):
         part = part.strip()
         if part:
-            roots.append(Path(part).expanduser().resolve(strict=False))
-    return roots if roots else [Path.home()]
+            roots.append(_normalize_path_for_compare(part))
+    return roots if roots else [_normalize_path_for_compare(Path.home())]
 
 
 def allowed_project_roots() -> list[Path]:
@@ -56,20 +68,53 @@ class PathTraversalError(ValueError):
     """Raised when a project path falls outside the allowed roots."""
 
 
-def canonicalize_project_path(project_path: str | Path | None) -> str:
+def _is_under_root(candidate: Path, root: Path) -> bool:
+    """Return True if *candidate* is *root* or a descendant of *root*."""
+    try:
+        candidate.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def path_is_allowed(project_path: str | Path | None, roots: list[Path] | None = None) -> bool:
+    """Return True when the path is inside an allowed root (normcase+realpath)."""
     raw_path = Path.cwd() if project_path is None else Path(project_path)
+    candidate = _normalize_path_for_compare(raw_path)
+    for root in roots if roots is not None else allowed_project_roots():
+        if _is_under_root(candidate, _normalize_path_for_compare(root)):
+            return True
+    return False
+
+
+def assert_path_still_allowed(project_path: str | Path | None) -> str:
+    """Re-check containment immediately before a file open.
+
+    Known Limitation: TOCTOU on Windows symlinks — a path can still change
+    between this check and a subsequent open() if an attacker races a
+    reparse-point swap. Prefer opening via O_NOFOLLOW-equivalent APIs where
+    available; this second check only shrinks the race window.
+    """
+    return canonicalize_project_path(project_path)
+
+
+def canonicalize_project_path(project_path: str | Path | None) -> str:
+    """Canonicalize and enforce allowed-root containment.
+
+    Both the candidate path and every allowed root are compared after
+    ``realpath`` (junctions/symlinks) and ``normcase`` (Windows case folding).
+    """
+    raw_path = Path.cwd() if project_path is None else Path(project_path)
+    # Preserve a stable realpath string for storage (not lowercased on Windows).
     resolved = raw_path.expanduser().resolve(strict=False)
     canonical = os.path.realpath(str(resolved))
+    candidate = Path(os.path.normcase(canonical))
 
-    # Path-traversal guard: must be inside one of the allowed roots.
     roots = allowed_project_roots()
-    cp = Path(canonical)
     for root in roots:
-        try:
-            cp.relative_to(root)
+        root_norm = _normalize_path_for_compare(root)
+        if _is_under_root(candidate, root_norm):
             return canonical
-        except ValueError:
-            continue
 
     raise PathTraversalError(
         f"Project path {canonical} is not inside any allowed root ({'; '.join(str(r) for r in roots)})"

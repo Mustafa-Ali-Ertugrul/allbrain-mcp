@@ -7,6 +7,7 @@ instead of replacing unrelated servers.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -29,6 +30,10 @@ CLIENTS = (
     "zed",
     "kiro",
 )
+
+MCP_JSON_NAME = ".mcp.json"
+MCP_JSON_BACKUP_SUFFIX = ".bak"
+MCP_JSON_HASH_REL = Path(".allbrain") / "mcp.json.sha256"
 
 
 def package_repo_root() -> Path:
@@ -53,6 +58,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--isolate", action="store_true", help="use a separate database for each client")
     parser.add_argument("--dry-run", action="store_true", help="show destinations without writing files")
     parser.add_argument("--verify", action="store_true", help="perform an MCP handshake after writing configs")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="skip interactive confirmation when merging over an existing config",
+    )
     return parser.parse_args(argv)
 
 
@@ -68,6 +78,56 @@ def load_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def config_sha256(value: dict[str, Any] | str | bytes) -> str:
+    """Return hex sha256 of canonical JSON or raw bytes for integrity tracking."""
+    if isinstance(value, bytes):
+        raw = value
+    elif isinstance(value, str):
+        raw = value.encode("utf-8")
+    else:
+        raw = (json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def backup_config_file(path: Path, dry_run: bool) -> Path | None:
+    """Copy *path* to ``path.bak`` when it exists. Returns backup path or None."""
+    if not path.exists():
+        return None
+    backup = path.with_name(path.name + MCP_JSON_BACKUP_SUFFIX)
+    print(f"  {'Would backup' if dry_run else 'Backed up'} {path} -> {backup}")
+    if not dry_run:
+        shutil.copy2(path, backup)
+    return backup
+
+
+def confirm_config_update(path: Path, *, force: bool) -> bool:
+    """Ask before overwriting an existing config unless *force* is set."""
+    if force or not path.exists():
+        return True
+    if not sys.stdin.isatty():
+        print(
+            f"  Existing config at {path} will be merged (non-interactive; use --force to silence).",
+            file=sys.stderr,
+        )
+        return True
+    try:
+        answer = input(f"  Mevcut config güncellendi, devam edilsin mi? [{path}] [Y/n]: ").strip().lower()
+    except EOFError:
+        return True
+    return answer in ("", "y", "yes", "e", "evet")
+
+
+def write_mcp_json_hash(project: Path, config: dict[str, Any], dry_run: bool) -> Path:
+    """Persist sha256 of the merged ``.mcp.json`` under ``.allbrain/mcp.json.sha256``."""
+    hash_path = project / MCP_JSON_HASH_REL
+    digest = config_sha256(config)
+    print(f"  {'Would write' if dry_run else 'Wrote'} integrity hash {hash_path}")
+    if not dry_run:
+        hash_path.parent.mkdir(parents=True, exist_ok=True)
+        hash_path.write_text(digest + "\n", encoding="utf-8")
+    return hash_path
+
+
 def write_json(path: Path, value: dict[str, Any], dry_run: bool) -> None:
     print(f"  {'Would update' if dry_run else 'Updated'} {path}")
     if dry_run:
@@ -76,13 +136,41 @@ def write_json(path: Path, value: dict[str, Any], dry_run: bool) -> None:
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def merge_server(path: Path, container: str, server: dict[str, Any], dry_run: bool) -> None:
+def merge_server(
+    path: Path,
+    container: str,
+    server: dict[str, Any],
+    dry_run: bool,
+    *,
+    force: bool = False,
+    project: Path | None = None,
+) -> None:
+    """Merge the AllBrain server entry into a client JSON config.
+
+    Existing files are never silently replaced: a ``.bak`` backup is written,
+    unrelated servers are preserved, and interactive confirmation is requested
+    unless ``force`` is True.
+    """
+    existed = path.exists()
+    if existed and not confirm_config_update(path, force=force):
+        print(f"  Skipped {path}")
+        return
+
+    if existed:
+        backup_config_file(path, dry_run)
+
     config = load_json(path)
     servers = config.setdefault(container, {})
     if not isinstance(servers, dict):
         raise SystemExit(f"Expected '{container}' to be an object in {path}")
+    # Preserve other server keys; only upsert allbrain.
     servers["allbrain"] = server
     write_json(path, config, dry_run)
+
+    # Track integrity for Claude Code project-root .mcp.json only.
+    if path.name == ".mcp.json":
+        root = project if project is not None else path.parent
+        write_mcp_json_hash(root, config, dry_run)
 
 
 def home_config(*parts: str) -> Path:
@@ -161,7 +249,7 @@ def db_for(agent: str, isolate: bool) -> Path:
     return root / (f"{agent}.db" if isolate else "allbrain.db")
 
 
-def install_codex(repo: Path, project: Path, isolate: bool, dry_run: bool) -> None:
+def install_codex(repo: Path, project: Path, isolate: bool, dry_run: bool, *, force: bool = False) -> None:
     path = project / ".codex" / "config.toml"
     server = allbrain_server(repo, project, "codex", db_for("codex", isolate))
     args = ",\n    ".join(json.dumps(item) for item in server["args"])
@@ -186,31 +274,57 @@ def install_codex(repo: Path, project: Path, isolate: bool, dry_run: bool) -> No
         path.write_text(updated, encoding="utf-8")
 
 
-def install_client(name: str, repo: Path, project: Path, isolate: bool, dry_run: bool) -> None:
+def install_client(
+    name: str,
+    repo: Path,
+    project: Path,
+    isolate: bool,
+    dry_run: bool,
+    *,
+    force: bool = False,
+) -> None:
     agent = "claude-code" if name == "claude" else name
     server = allbrain_server(repo, project, agent, db_for(agent, isolate))
 
     if name == "codex":
-        install_codex(repo, project, isolate, dry_run)
+        install_codex(repo, project, isolate, dry_run, force=force)
     elif name == "claude":
-        merge_server(project / ".mcp.json", "mcpServers", server, dry_run)
+        merge_server(project / ".mcp.json", "mcpServers", server, dry_run, force=force, project=project)
     elif name == "claude-desktop":
         base = Path(os.environ.get("APPDATA", home_config("Library", "Application Support")))
-        merge_server(base / "Claude" / "claude_desktop_config.json", "mcpServers", server, dry_run)
+        merge_server(
+            base / "Claude" / "claude_desktop_config.json",
+            "mcpServers",
+            server,
+            dry_run,
+            force=force,
+        )
     elif name == "opencode":
         entry = {"type": "local", "command": [server["command"], *server["args"]], "enabled": True, "timeout": 120000}
-        merge_server(project / ".opencode" / "opencode.json", "mcp", entry, dry_run)
+        merge_server(project / ".opencode" / "opencode.json", "mcp", entry, dry_run, force=force)
     elif name == "gemini":
-        merge_server(project / ".gemini" / "settings.json", "mcpServers", server, dry_run)
+        merge_server(project / ".gemini" / "settings.json", "mcpServers", server, dry_run, force=force)
     elif name == "antigravity":
-        merge_server(home_config(".gemini", "antigravity", "mcp_config.json"), "mcpServers", server, dry_run)
+        merge_server(
+            home_config(".gemini", "antigravity", "mcp_config.json"),
+            "mcpServers",
+            server,
+            dry_run,
+            force=force,
+        )
     elif name == "vscode":
         entry = {"type": "stdio", **server}
-        merge_server(project / ".vscode" / "mcp.json", "servers", entry, dry_run)
+        merge_server(project / ".vscode" / "mcp.json", "servers", entry, dry_run, force=force)
     elif name == "cursor":
-        merge_server(project / ".cursor" / "mcp.json", "mcpServers", server, dry_run)
+        merge_server(project / ".cursor" / "mcp.json", "mcpServers", server, dry_run, force=force)
     elif name == "windsurf":
-        merge_server(home_config(".codeium", "windsurf", "mcp_config.json"), "mcpServers", server, dry_run)
+        merge_server(
+            home_config(".codeium", "windsurf", "mcp_config.json"),
+            "mcpServers",
+            server,
+            dry_run,
+            force=force,
+        )
     elif name == "zed":
         if sys.platform == "darwin":
             path = home_config(".config", "zed", "settings.json")
@@ -219,9 +333,10 @@ def install_client(name: str, repo: Path, project: Path, isolate: bool, dry_run:
         else:
             path = home_config(".config", "zed", "settings.json")
         entry = {"command": server["command"], "args": server["args"], "env": server["env"]}
-        merge_server(path, "context_servers", entry, dry_run)
+        merge_server(path, "context_servers", entry, dry_run, force=force)
     elif name == "kiro":
-        merge_server(project / ".kiro" / "settings" / "mcp.json", "mcpServers", server, dry_run)
+        merge_server(project / ".kiro" / "settings" / "mcp.json", "mcpServers", server, dry_run, force=force)
+
 
 
 def _verify_probe_script(repo: Path, project: Path) -> str:
@@ -311,7 +426,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"AllBrain MCP installer\n  Server:  {repo}\n  Project: {project}\n  Shared DB: {not args.isolate}")
     for name in selected:
         print(f"[{name}]")
-        install_client(name, repo, project, args.isolate, args.dry_run)
+        install_client(name, repo, project, args.isolate, args.dry_run, force=args.force)
     if args.verify and not args.dry_run:
         verify(repo, project)
     print("Done. Restart open clients and approve the AllBrain server when prompted.")

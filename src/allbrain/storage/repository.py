@@ -16,6 +16,7 @@ from allbrain.domains.memory.foundations.versioning import (
     current_payload_version,
     get_default_upcaster,
 )
+from allbrain.events.integrity import attach_integrity_hash, extract_integrity_hash
 from allbrain.events.schemas import _EVENT_TYPE_ALIASES, EventType
 from allbrain.models.entities import Event, Project, QueueItemRecord, Session, SnapshotRecord, utc_now
 from allbrain.models.schemas import EventRead, UserInputError
@@ -413,6 +414,12 @@ class BrainRepository:
 
         # Defense-in-depth: always redact secrets from payload at storage layer
         payload = sanitize_payload(payload)
+        if not isinstance(payload, dict):
+            payload = {"value": payload}
+
+        # Lightweight tamper-evidence: chain hash over previous event payload.
+        prev_hash = self._latest_integrity_hash(db, project_id=project.id or 0)
+        payload = attach_integrity_hash(payload, prev_hash)
 
         bound_agent_id = agent_id or session.agent_name
         # Atomically claim the next stream position: a single UPDATE ... RETURNING
@@ -448,6 +455,27 @@ class BrainRepository:
         )
         db.add(event)
         return event
+
+    def _latest_integrity_hash(self, db: DbSession, *, project_id: int) -> str | None:
+        """Return integrity_hash of the newest event for *project_id*, if any.
+
+        Missing / legacy payloads without the field yield ``None`` so the next
+        event starts from the genesis base (backward compatible).
+        """
+        statement = (
+            select(Event)
+            .where(Event.project_id == project_id)
+            .order_by(col(Event.stream_position).desc())
+            .limit(1)
+        )
+        previous = db.exec(statement).first()
+        if previous is None:
+            return None
+        try:
+            payload = _loads_json(previous.payload_json)
+        except Exception:
+            return None
+        return extract_integrity_hash(payload if isinstance(payload, dict) else None)
 
     def list_events(
         self,
@@ -723,11 +751,17 @@ def _normalize_type_for_read(raw_type: str) -> str:
 
 
 def event_to_read(event: Event) -> EventRead:
+    from allbrain.security.quarantine import is_quarantined, strip_meta
+
     stored_version = getattr(event, "payload_version", 1) or 1
     payload, achieved_version = get_default_upcaster().migrate(
         _loads_json(event.payload_json),
         from_version=stored_version,
     )
+    quarantined = False
+    if isinstance(payload, dict) and is_quarantined(payload):
+        quarantined = True
+        payload = strip_meta(payload)
     return EventRead(
         id=event.id,
         project_id=event.project_id,
@@ -745,4 +779,5 @@ def event_to_read(event: Event) -> EventRead:
         branch=event.branch,
         created_at=event.created_at,
         stream_position=event.stream_position,
+        quarantined=quarantined,
     )
