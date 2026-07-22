@@ -102,5 +102,10 @@ def test_append_event_attaches_integrity_hash(tmp_path: Path) -> None:
         payload={"ok": True},
     )
     payload = json.loads(event.payload_json)
-    assert "integrity_hash" in payload
-    assert payload["integrity_hash"] == compute_integrity_hash(GENESIS, {"ok": True})
+    assert extract_integrity_hash(payload) == compute_integrity_hash(GENESIS, {"ok": True})
+    assert "_meta" in payload
+    assert "integrity_hash" not in payload  # nested under _meta, not top-level
+    # Public EventRead must not expose storage integrity metadata
+    public = repo.list_events(project_path=project, limit=1)[0]
+    assert "integrity_hash" not in public.payload
+    assert "_meta" not in public.payload or "integrity_hash" not in public.payload.get("_meta", {})

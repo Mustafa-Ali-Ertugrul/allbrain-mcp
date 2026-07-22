@@ -748,6 +748,7 @@ def _normalize_type_for_read(raw_type: str) -> str:
 
 
 def event_to_read(event: Event) -> EventRead:
+    from allbrain.events.integrity import strip_integrity_fields
     from allbrain.security.quarantine import is_quarantined, strip_meta
 
     stored_version = getattr(event, "payload_version", 1) or 1
@@ -756,9 +757,14 @@ def event_to_read(event: Event) -> EventRead:
         from_version=stored_version,
     )
     quarantined = False
-    if isinstance(payload, dict) and is_quarantined(payload):
-        quarantined = True
-        payload = strip_meta(payload)
+    if isinstance(payload, dict):
+        if is_quarantined(payload):
+            quarantined = True
+            payload = strip_meta(payload)
+        else:
+            # Keep domain schemas (extra=forbid) and business equality free of
+            # storage-only integrity metadata.
+            payload = strip_integrity_fields(payload)
     return EventRead(
         id=event.id,
         project_id=event.project_id,

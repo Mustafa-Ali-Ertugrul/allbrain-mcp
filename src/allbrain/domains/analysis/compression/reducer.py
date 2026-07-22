@@ -17,8 +17,10 @@ class EventCompressor:
         return self.deduplicator.collapse_file_churn(events)
 
     def metadata(self, events: list[EventRead], compressed_events: list[EventRead]) -> dict[str, Any]:
+        from allbrain.events.integrity import strip_integrity_fields
+
         failure_keys = [
-            json.dumps(event.payload, ensure_ascii=True, sort_keys=True)
+            json.dumps(strip_integrity_fields(event.payload), ensure_ascii=True, sort_keys=True)
             for event in events
             if event.type == EventType.FAILURE.value
         ]
