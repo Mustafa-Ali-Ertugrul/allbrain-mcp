@@ -174,7 +174,11 @@ class BrainRepository:
 
     def list_session_events(self, session_id: int) -> list[EventRead]:
         with open_session(self.engine) as db:
-            statement = select(Event).where(Event.session_id == session_id).order_by(col(Event.stream_position), col(Event.id))
+            statement = (
+                select(Event)
+                .where(Event.session_id == session_id)
+                .order_by(col(Event.stream_position), col(Event.id))
+            )
             return [event_to_read(event) for event in db.exec(statement).all()]
 
     def reconcile_stale_sessions(
@@ -463,7 +467,10 @@ class BrainRepository:
         event starts from the genesis base (backward compatible).
         """
         statement = (
-            select(Event).where(Event.project_id == project_id).order_by(col(Event.stream_position).desc(), col(Event.id).desc()).limit(1)
+            select(Event)
+            .where(Event.project_id == project_id)
+            .order_by(col(Event.stream_position).desc(), col(Event.id).desc())
+            .limit(1)
         )
         previous = db.exec(statement).first()
         if previous is None:

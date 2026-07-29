@@ -11,7 +11,6 @@ from allbrain.server.lifecycle_middleware import _record_outcome
 from allbrain.server.tools.events import save_event_impl
 from allbrain.server.tools.tasks import create_task_impl
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
-
 from tests._helpers import make_context
 
 
