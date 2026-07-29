@@ -175,9 +175,7 @@ class BrainRepository:
     def list_session_events(self, session_id: int) -> list[EventRead]:
         with open_session(self.engine) as db:
             statement = (
-                select(Event)
-                .where(Event.session_id == session_id)
-                .order_by(col(Event.stream_position), col(Event.id))
+                select(Event).where(Event.session_id == session_id).order_by(col(Event.stream_position), col(Event.id))
             )
             return [event_to_read(event) for event in db.exec(statement).all()]
 

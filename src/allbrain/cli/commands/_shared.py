@@ -316,6 +316,3 @@ def _patch_stdio_newlines_for_windows(*, require: bool = False) -> None:
     mcp_stdio.stdio_server = lf_stdio_server
     fastmcp_transport.stdio_server = lf_stdio_server
     PATCH_APPLIED = True
-
-
-

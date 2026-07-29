@@ -153,13 +153,9 @@ def test_record_outcome_strips_input_value(tmp_path: Path) -> None:
     outcome = next((e for e in events if e.type == "tool_call_outcome"), None)
     assert outcome is not None, "No outcome event was recorded"
     error_text = outcome.payload.get("error", "")
-    assert "input_value=" not in error_text, (
-        f"input_value= leaked into audit event: {error_text}"
-    )
+    assert "input_value=" not in error_text, f"input_value= leaked into audit event: {error_text}"
     # The secret was embedded entirely inside the ``input_value=...`` fragment, so
     # removal (rather than masking) is the correct behavior: assert the secret
     # is gone and the remaining Pydantic diagnostic envelope is preserved.
     assert "sk-live" not in error_text, f"Secret leaked into audit event: {error_text}"
-    assert "input_type=str" in error_text, (
-        f"Pydantic envelope destroyed by sanitizer: {error_text}"
-    )
+    assert "input_type=str" in error_text, f"Pydantic envelope destroyed by sanitizer: {error_text}"

@@ -33,9 +33,7 @@ def test_handle_tool_errors_validation_error_sanitized() -> None:
     result = leaky()
     assert not result.ok
     assert result.error is not None
-    assert "input_value=" not in result.error, (
-        f"input_value= leaked: {result.error}"
-    )
+    assert "input_value=" not in result.error, f"input_value= leaked: {result.error}"
     assert "123" not in result.error  # the actual invalid input value
     assert "Input should be a valid string" in result.error
 
