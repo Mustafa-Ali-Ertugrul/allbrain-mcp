@@ -174,7 +174,7 @@ class BrainRepository:
 
     def list_session_events(self, session_id: int) -> list[EventRead]:
         with open_session(self.engine) as db:
-            statement = select(Event).where(Event.session_id == session_id).order_by(col(Event.stream_position))
+            statement = select(Event).where(Event.session_id == session_id).order_by(col(Event.stream_position), col(Event.id))
             return [event_to_read(event) for event in db.exec(statement).all()]
 
     def reconcile_stale_sessions(
@@ -463,7 +463,7 @@ class BrainRepository:
         event starts from the genesis base (backward compatible).
         """
         statement = (
-            select(Event).where(Event.project_id == project_id).order_by(col(Event.stream_position).desc()).limit(1)
+            select(Event).where(Event.project_id == project_id).order_by(col(Event.stream_position).desc(), col(Event.id).desc()).limit(1)
         )
         previous = db.exec(statement).first()
         if previous is None:
@@ -505,7 +505,7 @@ class BrainRepository:
                 statement = statement.where(col(Event.created_at) <= until)
             # Order by the database-authoritative stream position rather than
             # UUIDv7 id so clock skew across hosts cannot reorder events.
-            statement = statement.order_by(col(Event.stream_position).desc()).limit(limit)
+            statement = statement.order_by(col(Event.stream_position).desc(), col(Event.id).desc()).limit(limit)
             events = list(reversed(db.exec(statement).all()))
             return [event_to_read(event) for event in events]
 
@@ -555,7 +555,7 @@ class BrainRepository:
                 )
                 statement = statement.where(col(Event.stream_position) > cursor_position)
             # Fetch one extra row to detect whether more pages exist.
-            statement = statement.order_by(col(Event.stream_position)).limit(limit + 1)
+            statement = statement.order_by(col(Event.stream_position), col(Event.id)).limit(limit + 1)
             rows = db.exec(statement).all()
             has_more = len(rows) > limit
             page = rows[:limit]
@@ -663,7 +663,7 @@ class BrainRepository:
                     cursor_name="through_cursor",
                 )
                 statement = statement.where(col(Event.stream_position) <= through_position)
-            statement = statement.order_by(col(Event.stream_position))
+            statement = statement.order_by(col(Event.stream_position), col(Event.id))
             if limit is not None:
                 statement = statement.limit(limit)
             events = db.exec(statement).all()

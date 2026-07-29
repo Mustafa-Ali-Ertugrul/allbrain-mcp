@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -27,11 +26,11 @@ def _read_response(process: subprocess.Popen[bytes], request_id: int) -> tuple[d
 
 
 def test_stdio_json_rpc_uses_lf_and_preserves_tool_descriptions(tmp_path: Path) -> None:
-    executable = shutil.which("allbrain") or shutil.which("allbrain", path=str(Path(sys.executable).parent))
-    assert executable is not None
     process = subprocess.Popen(
         [
-            executable,
+            sys.executable,
+            "-m",
+            "allbrain.cli.main",
             "start",
             "--project",
             str(tmp_path),

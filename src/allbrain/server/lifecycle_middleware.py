@@ -8,7 +8,7 @@ from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from uuid6 import uuid7
 
 from allbrain.events import EventType
-from allbrain.security.redaction import sanitize_text
+from allbrain.security.redaction import sanitize_text, sanitize_valerr_msg
 from allbrain.server.context import BrainContext
 from allbrain.server.lifecycle_session import ensure_session_started, record_git_changes
 
@@ -111,7 +111,7 @@ def _record_outcome(
     if error_type:
         payload["error_type"] = error_type
     if error:
-        safe_error = sanitize_text(error)
+        safe_error = sanitize_valerr_msg(sanitize_text(error))
         payload["error"] = safe_error[:2000] + "…" if len(safe_error) > 2000 else safe_error
     context.repository.append_event(
         project_path=context.project_path,
