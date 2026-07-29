@@ -1,6 +1,10 @@
 {
   "version": 1,
   "violations": {
+    "allbrain/cli/commands/lifecycle.py::register": {
+      "complexity": 1,
+      "lines": 210
+    },
     "allbrain/cli/main.py::doctor": {
       "complexity": 16,
       "lines": 108
@@ -70,8 +74,8 @@
       "lines": 51
     },
     "allbrain/domains/memory/gitbrain/parser.py::GitBrain.changed_paths_between": {
-      "complexity": 25,
-      "lines": 46
+      "complexity": 23,
+      "lines": 44
     },
     "allbrain/domains/memory/replay/event_replay_engine.py::EventReplayEngine._apply": {
       "complexity": 30,

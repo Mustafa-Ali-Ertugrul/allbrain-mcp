@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12.7-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -9,8 +9,9 @@ WORKDIR /app
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --no-cache-dir uv
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /uvx /usr/local/bin/
 
 COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY src ./src
