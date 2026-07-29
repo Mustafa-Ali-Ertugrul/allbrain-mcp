@@ -48,6 +48,7 @@ These are required for the supported product loop: install → MCP tools → eve
 | `ui` | Local dashboard (optional process, supported) |
 | `telemetry` | Tooling telemetry hooks |
 | `profiling` | *(module)* stage timers |
+| `utils` | *(module)* cross-cutting datetime/formatting helpers |
 
 **Default storage:** SQLite. **CI-validated alternate:** PostgreSQL (`storage` + integration tests).
 
