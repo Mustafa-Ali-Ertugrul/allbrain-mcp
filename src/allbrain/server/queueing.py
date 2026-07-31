@@ -17,8 +17,8 @@ from allbrain.storage._json import loads as _loads_json
 from allbrain.storage.database import open_session, open_write_session
 
 
-class QueueCoordinator:
-    """Atomic SQLite coordination for MCP-driven workflow execution."""
+class QueueManager:
+    """Handles enqueue operations and idempotency."""
 
     def __init__(self, context: BrainContext, *, max_attempts: int = 3):
         self.context = context
@@ -92,7 +92,7 @@ class QueueCoordinator:
             with open_write_session(self.context.repository.engine) as db:
                 existing = db.exec(select(QueueItemRecord).where(QueueItemRecord.idempotency_key == key)).first()
                 if existing is not None:
-                    return self._record_data(existing)
+                    return _record_data(existing)
                 record = QueueItemRecord(
                     id=str(uuid7()),
                     idempotency_key=key,
@@ -104,7 +104,8 @@ class QueueCoordinator:
                     payload_json=_dumps_json(sanitize_payload(payload)),
                 )
                 db.add(record)
-                self._event(
+                _event(
+                    self.context,
                     db,
                     EventType.QUEUE_ITEM_ENQUEUED.value,
                     record,
@@ -112,13 +113,21 @@ class QueueCoordinator:
                 )
                 db.commit()
                 db.refresh(record)
-                return self._record_data(record)
+                return _record_data(record)
         except IntegrityError:
             with open_session(self.context.repository.engine) as db:
                 existing = db.exec(select(QueueItemRecord).where(QueueItemRecord.idempotency_key == key)).first()
                 if existing is not None:
-                    return self._record_data(existing)
+                    return _record_data(existing)
                 raise
+
+
+class QueueProcessor:
+    """Handles lease lifecycle: claim, renew, complete, fail, recovery."""
+
+    def __init__(self, context: BrainContext, *, max_attempts: int = 3):
+        self.context = context
+        self.max_attempts = max_attempts
 
     def claim(
         self,
@@ -176,15 +185,16 @@ class QueueCoordinator:
                         expires_at=expires_at,
                     )
                 )
-                self._event(
+                _event(
+                    self.context,
                     db,
                     EventType.LEASE_ACQUIRED.value,
                     record,
                     {"lease_id": lease_id, "worker_id": server_instance_id, "queue_backend": "sqlite"},
                 )
-                self._event(db, EventType.QUEUE_ITEM_DEQUEUED.value, record, {"queue_backend": "sqlite"})
+                _event(self.context, db, EventType.QUEUE_ITEM_DEQUEUED.value, record, {"queue_backend": "sqlite"})
                 db.commit()
-                data = self._record_data(record)
+                data = _record_data(record)
                 data["payload"] = _loads_json(record.payload_json)
                 return data
         return None
@@ -197,7 +207,9 @@ class QueueCoordinator:
         server_instance_id: str,
         lease_ttl_seconds: int = 120,
     ) -> dict[str, Any]:
-        with open_session(self.context.repository.engine) as db:
+        if lease_ttl_seconds < 30 or lease_ttl_seconds > 3600:
+            raise ValueError("lease_ttl_seconds must be between 30 and 3600")
+        with open_write_session(self.context.repository.engine) as db:
             record = self._leased_record(db, queue_item_id, lease_id, server_instance_id)
             expires_at = utc_now() + timedelta(seconds=lease_ttl_seconds)
             record.lease_expires_at = expires_at
@@ -208,14 +220,15 @@ class QueueCoordinator:
                 lease.expires_at = expires_at
                 db.add(lease)
             db.add(record)
-            self._event(
+            _event(
+                self.context,
                 db,
                 EventType.LEASE_RENEWED.value,
                 record,
                 {"lease_id": lease_id, "worker_id": server_instance_id, "queue_backend": "sqlite"},
             )
             db.commit()
-            return self._record_data(record)
+            return _record_data(record)
 
     def complete(
         self,
@@ -226,7 +239,7 @@ class QueueCoordinator:
         output: str,
         artifacts: list[str],
     ) -> dict[str, Any]:
-        with open_session(self.context.repository.engine) as db:
+        with open_write_session(self.context.repository.engine) as db:
             record = self._leased_record(db, queue_item_id, lease_id, server_instance_id)
             record.state = "completed"
             record.updated_at = utc_now()
@@ -236,20 +249,22 @@ class QueueCoordinator:
                 lease.released_at = utc_now()
                 db.add(lease)
             db.add(record)
-            self._event(
+            _event(
+                self.context,
                 db,
                 EventType.TASK_COMPLETED.value,
                 record,
                 {"output": output, "artifacts": artifacts, "lease_id": lease_id},
             )
-            self._event(
+            _event(
+                self.context,
                 db,
                 EventType.LEASE_RELEASED.value,
                 record,
                 {"lease_id": lease_id, "worker_id": server_instance_id, "queue_backend": "sqlite"},
             )
             db.commit()
-            return self._record_data(record)
+            return _record_data(record)
 
     def fail(
         self,
@@ -260,7 +275,7 @@ class QueueCoordinator:
         reason: str,
         requeue: bool,
     ) -> dict[str, Any]:
-        with open_session(self.context.repository.engine) as db:
+        with open_write_session(self.context.repository.engine) as db:
             record = self._leased_record(db, queue_item_id, lease_id, server_instance_id)
             will_requeue = requeue and record.attempts < self.max_attempts
             record.state = "queued" if will_requeue else "failed"
@@ -274,16 +289,17 @@ class QueueCoordinator:
                 lease.released_at = utc_now()
                 db.add(lease)
             db.add(record)
-            self._event(db, EventType.TASK_FAILED.value, record, {"reason": reason, "lease_id": lease_id})
+            _event(self.context, db, EventType.TASK_FAILED.value, record, {"reason": reason, "lease_id": lease_id})
             if will_requeue:
-                self._event(
+                _event(
+                    self.context,
                     db,
                     EventType.TASK_REQUEUED.value,
                     record,
                     {"reason": reason, "queue_backend": "sqlite"},
                 )
             db.commit()
-            return self._record_data(record)
+            return _record_data(record)
 
     def _recover_expired(self, db) -> None:
         now = utc_now()
@@ -301,14 +317,16 @@ class QueueCoordinator:
             record.lease_expires_at = None
             record.updated_at = now
             db.add(record)
-            self._event(
+            _event(
+                self.context,
                 db,
                 EventType.LEASE_EXPIRED.value,
                 record,
                 {"lease_id": old_lease, "queue_backend": "sqlite"},
             )
             if record.state == "queued":
-                self._event(
+                _event(
+                    self.context,
                     db,
                     EventType.TASK_REQUEUED.value,
                     record,
@@ -331,39 +349,75 @@ class QueueCoordinator:
                 raise ValueError("lease has expired")
         return record
 
-    def _event(self, db, event_type: str, record: QueueItemRecord, extra: dict[str, Any]) -> None:
-        session_id = self.context.active_session_id
-        if session_id is None:
-            raise ValueError("No active session is available")
-        self.context.repository.append_event(
-            project_path=self.context.project_path,
-            session_id=session_id,
-            type=event_type,
-            source="queue",
-            payload={
-                "queue_item_id": record.id,
-                "workflow_id": record.workflow_id,
-                "task_id": record.task_id,
-                "node_id": record.node_id,
-                "agent_id": record.agent_id,
-                "state": record.state,
-                **extra,
-            },
-            agent_id=record.agent_id,
-            task_hint=record.task_id,
-            _session=db,
-        )
 
-    @staticmethod
-    def _record_data(record: QueueItemRecord) -> dict[str, Any]:
-        return {
+class QueueCoordinator:
+    """Facade over QueueManager + QueueProcessor for backward compatibility.
+
+    Delegates to the appropriate sub-component. New code should inject
+    QueueManager or QueueProcessor directly.
+    """
+
+    def __init__(self, context: BrainContext, *, max_attempts: int = 3):
+        self.manager = QueueManager(context, max_attempts=max_attempts)
+        self.processor = QueueProcessor(context, max_attempts=max_attempts)
+        self.context = context
+        self.max_attempts = max_attempts
+
+    def enqueue_pipeline_result(self, result: dict[str, Any]) -> dict[str, Any]:
+        return self.manager.enqueue_pipeline_result(result)
+
+    def enqueue_task(self, **kwargs: Any) -> dict[str, Any]:
+        return self.manager.enqueue_task(**kwargs)
+
+    def claim(self, **kwargs: Any) -> dict[str, Any] | None:
+        return self.processor.claim(**kwargs)
+
+    def renew(self, **kwargs: Any) -> dict[str, Any]:
+        return self.processor.renew(**kwargs)
+
+    def complete(self, **kwargs: Any) -> dict[str, Any]:
+        return self.processor.complete(**kwargs)
+
+    def fail(self, **kwargs: Any) -> dict[str, Any]:
+        return self.processor.fail(**kwargs)
+
+
+# ── module-level helpers (shared by QueueManager + QueueProcessor) ──
+
+
+def _event(context: BrainContext, db, event_type: str, record: QueueItemRecord, extra: dict[str, Any]) -> None:
+    session_id = context.active_session_id
+    if session_id is None:
+        raise ValueError("No active session is available")
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=session_id,
+        type=event_type,
+        source="queue",
+        payload={
             "queue_item_id": record.id,
             "workflow_id": record.workflow_id,
             "task_id": record.task_id,
             "node_id": record.node_id,
             "agent_id": record.agent_id,
             "state": record.state,
-            "attempts": record.attempts,
-            "lease_id": record.lease_id,
-            "lease_expires_at": record.lease_expires_at.isoformat() if record.lease_expires_at else None,
-        }
+            **extra,
+        },
+        agent_id=record.agent_id,
+        task_hint=record.task_id,
+        _session=db,
+    )
+
+
+def _record_data(record: QueueItemRecord) -> dict[str, Any]:
+    return {
+        "queue_item_id": record.id,
+        "workflow_id": record.workflow_id,
+        "task_id": record.task_id,
+        "node_id": record.node_id,
+        "agent_id": record.agent_id,
+        "state": record.state,
+        "attempts": record.attempts,
+        "lease_id": record.lease_id,
+        "lease_expires_at": record.lease_expires_at.isoformat() if record.lease_expires_at else None,
+    }
