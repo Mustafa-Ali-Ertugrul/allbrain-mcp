@@ -66,6 +66,18 @@ def _normalize_task_label(label: str) -> str:
 
 
 class StateMachine:
+    # Build the handler dispatch table once at class definition time.
+    _HANDLER: dict[EventType, str] = {
+        EventType.TOOL_CALL: "_record_tool_usage",
+        EventType.GOAL_SET: "_apply_goal_set",
+        EventType.TASK_STARTED: "_apply_task_started",
+        EventType.TASK_COMPLETED: "_apply_task_completed",
+        EventType.TASK_UPDATED: "_apply_task_updated",
+        EventType.FILE_MODIFIED: "_apply_file_modified",
+        EventType.FAILURE: "_apply_failure",
+        EventType.TASK_BLOCKED: "_apply_blocked",
+    }
+
     def __init__(self, state: ProjectState | None = None) -> None:
         self.state = state or ProjectState()
         self._applied_event_ids: set[str] = set()
@@ -79,18 +91,11 @@ class StateMachine:
             event_type = EventType(event.type)
         except ValueError:
             return
-        handler = {
-            EventType.TOOL_CALL: self._record_tool_usage,
-            EventType.GOAL_SET: self._apply_goal_set,
-            EventType.TASK_STARTED: self._apply_task_started,
-            EventType.TASK_COMPLETED: self._apply_task_completed,
-            EventType.TASK_UPDATED: self._apply_task_updated,
-            EventType.FILE_MODIFIED: self._apply_file_modified,
-            EventType.FAILURE: self._apply_failure,
-            EventType.TASK_BLOCKED: self._apply_blocked,
-        }.get(event_type)
-        if handler is not None:
-            handler(event)
+        handler_name = self._HANDLER.get(event_type)
+        if handler_name is not None:
+            handler = getattr(self, handler_name, None)
+            if handler is not None:
+                handler(event)
 
     def get_state(self) -> ProjectState:
         return self.state
@@ -116,6 +121,13 @@ class StateMachine:
         key, task = self._task_ref(event)
         if not key or not task:
             return
+        # Try the primary key first; if not found, try the alternate format
+        # (legacy ↔ id) since TASK_STARTED may have used a different key
+        # derivation than TASK_COMPLETED for the same task.
+        if key not in self.state.open_task_refs:
+            alt_key = self._alternate_ref_key(key)
+            if alt_key in self.state.open_task_refs:
+                key = alt_key
         self.state.open_task_refs.pop(key, None)
         self._sync_open_tasks()
         if task not in self.state.completed_tasks:
@@ -149,6 +161,15 @@ class StateMachine:
         if isinstance(task, str) and task:
             return f"legacy:{_normalize_task_label(task)}", task
         return None, None
+
+    @staticmethod
+    def _alternate_ref_key(key: str) -> str:
+        """Return the alternate key format (id: ↔ legacy:) for matching."""
+        if key.startswith("id:"):
+            return f"legacy:{_normalize_task_label(key[3:])}"
+        if key.startswith("legacy:"):
+            return f"id:{key[7:]}"
+        return key
 
     def _sync_open_tasks(self) -> None:
         self.state.open_tasks = list(self.state.open_task_refs.values())

@@ -4,7 +4,12 @@ from typing import Any
 
 MERGE_STRATEGY = {
     "goal": "replace_if_present",
-    "working_files": "set_union",
+    # NOTE(sprint‑75): "replace" because the delta carries the authoritative
+    # full working-file list in final order; a union would resurrect files
+    # that were closed earlier in the session. Full replay (apply_events →
+    # final_state) produces the same move-to-end order via
+    # StateMachine._mark_working_file.
+    "working_files": "replace",
     "completed_tasks": "append_unique",
     "failures": "append",
     "blocked": "append",
@@ -41,8 +46,16 @@ class StateMerger:
         return merged
 
     def _append_unique(self, left: list[Any], right: list[Any]) -> list[Any]:
-        result: list[Any] = []
-        for item in list(left) + list(right):
-            if item not in result:
-                result.append(item)
-        return result
+        # dict.fromkeys preserves insertion order (Python 3.7+) and
+        # deduplicates in O(n) — avoids the O(n²) scan in the previous
+        # "if item not in result" loop. Falls back to naive scan for
+        # unhashable types.
+        combined = list(left) + list(right)
+        try:
+            return list(dict.fromkeys(combined))
+        except TypeError:
+            result: list[Any] = []
+            for item in combined:
+                if item not in result:
+                    result.append(item)
+            return result

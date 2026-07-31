@@ -88,12 +88,12 @@ class ContradictionDetector:
         return "info"
 
     def _supportive_pair(self, a_goal: str, b_goal: str) -> bool:
-        a = a_goal.lower()
-        b = b_goal.lower()
+        a_words = set(a_goal.lower().split())
+        b_words = set(b_goal.lower().split())
         supportive_terms = {"test", "tests", "doc", "docs", "documentation"}
         risky_terms = {"refactor", "fix", "cleanup", "migrate", "implement"}
-        a_support = any(term in a for term in supportive_terms)
-        b_support = any(term in b for term in supportive_terms)
-        a_risky = any(term in a for term in risky_terms)
-        b_risky = any(term in b for term in risky_terms)
+        a_support = bool(a_words & supportive_terms)
+        b_support = bool(b_words & supportive_terms)
+        a_risky = bool(a_words & risky_terms)
+        b_risky = bool(b_words & risky_terms)
         return (a_support and b_risky) or (b_support and a_risky)

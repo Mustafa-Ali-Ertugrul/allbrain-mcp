@@ -63,13 +63,13 @@ class AutonomousGovernanceCoordinator:
             decision["decision"], alignment_report, trajectory, autonomy_action, constitutional
         )
         autonomy_action = {
+            **autonomy_action,  # base from assess(): may include risk_level, autonomy_impact, etc.
             "decision_id": decision["decision_id"],
             "decision": decision["decision"],
-            "autonomy_level_allowed": autonomy_action["autonomy_level_allowed"],
+            "autonomy_level_allowed": autonomy_action.get("autonomy_level_allowed") or "autonomous",
             "constraints_applied": policy["constraints"],
             "reasoning": decision["reasoning"],
             "rollback_conditions": decision["rollback_conditions"],
-            **autonomy_action,
         }
         governance_decision = {
             "review_id": str(uuid7()),
