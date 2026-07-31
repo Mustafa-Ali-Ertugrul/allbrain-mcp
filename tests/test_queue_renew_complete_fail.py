@@ -203,9 +203,3 @@ def test_lease_expiry_race_complete(tmp_path: Path) -> None:
             output="late",
             artifacts=[],
         )
-
-
-# https://github.com/
-def _unused_helper(tmp_path: Path) -> None:
-    """Marker to keep timedelta import used in additional future tests; harmless."""
-    _ = timedelta(seconds=1)
