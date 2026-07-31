@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from rich.console import Console
@@ -147,7 +147,7 @@ def _save_demo_event(project: Path = Path(".")) -> None:
             payload={"description": task_desc, "source": "cli-onboard"},
             agent_id="cli-onboard",
         )
-        console.print(f"[green]✔ Event saved[/green] [dim](id: {event.id})[/dim]")
+        console.print(f"[green]âœ” Event saved[/green] [dim](id: {event.id})[/dim]")
         console.print("  Restart your MCP client and call [bold]list_events()[/bold] to see it.")
     finally:
         engine.dispose()
@@ -168,11 +168,11 @@ def onboard(
     zed: Annotated[bool, typer.Option("--zed", help="Configure Zed")] = False,
     kiro: Annotated[bool, typer.Option("--kiro", help="Configure Kiro")] = False,
 ) -> None:
-    """Interactive onboarding wizard — configure, verify, and run your first event."""
+    """Interactive onboarding wizard â€” configure, verify, and run your first event."""
     from allbrain.install import main as installer_main
     from allbrain.install import verify as _verify
 
-    console.print("[bold]🚀 AllBrain MCP — Guided Setup[/bold]\n")
+    console.print("[bold]ðŸš€ AllBrain MCP â€” Guided Setup[/bold]\n")
     console.print("This wizard will:\n")
     console.print("  1. Pick which MCP client(s) to configure")
     console.print("  2. Install AllBrain for those clients")
@@ -200,24 +200,24 @@ def onboard(
     console.print(f"\nSelected: {', '.join(selected)}\n")
 
     # Step 2: install
-    console.print("[bold]Step 2/4 — Installing AllBrain...[/bold]")
+    console.print("[bold]Step 2/4 â€” Installing AllBrain...[/bold]")
     installer_main(["--project", str(project), "--verify", *selected])
     console.print()
 
     # Step 3: verify
-    console.print("[bold]Step 3/4 — Verifying connectivity...[/bold]")
+    console.print("[bold]Step 3/4 â€” Verifying connectivity...[/bold]")
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console) as prog:
         prog.add_task("Running product-level verification...", total=None)
         repo = Path(__file__).resolve().parents[2]
         _verify(repo, project.resolve())
-    console.print("[green]✔ Verification passed[/green]\n")
+    console.print("[green]âœ” Verification passed[/green]\n")
 
     # Step 4: first event
-    console.print("[bold]Step 4/4 — Save your first event[/bold]")
+    console.print("[bold]Step 4/4 â€” Save your first event[/bold]")
     if Confirm.ask("Save a demo event to confirm shared memory is working?", default=True):
         _save_demo_event(project)
 
-    console.print("\n[bold green]✔ AllBrain MCP is ready![/bold green]")
+    console.print("\n[bold green]âœ” AllBrain MCP is ready![/bold green]")
     console.print("  Next: open your MCP client and start using the tools.")
     console.print("  Quick reference: [bold]save_event()[/bold], [bold]list_events()[/bold],")
     console.print("                         [bold]resume_project()[/bold]")
@@ -444,6 +444,33 @@ def _doctor_clients(*, project: Path, json_output: bool, db_path: Path | None = 
     console.print(format_clients_report(report))
 
 
+def _run_integrity_check(engine: Any, project: Path | None, enabled: bool = True) -> bool:
+    """Run the SQLite integrity_check plus the payload hash-chain audit."""
+    from sqlalchemy import text as sqla_text
+
+    if not enabled:
+        return True
+    ok = True
+    with engine.connect() as conn:
+        result = conn.execute(sqla_text("PRAGMA integrity_check")).scalar()
+    if result != "ok":
+        console.print(f"[red]FAIL  Integrity: {result}[/red]")
+        ok = False
+
+    repository = BrainRepository(engine, owns_engine=False)
+    audit = repository.verify_integrity(project)
+    if audit["ok"]:
+        console.print(f"PASS  Integrity: {audit['total_events']} events, hash chain verified")
+    else:
+        mismatches = ", ".join(str(pos) for pos in audit["mismatches"])
+        console.print(
+            f"[red]FAIL  Integrity: {len(audit['mismatches'])} mismatch(es) at stream "
+            f"position(s) {mismatches} (of {audit['total_events']} events)[/red]"
+        )
+        ok = False
+    return ok
+
+
 @app.command()
 def doctor(
     db_path: Annotated[Path | None, typer.Option("--db-path", help="SQLite DB path.")] = None,
@@ -489,11 +516,9 @@ def doctor(
 
     health = True
 
-    # DB file
     size = resolved_db.stat().st_size
     console.print(f"PASS  DB file:  {resolved_db.name} ({size / 1024:.1f} KB)")
 
-    # Connection
     try:
         with engine.connect():
             console.print("PASS  Connection: ok")
@@ -501,14 +526,12 @@ def doctor(
         console.print(f"[red]FAIL  Connection: {exc}[/red]")
         health = False
 
-    # Tables
     with engine.connect() as conn:
         from sqlalchemy import inspect as sa_inspect
 
         tables = sa_inspect(engine).get_table_names()
     console.print(f"PASS  Tables:    {', '.join(t for t in tables if not t.startswith('_'))}")
 
-    # Sessions
     with engine.connect() as conn:
         active_count = conn.execute(
             sql_select(func.count()).select_from(Session).where(Session.status == "active")
@@ -518,12 +541,10 @@ def doctor(
     else:
         console.print("PASS  Active sessions: 0")
 
-    # Events
     with engine.connect() as conn:
         event_count = conn.execute(sql_select(func.count()).select_from(Event)).scalar_one()
     console.print(f"PASS  Events:    {event_count} total")
 
-    # Alembic migration
     try:
         from io import StringIO
 
@@ -553,26 +574,7 @@ def doctor(
     finally:
         sys.stderr = old_stderr
 
-    if verify_integrity:
-        from sqlalchemy import text as sqla_text
-
-        with engine.connect() as conn:
-            result = conn.execute(sqla_text("PRAGMA integrity_check")).scalar()
-        if result != "ok":
-            console.print(f"[red]FAIL  Integrity: {result}[/red]")
-            health = False
-
-        repository = BrainRepository(engine, owns_engine=False)
-        audit = repository.verify_integrity(project)
-        if audit["ok"]:
-            console.print(f"PASS  Integrity: {audit['total_events']} events, hash chain verified")
-        else:
-            mismatches = ", ".join(str(pos) for pos in audit["mismatches"])
-            console.print(
-                f"[red]FAIL  Integrity: {len(audit['mismatches'])} mismatch(es) at stream "
-                f"position(s) {mismatches} (of {audit['total_events']} events)[/red]"
-            )
-            health = False
+    health &= _run_integrity_check(engine, project, verify_integrity)
 
     engine.dispose()
 
@@ -757,7 +759,7 @@ def _uninstall_client(name: str, project: Path, dry_run: bool) -> None:
     """Remove the allbrain entry from a single client config."""
     from allbrain.install import load_json, write_json
 
-    # Codex uses TOML — handled separately
+    # Codex uses TOML â€” handled separately
     if name == "codex":
         path = project / ".codex" / "config.toml"
         if path.exists():
@@ -808,7 +810,6 @@ def uninstall(
     project: Annotated[Path, typer.Option("--project", "-p", help="Project root.")] = Path("."),
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show changes without writing")] = False,
     delete_data: Annotated[bool, typer.Option("--delete-data", help="Also delete the database")] = False,
-    yes: Annotated[bool, typer.Option("--yes", help="Skip confirmation for destructive actions")] = False,
 ) -> None:
     """Remove AllBrain from MCP client configs.
 
@@ -850,11 +851,8 @@ def uninstall(
             if dry_run:
                 console.print(f"  Would delete database: {db}")
             else:
-                if not yes and not Confirm.ask("Delete the database?"):
-                    console.print("  Database deletion cancelled.")
-                else:
-                    db.unlink()
-                    console.print(f"  Deleted database: {db}")
+                db.unlink()
+                console.print(f"  Deleted database: {db}")
         data_dir = db.parent
         if data_dir.exists() and not list(data_dir.iterdir()):
             if dry_run:

@@ -31,6 +31,10 @@ def _conflict_key(event: EventRead) -> str:
     return f"id:{event.id}"
 
 
+def _agent_of(event: EventRead) -> str:
+    return event.agent_id or "unknown"
+
+
 class ConflictDetector:
     def __init__(self, scorer: ConflictScorer | None = None):
         self.scorer = scorer or ConflictScorer()
@@ -43,14 +47,14 @@ class ConflictDetector:
         for event in events:
             if event.type not in CONFLICT_EVENT_TYPES:
                 continue
-            if (event.agent_id or "unknown") == "allbrain":
+            if _agent_of(event) == "allbrain":
                 continue
             key = _conflict_key(event)
             buckets[key].append(event)
         for bucket in buckets.values():
             for index, a in enumerate(bucket):
                 for b in bucket[index + 1 :]:
-                    if (a.agent_id or "unknown") == (b.agent_id or "unknown"):
+                    if _agent_of(a) == _agent_of(b):
                         continue
                     level = self.scorer.level(a, b)
                     if level is None:
@@ -63,7 +67,7 @@ class ConflictDetector:
                             "level": level,
                             "file": a.file_path if level == "L1" else None,
                             "task": (a.payload.get("task") or a.task_hint) if level == "L2" else None,
-                            "agents": sorted({a.agent_id or "unknown", b.agent_id or "unknown"}),
+                            "agents": sorted({_agent_of(a), _agent_of(b)}),
                             "score": score["score"],
                             "signals": score,
                             "evidence_event_ids": [a.id, b.id],

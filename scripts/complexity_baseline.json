@@ -113,9 +113,13 @@
       "complexity": 1,
       "lines": 130
     },
-    "allbrain/server/queueing.py::QueueCoordinator.enqueue_pipeline_result": {
+    "allbrain/server/queueing.py::QueueManager.enqueue_pipeline_result": {
       "complexity": 16,
       "lines": 20
+    },
+    "allbrain/server/tools/events.py::list_events_impl": {
+      "complexity": 13,
+      "lines": 109
     },
     "allbrain/server/tools/foresight.py::register_tools": {
       "complexity": 1,
