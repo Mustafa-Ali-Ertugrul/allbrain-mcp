@@ -1,15 +1,24 @@
 from __future__ import annotations
 
+import re
+
 from typer.testing import CliRunner
 
 from allbrain.cli import main
+
+_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _strip_ansi(text: str) -> str:
+    return _ANSI_ESCAPE_RE.sub("", text)
 
 
 def test_doctor_inventory_prints_static() -> None:
     result = CliRunner().invoke(main.app, ["doctor", "--inventory", "--project", "."])
     assert result.exit_code == 0
-    assert "project://resume" in result.stderr
-    assert "resume_project" in result.stderr
+    stderr = _strip_ansi(result.stderr)
+    assert "project://resume" in stderr
+    assert "resume_project" in stderr
 
 
 def test_doctor_inventory_json_emits_json() -> None:

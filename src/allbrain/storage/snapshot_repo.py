@@ -65,12 +65,14 @@ class SnapshotRepo:
 
     def delete_for_project(self, project_id: int) -> int:
         """Delete all snapshot rows for a project. Returns deleted row count."""
+        from sqlalchemy import delete
+
         with open_write_session(self.engine) as db:
-            records = list(db.exec(select(SnapshotRecord).where(SnapshotRecord.project_id == project_id)).all())
-            for record in records:
-                db.delete(record)
+            result = db.execute(
+                delete(SnapshotRecord).where(SnapshotRecord.project_id == project_id)
+            )
             db.commit()
-            return len(records)
+            return result.rowcount or 0
 
 
 def record_to_snapshot(record: SnapshotRecord) -> Snapshot:

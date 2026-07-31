@@ -460,6 +460,10 @@ def doctor(
         bool,
         typer.Option("--verify", help="Verify the static inventory against a live MCP server."),
     ] = False,
+    verify_integrity: Annotated[
+        bool,
+        typer.Option("--verify-integrity", help="Run database integrity check."),
+    ] = False,
     json_output: Annotated[bool, typer.Option("--json", help="Emit machine-readable JSON.")] = False,
 ) -> None:
     """Check database health; optionally inspect multi-client MCP installs."""
@@ -548,6 +552,27 @@ def doctor(
         console.print("INFO  Migrations: alembic not configured (SQLite schema managed at startup)")
     finally:
         sys.stderr = old_stderr
+
+    if verify_integrity:
+        from sqlalchemy import text as sqla_text
+
+        with engine.connect() as conn:
+            result = conn.execute(sqla_text("PRAGMA integrity_check")).scalar()
+        if result != "ok":
+            console.print(f"[red]FAIL  Integrity: {result}[/red]")
+            health = False
+
+        repository = BrainRepository(engine, owns_engine=False)
+        audit = repository.verify_integrity(project)
+        if audit["ok"]:
+            console.print(f"PASS  Integrity: {audit['total_events']} events, hash chain verified")
+        else:
+            mismatches = ", ".join(str(pos) for pos in audit["mismatches"])
+            console.print(
+                f"[red]FAIL  Integrity: {len(audit['mismatches'])} mismatch(es) at stream "
+                f"position(s) {mismatches} (of {audit['total_events']} events)[/red]"
+            )
+            health = False
 
     engine.dispose()
 
@@ -783,6 +808,7 @@ def uninstall(
     project: Annotated[Path, typer.Option("--project", "-p", help="Project root.")] = Path("."),
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show changes without writing")] = False,
     delete_data: Annotated[bool, typer.Option("--delete-data", help="Also delete the database")] = False,
+    yes: Annotated[bool, typer.Option("--yes", help="Skip confirmation for destructive actions")] = False,
 ) -> None:
     """Remove AllBrain from MCP client configs.
 
@@ -824,8 +850,11 @@ def uninstall(
             if dry_run:
                 console.print(f"  Would delete database: {db}")
             else:
-                db.unlink()
-                console.print(f"  Deleted database: {db}")
+                if not yes and not Confirm.ask("Delete the database?"):
+                    console.print("  Database deletion cancelled.")
+                else:
+                    db.unlink()
+                    console.print(f"  Deleted database: {db}")
         data_dir = db.parent
         if data_dir.exists() and not list(data_dir.iterdir()):
             if dry_run:
