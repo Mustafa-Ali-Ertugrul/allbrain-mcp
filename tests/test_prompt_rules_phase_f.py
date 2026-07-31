@@ -17,9 +17,7 @@ from allbrain.security.input_guard import sanitize_user_text
 
 def test_phase_f_pattern_count() -> None:
     """Guard the pattern count so accidental removals fail loudly."""
-    assert len(PROMPT_INJECTION_PATTERNS) == 22, (
-        f"expected 22 patterns, got {len(PROMPT_INJECTION_PATTERNS)}"
-    )
+    assert len(PROMPT_INJECTION_PATTERNS) == 22, f"expected 22 patterns, got {len(PROMPT_INJECTION_PATTERNS)}"
 
 
 def test_json_embedded_system_prompt_redacted() -> None:
@@ -101,39 +99,27 @@ def test_your_true_objective_redacted() -> None:
 
 
 def test_benign_translate_alone_passes() -> None:
-    assert sanitize_user_text("Translate this to English: hello") == (
-        "Translate this to English: hello"
-    )
+    assert sanitize_user_text("Translate this to English: hello") == ("Translate this to English: hello")
 
 
 def test_benign_actually_alone_passes() -> None:
-    assert sanitize_user_text("Actually, that's a nice car") == (
-        "Actually, that's a nice car"
-    )
+    assert sanitize_user_text("Actually, that's a nice car") == ("Actually, that's a nice car")
 
 
 def test_benign_system_word_passes() -> None:
-    assert sanitize_user_text("The system rebooted at noon") == (
-        "The system rebooted at noon"
-    )
+    assert sanitize_user_text("The system rebooted at noon") == ("The system rebooted at noon")
 
 
 def test_benign_system_colon_passes() -> None:
     """`system:` alone with neutral noun must not trigger."""
-    assert sanitize_user_text("system: a database table description") == (
-        "system: a database table description"
-    )
+    assert sanitize_user_text("system: a database table description") == ("system: a database table description")
 
 
 def test_benign_rm_command_question_passes() -> None:
     """Mentioning `rm` in a how-to question must not trigger."""
-    assert sanitize_user_text("How does the rm command work?") == (
-        "How does the rm command work?"
-    )
+    assert sanitize_user_text("How does the rm command work?") == ("How does the rm command work?")
 
 
 def test_benign_system_database_chat_passes() -> None:
     """Asking about DB systems (host_path, schema) must not trigger."""
-    assert sanitize_user_text("The system_schema is named correctly") == (
-        "The system_schema is named correctly"
-    )
+    assert sanitize_user_text("The system_schema is named correctly") == ("The system_schema is named correctly")

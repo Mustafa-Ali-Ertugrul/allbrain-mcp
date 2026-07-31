@@ -157,8 +157,12 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             _first = visible[0].created_at if visible else None
             _last = visible[-1].created_at if visible else None
             summary = {
-                "total": _total, "by_type": _by_type, "by_agent": _by_agent,
-                "by_date": {}, "first_event_at": _first, "last_event_at": _last,
+                "total": _total,
+                "by_type": _by_type,
+                "by_agent": _by_agent,
+                "by_date": {},
+                "first_event_at": _first,
+                "last_event_at": _last,
             }
         else:
             summary = context.repository.summarize_events(

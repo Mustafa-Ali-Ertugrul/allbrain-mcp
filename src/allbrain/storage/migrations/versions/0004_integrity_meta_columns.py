@@ -23,10 +23,7 @@ depends_on = None
 
 def _backfill(connection) -> None:
     rows = connection.execute(
-        sa.text(
-            "SELECT id, payload_json, stream_position FROM event "
-            "ORDER BY stream_position ASC"
-        )
+        sa.text("SELECT id, payload_json, stream_position FROM event ORDER BY stream_position ASC")
     ).fetchall()
     for event_id, payload_json, _position in rows:
         integrity_hash: str | None = None
@@ -49,9 +46,7 @@ def _backfill(connection) -> None:
                     if isinstance(top, str) and top:
                         integrity_hash = top
         connection.execute(
-            sa.text(
-                "UPDATE event SET integrity_hash = :ih, meta_json = :mj WHERE id = :eid"
-            ),
+            sa.text("UPDATE event SET integrity_hash = :ih, meta_json = :mj WHERE id = :eid"),
             {"ih": integrity_hash, "mj": meta_json, "eid": event_id},
         )
 

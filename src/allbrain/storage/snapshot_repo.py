@@ -68,9 +68,7 @@ class SnapshotRepo:
         from sqlalchemy import delete
 
         with open_write_session(self.engine) as db:
-            result = db.execute(
-                delete(SnapshotRecord).where(SnapshotRecord.project_id == project_id)
-            )
+            result = db.execute(delete(SnapshotRecord).where(SnapshotRecord.project_id == project_id))
             db.commit()
             return result.rowcount or 0
 

@@ -156,9 +156,7 @@ def test_queue_fail_requeues_atomically(tmp_path: Path) -> None:
     assert failed["state"] == "queued", f"expected requeued — got {failed!r}"
     assert failed["lease_id"] is None
     assert failed["lease_expires_at"] is None
-    assert failed["attempts"] == claimed_attempts, (
-        "fail() must not re-increment attempts — claim already bumped it"
-    )
+    assert failed["attempts"] == claimed_attempts, "fail() must not re-increment attempts — claim already bumped it"
 
     # Re-fetch the row and check internal fields the public dict does not expose.
     from allbrain.models.entities import QueueItemRecord

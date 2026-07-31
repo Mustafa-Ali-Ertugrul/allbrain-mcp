@@ -540,9 +540,7 @@ class EventRepository:
             return {"ok": True, "total_events": 0, "mismatches": []}
         with open_session(self.engine) as db:
             events = db.exec(
-                select(Event).where(Event.project_id == project.id).order_by(
-                    col(Event.stream_position), col(Event.id)
-                )
+                select(Event).where(Event.project_id == project.id).order_by(col(Event.stream_position), col(Event.id))
             ).all()
         payloads: list[Any] = []
         positions: list[int] = []
