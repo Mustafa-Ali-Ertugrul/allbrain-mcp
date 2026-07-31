@@ -92,17 +92,7 @@ def is_effectively_quarantined(event, promoted_ids: set[str] | None = None) -> b
     1. Its payload contains _meta.quarantined = True, AND
     2. No quarantine_lifted event references it (not in promoted_ids)
     """
-    payload = getattr(event, "payload", None)
-    if payload is None and isinstance(event, dict):
-        payload = event.get("payload")
-    if not isinstance(payload, dict):
-        return False
-    if not is_quarantined(payload):
-        return False
-    event_id = getattr(event, "id", None)
-    if event_id is None and isinstance(event, dict):
-        event_id = event.get("id")
-    return not (promoted_ids is not None and event_id in promoted_ids)
+    return _check_quarantine(event, promoted_ids or set())
 
 
 def filter_quarantined(events: list, promoted_ids: set[str] | None = None) -> list:

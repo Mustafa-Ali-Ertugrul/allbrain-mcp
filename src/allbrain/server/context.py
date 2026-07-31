@@ -66,6 +66,9 @@ class BrainContext:
         self.__dict__["_git_baseline"]: dict[str, Any] | None = None
         self.__dict__["_recorded_git_keys"]: set[tuple[str | None, str | None, str | None]] | None = None
         self.__dict__["_event_count"]: int = 0
+        # ── promoted_ids cache (invalidated on each save_event) ──
+        self.__dict__["_promoted_ids"]: set[str] | None = None
+        self.__dict__["_promoted_ids_version"]: int = 0
 
     # ── properties ──
 
@@ -87,6 +90,8 @@ class BrainContext:
             self._active_session = value
             self._recorded_git_keys = None
             self._git_baseline = None
+            self._promoted_ids = None
+            self._promoted_ids_version = 0
 
     @property
     def active_session_id(self) -> int | None:
@@ -180,3 +185,18 @@ class BrainContext:
                 self._event_count = 0
                 return True
             return False
+
+    def invalidate_promoted_ids_cache(self) -> None:
+        """Drop the cached promoted_ids so the next call recomputes."""
+        with self._session_lock:
+            self._promoted_ids = None
+            self._promoted_ids_version += 1
+
+    def get_or_compute_promoted_ids(self) -> set[str] | None:
+        """Return cached promoted_ids or None if not yet computed."""
+        with self._session_lock:
+            return self._promoted_ids
+
+    def set_promoted_ids(self, ids: set[str]) -> None:
+        with self._session_lock:
+            self._promoted_ids = ids
