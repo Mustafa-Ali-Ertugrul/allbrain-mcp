@@ -151,17 +151,25 @@ class BaseInputModel(BaseModel):
 
     @model_validator(mode="after")
     def _check_dict_sizes(self) -> BaseInputModel:
-        """Enforce size limits on all dict-typed fields."""
+        """Enforce size limits on all non-payload dict-typed fields.
+
+        Payload size is enforced by ``SaveEventInput.validate_payload_size``
+        (which reads ``ALLBRAIN_MAX_PAYLOAD_BYTES`` from env), so this
+        validator skips payload fields to avoid a duplicate check with a
+        potentially stale default value. Non-payload dicts (e.g. ``objective``)
+        are capped at ``_MAX_DICT_BYTES``.
+        """
         import json
 
         for field_name, field_value in self.__dict__.items():
             if not isinstance(field_value, dict):
                 continue
+            if "payload" in field_name:
+                continue  # delegated to SaveEventInput.validate_payload_size
             raw = json.dumps(field_value)
-            max_bytes = _MAX_PAYLOAD_BYTES if "payload" in field_name else _MAX_DICT_BYTES
-            if len(raw) > max_bytes:
+            if len(raw) > _MAX_DICT_BYTES:
                 raise ValueError(
-                    f"field '{field_name}' exceeds maximum size of {max_bytes // 1000}KB (got {len(raw)} bytes)"
+                    f"field '{field_name}' exceeds maximum size of {_MAX_DICT_BYTES // 1000}KB (got {len(raw)} bytes)"
                 )
         return self
 
