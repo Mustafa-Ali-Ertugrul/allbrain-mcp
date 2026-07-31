@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import logging
 from collections.abc import Callable
@@ -18,6 +19,23 @@ except ImportError:  # pragma: no cover - FastMCP always present at runtime
     ToolError = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
+
+
+def _client_error_result(exc: Exception) -> ToolResult | None:
+    """Map known client errors to a sanitized ToolResult; None for unexpected ones."""
+    if isinstance(exc, ValidationError):
+        return ToolResult(
+            ok=False,
+            error=sanitize_valerr_msg(str(exc)),
+            error_code="validation_error",
+        )
+    if isinstance(exc, UserInputError):
+        return ToolResult(
+            ok=False,
+            error=sanitize_text(str(exc)),
+            error_code="user_input_error",
+        )
+    return None
 
 
 def handle_tool_errors(func: Callable[..., ToolResult]) -> Callable[..., ToolResult]:
@@ -48,19 +66,10 @@ def handle_tool_errors(func: Callable[..., ToolResult]) -> Callable[..., ToolRes
     def wrapper(*args: Any, **kwargs: Any) -> ToolResult:
         try:
             return func(*args, **kwargs)
-        except ValidationError as exc:
-            return ToolResult(
-                ok=False,
-                error=sanitize_valerr_msg(str(exc)),
-                error_code="validation_error",
-            )
-        except UserInputError as exc:
-            return ToolResult(
-                ok=False,
-                error=sanitize_text(str(exc)),
-                error_code="user_input_error",
-            )
-        except Exception:
+        except Exception as exc:
+            mapped = _client_error_result(exc)
+            if mapped is not None:
+                return mapped
             logger.exception("Tool failed")
             return ToolResult(ok=False, error="Internal server error", error_code="internal_error")
 
@@ -85,7 +94,16 @@ def handle_tool_errors_mcp(func: Callable[..., Any]) -> Callable[..., Any]:
 
     @functools.wraps(func)
     def _invoke(*args: Any, **kwargs: Any) -> Any:
-        return func(*args, **kwargs)
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            mapped = _client_error_result(exc)
+            if mapped is not None:
+                return mapped
+            logger.exception("Tool failed: %s", getattr(func, "__name__", "?"))
+            if ToolError is not None:
+                raise ToolError("Internal server error") from None
+            raise
 
     if _is_coroutine(func):
 
@@ -93,19 +111,10 @@ def handle_tool_errors_mcp(func: Callable[..., Any]) -> Callable[..., Any]:
         async def async_wrapper(*args: Any, **kwargs: Any) -> ToolResult:
             try:
                 return await func(*args, **kwargs)
-            except ValidationError as exc:
-                return ToolResult(
-                    ok=False,
-                    error=sanitize_valerr_msg(str(exc)),
-                    error_code="validation_error",
-                )
-            except UserInputError as exc:
-                return ToolResult(
-                    ok=False,
-                    error=sanitize_text(str(exc)),
-                    error_code="user_input_error",
-                )
-            except Exception:
+            except Exception as exc:
+                mapped = _client_error_result(exc)
+                if mapped is not None:
+                    return mapped
                 logger.exception("Tool failed: %s", getattr(func, "__name__", "?"))
                 if ToolError is not None:
                     raise ToolError("Internal server error") from None
@@ -113,32 +122,8 @@ def handle_tool_errors_mcp(func: Callable[..., Any]) -> Callable[..., Any]:
 
         return async_wrapper
 
-    @functools.wraps(func)
-    def sync_wrapper(*args: Any, **kwargs: Any) -> ToolResult:
-        try:
-            return func(*args, **kwargs)
-        except ValidationError as exc:
-            return ToolResult(
-                ok=False,
-                error=sanitize_valerr_msg(str(exc)),
-                error_code="validation_error",
-            )
-        except UserInputError as exc:
-            return ToolResult(
-                ok=False,
-                error=sanitize_text(str(exc)),
-                error_code="user_input_error",
-            )
-        except Exception:
-            logger.exception("Tool failed: %s", getattr(func, "__name__", "?"))
-            if ToolError is not None:
-                raise ToolError("Internal server error") from None
-            raise
-
-    return sync_wrapper
+    return _invoke
 
 
 def _is_coroutine(func: Callable[..., Any]) -> bool:
-    import asyncio
-
     return asyncio.iscoroutinefunction(func)
