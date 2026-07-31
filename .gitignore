@@ -18,6 +18,8 @@ stress_run.log
 *.diff
 scripts/mcp_latency_profiles/
 
+_debug*.py
+tmp*/
 # Benchmark results (generated; committed baselines use git add -f)
 benchmarks/results/
 

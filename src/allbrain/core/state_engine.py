@@ -12,12 +12,13 @@ class StateEngine:
         self.merger = merger or StateMerger()
 
     def build_state(self, context: dict[str, Any]) -> dict[str, Any]:
+        events = context.get("events", [])
         machine = StateMachine()
-        for event in context["events"]:
+        for event in events:
             machine.apply(event)
         state = machine.get_state().to_dict()
-        state["event_count"] = len(context["events"])
-        state["git"] = context["git"]
+        state["event_count"] = len(events)
+        state["git"] = context.get("git", {})
         return state
 
     def apply_events(
@@ -28,15 +29,22 @@ class StateEngine:
             state["git"] = git or {}
             return state
 
+        # Full replay: apply all events from base_state forward.
         final_machine = StateMachine(ProjectState.from_dict(base_state))
-        delta_machine = StateMachine()
         for event in events:
             final_machine.apply(event)
-            delta_machine.apply(event)
         final_state = final_machine.get_state().to_dict()
+
+        # Delta replay: only append-strategy fields need the delta path.
+        # Non-append fields (goal, working_files, open_tasks, etc.) are
+        # taken directly from final_state.
+        delta_machine = StateMachine()
+        for event in events:
+            delta_machine.apply(event)
         delta_state = delta_machine.get_state().to_dict()
 
-        # Override delta fields where merger needs final_state values
+        # Override delta fields with final_state values for non-append fields
+        # so the merger only sees meaningful diffs on append-only lists.
         delta_state["goal"] = final_state["goal"]
         delta_state["working_files"] = final_state["working_files"]
         delta_state["open_tasks"] = final_state["open_tasks"]

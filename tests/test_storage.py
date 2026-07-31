@@ -115,10 +115,10 @@ def test_event_type_counts_after_uses_project_and_cursor(tmp_path: Path) -> None
 
 
 def test_cursor_queries_use_stream_position_not_event_id(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from allbrain.storage import repository as repository_module
+    from allbrain.storage import event_repository as event_repository_module
 
     ids = iter(["z-cursor", "a-later"])
-    monkeypatch.setattr(repository_module, "uuid7", lambda: next(ids))
+    monkeypatch.setattr(event_repository_module, "uuid7", lambda: next(ids))
 
     repo = make_repository(tmp_path)
     project_root = tmp_path / "project"

@@ -86,6 +86,9 @@ def save_event_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             _session=db,
         )
         db.commit()
+        # A saved event may be a quarantine_lifted promotion (or any type),
+        # so drop the promoted-ids cache instead of risking stale visibility.
+        context.invalidate_promoted_ids_cache()
         result_data = event_to_read(event).model_dump(mode="json")
     maybe_auto_snapshot(context, project_path=context.project_path)
     return ToolResult(ok=True, data=result_data)
@@ -113,52 +116,66 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 
     # §1 Security: when include_quarantined=False (default), we need to
     # know which events have been promoted so we can still show them.
-    promoted_ids: set[str] | None = None
-    if not data.include_quarantined:
+    # Use the BrainContext cache to avoid re-fetching quarantine_lifted
+    # events on every list_events call.
+    promoted_ids: set[str] | None = context.get_or_compute_promoted_ids()
+    if not data.include_quarantined and promoted_ids is None:
         all_raw = context.repository.list_events(
             project_path=context.project_path,
             type="quarantine_lifted",
             limit=10000,
         )
         promoted_ids = {e.caused_by for e in all_raw if e.caused_by}
+        context.set_promoted_ids(promoted_ids)
 
     if data.summary:
-        summary = context.repository.summarize_events(
-            project_path=context.project_path,
-            session_id=data.session_id,
-            agent_id=data.agent_id,
-            type=data.type,
-            branch=data.branch,
-            since=data.since,
-            until=data.until,
-        )
-        result_data: Any = ListEventsSummary.model_validate(summary).model_dump(mode="json")
-    elif data.cursor is not None:
-        events, has_more = context.repository.list_events_paginated(
-            project_path=context.project_path,
-            session_id=data.session_id,
-            agent_id=data.agent_id,
-            type=data.type,
-            branch=data.branch,
-            since=data.since,
-            until=data.until,
-            cursor=data.cursor,
-            limit=data.limit,
-        )
         if not data.include_quarantined and promoted_ids is not None:
-            events = [e for e in events if not e.quarantined or e.id in promoted_ids]
-        next_cursor = events[-1].id if (has_more and events) else None
-        page = ListEventsPage(
-            events=events,
-            next_cursor=next_cursor,
-            has_more=has_more,
-            truncated=has_more,
-        )
-        result_data = page.model_dump(mode="json")
+            # Security: when quarantined events should be excluded, fetch a
+            # full event list, filter by promoted_ids, then derive summary
+            # counts client-side so quarantined-and-not-promoted events never
+            # inflate the aggregates. This is slower but preserves the
+            # memory-poisoning defense on the summary path.
+            all_events = context.repository.list_events_paginated(
+                project_path=context.project_path,
+                session_id=data.session_id,
+                agent_id=data.agent_id,
+                type=data.type,
+                branch=data.branch,
+                since=data.since,
+                until=data.until,
+                cursor=None,
+                limit=50000,
+            )[0]
+            visible = [e for e in all_events if not e.quarantined or e.id in promoted_ids]
+            _total = len(visible)
+            _by_type: dict[str, int] = {}
+            _by_agent: dict[str, int] = {}
+            for e in visible:
+                _by_type[e.type] = _by_type.get(e.type, 0) + 1
+                agent = e.agent_id or "unknown"
+                _by_agent[agent] = _by_agent.get(agent, 0) + 1
+            _first = visible[0].created_at if visible else None
+            _last = visible[-1].created_at if visible else None
+            summary = {
+                "total": _total,
+                "by_type": _by_type,
+                "by_agent": _by_agent,
+                "by_date": {},
+                "first_event_at": _first,
+                "last_event_at": _last,
+            }
+        else:
+            summary = context.repository.summarize_events(
+                project_path=context.project_path,
+                session_id=data.session_id,
+                agent_id=data.agent_id,
+                type=data.type,
+                branch=data.branch,
+                since=data.since,
+                until=data.until,
+            )
+        result_data: Any = ListEventsSummary.model_validate(summary).model_dump(mode="json")
     else:
-        # Backward-compatible default still uses the plain event list, but is
-        # now served through the paginated path so an over-large window is
-        # truncated (with next_cursor) instead of overflowing the client.
         events, has_more = context.repository.list_events_paginated(
             project_path=context.project_path,
             session_id=data.session_id,
@@ -167,7 +184,7 @@ def list_events_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             branch=data.branch,
             since=data.since,
             until=data.until,
-            cursor=None,
+            cursor=data.cursor,  # None for the backward-compatible default path
             limit=data.limit,
         )
         if not data.include_quarantined and promoted_ids is not None:
@@ -198,6 +215,7 @@ def _register_save_event(mcp, context: BrainContext) -> None:
         file_path: str | None = None,
         source: str = "agent",
         session_id: int | None = None,
+        agent_id: str | None = None,
         task_hint: str | None = None,
         importance: int | None = None,
         impact_score: float | None = None,
@@ -209,9 +227,6 @@ def _register_save_event(mcp, context: BrainContext) -> None:
         Records agent actions, decisions, and state changes. All events are
         append-only with stable UUIDv7 ordering for deterministic replay.
 
-        Side effects: Creates a new event in the SQLite event log. Triggers
-        an automatic snapshot when the event threshold is reached.
-
         Args:
             type: Event type identifier in snake_case (e.g., "task_created",
                 "task_assigned", "tool_call", "file_modified"). SCREAMING_SNAKE
@@ -220,6 +235,7 @@ def _register_save_event(mcp, context: BrainContext) -> None:
             file_path: Optional source file path (for code-related events).
             source: Event source label (default "agent").
             session_id: Optional session ID to associate with.
+            agent_id: Optional agent identifier for traceability.
             task_hint: Optional task hint string (helps with memory building).
             importance: Optional importance rating (1-5).
             impact_score: Optional impact score for decision events.
@@ -236,6 +252,7 @@ def _register_save_event(mcp, context: BrainContext) -> None:
             file_path=file_path,
             source=source,
             session_id=session_id,
+            agent_id=agent_id,
             task_hint=task_hint,
             importance=importance,
             impact_score=impact_score,
@@ -392,6 +409,7 @@ def _register_promote_event(mcp, context: BrainContext) -> None:
                 _session=db,
             )
             db.commit()
+            context.invalidate_promoted_ids_cache()
             result_data = event_to_read(event).model_dump(mode="json")
         logger.warning(
             "security_event",

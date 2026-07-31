@@ -32,6 +32,8 @@ def _get_max_sanitize_depth() -> int:
     return max(1, min(256, val))
 
 
+# Import-time snapshot (backward-compatible for tests); the runtime walker
+# reads the env var lazily so operator changes take effect without reload.
 _MAX_SANITIZE_DEPTH = _get_max_sanitize_depth()
 
 _BUILTIN_SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
@@ -285,15 +287,19 @@ def _mask_secrets_patterns(text: str, found_types: dict[str, int]) -> str:
     return text
 
 
-def _sanitize_payload_impl(obj: Any, found_types: dict[str, int], *, depth: int = 0) -> Any:
+def _sanitize_payload_impl(
+    obj: Any, found_types: dict[str, int], *, depth: int = 0, max_depth: int | None = None
+) -> Any:
     """Core recursive walk with field-name redaction."""
-    if depth >= _MAX_SANITIZE_DEPTH:
+    if max_depth is None:
+        max_depth = _get_max_sanitize_depth()
+    if depth >= max_depth:
         found_types["depth_limit"] = found_types.get("depth_limit", 0) + 1
         logger.warning(
             "sanitize_depth_limit_reached",
             extra={
                 "depth": depth,
-                "max_depth": _MAX_SANITIZE_DEPTH,
+                "max_depth": max_depth,
                 "count": found_types["depth_limit"],
             },
         )

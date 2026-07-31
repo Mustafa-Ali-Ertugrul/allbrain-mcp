@@ -1,30 +1,16 @@
-"""Tool registration - delegates to domain modules."""
+"""Tool registration - delegates to domain modules dynamically."""
 
 from __future__ import annotations
 
+import importlib
+import logging
+import pkgutil
 from collections.abc import Callable
 from typing import Any, Literal
 
-from allbrain.server.tools import (
-    conflicts,
-    context_pack,
-    counterfactual,
-    events,
-    foresight,
-    git,
-    intents,
-    knowledge,
-    memory,
-    observability,
-    orchestrator,
-    queue,
-    scenarios,
-    sessions,
-    snapshots,
-    tasks,
-    ui,
-    world,
-)
+import allbrain.server.tools
+
+logger = logging.getLogger(__name__)
 
 ToolProfile = Literal["core", "full", "minimal", "memory", "collaboration", "reasoning"]
 
@@ -120,27 +106,20 @@ def register_all_tools(mcp: Any, context: Any, *, tool_profile: ToolProfile = "f
     else:
         allowed = _allowed_for_profile(tool_profile)
     registrar = _ProfiledToolRegistrar(mcp, allowed=allowed)
-    for domain in (
-        conflicts,
-        context_pack,
-        counterfactual,
-        events,
-        foresight,
-        git,
-        intents,
-        knowledge,
-        memory,
-        observability,
-        orchestrator,
-        queue,
-        scenarios,
-        snapshots,
-        sessions,
-        tasks,
-        ui,
-        world,
-    ):
-        domain.register_tools(registrar, context)
+
+    # Dynamically scan, import, and register all modules in the package
+    for _, module_name, _ in pkgutil.iter_modules(allbrain.server.tools.__path__):
+        # Skip private helpers and decorators which don't register tools
+        if module_name.startswith("_") or module_name == "decorators":
+            continue
+        try:
+            domain = importlib.import_module(f"allbrain.server.tools.{module_name}")
+            if hasattr(domain, "register_tools"):
+                domain.register_tools(registrar, context)
+        except Exception:
+            logger.exception("Failed to load and register tools from domain module: %s", module_name)
+            raise
+
     if tool_profile in ("core",) and registrar.registered != CORE_TOOL_NAMES:
         missing = sorted(CORE_TOOL_NAMES - registrar.registered)
         raise RuntimeError(f"Core MCP tool profile is incomplete: {missing}")

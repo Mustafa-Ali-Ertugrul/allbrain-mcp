@@ -6,7 +6,6 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import Any
 
-from allbrain.events import EventType
 from allbrain.models.entities import utc_now
 from allbrain.models.schemas import ToolResult, UserInputError
 from allbrain.server.constants import EMPTY_SESSION_TTL_HOURS
@@ -39,15 +38,16 @@ def build_session_report(
         if previous is not None and (session.started_at - previous).total_seconds() < 60:
             rapid_reconnects += 1
         previous_by_agent[session.agent_name] = session.started_at
+    session_ids = [session.id or 0 for session in sessions]
+    counts = context.repository.session_event_counts(session_ids)
+    summaries = context.repository.latest_session_summaries(session_ids)
     for session in sessions:
-        events = context.repository.list_session_events(session.id or 0)
-        if events:
+        session_id = session.id or 0
+        if counts.get(session_id):
             coverage += 1
         if len(details) >= detail_limit:
             continue
-        summary_event = next(
-            (event for event in reversed(events) if event.type == EventType.SESSION_SUMMARY.value), None
-        )
+        summary_event = summaries.get(session_id)
         details.append(
             {
                 "session_id": session.id,
@@ -57,7 +57,7 @@ def build_session_report(
                 "started_at": session.started_at.isoformat(),
                 "ended_at": session.ended_at.isoformat() if session.ended_at else None,
                 "close_reason": session.close_reason,
-                "event_count": len(events),
+                "event_count": counts.get(session_id, 0),
                 "summary": summary_event.payload if summary_event is not None else None,
             }
         )

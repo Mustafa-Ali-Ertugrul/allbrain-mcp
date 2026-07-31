@@ -102,6 +102,14 @@ def test_max_sanitize_depth_env_invalid_falls_back(monkeypatch: pytest.MonkeyPat
     assert _get_max_sanitize_depth() == 32
 
 
+def test_runtime_depth_reads_env_lazily(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A post-import env change must apply without reloading the module."""
+    monkeypatch.setenv("ALLBRAIN_SANITIZE_MAX_DEPTH", "4")
+    payload: dict = {"next": {"next": {"next": {"next": {"deep": "value"}}}}}
+    result = sanitize_payload(payload)
+    assert result["next"]["next"]["next"]["next"] == "********"
+
+
 # ---------------------------------------------------------------------------
 # save_event payload size cap (ALLBRAIN_MAX_PAYLOAD_BYTES)
 # ---------------------------------------------------------------------------

@@ -25,6 +25,7 @@ def _load_decorators() -> ModuleType:
         "allbrain.models",
         "allbrain.server",
         "allbrain.server.tools",
+        "allbrain.server.tools.decorators",
         "allbrain.security",
         "allbrain.models.schemas",
         "allbrain.security.redaction",
