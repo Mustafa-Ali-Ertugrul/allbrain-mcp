@@ -147,7 +147,7 @@ def _save_demo_event(project: Path = Path(".")) -> None:
             payload={"description": task_desc, "source": "cli-onboard"},
             agent_id="cli-onboard",
         )
-        console.print(f"[green]âœ” Event saved[/green] [dim](id: {event.id})[/dim]")
+        console.print(f"[green]✔ Event saved[/green] [dim](id: {event.id})[/dim]")
         console.print("  Restart your MCP client and call [bold]list_events()[/bold] to see it.")
     finally:
         engine.dispose()
@@ -168,11 +168,11 @@ def onboard(
     zed: Annotated[bool, typer.Option("--zed", help="Configure Zed")] = False,
     kiro: Annotated[bool, typer.Option("--kiro", help="Configure Kiro")] = False,
 ) -> None:
-    """Interactive onboarding wizard â€” configure, verify, and run your first event."""
+    """Interactive onboarding wizard — configure, verify, and run your first event."""
     from allbrain.install import main as installer_main
     from allbrain.install import verify as _verify
 
-    console.print("[bold]ðŸš€ AllBrain MCP â€” Guided Setup[/bold]\n")
+    console.print("[bold]🚀 AllBrain MCP — Guided Setup[/bold]\n")
     console.print("This wizard will:\n")
     console.print("  1. Pick which MCP client(s) to configure")
     console.print("  2. Install AllBrain for those clients")
@@ -200,24 +200,24 @@ def onboard(
     console.print(f"\nSelected: {', '.join(selected)}\n")
 
     # Step 2: install
-    console.print("[bold]Step 2/4 â€” Installing AllBrain...[/bold]")
+    console.print("[bold]Step 2/4 — Installing AllBrain...[/bold]")
     installer_main(["--project", str(project), "--verify", *selected])
     console.print()
 
     # Step 3: verify
-    console.print("[bold]Step 3/4 â€” Verifying connectivity...[/bold]")
+    console.print("[bold]Step 3/4 — Verifying connectivity...[/bold]")
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console) as prog:
         prog.add_task("Running product-level verification...", total=None)
         repo = Path(__file__).resolve().parents[2]
         _verify(repo, project.resolve())
-    console.print("[green]âœ” Verification passed[/green]\n")
+    console.print("[green]✔ Verification passed[/green]\n")
 
     # Step 4: first event
-    console.print("[bold]Step 4/4 â€” Save your first event[/bold]")
+    console.print("[bold]Step 4/4 — Save your first event[/bold]")
     if Confirm.ask("Save a demo event to confirm shared memory is working?", default=True):
         _save_demo_event(project)
 
-    console.print("\n[bold green]âœ” AllBrain MCP is ready![/bold green]")
+    console.print("\n[bold green]✔ AllBrain MCP is ready![/bold green]")
     console.print("  Next: open your MCP client and start using the tools.")
     console.print("  Quick reference: [bold]save_event()[/bold], [bold]list_events()[/bold],")
     console.print("                         [bold]resume_project()[/bold]")
@@ -759,7 +759,7 @@ def _uninstall_client(name: str, project: Path, dry_run: bool) -> None:
     """Remove the allbrain entry from a single client config."""
     from allbrain.install import load_json, write_json
 
-    # Codex uses TOML â€” handled separately
+    # Codex uses TOML — handled separately
     if name == "codex":
         path = project / ".codex" / "config.toml"
         if path.exists():
