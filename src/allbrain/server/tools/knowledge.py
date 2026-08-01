@@ -244,8 +244,8 @@ def register_tools(mcp, context: BrainContext) -> None:
     def estimate_uncertainty(decision_id: str, limit: int = 5000) -> dict[str, Any]:
         """Estimate epistemic and aleatoric uncertainty around a prior decision.
 
-        Returns calibrated uncertainty scores â€” separate epistemic (model knowledge)
-        and aleatoric (inherent randomness) components â€” along with drift metrics.
+        Returns calibrated uncertainty scores — separate epistemic (model knowledge)
+        and aleatoric (inherent randomness) components — along with drift metrics.
         High uncertainty suggests more information gathering before acting.
 
         Call this after `run_decision_pipeline` to understand reliability of outputs.
@@ -294,7 +294,7 @@ def register_tools(mcp, context: BrainContext) -> None:
         """List specific information items needed to make a well-informed decision.
 
         Returns actionable questions to resolve, data sources to consult, and analyses
-        to run â€” structured as an investigation plan. Builds on knowledge gaps found
+        to run — structured as an investigation plan. Builds on knowledge gaps found
         by `detect_knowledge_gaps` and prioritizes by expected information gain.
 
         Use during decision preparation to systematically enumerate what must be

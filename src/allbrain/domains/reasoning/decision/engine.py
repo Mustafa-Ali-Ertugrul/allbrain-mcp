@@ -24,7 +24,7 @@ class DecisionEngine:
     ) -> DecisionResult:
         """Single entry point for all decision types.
 
-        strict=True (production): unknown fields â†’ ValueError.
+        strict=True (production): unknown fields → ValueError.
         strict=False (debug/testing): tolerant mode, unknown fields ignored.
 
         DEBUG mode (Refinement #3): read-only dry-run.
