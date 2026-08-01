@@ -10,6 +10,7 @@ command, then confirms no side effect (PWNED file) is created.
 
 from __future__ import annotations
 
+import ast
 import os
 import sys
 import textwrap
@@ -167,15 +168,52 @@ def test_safe_git_uses_execute_no_shell(tmp_path: Path) -> None:
     """_safe_git must pass argv (not shell string) to repo.git.execute.
 
     GitPython's ``execute()`` accepts either a string (shell) or list (argv).
-    We verify via source inspection that ``_safe_git`` passes a list, which
-    prevents shell injection. (An optional ``env=`` kwarg is allowed and used
-    to pass the sandboxed environment dict.)
+    We verify via AST inspection that ``_safe_git`` passes the ``argv``
+    variable (a list) as the first positional argument, which prevents shell
+    injection. An optional ``env=`` kwarg is also expected and accepted —
+    it carries the sandboxed environment dict.
     """
     source = Path(__file__).resolve().parents[1] / "src" / "allbrain" / "domains" / "memory" / "gitbrain" / "parser.py"
-    content = source.read_text(encoding="utf-8")
-    # Must use execute(argv...) where argv is a list — not a shell string.
-    # argv may be followed by an env= kwarg; assert on the opening call.
-    assert "self.repo.git.execute(\n            argv,\n" in content, (
-        "_safe_git must call execute with argv list (env= kwarg allowed)"
+    tree = ast.parse(source.read_text(encoding="utf-8"))
+
+    # Locate the GitBrain._safe_git method.
+    safe_git_node: ast.AsyncFunctionDef | ast.FunctionDef | None = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name == "_safe_git":
+            # Ensure it is the method on GitBrain (not a free function).
+            safe_git_node = node
+            break
+    assert safe_git_node is not None, "GitBrain._safe_git method not found in parser.py"
+
+    # Assert `argv: list[str] = ["git", ...]` assignment appears in the body.
+    has_argv_list_init = False
+    for child in ast.walk(safe_git_node):
+        if isinstance(child, ast.AnnAssign) and getattr(child.target, "id", None) == "argv":
+            value = child.value
+            if isinstance(value, ast.List) and value.elts:
+                first = value.elts[0]
+                if isinstance(first, ast.Constant) and first.value == "git":
+                    has_argv_list_init = True
+    assert has_argv_list_init, 'argv must be a list literal starting with "git"'
+
+    # Find `self.repo.git.execute(...)` in _safe_git and confirm its first
+    # positional arg is the `argv` name (a list), not a string literal.
+    execute_calls: list[ast.Call] = []
+    for child in ast.walk(safe_git_node):
+        if isinstance(child, ast.Call):
+            func = child.func
+            if (
+                isinstance(func, ast.Attribute)
+                and func.attr == "execute"
+                and isinstance(func.value, ast.Attribute)
+                and func.value.attr == "git"
+            ):
+                execute_calls.append(child)
+
+    assert execute_calls, "_safe_git must call self.repo.git.execute(...)"
+    first_call = execute_calls[0]
+    assert first_call.args, "_safe_git must pass argv as the first positional arg to execute()"
+    first_arg = first_call.args[0]
+    assert isinstance(first_arg, ast.Name) and first_arg.id == "argv", (
+        "first positional arg to repo.git.execute() must be the `argv` list, not a shell string"
     )
-    assert 'argv: list[str] = ["git"' in content, "argv must be a list starting with 'git'"

@@ -57,6 +57,28 @@ def safe_git_env() -> dict[str, str]:
     return env
 
 
+def _normalize_renamed_path(raw_path: str) -> str:
+    """Collapse `git log --numstat` rename syntax to the new path.
+
+    Git emits renames in two shapes; both are collapsed to the destination:
+      * ``old/path => new/path``                         (full form)
+      * ``dir/{old => new}.ext`` and ``{old => new}.ext`` (brace form)
+
+    Paths contain no ``=>`` unless this is a rename, so the rewrite is safe.
+    """
+    if " => " not in raw_path:
+        return raw_path
+    # Brace form first: "dir/{o => n}.ext" -> "dir/n.ext".
+    if "{" in raw_path and "}" in raw_path:
+        left, brace = raw_path.split("{", 1)
+        inner, right = brace.split("}", 1)
+        # inner == "old => new"
+        _, _, new = inner.partition(" => ")
+        return f"{left}{new}{right}"
+    # Full form: "old => new".
+    return raw_path.rsplit(" => ", 1)[-1]
+
+
 class GitBrain:
     def __init__(self, project_path: str | Path):
         self.project_path = canonicalize_project_path(project_path)
@@ -111,7 +133,7 @@ class GitBrain:
                 {
                     "sha": sha,
                     "summary": sanitize_text(summary),
-                    "author": author,
+                    "author": sanitize_text(author),
                     "committed_at": committed_at,
                 }
             )
@@ -232,12 +254,14 @@ class GitBrain:
             for stat_line in lines[5:]:
                 if not stat_line:
                     continue
-                fields = stat_line.split("\t")
+                # numstat rows: "\t<added>\t<deleted>\t<path>". Use maxsplit=2
+                # so paths containing tabs survive intact; only the first
+                # two tabs are field separators.
+                fields = stat_line.split("\t", 2)
                 if len(fields) < 3:
                     continue
                 added_raw, deleted_raw, path = fields[0], fields[1], fields[2]
-                if " => " in path:
-                    path = path.rsplit(" => ", 1)[-1]
+                path = _normalize_renamed_path(path)
                 commit_files.append(path)
                 if added_raw != "-":
                     commit_additions += int(added_raw)
@@ -361,9 +385,11 @@ class GitBrain:
 
         .. deprecated::
             Retained for backward compatibility. New code should call
-            ``_build_git_env()`` and pass the result to ``_safe_git(env=...))``
-            instead of relying on global ``os.environ`` mutation, which is
-            inherently thread-unsafe.
+            ``_build_git_env()`` to obtain an isolated env dict; ``_safe_git``
+            forwards that dict to GitPython's ``repo.git.execute(env=...)`` so
+            the sandbox holds without mutating the process-wide
+            ``os.environ``. Relying on this context manager's global mutation
+            is inherently thread-unsafe.
 
         Removes known credential-carrying keys, blocks interactive prompts,
         and disables global/system git config to neutralize untrusted-repo
