@@ -87,19 +87,34 @@ class GitBrain:
     def get_recent_changes(self, limit: int = 10) -> list[dict[str, str]]:
         if self.repo is None:
             return []
-        changes = []
+        # Multi-arg eval is what powers `git log -c … --format`. Use a NUL
+        # (%x00) separator so summaries containing tabs/newlines survive.
+        # Fields: sha, summary, author name, committer date (strict ISO-8601,
+        # matching GitPython's committed_datetime.isoformat()).
+        # Going through _safe_git guarantees the config-override sandbox
+        # (core.fsmonitor, filter.*, protocol.*) is applied; iter_commits()
+        # would bypass it entirely.
         try:
-            for commit in self.repo.iter_commits(max_count=limit):
-                changes.append(
-                    {
-                        "sha": commit.hexsha,
-                        "summary": sanitize_text(commit.summary),
-                        "author": commit.author.name,
-                        "committed_at": commit.committed_datetime.isoformat(),
-                    }
-                )
+            raw = self._safe_git("log", "--format=%H%x00%s%x00%an%x00%cI", "-n", str(limit))
         except (ValueError, GitCommandError):
             return []
+        sep = "\x00"
+        changes: list[dict[str, str]] = []
+        for line in raw.splitlines():
+            if not line:
+                continue
+            parts = line.split(sep)
+            if len(parts) < 4:
+                continue
+            sha, summary, author, committed_at = parts[0], parts[1], parts[2], parts[3]
+            changes.append(
+                {
+                    "sha": sha,
+                    "summary": sanitize_text(summary),
+                    "author": author,
+                    "committed_at": committed_at,
+                }
+            )
         return changes
 
     def get_work_summary(
@@ -131,28 +146,35 @@ class GitBrain:
         if self.repo is None:
             return empty
 
-        kwargs: dict[str, Any] = {"all": True, "max_count": limit + 1}
+        # A single sandboxed `git log --all --numstat` walk replaces the
+        # GitPython high-level API (iter_commits + commit.stats), both of
+        # which spawn unsandboxed git subprocesses that bypass the
+        # config-override sandbox. NUL-separated blocks carry: sha, summary,
+        # author, committed_at, parent hashes, then one numstat line per file.
+        args: list[str] = [
+            "log",
+            "--all",
+            "--numstat",
+            "--format=%x00%H%n%s%n%an%n%cI%n%P%n",
+            "-n",
+            str(limit + 1),
+        ]
         if since is not None:
-            kwargs["since"] = since.isoformat()
+            args.append(f"--since={since.isoformat()}")
         if until is not None:
-            kwargs["until"] = until.isoformat()
+            args.append(f"--until={until.isoformat()}")
         try:
-            with self._git_env():
-                commits = list(self.repo.iter_commits(**kwargs))
+            raw = self._safe_git(*args)
         except (ValueError, GitCommandError):
             return empty
 
-        truncated = len(commits) > limit
-        commits = commits[:limit]
+        parsed = self._parse_log_numstat(raw)
+        truncated = len(parsed) > limit
+        parsed = parsed[:limit]
         files: set[str] = set()
         additions = deletions = merges = 0
         details: list[dict[str, Any]] = []
-        for commit in commits:
-            stats = commit.stats.total
-            commit_files = sorted(commit.stats.files)
-            commit_additions = int(stats.get("insertions", 0))
-            commit_deletions = int(stats.get("deletions", 0))
-            is_merge = len(commit.parents) > 1
+        for sha, summary, author, committed_at, is_merge, commit_files, commit_additions, commit_deletions in parsed:
             merges += int(is_merge)
             # Merge diffs repeat work already represented by their parent
             # commits, so aggregate work metrics from non-merge commits only.
@@ -162,10 +184,10 @@ class GitBrain:
                 deletions += commit_deletions
             details.append(
                 {
-                    "sha": commit.hexsha,
-                    "summary": sanitize_text(commit.summary),
-                    "author": sanitize_text(commit.author.name),
-                    "committed_at": commit.committed_datetime.isoformat(),
+                    "sha": sha,
+                    "summary": sanitize_text(summary),
+                    "author": sanitize_text(author),
+                    "committed_at": committed_at,
                     "is_merge": is_merge,
                     "additions": commit_additions,
                     "deletions": commit_deletions,
@@ -174,8 +196,8 @@ class GitBrain:
             )
         return {
             **empty,
-            "commit_count": len(commits),
-            "work_commit_count": len(commits) - merges,
+            "commit_count": len(parsed),
+            "work_commit_count": len(parsed) - merges,
             "merge_commit_count": merges,
             "additions": additions,
             "deletions": deletions,
@@ -184,6 +206,47 @@ class GitBrain:
             "commits": details,
             "truncated": truncated,
         }
+
+    @staticmethod
+    def _parse_log_numstat(
+        raw: str,
+    ) -> list[tuple[str, str, str, str, bool, list[str], int, int]]:
+        """Parse output of ``git log --numstat --format=%x00%H%n%s%n%an%n%cI%n%P%n``.
+
+        Each commit block starts with a NUL sentinel followed by five header
+        lines (sha, summary, author, committer-date, parents) and then one
+        numstat line per changed file: ``<added>\\t<deleted>\\t<path>``.
+
+        Returns a list of tuples in the shape consumed by ``get_work_summary``:
+        (sha, summary, author, committed_at, is_merge, files, additions, deletions).
+        """
+        entries: list[tuple[str, str, str, str, bool, list[str], int, int]] = []
+        for block in raw.split("\x00"):
+            lines = block.splitlines()
+            if len(lines) < 5:
+                continue
+            sha, summary, author, committed_at = lines[0], lines[1], lines[2], lines[3]
+            is_merge = len(lines[4].split()) > 1
+            commit_files: list[str] = []
+            commit_additions = commit_deletions = 0
+            for stat_line in lines[5:]:
+                if not stat_line:
+                    continue
+                fields = stat_line.split("\t")
+                if len(fields) < 3:
+                    continue
+                added_raw, deleted_raw, path = fields[0], fields[1], fields[2]
+                if " => " in path:
+                    path = path.rsplit(" => ", 1)[-1]
+                commit_files.append(path)
+                if added_raw != "-":
+                    commit_additions += int(added_raw)
+                if deleted_raw != "-":
+                    commit_deletions += int(deleted_raw)
+            entries.append(
+                (sha, summary, author, committed_at, is_merge, commit_files, commit_additions, commit_deletions)
+            )
+        return entries
 
     def build_fingerprint(self) -> dict[str, Any]:
         """Return a content-free Git fingerprint suitable for session attribution."""
@@ -296,6 +359,12 @@ class GitBrain:
     def _git_env(self):
         """Apply credential-safe env tweaks without ``os.environ.clear()``.
 
+        .. deprecated::
+            Retained for backward compatibility. New code should call
+            ``_build_git_env()`` and pass the result to ``_safe_git(env=...))``
+            instead of relying on global ``os.environ`` mutation, which is
+            inherently thread-unsafe.
+
         Removes known credential-carrying keys, blocks interactive prompts,
         and disables global/system git config to neutralize untrusted-repo
         RCE vectors (core.fsmonitor, filter.*, protocol.*).
@@ -303,11 +372,11 @@ class GitBrain:
         Other process env (PATH, HOME, …) stays intact so concurrent threads
         never observe a wiped environment.
         """
+        clean = self._build_git_env()
         removed: dict[str, str] = {}
         for key in list(os.environ):
-            if _is_credential_var(key):
+            if key not in clean:
                 removed[key] = os.environ.pop(key)
-        # Apply hard overrides (save previous values for restore)
         previous: dict[str, str | None] = {}
         for key, val in self._ENV_HARD_OVERRIDES.items():
             previous[key] = os.environ.get(key)
@@ -322,11 +391,30 @@ class GitBrain:
                     os.environ[key] = prev
             os.environ.update(removed)
 
+    def _build_git_env(self) -> dict[str, str]:
+        """Build a fresh, credential-safe env dict for git subprocesses.
+
+        Unlike the legacy ``_git_env()`` context manager, this does NOT mutate
+        the global ``os.environ`` — it returns an isolated copy with the same
+        guarantees (credential-bearing keys stripped, ``GIT_TERMINAL_PROMPT=0``,
+        global/system git config disabled). Safe to call from any thread.
+
+        All ``_safe_git()`` calls pass this dict via ``execute(env=...)`` so
+        the sandbox holds even when GitPython spawns ``git`` subprocesses.
+        """
+        env = {k: v for k, v in os.environ.items() if not _is_credential_var(k)}
+        env.update(self._ENV_HARD_OVERRIDES)
+        return env
+
     def _safe_git(self, *args: str) -> str:
         """Run a git command with config overrides and sandboxed env.
 
         Wraps ``repo.git.execute()`` with mandatory ``-c`` overrides that
-        neutralize untrusted-repo RCE vectors (fsmonitor, filters, protocols).
+        neutralize untrusted-repo RCE vectors (fsmonitor, filters, protocols),
+        and an isolated ``env`` dict (built by ``_build_git_env()``) so the
+        spawned git process never inherits credential-bearing globals and
+        never mutates the process-wide ``os.environ``.
+
         No shell is used — argv is passed directly.
 
         Args:
@@ -341,8 +429,10 @@ class GitBrain:
         if self.repo is None:
             raise GitCommandError(["git"], 128, "repo is not initialized")
         argv: list[str] = ["git", *self._GIT_CONFIG_OVERRIDES, *args]
-        with self._git_env():
-            result = self.repo.git.execute(argv)
+        result = self.repo.git.execute(
+            argv,
+            env=self._build_git_env(),
+        )
         if isinstance(result, bytes):
             return result.decode("utf-8", errors="replace")
         return str(result)

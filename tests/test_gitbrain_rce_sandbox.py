@@ -168,10 +168,14 @@ def test_safe_git_uses_execute_no_shell(tmp_path: Path) -> None:
 
     GitPython's ``execute()`` accepts either a string (shell) or list (argv).
     We verify via source inspection that ``_safe_git`` passes a list, which
-    prevents shell injection.
+    prevents shell injection. (An optional ``env=`` kwarg is allowed and used
+    to pass the sandboxed environment dict.)
     """
     source = Path(__file__).resolve().parents[1] / "src" / "allbrain" / "domains" / "memory" / "gitbrain" / "parser.py"
     content = source.read_text(encoding="utf-8")
-    # Must use execute(argv) where argv is a list — not a shell string
-    assert "self.repo.git.execute(argv)" in content, "_safe_git must call execute with argv list"
+    # Must use execute(argv...) where argv is a list — not a shell string.
+    # argv may be followed by an env= kwarg; assert on the opening call.
+    assert "self.repo.git.execute(\n            argv,\n" in content, (
+        "_safe_git must call execute with argv list (env= kwarg allowed)"
+    )
     assert 'argv: list[str] = ["git"' in content, "argv must be a list starting with 'git'"
