@@ -148,7 +148,7 @@ def register_tools(mcp, context: BrainContext) -> None:
 
         Each scenario describes a plausible future outcome with probability estimates,
         impact assessment, and key assumptions. Scenarios are richer than counterfactuals
-        â€” they include external context and branching assumptions (best-case, expected,
+        — they include external context and branching assumptions (best-case, expected,
         worst-case).
 
         Use this for exploring the range of possible futures before committing to a
