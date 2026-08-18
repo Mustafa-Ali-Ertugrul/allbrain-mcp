@@ -74,13 +74,13 @@ def test_prompts_registration_and_execution():
     register_prompts(mcp, ctx)
 
     res1 = registered_prompts["resume_project"]()
-    assert "No project found" in res1[0]["content"]
+    assert "No project found" in res1.messages[0].content.text
 
     res2 = registered_prompts["task_handoff"]("task_1", "agent_a")
-    assert "no project found" in res2[0]["content"]
+    assert "no project found" in res2.messages[0].content.text
 
-    res3 = registered_prompts["investigate_conflict"](99)
-    assert "no project found" in res3[0]["content"]
+    res3 = registered_prompts["investigate_conflict"]("99")
+    assert "no project found" in res3.messages[0].content.text
 
     # 2. Project found branch
     project = MagicMock()
@@ -93,11 +93,11 @@ def test_prompts_registration_and_execution():
         patch("allbrain.server.prompts.load_task_projection", return_value=({"tasks": {"t1": {"status": "open"}}}, {})),
     ):
         resume_res = registered_prompts["resume_project"]()
-        assert len(resume_res) == 2
-        assert "Context summary" in resume_res[0]["content"]
+        assert len(resume_res.messages) == 2
+        assert "Context summary" in resume_res.messages[0].content.text
 
         handoff_res = registered_prompts["task_handoff"]("t1", "agent_a", reason="busy")
-        assert "Handoff task t1" in handoff_res[0]["content"]
+        assert "Handoff task t1" in handoff_res.messages[0].content.text
 
 
 def test_conflict_summary_and_json_text():

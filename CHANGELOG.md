@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **MCP prompt compatibility (OpenCode crash):** prompts now return `PromptResult([Message(...), ...])` instead of plain dicts, fixing fastmcp's `messages[0] must be Message or str, got dict` error.
+- **Prompt placeholder arguments:** numeric prompt parameters (`resume_project(limit)`, `investigate_conflict(session_id)`) accept strings and coerce safely via `_as_int()`, so clients that prefetch prompts with literal placeholders (e.g. OpenCode's `"$1"`) no longer crash with `Could not convert argument`; invalid session ids return a clear in-prompt error instead of an exception.
+
 ## [1.1.0] - 2026-07-22
 
 ### Security (Threat-Model Remediation)
