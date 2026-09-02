@@ -93,24 +93,24 @@ def simulate_action_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
 def register_tools(mcp, context: BrainContext) -> None:
     @mcp.tool
     def observe_world(limit: int = 5000) -> dict[str, Any]:
-        """Return the current environment state built from the event log.
+        """Return the current live environment state (CPU, RAM, disk, git branch).
 
-        Observes the project's world model — the learned transition model derived from
-        past agent actions and events. Returns the predicted current state based on all
-        stored observations.
+        Reads the running system's resource metrics via psutil and the current
+        git branch. Does **not** read the event log or use a learned transition
+        model. The ``limit`` argument is accepted for API consistency but has no
+        effect on this tool's behaviour.
 
-        Use this before making state-dependent decisions or to understand the environment
-        context for agent actions.
+        Use this to get a snapshot of the host environment before making
+        state-dependent decisions.
 
-        Side effects: Appends a WORLD_STATE_OBSERVED event to the log. Read-only on
-        the world model itself.
+        Side effects: Appends a WORLD_STATE_OBSERVED event to the log.
 
         Args:
-            limit: Maximum number of events to process for state reconstruction (default 5000).
+            limit: Reserved parameter (no-op; kept for schema compatibility).
 
         Returns:
-            Current world state dict with environment context, recent observations,
-            and the associated event record.
+            Current environment state dict with CPU/RAM/disk metrics, git branch,
+            and the associated WORLD_STATE_OBSERVED event record.
         """
         result = observe_world_impl(context, limit=limit)
         return result.model_dump(mode="json")
@@ -120,23 +120,26 @@ def register_tools(mcp, context: BrainContext) -> None:
         action: str,
         limit: int = 5000,
     ) -> dict[str, Any]:
-        """Simulate the effect of an action using the learned world model.
+        """Simulate the effect of an action using a hardcoded transition model.
 
-        Predicts how the environment state would change if the described action were
-        taken. Uses the world model's transition function learned from past observations.
-        Complements `generate_counterfactual` and `generate_scenarios` by focusing
-        on environment state changes rather than agent decisions.
+        Reads the current live environment state (same as ``observe_world``), then
+        runs the action through the world model's transition function. The model
+        recognises only four verbs — ``deploy``, ``run_tests``, ``rollback``,
+        ``scale`` — and returns fixed fallback scores (success=0.85, risk=0.15,
+        cost=0.25) for all other actions. The ``limit`` argument is accepted for
+        API consistency but has no effect.
 
-        Use this to preview likely outcomes before executing a real action — especially
-        useful for high-risk or irreversible actions.
+        Use this to preview likely outcomes before executing a real action —
+        especially useful for high-risk or irreversible actions. Output is a
+        heuristic estimate, not a data-driven prediction.
 
         Side effects: Appends both a WORLD_STATE_OBSERVED and a WORLD_SIMULATION_RUN
         event to the log. Does not modify real environment state.
 
         Args:
             action: Description of the action to simulate (e.g., "deploy to production",
-                   "grant admin role to user X").
-            limit: Maximum number of events to process (default 5000).
+                    "grant admin role to user X").
+            limit: Reserved parameter (no-op; kept for schema compatibility).
 
         Returns:
             Simulation result with predicted state changes, risk score, and

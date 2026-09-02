@@ -93,8 +93,13 @@ def _coerce_bool(value: Any) -> Any:
     return value
 
 
-def _check_null_bytes_recursive(obj: Any) -> None:
-    """Reject null bytes in strings, dict keys/values, and list items."""
+def _check_null_bytes_recursive(obj: Any, *, _depth: int = 0) -> None:
+    """Reject null bytes in strings, dict keys/values, and list items.
+
+    Depth is bounded to prevent RecursionError on adversarially deep input.
+    """
+    if _depth > 64:
+        raise ValueError("input exceeds maximum nesting depth")
     if isinstance(obj, str):
         if "\x00" in obj:
             raise ValueError("null byte (\\x00) is not allowed in input")
@@ -102,10 +107,10 @@ def _check_null_bytes_recursive(obj: Any) -> None:
         for k, v in obj.items():
             if isinstance(k, str) and "\x00" in k:
                 raise ValueError("null byte (\\x00) is not allowed in input")
-            _check_null_bytes_recursive(v)
+            _check_null_bytes_recursive(v, _depth=_depth + 1)
     elif isinstance(obj, list):
         for item in obj:
-            _check_null_bytes_recursive(item)
+            _check_null_bytes_recursive(item, _depth=_depth + 1)
 
 
 class BaseInputModel(BaseModel):

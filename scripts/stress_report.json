@@ -9,8 +9,8 @@
     "rate_limited": 0,
     "db_locked": 0,
     "other_errors": [],
-    "duration_seconds": 6.095,
-    "resume_hash": "6335272886525285447"
+    "duration_seconds": 7.947,
+    "resume_hash": "338755591852669629"
   },
   "summary": {
     "stress_test": {
@@ -28,7 +28,7 @@
         "agent-09"
       ],
       "events_per_agent": 100,
-      "concurrent_runtime_seconds": 6.179,
+      "concurrent_runtime_seconds": 8.444,
       "total_events_attempted": 1000,
       "total_ok": 1000,
       "total_rate_limited": 0,
@@ -41,7 +41,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 3.377
+          "duration_seconds": 1.191
         },
         {
           "agent": "agent-01",
@@ -49,7 +49,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 6.176
+          "duration_seconds": 7.837
         },
         {
           "agent": "agent-02",
@@ -57,7 +57,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 3.205
+          "duration_seconds": 6.287
         },
         {
           "agent": "agent-03",
@@ -65,7 +65,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 4.484
+          "duration_seconds": 5.066
         },
         {
           "agent": "agent-04",
@@ -73,7 +73,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 4.982
+          "duration_seconds": 3.258
         },
         {
           "agent": "agent-05",
@@ -81,7 +81,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 5.482
+          "duration_seconds": 2.361
         },
         {
           "agent": "agent-06",
@@ -89,7 +89,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 3.466
+          "duration_seconds": 8.007
         },
         {
           "agent": "agent-07",
@@ -97,7 +97,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 5.72
+          "duration_seconds": 6.11
         },
         {
           "agent": "agent-08",
@@ -105,7 +105,7 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 3.593
+          "duration_seconds": 8.438
         },
         {
           "agent": "agent-09",
@@ -113,63 +113,63 @@
           "rate_limited": 0,
           "db_locked": 0,
           "other_errors": [],
-          "duration_seconds": 5.399
+          "duration_seconds": 3.075
         }
       ],
       "resume_hashes_match": true,
       "resume_details": [
         {
           "agent": "agent-00",
-          "event_count": 4002,
+          "event_count": 0,
           "deterministic_keys_match": true
         },
         {
           "agent": "agent-01",
-          "event_count": 4003,
+          "event_count": 0,
           "deterministic_keys_match": true
         },
         {
           "agent": "agent-02",
-          "event_count": 4004,
+          "event_count": 0,
           "deterministic_keys_match": true
         },
         {
           "agent": "agent-03",
-          "event_count": 4005,
+          "event_count": 0,
           "deterministic_keys_match": true
         },
         {
           "agent": "agent-04",
-          "event_count": 4006,
+          "event_count": 0,
           "deterministic_keys_match": true
         },
         {
           "agent": "agent-05",
-          "event_count": 4007,
+          "event_count": 0,
           "deterministic_keys_match": true
         },
         {
           "agent": "agent-06",
-          "event_count": 4008,
+          "event_count": 0,
           "deterministic_keys_match": true
         },
         {
           "agent": "agent-07",
-          "event_count": 4009,
+          "event_count": 0,
           "deterministic_keys_match": true
         },
         {
           "agent": "agent-08",
-          "event_count": 4010,
+          "event_count": 0,
           "deterministic_keys_match": true
         },
         {
           "agent": "agent-09",
-          "event_count": 4011,
+          "event_count": 0,
           "deterministic_keys_match": true
         }
       ],
-      "reference_event_count": 4001,
+      "reference_event_count": 0,
       "deterministic_fields_match": true
     },
     "verdict": "PASS",
