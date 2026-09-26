@@ -10,7 +10,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm, Prompt
 
 from allbrain.cli.stdio_compat import patch_stdio_newlines_for_windows
-from allbrain.config import canonicalize_project_path, default_db_path
+from allbrain.config import canonicalize_project_path, default_db_path, find_project_root
 from allbrain.server import BrainContext, create_mcp_server
 from allbrain.server.lifecycle import reconcile_stale_sessions
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
@@ -256,7 +256,7 @@ def start(
 
 def run_mcp_server(project: Path, agent: str, db_path: Path | None, tool_profile: str = "full") -> None:
     resolved_db_path = db_path or default_db_path()
-    project_path = canonicalize_project_path(project)
+    project_path = canonicalize_project_path(find_project_root(project))
     engine = create_engine_for_path(resolved_db_path)
     init_db(engine)
     repository = BrainRepository(engine)
@@ -296,7 +296,7 @@ def rebuild_snapshots(
     from allbrain.storage.snapshot_repo import SnapshotRepo
 
     resolved_db = _resolve_db(db_path)
-    project_path = canonicalize_project_path(project)
+    project_path = canonicalize_project_path(find_project_root(project))
     engine = create_engine_for_path(resolved_db)
     init_db(engine)
     repository = BrainRepository(engine)
@@ -343,7 +343,7 @@ def repair_history(
     apply: Annotated[bool, typer.Option("--apply", help="Apply changes; default is dry-run.")] = False,
 ) -> None:
     resolved_db = (db_path or default_db_path()).expanduser().resolve()
-    project_path = canonicalize_project_path(project)
+    project_path = canonicalize_project_path(find_project_root(project))
     sources = list(source_db or sorted(resolved_db.parent.glob(".allbrain-*.db")))
     engine = create_engine_for_path(resolved_db)
     init_db(engine)
@@ -382,7 +382,7 @@ def status(
 ) -> None:
     """Show database path, event count, session count, and backup files."""
     resolved_db = _resolve_db(db_path)
-    project_path = canonicalize_project_path(project)
+    project_path = canonicalize_project_path(find_project_root(project))
 
     console.print(f"Project:  {project_path}")
     console.print(f"Database: {resolved_db}")

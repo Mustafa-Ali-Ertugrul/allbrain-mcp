@@ -98,6 +98,20 @@ def assert_path_still_allowed(project_path: str | Path | None) -> str:
     return canonicalize_project_path(project_path)
 
 
+def find_project_root(project_path: str | Path | None) -> Path:
+    """Return the nearest enclosing git work tree root, else the path itself.
+
+    An agent started from a repo subfolder then binds to the repo root, so
+    one repo maps to one AllBrain project. A ``.git`` *file* (worktree or
+    submodule) marks its own root because it has its own working tree.
+    """
+    start = (Path.cwd() if project_path is None else Path(project_path)).expanduser().resolve(strict=False)
+    for candidate in (start, *start.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    return start
+
+
 def canonicalize_project_path(project_path: str | Path | None) -> str:
     """Canonicalize and enforce allowed-root containment.
 
