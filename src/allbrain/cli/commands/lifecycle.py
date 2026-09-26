@@ -6,7 +6,7 @@ from typing import Annotated
 import typer
 
 from allbrain.cli.commands._shared import _resolve_db, console
-from allbrain.config import canonicalize_project_path, default_db_path
+from allbrain.config import canonicalize_project_path, default_db_path, find_project_root
 from allbrain.storage import create_engine_for_path, init_db
 from allbrain.storage.history_repair import HistoryRepairer, backup_sqlite
 
@@ -51,7 +51,7 @@ def register(app: typer.Typer) -> None:
         apply: Annotated[bool, typer.Option("--apply", help="Apply changes; default is dry-run.")] = False,
     ) -> None:
         resolved_db = (db_path or default_db_path()).expanduser().resolve()
-        project_path = canonicalize_project_path(project)
+        project_path = canonicalize_project_path(find_project_root(project))
         sources = list(source_db or sorted(resolved_db.parent.glob(".allbrain-*.db")))
         engine = create_engine_for_path(resolved_db)
         init_db(engine)
@@ -92,7 +92,7 @@ def register(app: typer.Typer) -> None:
     ) -> None:
         """Show database path, event count, session count, and backup files."""
         resolved_db = _resolve_db(db_path)
-        project_path = canonicalize_project_path(project)
+        project_path = canonicalize_project_path(find_project_root(project))
 
         console.print(f"Project:  {project_path}")
         console.print(f"Database: {resolved_db}")

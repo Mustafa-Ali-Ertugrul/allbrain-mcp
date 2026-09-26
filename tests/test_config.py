@@ -9,6 +9,7 @@ from allbrain.config import (
     allowed_project_roots,
     canonicalize_project_path,
     default_db_path,
+    find_project_root,
     path_is_allowed,
 )
 
@@ -165,3 +166,31 @@ def test_path_is_allowed_helper(tmp_path: Path) -> None:
         assert not path_is_allowed(tmp_path / "nope")
     finally:
         cfg._ALLOWED_PROJECT_ROOTS = saved
+
+
+def test_find_project_root_binds_subfolder_to_repo_root(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    (repo / ".git").mkdir(parents=True)
+    sub = repo / "src" / "pkg"
+    sub.mkdir(parents=True)
+
+    assert find_project_root(sub) == repo.resolve()
+    assert find_project_root(repo) == repo.resolve()
+
+
+def test_find_project_root_without_repo_keeps_path(tmp_path: Path) -> None:
+    plain = tmp_path / "plain" / "dir"
+    plain.mkdir(parents=True)
+
+    assert find_project_root(plain) == plain.resolve()
+
+
+def test_find_project_root_worktree_is_its_own_root(tmp_path: Path) -> None:
+    # A worktree/submodule has a .git *file* and its own working tree.
+    (tmp_path / "main" / ".git").mkdir(parents=True)
+    worktree = tmp_path / "main" / "wt"
+    worktree.mkdir()
+    (worktree / ".git").write_text("gitdir: ../.git/worktrees/wt\n")
+    (worktree / "sub").mkdir()
+
+    assert find_project_root(worktree / "sub") == worktree.resolve()
