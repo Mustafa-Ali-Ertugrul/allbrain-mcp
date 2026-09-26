@@ -1,13 +1,20 @@
 from __future__ import annotations
 
 import json
+import os
+import secrets
 import sys
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
 
 from allbrain.config import default_db_path
 from allbrain.domains.memory.ui import GraphExplorer, MetricsDashboard
 from allbrain.storage import BrainRepository, create_engine_for_path, init_db
+
+_DEFAULT_EVENTS_LIMIT = 50
+_MAX_EVENTS_LIMIT = 1000
+_LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 _HTML_PAGE = r"""<!DOCTYPE html>
 <html lang="en">
@@ -57,7 +64,14 @@ _HTML_PAGE = r"""<!DOCTYPE html>
 <div id="graph" class="tab-content" style="display:none"></div>
 <script>
 async function api(path) {
-  const r = await fetch(path);
+  const tok = new URLSearchParams(location.search).get('token') || sessionStorage.getItem('ab_token');
+  if (tok) sessionStorage.setItem('ab_token', tok);
+  const r = await fetch(path, tok ? { headers: { 'Authorization': 'Bearer ' + tok } } : {});
+  if (r.status === 401) {
+    document.getElementById('subtitle').textContent =
+      'unauthorized — open the dashboard URL printed by the CLI (it includes the token)';
+    throw new Error('unauthorized');
+  }
   if (!r.ok) throw new Error(r.statusText);
   return r.json();
 }
@@ -141,11 +155,19 @@ refresh();
 
 class DashboardHandler(BaseHTTPRequestHandler):
     repo: BrainRepository | None = None
+    auth_token: str | None = None
+    allowed_origins: set[str] = set()
 
     def _send_json(self, data: Any, status: int = 200) -> None:
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        # CORS: never reflect arbitrary origins. Only explicitly allowlisted
+        # origins (ALLBRAIN_DASHBOARD_ALLOWED_ORIGINS) get an ACAO header;
+        # the bundled HTML page is same-origin and needs none.
+        origin = self.headers.get("Origin")
+        if origin and origin in self.allowed_origins:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
         self.end_headers()
         self.wfile.write(json.dumps(data, default=str, indent=2).encode())
 
@@ -155,29 +177,76 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(html.encode())
 
+    def _authorized(self) -> bool:
+        """Bearer-token check for /api endpoints (constant-time comparison)."""
+        token = self.auth_token
+        if not token:
+            return True
+        supplied = self.headers.get("Authorization", "")
+        if supplied.startswith("Bearer ") and _constant_time_eq(supplied[len("Bearer ") :], token):
+            return True
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        candidate = query.get("token", [""])[0]
+        return bool(candidate) and _constant_time_eq(candidate, token)
+
     def _get_events(self, limit: int = 100) -> list:
         from allbrain.models.schemas import EventRead
 
         if self.repo is None:
             return []
-        events = self.repo.list_events(limit=limit)
+        project_path = self._dashboard_project_path()
+        if project_path is None:
+            return []
+        events = self.repo.list_events(project_path=project_path, limit=limit)
         return [EventRead.model_validate(e).model_dump(mode="json") for e in events]
 
+    def _dashboard_project_path(self) -> str | None:
+        """Resolve the project the dashboard displays.
+
+        The default DB can hold several projects; show the one with the most
+        recent event (fallback: newest project). This also repairs the
+        previous ``list_events()`` call that omitted the required
+        ``project_path`` argument and broke every /api endpoint.
+        """
+        from sqlmodel import col, select
+
+        from allbrain.models.entities import Event, Project
+
+        if self.repo is None:
+            return None
+        with self.repo.engine.connect() as conn:
+            recent = conn.execute(
+                select(Project.canonical_project_path)
+                .join(Event, Event.project_id == Project.id)
+                .order_by(col(Event.stream_position).desc())
+                .limit(1)
+            ).first()
+            if recent is not None:
+                return str(recent[0])
+            fallback = conn.execute(
+                select(Project.canonical_project_path).order_by(col(Project.id).desc()).limit(1)
+            ).first()
+            return str(fallback[0]) if fallback is not None else None
+
     def do_GET(self) -> None:
-        if self.path == "/" or self.path == "/index.html":
+        path = urllib.parse.urlparse(self.path).path
+        if path in ("/", "/index.html"):
             return self._send_html(_HTML_PAGE)
-        elif self.path == "/api/overview":
-            return self._overview()
-        elif self.path.startswith("/api/events"):
-            return self._events()
-        elif self.path == "/api/graph":
-            return self._graph()
-        elif self.path == "/api/metrics":
-            return self._metrics()
-        elif self.path == "/health":
-            self._send_json({"status": "ok"})
-        else:
-            self._send_json({"error": "not found"}, 404)
+        if path == "/health":
+            return self._send_json({"status": "ok"})
+        if path.startswith("/api/"):
+            if not self._authorized():
+                return self._send_json({"error": "unauthorized"}, 401)
+            if path == "/api/overview":
+                return self._overview()
+            if path == "/api/events":
+                return self._events()
+            if path == "/api/graph":
+                return self._graph()
+            if path == "/api/metrics":
+                return self._metrics()
+            return self._send_json({"error": "not found"}, 404)
+        self._send_json({"error": "not found"}, 404)
 
     def _overview(self) -> None:
         from sqlmodel import select as sql_select
@@ -217,11 +286,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         )
 
     def _events(self) -> None:
-        import urllib.parse
-
-        parsed = urllib.parse.urlparse(self.path)
-        qs = urllib.parse.parse_qs(parsed.query)
-        limit = int(qs.get("limit", [50])[0])
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        raw = query.get("limit", [str(_DEFAULT_EVENTS_LIMIT)])[0]
+        try:
+            limit = int(raw)
+        except (TypeError, ValueError):
+            return self._send_json({"error": "invalid limit: must be an integer"}, 400)
+        if not 1 <= limit <= _MAX_EVENTS_LIMIT:
+            return self._send_json({"error": f"limit must be between 1 and {_MAX_EVENTS_LIMIT}"}, 400)
         events = self._get_events(limit=limit)
         self._send_json({"events": events, "count": len(events)})
 
@@ -256,13 +328,29 @@ class DashboardHandler(BaseHTTPRequestHandler):
         sys.stderr.write(f"[dashboard] {args[0]} {args[1]} {args[2]}\n")
 
 
+def _constant_time_eq(supplied: str, expected: str) -> bool:
+    """Constant-time string comparison that tolerates non-ASCII input."""
+    return secrets.compare_digest(supplied.encode("utf-8"), expected.encode("utf-8"))
+
+
 def start_dashboard(host: str = "127.0.0.1", port: int = 8080) -> None:
     engine = create_engine_for_path(default_db_path())
     init_db(engine)
     DashboardHandler.repo = BrainRepository(engine)
 
+    # F3 hardening: every dashboard start requires a bearer token. A fresh
+    # random token is generated per start (printed in the URL below); set
+    # ALLBRAIN_DASHBOARD_TOKEN to pin your own for scripted access.
+    token = os.environ.get("ALLBRAIN_DASHBOARD_TOKEN") or secrets.token_urlsafe(24)
+    DashboardHandler.auth_token = token
+    allowed = os.environ.get("ALLBRAIN_DASHBOARD_ALLOWED_ORIGINS", "")
+    DashboardHandler.allowed_origins = {origin.strip() for origin in allowed.split(",") if origin.strip()}
+
     server = HTTPServer((host, port), DashboardHandler)
-    print(f"\n  AllBrain Dashboard → http://{host}:{port}/\n")
+    if host not in _LOOPBACK_HOSTS:
+        print("  WARNING: dashboard is bound to a non-loopback interface and serves raw event data.")
+        print("           Keep the token confidential; prefer an SSH tunnel over direct exposure.\n")
+    print(f"\n  AllBrain Dashboard → http://{host}:{port}/?token={token}\n")
     print("  Press Ctrl+C to stop.\n")
     try:
         server.serve_forever()

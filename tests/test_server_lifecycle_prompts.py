@@ -39,6 +39,82 @@ async def test_lifecycle_heartbeat_and_cleanup_loops():
 
 
 @pytest.mark.asyncio
+async def test_heartbeat_loop_detaches_terminal_session(tmp_path):
+    """A session closed by another process must be detached by the next beat.
+
+    The zombie process must stop heartbeating a terminal row (heartbeat can
+    never drift past ended_at) and drop it so the next tool call creates a
+    fresh session instead of writing into a dead one.
+    """
+    from allbrain.models.entities import Session
+    from allbrain.server.lifecycle_session import ensure_session_started
+    from allbrain.storage import BrainRepository, create_engine_for_path, init_db, open_session
+
+    engine = create_engine_for_path(tmp_path / "allbrain.db")
+    init_db(engine)
+    repository = BrainRepository(engine)
+    project = tmp_path / "project"
+    project.mkdir()
+    ctx = BrainContext(
+        repository=repository,
+        project_path=str(project.resolve()),
+        agent_name="codex",
+        central_audit_enabled=True,
+    )
+    session = ensure_session_started(ctx)
+    assert ctx.active_session is not None
+    # Another process closes the session behind this process's back.
+    closed = repository.close_session(session.id or 0, status="closed", reason="external")
+    assert closed is not None
+    assert closed.ended_at is not None
+    ended = closed.ended_at
+
+    with patch("allbrain.server.lifecycle.HEARTBEAT_INTERVAL_SECONDS", 0.01):
+        task = asyncio.create_task(_heartbeat_loop(ctx))
+        await asyncio.sleep(0.2)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    assert ctx.active_session is None
+    with open_session(engine) as db:
+        stored = db.get(Session, session.id)
+    assert stored is not None
+    assert stored.status == "closed"
+    assert stored.last_heartbeat_at == ended
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("wall_elapsed", "expect_reconcile"), [(0.01, True), (10_000.0, False)])
+async def test_cleanup_loop_skips_reconcile_after_host_suspend(wall_elapsed, expect_reconcile):
+    """After laptop sleep every live heartbeat is old; reconciling then marks live sessions stale.
+
+    The loop must detect it woke far later than scheduled and skip that round.
+    """
+    ctx = MagicMock(spec=BrainContext)
+    ctx.project_path = "/test/project"
+    ctx.repository = MagicMock()
+    ctx.repository.cleanup_empty_sessions.return_value = 0
+    reconcile = MagicMock(return_value=[])
+    clock = iter([0.0] + [wall_elapsed * n for n in range(1, 100)])
+
+    with (
+        patch("allbrain.server.lifecycle.SESSION_CLEANUP_INTERVAL_SECONDS", 0.01),
+        patch("allbrain.server.lifecycle.HEARTBEAT_INTERVAL_SECONDS", 0.01),
+        patch("allbrain.server.lifecycle.reconcile_stale_sessions", reconcile),
+        patch("allbrain.server.lifecycle.time.time", side_effect=lambda: next(clock)),
+    ):
+        task = asyncio.create_task(_cleanup_loop(ctx))
+        await asyncio.sleep(0.1)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    assert reconcile.called is expect_reconcile
+    assert ctx.record_cleanup_run.called
+
+
+@pytest.mark.asyncio
 async def test_create_lifespan_success_and_failure():
     ctx = MagicMock(spec=BrainContext)
     ctx._session_lock = MagicMock()

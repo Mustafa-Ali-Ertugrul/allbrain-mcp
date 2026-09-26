@@ -109,6 +109,11 @@ def close_session_impl(context: BrainContext, **kwargs: Any) -> ToolResult:
             tool_args={"session_id": session_id, "reason": reason},
             session_id=bind_session_id(context, None),
         )
+    # If this process was using the closed session, detach it so the next
+    # tool call starts a fresh session instead of writing into a terminal row.
+    with context._session_lock:
+        if context._active_session is not None and context._active_session.id == session_id:
+            context.active_session = None
     return ToolResult(
         ok=True,
         data={
@@ -127,6 +132,7 @@ def cleanup_stale_sessions_impl(context: BrainContext, **kwargs: Any) -> ToolRes
     reconciled = reconcile_stale_sessions(context)
     before = utc_now() - timedelta(hours=EMPTY_SESSION_TTL_HOURS)
     deleted = context.repository.cleanup_empty_sessions(project_path=context.project_path, before=before)
+    context.record_cleanup_run(len(reconciled), deleted)
     if deleted:
         logger.info("Cleaned up %d empty session(s)", deleted)
     with suppress(UserInputError):

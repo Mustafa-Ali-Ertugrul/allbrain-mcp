@@ -58,6 +58,22 @@ def test_build_session_summary_empty_events():
     assert summary["session_id"] == 1
     assert summary["event_count"] == 0
     assert summary["goals"] == []
+    assert summary["file_changes"] == {"added": 0, "modified": 0, "deleted": 0}
+
+
+def test_build_session_summary_counts_file_changes():
+    """build_session_summary aggregates change_kind over file events."""
+    from types import SimpleNamespace
+
+    session = Session(id=2, agent_name="a", status="active")
+    events = [
+        SimpleNamespace(type="file_modified", payload={"change_kind": "modified"}, file_path="a.py"),
+        SimpleNamespace(type="file_modified", payload={"change_kind": "deleted"}, file_path="b.py"),
+        SimpleNamespace(type="file_modified", payload={}, file_path="c.py"),
+    ]
+    summary = build_session_summary(session, events, status="closed", reason="test")
+    assert summary["file_changes"] == {"added": 0, "modified": 1, "deleted": 1}
+    assert summary["files"] == ["a.py", "b.py", "c.py"]
 
 
 def test_reconcile_stale_sessions_no_stale():
@@ -68,3 +84,16 @@ def test_reconcile_stale_sessions_no_stale():
     ctx.repository.reconcile_stale_sessions.return_value = []
     result = reconcile_stale_sessions(ctx)
     assert result == []
+
+
+def test_cleanup_bookkeeping_never_run_then_recorded():
+    """last_cleanup distinguishes 'never ran' from 'ran, nothing to do'."""
+    ctx = BrainContext(repository=MagicMock(), project_path="/tmp/test")
+    assert ctx.last_cleanup is None
+    ctx.record_cleanup_run(0, 0)
+    stamped = ctx.last_cleanup
+    assert stamped is not None
+    assert stamped["status"] == "ran"
+    assert stamped["reconciled"] == 0
+    assert stamped["deleted_empty"] == 0
+    assert stamped["last_run_at"]

@@ -28,8 +28,13 @@ def build_session_summary(
     tools: list[str] = []
     errors: list[str] = []
     files: list[str] = []
+    file_changes = {"added": 0, "modified": 0, "deleted": 0}
     for event in events:
         payload = event.payload
+        if event.type == EventType.FILE_MODIFIED.value:
+            kind = payload.get("change_kind")
+            if kind in file_changes:
+                file_changes[kind] += 1
         if event.type == EventType.TOOL_CALL.value:
             tool = payload.get("tool_name")
             if isinstance(tool, str):
@@ -65,5 +70,6 @@ def build_session_summary(
         "tools": list(dict.fromkeys(tools)),
         "errors": list(dict.fromkeys(errors)),
         "files": sorted(set(files)),
+        "file_changes": dict(file_changes),
         "git": git or {},
     }

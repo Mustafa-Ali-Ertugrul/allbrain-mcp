@@ -84,6 +84,8 @@ def test_git_delta_emits_observed_file_event(tmp_path: Path) -> None:
     file_events = [event for event in events if event.type == EventType.FILE_MODIFIED.value]
     assert [event.file_path for event in file_events] == ["tracked.txt"]
     assert file_events[0].payload["attribution"] == "observed"
+    # Payload mirrors the first-class file_path column for json_extract consumers.
+    assert file_events[0].payload["file_path"] == "tracked.txt"
 
 
 def test_git_checkpoint_emits_once_and_snapshot_keeps_git_state(tmp_path: Path) -> None:
@@ -203,6 +205,12 @@ def test_cleanup_stale_sessions_tool(tmp_path: Path) -> None:
     result = cleanup_stale_sessions_impl(context)
     assert result.ok
     assert result.data["reconciled"] >= 1
+    # The manual run is stamped for reliability-status visibility.
+    stamped = context.last_cleanup
+    assert stamped is not None
+    assert stamped["status"] == "ran"
+    assert stamped["reconciled"] == result.data["reconciled"]
+    assert stamped["deleted_empty"] == result.data["deleted"]
 
 
 def test_close_session_tool(tmp_path: Path) -> None:
@@ -234,3 +242,103 @@ def test_count_sessions(tmp_path: Path) -> None:
     context.repository.create_session(context.project_path, "claude")
     assert context.repository.count_sessions(project_path=context.project_path) == 2
     assert context.repository.count_sessions(project_path=context.project_path, status="active") == 2
+
+
+def test_touch_session_refuses_terminal_sessions(tmp_path: Path) -> None:
+    """Terminal sessions are never resurrected by a late/zombie heartbeat."""
+    context = make_context(tmp_path)
+    session = context.repository.create_session(context.project_path, "codex")
+    closed = context.repository.close_session(session.id or 0, status="closed", reason="test")
+    assert closed is not None
+    ended = closed.ended_at
+
+    touched = context.repository.touch_session(session.id or 0, at=utc_now() + timedelta(hours=12))
+    assert touched is not None
+    assert touched.status == "closed"
+    assert touched.last_heartbeat_at == ended
+
+
+def test_zombie_touch_cannot_push_heartbeat_past_ended_at(tmp_path: Path) -> None:
+    """Regression for sessions 355/356: last_heartbeat_at drifted ~10h past ended_at."""
+    context = make_context(tmp_path)
+    session = context.repository.create_session(context.project_path, "codex")
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=session.id or 0,
+        type=EventType.GOAL_SET.value,
+        source="test",
+        payload={"description": "zombie work"},
+    )
+    with open_session(context.repository.engine) as db:
+        stored = db.get(Session, session.id)
+        assert stored is not None
+        stored.last_heartbeat_at = utc_now() - timedelta(minutes=15)
+        db.add(stored)
+        db.commit()
+
+    reconciled = context.repository.reconcile_stale_sessions(
+        project_path=context.project_path,
+        stale_before=utc_now() - timedelta(seconds=120),
+    )
+    assert len(reconciled) == 1
+    assert reconciled[0].status == "stale"
+
+    # The hung process wakes up hours later and heartbeats again.
+    touched = context.repository.touch_session(session.id or 0, at=utc_now() + timedelta(hours=10))
+    assert touched is not None
+    assert touched.status == "stale"
+    assert touched.last_heartbeat_at is not None
+    assert touched.ended_at is not None
+    assert touched.last_heartbeat_at <= touched.ended_at
+
+
+def test_finalize_does_not_duplicate_summary_after_external_reconcile(tmp_path: Path) -> None:
+    """A zombie EOF after another process reconciled the session must not
+    append a second session_summary claiming status=closed."""
+    context = make_context(tmp_path)
+    session = ensure_session_started(context)
+    context.repository.append_event(
+        project_path=context.project_path,
+        session_id=session.id or 0,
+        type=EventType.GOAL_SET.value,
+        source="test",
+        payload={"description": "work before hang"},
+    )
+    with open_session(context.repository.engine) as db:
+        stored = db.get(Session, session.id)
+        assert stored is not None
+        stored.last_heartbeat_at = utc_now() - timedelta(minutes=15)
+        db.add(stored)
+        db.commit()
+
+    reconciled = reconcile_stale_sessions(context, stale_after_seconds=120)
+    assert len(reconciled) == 1
+    # The zombie's in-memory copy still reads "active".
+    assert context.active_session is not None
+    assert context.active_session.status == "active"
+
+    result = finalize_active_session(context, reason="zombie_eof")
+    assert result is not None
+    assert result.status == "stale"
+
+    events = context.repository.list_session_events(session.id or 0)
+    summaries = [event for event in events if event.type == EventType.SESSION_SUMMARY.value]
+    assert len(summaries) == 1
+    assert summaries[0].payload["status"] == "stale"
+
+
+def test_close_session_tool_detaches_current_session(tmp_path: Path) -> None:
+    """Closing this process's session drops it so the next call starts fresh."""
+    context = make_context(tmp_path)
+    session = ensure_session_started(context)
+    assert context.active_session is not None
+    assert context.active_session.id == session.id
+
+    result = close_session_impl(context, session_id=session.id, reason="manual_test")
+    assert result.ok
+    assert context.active_session is None
+
+    fresh = ensure_session_started(context)
+    assert fresh.id is not None
+    assert fresh.id != session.id
+    assert fresh.status == "active"

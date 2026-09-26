@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from uuid6 import uuid7
 
+from allbrain.models.entities import utc_now
 from allbrain.server.constants import (
     DEFAULT_AUTO_SNAPSHOT_THRESHOLD,
     DEFAULT_SNAPSHOT_CHECK_INTERVAL,
@@ -69,6 +70,11 @@ class BrainContext:
         # ── promoted_ids cache (invalidated on each save_event) ──
         self.__dict__["_promoted_ids"]: set[str] | None = None
         self.__dict__["_promoted_ids_version"]: int = 0
+        # ── session-maintenance bookkeeping (written by the cleanup loop and
+        # the manual cleanup_stale_sessions tool; surfaced by reliability status)
+        self.__dict__["_last_cleanup_at"]: str | None = None
+        self.__dict__["_last_cleanup_reconciled"]: int = 0
+        self.__dict__["_last_cleanup_deleted"]: int = 0
 
     # ── properties ──
 
@@ -200,3 +206,28 @@ class BrainContext:
     def set_promoted_ids(self, ids: set[str]) -> None:
         with self._session_lock:
             self._promoted_ids = ids
+
+    @property
+    def last_cleanup(self) -> dict[str, Any] | None:
+        """Last session-cleanup run bookkeeping (thread-safe).
+
+        Returns ``None`` when neither the background cleanup loop nor the
+        manual ``cleanup_stale_sessions`` tool has run yet in this process,
+        so operators can tell "never ran" apart from "ran, nothing to do".
+        """
+        with self._session_lock:
+            if self._last_cleanup_at is None:
+                return None
+            return {
+                "status": "ran",
+                "last_run_at": self._last_cleanup_at,
+                "reconciled": self._last_cleanup_reconciled,
+                "deleted_empty": self._last_cleanup_deleted,
+            }
+
+    def record_cleanup_run(self, reconciled: int, deleted: int) -> None:
+        """Stamp a completed session-cleanup run (thread-safe)."""
+        with self._session_lock:
+            self._last_cleanup_at = utc_now().isoformat()
+            self._last_cleanup_reconciled = int(reconciled)
+            self._last_cleanup_deleted = int(deleted)

@@ -7,9 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-09-24
+
 ### Fixed
 - **MCP prompt compatibility (OpenCode crash):** prompts now return `PromptResult([Message(...), ...])` instead of plain dicts, fixing fastmcp's `messages[0] must be Message or str, got dict` error.
 - **Prompt placeholder arguments:** numeric prompt parameters (`resume_project(limit)`, `investigate_conflict(session_id)`) accept strings and coerce safely via `_as_int()`, so clients that prefetch prompts with literal placeholders (e.g. OpenCode's `"$1"`) no longer crash with `Could not convert argument`; invalid session ids return a clear in-prompt error instead of an exception.
+- **Zombie-session resurrection (sessions 355/356 incident):** `touch_session` now refuses to update heartbeats on terminal session rows. A hung process that wakes up after another instance reconciled its session can no longer push `last_heartbeat_at` past `ended_at` (observed drift: 10–12 h), which corrupted staleness accounting.
+- **Live sessions marked stale after laptop sleep (root cause of 355/356):** on wake from sleep the cleanup loop fired before any heartbeat and reconciled every live session whose heartbeat was hours old. The loop now detects that it woke far later than scheduled and skips reconciliation for that round, giving heartbeats time to catch up.
+- **Duplicate session summaries:** `finalize_active_session` re-reads the authoritative DB row before writing a summary. A zombie process receiving stdio EOF after a cross-process stale reconciliation no longer appends a second `session_summary` claiming `status=closed` while the row stays `stale`.
+- **Heartbeat writes into dead sessions:** the heartbeat loop now touches first and skips git-change recording for terminal rows; it also detaches a session closed or reconciled elsewhere so the next tool call starts a fresh session instead of writing events into a dead one.
+- **Manual `close_session` alignment:** closing the current session via the tool detaches it from the process context immediately, so subsequent tool calls no longer attribute events to the closed row.
+- **Dashboard API 500s:** `_get_events` omitted the required `project_path` argument of `list_events`, breaking every `/api/*` endpoint. The dashboard now resolves the project with the most recent event (fallback: newest project).
+
+### Security
+- **GitPython 3.1.50 → 3.1.62** (F1, HIGH): closes 15 known advisories incl. a CVSS 9.3 conditional RCE via `clone_from` option-injection (`uv lock --upgrade-package gitpython`).
+- **cryptography 49.0.0 → 50.0.1** (F2, MEDIUM): closes CVE-2026-69247 / PYSEC-2026-3552 (Bleichenbacher-style PKCS#7 EnvelopedData decryption oracle; transitive via keyring).
+- **Dashboard authentication (F3, MEDIUM):** `allbrain ui` now requires a bearer token on all `/api/*` endpoints. A fresh random token is generated per start and printed in the URL; set `ALLBRAIN_DASHBOARD_TOKEN` to pin your own. `/` and `/health` stay open (no data). Non-loopback binds print an explicit warning.
+- **Dashboard CORS (F3):** the blanket `Access-Control-Allow-Origin: *` header is removed. Cross-origin access is only granted to origins allowlisted via `ALLBRAIN_DASHBOARD_ALLOWED_ORIGINS` (comma-separated); the bundled page is same-origin and needs none.
+- **Dashboard `limit` validation (F4, LOW):** `/api/events?limit=` rejects non-integer and out-of-range values (valid range 1–1000) with a 400 response instead of crashing the request handler.
+
+### Changed
+- Version bumped to 1.1.1 via `bump-my-version` (patch).
 
 ## [1.1.0] - 2026-07-22
 

@@ -73,6 +73,14 @@ class SessionRepository:
             session = db.get(Session, session_id)
             if session is None:
                 return None
+            if session.status != "active":
+                # Terminal sessions (closed/stale/empty) must not be
+                # resurrected by a hung/zombie process that wakes up after
+                # another instance reconciled its session; otherwise
+                # last_heartbeat_at drifts past ended_at and corrupts
+                # staleness accounting. Return the stored row unchanged so
+                # callers can detect the detached state.
+                return session
             session.last_heartbeat_at = at or utc_now()
             db.add(session)
             db.commit()
