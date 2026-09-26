@@ -6,6 +6,13 @@ from typing import Any
 from allbrain.events import EventType
 from allbrain.models.entities import Session, utc_now
 
+_LIFECYCLE_TYPES = {
+    EventType.TOOL_CALL.value,
+    EventType.TOOL_CALL_OUTCOME.value,
+    EventType.SESSION_STARTED.value,
+    EventType.SESSION_SUMMARY.value,
+}
+
 
 def build_session_summary(
     session: Session,
@@ -16,25 +23,14 @@ def build_session_summary(
     git: dict[str, Any] | None = None,
     ended_at: datetime | None = None,
 ) -> dict[str, Any]:
-    lifecycle_types = {
-        EventType.TOOL_CALL.value,
-        EventType.TOOL_CALL_OUTCOME.value,
-        EventType.SESSION_STARTED.value,
-        EventType.SESSION_SUMMARY.value,
-    }
-    semantic = [event for event in events if event.type not in lifecycle_types]
+    semantic = [event for event in events if event.type not in _LIFECYCLE_TYPES]
     goals: list[str] = []
     task_ids: list[str] = []
     tools: list[str] = []
     errors: list[str] = []
     files: list[str] = []
-    file_changes = {"added": 0, "modified": 0, "deleted": 0}
     for event in events:
         payload = event.payload
-        if event.type == EventType.FILE_MODIFIED.value:
-            kind = payload.get("change_kind")
-            if kind in file_changes:
-                file_changes[kind] += 1
         if event.type == EventType.TOOL_CALL.value:
             tool = payload.get("tool_name")
             if isinstance(tool, str):
@@ -70,6 +66,16 @@ def build_session_summary(
         "tools": list(dict.fromkeys(tools)),
         "errors": list(dict.fromkeys(errors)),
         "files": sorted(set(files)),
-        "file_changes": dict(file_changes),
+        "file_changes": _count_file_changes(events),
         "git": git or {},
     }
+
+
+def _count_file_changes(events: list[Any]) -> dict[str, int]:
+    counts = {"added": 0, "modified": 0, "deleted": 0}
+    for event in events:
+        if event.type == EventType.FILE_MODIFIED.value:
+            kind = event.payload.get("change_kind")
+            if kind in counts:
+                counts[kind] += 1
+    return counts
