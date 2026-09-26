@@ -61,6 +61,15 @@ def finalize_active_session(
             return None
         if session.status != "active":
             return session
+        # Another process may have reconciled this session as stale while
+        # this one was hung (zombie-EOF race). The in-memory copy can still
+        # read "active", so re-read the authoritative row before writing a
+        # summary; a terminal row means the summary already belongs to the
+        # reconciler and must not be duplicated here.
+        fresh = _load_session(context, session.id)
+        if fresh is not None and fresh.status != "active":
+            context.active_session = fresh
+            return fresh
         final_fingerprint = record_git_changes(
             context,
             session,
@@ -68,24 +77,25 @@ def finalize_active_session(
         )
         events = context.repository.list_session_events(session.id)
         ended_at = utc_now()
-        summary = build_session_summary(
-            session,
-            events,
-            status=status,
-            reason=reason,
-            git=final_fingerprint,
-            ended_at=ended_at,
-        )
-        context.repository.append_event(
-            project_path=context.project_path,
-            session_id=session.id,
-            type=EventType.SESSION_SUMMARY.value,
-            source="allbrain",
-            payload=summary,
-            agent_id=context.agent_name,
-            branch=context.agent_name,
-            importance=3,
-        )
+        if not any(event.type == EventType.SESSION_SUMMARY.value for event in events):
+            summary = build_session_summary(
+                session,
+                events,
+                status=status,
+                reason=reason,
+                git=final_fingerprint,
+                ended_at=ended_at,
+            )
+            context.repository.append_event(
+                project_path=context.project_path,
+                session_id=session.id,
+                type=EventType.SESSION_SUMMARY.value,
+                source="allbrain",
+                payload=summary,
+                agent_id=context.agent_name,
+                branch=context.agent_name,
+                importance=3,
+            )
         closed = context.repository.close_session(session.id, status=status, reason=reason, ended_at=ended_at)
         if closed is not None:
             context.active_session = closed
@@ -181,6 +191,10 @@ def record_git_changes(
                     "confidence": confidence,
                     "fingerprint": fingerprint,
                     "observed_by_session": session.id,
+                    # Mirror the first-class event.file_path column so that
+                    # consumers reading only payload_json (SQL json_extract,
+                    # audit exports) can still attribute the file.
+                    "file_path": path,
                 },
                 file_path=path,
                 agent_id=context.agent_name,
@@ -198,3 +212,11 @@ def _project_path_for_session(context: BrainContext, session: Session) -> str:
     with open_session(context.repository.engine) as db:
         project = db.get(Project, session.project_id)
         return project.canonical_project_path if project is not None else context.project_path
+
+
+def _load_session(context: BrainContext, session_id: int) -> Session | None:
+    """Re-read a session row from the database (authoritative cross-process state)."""
+    from allbrain.storage.database import open_session
+
+    with open_session(context.repository.engine) as db:
+        return db.get(Session, session_id)

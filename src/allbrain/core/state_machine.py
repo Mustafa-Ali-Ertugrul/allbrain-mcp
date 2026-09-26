@@ -73,6 +73,7 @@ class StateMachine:
         EventType.TASK_STARTED: "_apply_task_started",
         EventType.TASK_COMPLETED: "_apply_task_completed",
         EventType.TASK_UPDATED: "_apply_task_updated",
+        EventType.TASK_DELETED: "_apply_task_deleted",
         EventType.FILE_MODIFIED: "_apply_file_modified",
         EventType.FAILURE: "_apply_failure",
         EventType.TASK_BLOCKED: "_apply_blocked",
@@ -128,10 +129,24 @@ class StateMachine:
             alt_key = self._alternate_ref_key(key)
             if alt_key in self.state.open_task_refs:
                 key = alt_key
+            else:
+                # A label-only completion (no task_id) must still close a
+                # task that was opened by id under the same label.
+                label = _normalize_task_label(task)
+                key = next(
+                    (ref for ref, value in self.state.open_task_refs.items() if _normalize_task_label(value) == label),
+                    key,
+                )
         self.state.open_task_refs.pop(key, None)
         self._sync_open_tasks()
         if task not in self.state.completed_tasks:
             self.state.completed_tasks.append(task)
+
+    def _apply_task_deleted(self, event: EventRead) -> None:
+        task_id = event.payload.get("task_id")
+        if isinstance(task_id, str) and task_id:
+            self.state.open_task_refs.pop(f"id:{task_id}", None)
+            self._sync_open_tasks()
 
     def _apply_task_updated(self, event: EventRead) -> None:
         task_id = event.payload.get("task_id")

@@ -2,6 +2,21 @@
 
 This roadmap outlines the targets for the upcoming versions, distinguishing between new features and technical debt reduction.
 
+## v1.1.1 (2026-09-24) — Shipped
+
+* **Zombie-Session Defense:** ✅ DONE
+  * `touch_session` refuses heartbeats on terminal rows (no more `last_heartbeat_at > ended_at` drift).
+  * `finalize_active_session` re-reads the authoritative DB row — no duplicate `session_summary` after cross-process stale reconciliation.
+  * Heartbeat loop detaches sessions closed/reconciled elsewhere; `close_session` tool aligns process context immediately.
+* **Dependency Security Sweep:** ✅ DONE
+  * GitPython 3.1.50 → 3.1.62 (closes 15 advisories incl. CVSS 9.3 conditional RCE).
+  * cryptography 49.0.0 → 50.0.1 (closes CVE-2026-69247).
+* **Dashboard Hardening:** ✅ DONE
+  * Bearer-token auth on all `/api/*` endpoints (per-start random token; `ALLBRAIN_DASHBOARD_TOKEN` override).
+  * CORS `*` removed; explicit `ALLBRAIN_DASHBOARD_ALLOWED_ORIGINS` allowlist.
+  * `limit` input validation (1–1000, 400 on bad input).
+  * Repaired broken `/api/*` endpoints (`list_events` missing `project_path`).
+
 ## v0.2.5 Backlog
 
 * **Snapshot Generation Optimization:** ✅ DONE

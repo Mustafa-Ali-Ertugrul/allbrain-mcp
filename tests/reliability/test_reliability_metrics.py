@@ -39,3 +39,21 @@ def test_reliability_status_mcp_impl_and_system_metrics_are_additive(tmp_path) -
     assert status.data["active_workers"] == 1
     assert system.ok
     assert "reliability" in system.data
+
+
+def test_reliability_status_reports_session_maintenance(tmp_path) -> None:
+    context = make_context(tmp_path)
+
+    status = get_reliability_status_impl(context)
+    assert status.ok
+    maintenance = status.data["session_maintenance"]
+    assert maintenance["status"] == "never_run"
+    assert maintenance["last_run_at"] is None
+
+    context.record_cleanup_run(3, 1)
+    status = get_reliability_status_impl(context)
+    maintenance = status.data["session_maintenance"]
+    assert maintenance["status"] == "ran"
+    assert maintenance["reconciled"] == 3
+    assert maintenance["deleted_empty"] == 1
+    assert maintenance["last_run_at"]

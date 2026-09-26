@@ -111,6 +111,12 @@ def get_reliability_status_impl(context: BrainContext, **kwargs: Any) -> ToolRes
     from allbrain.server.tools.sessions import build_session_report
 
     result["sessions"] = build_session_report(context, limit=min(limit, 5000), include_empty=True, detail_limit=0)
+    result["session_maintenance"] = context.last_cleanup or {
+        "status": "never_run",
+        "last_run_at": None,
+        "reconciled": 0,
+        "deleted_empty": 0,
+    }
     semantic_events = [e for e in events if e.type not in NON_SEMANTIC_EVENT_TYPES]
     memory_event_count = len(semantic_events)
     memory_items = 0

@@ -49,6 +49,11 @@ class ConflictDetector:
                 continue
             if _agent_of(event) == "allbrain":
                 continue
+            if event.source == "git_observer":
+                # Passive working-tree observation: every open server records
+                # the same edit, so two agents "touching" a file here is one
+                # change seen twice, not a conflict.
+                continue
             key = _conflict_key(event)
             buckets[key].append(event)
         for bucket in buckets.values():

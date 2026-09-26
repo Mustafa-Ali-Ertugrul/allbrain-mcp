@@ -1,5 +1,8 @@
 SNAPSHOT_SCHEMA_VERSION = "7.2"
-REDUCER_VERSION = "7.2"
+# 7.3: open tasks drop on task_deleted and on label-only completion. 7.2
+# snapshots are deliberately not reducer-compatible: their stored open_tasks
+# still carry deleted/completed tasks, so they must be rebuilt by full replay.
+REDUCER_VERSION = "7.3"
 COMPRESSION_VERSION = "1.1"
 
 COMPATIBLE_SNAPSHOT_SCHEMA_VERSIONS = {"3.1", "4.0", "5.0", "6.0", "7.0", "7.1", SNAPSHOT_SCHEMA_VERSION}

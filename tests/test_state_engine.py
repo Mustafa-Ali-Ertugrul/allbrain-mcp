@@ -142,3 +142,36 @@ def test_state_machine_tolerates_unknown_event_type() -> None:
     assert state["completed_tasks"] == []
     assert state["failures"] == []
     assert state["blocked"] == []
+
+
+def test_state_machine_drops_deleted_task_from_open_tasks() -> None:
+    events = [
+        make_event("1", "task_updated", {"task_id": "smoke-1", "goal": "Smoke test task"}),
+        make_event("2", "task_deleted", {"task_id": "smoke-1", "reason": "cleanup"}),
+    ]
+
+    state = StateEngine().build_state({"events": events, "git": {}})
+
+    assert state["open_tasks"] == []
+    assert state["completed_tasks"] == []
+
+
+def test_state_machine_label_only_completion_closes_task_opened_by_id() -> None:
+    events = [
+        make_event("1", "task_updated", {"task_id": "smoke-1", "goal": "Smoke test task"}),
+        make_event("2", "task_completed", {"task": "Smoke test task", "status": "completed"}),
+    ]
+
+    state = StateEngine().build_state({"events": events, "git": {}})
+
+    assert state["open_tasks"] == []
+    assert state["completed_tasks"] == ["Smoke test task"]
+
+
+def test_reducer_7_2_snapshots_are_rebuilt() -> None:
+    from allbrain.snapshot.versions import COMPRESSION_VERSION, SNAPSHOT_SCHEMA_VERSION, is_compatible
+
+    stale = {"snapshot_schema_version": SNAPSHOT_SCHEMA_VERSION, "reducer_version": "7.2"}
+    stale["compression_version"] = COMPRESSION_VERSION
+
+    assert not is_compatible(stale)
