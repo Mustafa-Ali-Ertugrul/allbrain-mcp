@@ -108,6 +108,22 @@ class TestConflictDetector:
         conflicts = detector.detect(events)
         assert len(conflicts) == 0
 
+    def test_skips_passive_git_observations(self) -> None:
+        # Every open server observes the same working tree, so one edit is
+        # recorded once per server; those observations are not conflicts.
+        # Uses the detector that resume_project runs, not this module's legacy copy.
+        from allbrain.domains.collaboration.conflict import ConflictDetector
+
+        events = [
+            _event(EventType.FILE_MODIFIED.value, file_path="a.py", agent_id="kilo").model_copy(
+                update={"source": "git_observer"}
+            ),
+            _event(EventType.FILE_MODIFIED.value, file_path="a.py", agent_id="opencode").model_copy(
+                update={"source": "git_observer"}
+            ),
+        ]
+        assert ConflictDetector().detect(events) == []
+
     def test_empty_events(self) -> None:
         detector = ConflictDetector()
         assert detector.detect([]) == []
