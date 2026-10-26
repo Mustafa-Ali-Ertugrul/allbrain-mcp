@@ -203,6 +203,13 @@ Switch to another client, call `list_events()` again — the same event appears.
 * **Filesystem Sandbox:** `ALLBRAIN_ALLOWED_PROJECT_ROOTS` path traversal isolation.
 * **Dual-Window Rate Limiting:** Process-local thread-safe rate limiter (1,000 RPS burst, 100,000 RPM rolling).
 
+## Community
+
+- **Issues** — bug reports and feature requests via [issue templates](https://github.com/Mustafa-Ali-Ertugrul/allbrain-mcp/issues/new/choose)
+- **Changelog** — every release documented in [CHANGELOG.md](CHANGELOG.md)
+- **Releases** — tagged, tested builds on [GitHub Releases](https://github.com/Mustafa-Ali-Ertugrul/allbrain-mcp/releases) and [PyPI](https://pypi.org/project/allbrain-agent-runtime/)
+- **Contributing** — see [CONTRIBUTING.md](CONTRIBUTING.md); PRs welcome, `make ci-local` before opening one
+
 ## Data lifecycle and security
 
 AllBrain stores events, sessions, and audit logs in local SQLite. Data never leaves your machine. Credential-like values are redacted before storage.
@@ -229,3 +236,4 @@ AllBrain stores events, sessions, and audit logs in local SQLite. Data never lea
 - stdio FastMCP handshake verified
 - Python 3.12 & 3.13 (CI matrix)
 - Coverage: 86.54% (enforced threshold 85%)
+- Released under [MIT](LICENSE) · all releases are reproducible from the tagged source

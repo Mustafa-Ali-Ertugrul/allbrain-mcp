@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an improvement or a new capability for AllBrain.
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do that AllBrain does not support today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should AllBrain do instead?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you tried or considered, and why they fall short.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - MCP tools
+        - Memory / event store
+        - Governance / policy
+        - Dashboard
+        - CLI / install
+        - Documentation
+        - Other
+    validations:
+      required: true
