@@ -56,7 +56,10 @@ body:
     id: logs
     attributes:
       label: Relevant logs or output
-      description: Paste any error output or stack trace. It is stored in local SQLite — nothing sensitive is sent anywhere.
+      description: |
+        Paste any error output or stack trace.
+
+        **This issue is public.** Anything pasted here — including logs — is visible to everyone and indexed by search engines. Redact secrets, tokens, file paths, hostnames, and private event payloads before posting. See [SECURITY.md](https://github.com/Mustafa-Ali-Ertugrul/allbrain-mcp/security/policy) for how to report vulnerabilities privately.
       render: shell
   - type: checkboxes
     id: checks
